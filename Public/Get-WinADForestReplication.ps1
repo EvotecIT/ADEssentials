@@ -7,15 +7,21 @@
     if (-not $DomainControllers) {
         $DomainControllers = Get-WinADForestControllers
     }
+    $ProcessErrors = [System.Collections.Generic.List[PSCustomObject]]::new()
     $Replication = foreach ($DC in $DomainControllers) {
-        Get-ADReplicationPartnerMetadata -Target $DC.HostName -Partition * -ErrorAction SilentlyContinue -ErrorVariable +ProcessErrors
-    }
-    #$Replication = Get-ADReplicationPartnerMetadata -Target * -Partition * -ErrorAction SilentlyContinue -ErrorVariable ProcessErrors
-    if ($ProcessErrors) {
-        foreach ($_ in $ProcessErrors) {
+        try {
+            Get-ADReplicationPartnerMetadata -Target $DC.HostName -Partition * -ErrorAction Stop #-ErrorVariable +ProcessErrors
+        } catch {
             Write-Warning -Message "Get-WinADForestReplication - Error on server $($_.Exception.ServerName): $($_.Exception.Message)"
+            $ProcessErrors.Add([PSCustomObject] @{ Server = $_.Exception.ServerName; StatusMessage = $_.Exception.Message })
         }
     }
+    #$Replication = Get-ADReplicationPartnerMetadata -Target * -Partition * -ErrorAction SilentlyContinue -ErrorVariable ProcessErrors
+    # if ($ProcessErrors) {
+    #     foreach ($_ in $ProcessErrors) {
+
+    #     }
+    # }
     foreach ($_ in $Replication) {
         $ServerPartner = (Resolve-DnsName -Name $_.PartnerAddress -Verbose:$false -ErrorAction SilentlyContinue)
         $ServerInitiating = (Resolve-DnsName -Name $_.Server -Verbose:$false -ErrorAction SilentlyContinue)
@@ -56,10 +62,15 @@
         }
         [PSCustomObject] $ReplicationObject
     }
+
     foreach ($_ in $ProcessErrors) {
-        $ServerInitiating = (Resolve-DnsName -Name $_.Exception.ServerName -Verbose:$false -ErrorAction SilentlyContinue)
+        if ($null -ne $_.Server) {
+            $ServerInitiating = (Resolve-DnsName -Name $_.Server -Verbose:$false -ErrorAction SilentlyContinue)
+        } else {
+            $ServerInitiating = [PSCustomObject] @{ IP4Address = '127.0.0.1' }
+        }
         $ReplicationObject = [ordered] @{
-            Server                         = $_.Exception.ServerName
+            Server                         = $_.Server
             ServerIPV4                     = $ServerInitiating.IP4Address
             ServerPartner                  = 'Unknown'
             ServerPartnerIPV4              = '127.0.0.1'
@@ -84,7 +95,7 @@
             UsnFilter                      = $null
             Writable                       = $null
             Status                         = $false
-            StatusMessage                  = $_.Exception.Message
+            StatusMessage                  = $_.StatusMessage
         }
         if ($Extended) {
             $ReplicationObject.Partner = $null
@@ -95,4 +106,5 @@
         }
         [PSCustomObject] $ReplicationObject
     }
+
 }
