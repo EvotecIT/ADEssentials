@@ -28,28 +28,19 @@
         $ConnectionLDAP = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAP
 
         $PortsThatWork = @(
-            if ($GlobalCatalogNonSSL.Status) { $GCPortLDAP }
-            if ($GlobalCatalogSSL.Status) { $GCPortLDAPSSL }
-            if ($ConnectionLDAP.Status) { $PortLDAP }
-            if ($ConnectionLDAPS.Status) { $PortLDAPS }
+            if ($GlobalCatalogNonSSL) { $GCPortLDAP }
+            if ($GlobalCatalogSSL) { $GCPortLDAPSSL }
+            if ($ConnectionLDAP) { $PortLDAP }
+            if ($ConnectionLDAPS) { $PortLDAPS }
         ) | Sort-Object
-        <#
-        $Comments = @(
-            $GlobalCatalogNonSSL.Comment
-            $GlobalCatalogSSL.Comment
-            $ConnectionLDAP.Comment
-            $ConnectionLDAPS.Comment
-        ) | Sort-Object -Unique
-        #>
         [pscustomobject]@{
             Computer           = $Computer
             ComputerFQDN       = $ServerName
-            GlobalCatalogLDAP  = $GlobalCatalogNonSSL.Status
-            GlobalCatalogLDAPS = $GlobalCatalogSSL.Status
-            LDAP               = $ConnectionLDAP.Status
-            LDAPS              = $ConnectionLDAPS.Status
+            GlobalCatalogLDAP  = $GlobalCatalogNonSSL
+            GlobalCatalogLDAPS = $GlobalCatalogSSL
+            LDAP               = $ConnectionLDAP
+            LDAPS              = $ConnectionLDAPS
             AvailablePorts     = $PortsThatWork -join ','
-            #Comment            = $Comments -join ';'
         }
     }
 }
