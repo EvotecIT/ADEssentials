@@ -12,7 +12,7 @@
     RootModule = 'ADEssentials.psm1'
 
     # Version number of this module.
-    ModuleVersion = '0.0.6'
+    ModuleVersion = '0.0.7'
 
     # Supported PSEditions
     CompatiblePSEditions = 'Desktop'
@@ -51,7 +51,7 @@
     # ProcessorArchitecture = ''
 
     # Modules that must be imported into the global environment prior to importing this module
-    # RequiredModules = @()
+    RequiredModules = @(@{ModuleName = 'PSSharedGoods'; GUID = 'ee272aa8-baaa-4edf-9f45-b6d6f7d844fe'; ModuleVersion = '0.0.83'; })
 
     # Assemblies that must be loaded prior to importing this module
     # RequiredAssemblies = @()
