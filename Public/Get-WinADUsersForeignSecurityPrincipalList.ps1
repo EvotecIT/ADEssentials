@@ -1,5 +1,5 @@
 ﻿function Get-WinADUsersForeignSecurityPrincipalList {
-    [alias('Get-WinADUserFP')]
+    [alias('Get-WinADUsersFP')]
     param(
         [string] $Domain
     )
