@@ -53,7 +53,11 @@
             }
             $domainControllerMetadata = $domainController.GetReplicationMetadata($Name)
             $dsaSignature = $domainControllerMetadata.Item("dsaSignature")
-            $LastBackup = [DateTime] $($dsaSignature.LastOriginatingChangeTime)
+            try {
+                $LastBackup = [DateTime] $($dsaSignature.LastOriginatingChangeTime)
+            } catch {
+                $LastBackup = [DateTime]::MinValue
+            }
             [PSCustomObject] @{
                 Domain            = $Domain
                 NamingContext     = $Name
