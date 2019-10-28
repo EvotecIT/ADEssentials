@@ -1,4 +1,5 @@
 ﻿function Get-WinADLMSettings {
+    [CmdletBinding()]
     param(
         [string] $DomainController
     )
@@ -44,21 +45,22 @@
             5 = 'DCs refuse LM and NTLM responses, and accept only NTLM v2. Clients use NTLM v2 authentication and use extended session security if the server supports it. DCs refuse NTLM and LM authentication, and accept only NTLM v2 authentication.'
         }
         [PSCustomObject] @{
-            LSAProtectionCredentials = [bool] $LSA.RunAsPPL # https://docs.microsoft.com/en-us/windows-server/security/credentials-protection-and-management/configuring-additional-lsa-protection
-            Level                    = $LMCompatibilityLevel
-            LevelDescription         = $LM[$LMCompatibilityLevel]
-            LimitBlankPasswordUse    = [bool] $LSA.LimitBlankPasswordUse
-            NoLmHash                 = [bool] $LSA.NoLmHash
-            DisableDomainCreds       = [bool] $LSA.disabledomaincreds # https://www.stigviewer.com/stig/windows_8/2014-01-07/finding/V-3376
-            ForceGuest               = [bool] $LSA.forceguest
-            RestrictAnonymous        = [bool] $LSA.restrictanonymous
-            RestrictAnonymousSAM     = [bool] $LSA.restrictanonymoussam
-            SecureBoot               = [bool] $LSA.SecureBoot
-            LsaCfgFlagsDefault       = $LSA.LsaCfgFlagsDefault
-            LSAPid                   = $LSA.LSAPid
-            AuditBaseDirectories     = [bool] $LSA.auditbasedirectories
-            AuditBaseObjects         = [bool] $LSA.auditbaseobjects # https://www.stigviewer.com/stig/windows_server_2012_member_server/2014-01-07/finding/V-14228 | Should be false
-            CrashOnAuditFail         = $LSA.CrashOnAuditFail # http://systemmanager.ru/win2k_regestry.en/46686.htm | Should be 0
+            LSAProtectionCredentials  = [bool] $LSA.RunAsPPL # https://docs.microsoft.com/en-us/windows-server/security/credentials-protection-and-management/configuring-additional-lsa-protection
+            Level                     = $LMCompatibilityLevel
+            LevelDescription          = $LM[$LMCompatibilityLevel]
+            EveryoneIncludesAnonymous = [bool] $LSA.everyoneincludesanonymous
+            LimitBlankPasswordUse     = [bool] $LSA.LimitBlankPasswordUse
+            NoLmHash                  = [bool] $LSA.NoLmHash
+            DisableDomainCreds        = [bool] $LSA.disabledomaincreds # https://www.stigviewer.com/stig/windows_8/2014-01-07/finding/V-3376
+            ForceGuest                = [bool] $LSA.forceguest
+            RestrictAnonymous         = [bool] $LSA.restrictanonymous
+            RestrictAnonymousSAM      = [bool] $LSA.restrictanonymoussam
+            SecureBoot                = [bool] $LSA.SecureBoot
+            LsaCfgFlagsDefault        = $LSA.LsaCfgFlagsDefault
+            LSAPid                    = $LSA.LSAPid
+            AuditBaseDirectories      = [bool] $LSA.auditbasedirectories
+            AuditBaseObjects          = [bool] $LSA.auditbaseobjects # https://www.stigviewer.com/stig/windows_server_2012_member_server/2014-01-07/finding/V-14228 | Should be false
+            CrashOnAuditFail          = $LSA.CrashOnAuditFail # http://systemmanager.ru/win2k_regestry.en/46686.htm | Should be 0
         }
     }
 }
