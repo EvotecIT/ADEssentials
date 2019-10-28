@@ -39,6 +39,8 @@ That's it. Whenever there's new version you simply run the command and you can e
 
 ## Changelog
 
+- 0.0.22 - 28.10.2019
+  - [x] Added some functions
 - 0.0.21 - 10.10.2019
   - [x] Fix for Get-WinADLastBackup
 - 0.0.7 - 3.08.2019
