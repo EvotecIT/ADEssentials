@@ -125,7 +125,7 @@
             }
 
             try {
-                [Array] $SYSVOL = Get-ChildItem -Path "\\$Hostname\SYSVOL\$Domain\Policies" -ErrorAction Stop
+                [Array] $SYSVOL = Get-ChildItem -Path "\\$Hostname\SYSVOL\$Domain\Policies" -Exclude "PolicyDefinitions*" -ErrorAction Stop
                 $DomainSummary['SysvolCount'] = $SYSVOL.Count
             } catch {
                 $DomainSummary['SysvolCount'] = 0
