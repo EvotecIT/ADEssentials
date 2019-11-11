@@ -39,6 +39,11 @@ That's it. Whenever there's new version you simply run the command and you can e
 
 ## Changelog
 
+- 0.0.23 - 11.11.2019
+  - [x] Removed PSSharedGoods as dependency for modules published to releases and PowerShellGallery
+    - [ ] It's still part of development build. Releases are now merged with PSPublishModule functionality
+  - [x] Added PSEventViewer as depenedency as it was missing
+  - [x] Fix for Get-WinADDFSHealth.ps1 SYSVol Count (tnx brianmccarty)
 - 0.0.22 - 28.10.2019
   - [x] Added some functions
 - 0.0.21 - 10.10.2019
