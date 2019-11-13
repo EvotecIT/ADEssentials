@@ -2,7 +2,7 @@
     [CmdletBinding()]
     param(
         [alias('Joiner')][string] $Splitter,
-        [string] $Formatted
+        [switch] $Formatted
     )
 
     [Flags()]
