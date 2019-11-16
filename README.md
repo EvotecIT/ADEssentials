@@ -39,6 +39,8 @@ That's it. Whenever there's new version you simply run the command and you can e
 
 ## Changelog
 
+- 0.0.25 - 15.11.2019
+  - [x] Added two new commands for fixing and reading Proxy Addresses
 - 0.0.23 - 11.11.2019
   - [x] Removed PSSharedGoods as dependency for modules published to releases and PowerShellGallery
     - [ ] It's still part of development build. Releases are now merged with PSPublishModule functionality
