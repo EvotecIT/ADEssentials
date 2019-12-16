@@ -39,6 +39,8 @@ That's it. Whenever there's new version you simply run the command and you can e
 
 ## Changelog
 
+- 0.0.27 - 16.12.2019
+  - [x] Fixes for Get-WINADFSHealth
 - 0.0.26 - 18.11.2019
   - [x] Added Get-WinADForestObjectsConflict to find conflicting objects
 - 0.0.25 - 15.11.2019
