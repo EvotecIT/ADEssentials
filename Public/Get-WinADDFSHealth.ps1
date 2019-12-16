@@ -14,9 +14,9 @@
     [Array] $Table = foreach ($Domain in $Domains) {
         Write-Verbose "Get-WinADDFSHealth - Processing $Domain"
         if (-not $DomainControllers) {
-            $DomainControllers = Get-ADDomainController -Filter * -Server $Domain
+            $DomainControllersFull = Get-ADDomainController -Filter * -Server $Domain
         } else {
-            $DomainControllers = foreach ($_ in $DomainControllers) {
+            $DomainControllersFull = foreach ($_ in $DomainControllers) {
                 Get-ADDomainController -Identity $_ -Server $Domain
             }
         }
@@ -29,7 +29,7 @@
         }
 
 
-        foreach ($DC in $DomainControllers) {
+        foreach ($DC in $DomainControllersFull) {
             Write-Verbose "Get-WinADDFSHealth - Processing $DC for $Domain"
             $DCName = $DC.Name
             $Hostname = $DC.Hostname
@@ -88,10 +88,14 @@
             State                    : 2
             PSComputerName           : AD1
             #>
-
-            $DFSReplicatedFolderInfo = Get-CimData -NameSpace "root\microsoftdfs" -Class 'dfsrreplicatedfolderinfo' -ComputerName $Hostname
-            $DomainSummary['ReplicationState'] = $ReplicationStatus["$($DFSReplicatedFolderInfo.State)"]
-
+            $WarningVar = $null
+            $DFSReplicatedFolderInfo = Get-CimData -NameSpace "root\microsoftdfs" -Class 'dfsrreplicatedfolderinfo' -ComputerName $Hostname -WarningAction SilentlyContinue -WarningVariable WarningVar
+            if ($WarningVar) {
+                $DomainSummary['ReplicationState'] = 'Unknown'
+                #$DomainSummary['ReplicationState'] = $WarningVar -join ', '
+            } else {
+                $DomainSummary['ReplicationState'] = $ReplicationStatus["$($DFSReplicatedFolderInfo.State)"]
+            }
             try {
                 $CentralRepositoryDC = Get-ChildItem -Path "\\$Hostname\SYSVOL\$Domain\policies\PolicyDefinitions" -ErrorAction Stop
                 $DomainSummary['CentralRepositoryDC'] = if ($CentralRepositoryDC) { $true } else { $false }
@@ -145,11 +149,17 @@
             }
             $DomainSummary['IdenticalCount'] = $DomainSummary['GroupPolicyCount'] -eq $DomainSummary['SYSVOLCount']
 
-            $Registry = Get-PSRegistry -RegistryPath "HKLM\SYSTEM\CurrentControlSet\Services\DFSR\Parameters" -ComputerName $Hostname
+            try {
+                $Registry = Get-PSRegistry -RegistryPath "HKLM\SYSTEM\CurrentControlSet\Services\DFSR\Parameters" -ComputerName $Hostname -ErrorAction Stop
+            } catch {
+                #$ErrorMessage = $_.Exception.Message
+                $Registry = $null
+            }
             if ($null -ne $Registry.StopReplicationOnAutoRecovery) {
                 $DomainSummary['StopReplicationOnAutoRecovery'] = [bool] $Registry.StopReplicationOnAutoRecovery
             } else {
                 $DomainSummary['StopReplicationOnAutoRecovery'] = $null
+                # $DomainSummary['StopReplicationOnAutoRecovery'] = $ErrorMessage
             }
 
             $All = @(
