@@ -3,8 +3,7 @@
     param(
         [string] $Domain
     )
-    $ADModule = Import-Module PSWinDocumentation.AD -PassThru
-    $Roles = & $ADModule { param($Domain); Get-WinADForestRoles -Domain $Domain } $Domain
+    $Roles = Get-WinADForestRoles -Domain $Domain
     if ($Domain -ne '') {
         [PSCustomObject] @{
             PDCEmulator                      = $Roles['PDCEmulator']
