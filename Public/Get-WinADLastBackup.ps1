@@ -23,13 +23,18 @@
 
     [cmdletBinding()]
     param(
+        [string] $ForestName,
         [string[]] $Domains
     )
     $NameUsed = [System.Collections.Generic.List[string]]::new()
     [DateTime] $CurrentDate = Get-Date
     if (-not $Domains) {
         try {
-            $Forest = Get-ADForest -ErrorAction Stop
+            if ($ForestName) {
+                $Forest = Get-ADForest -ErrorAction Stop -Identity $ForestName
+            } else {
+                $Forest = Get-ADForest -ErrorAction Stop
+            }
             $Domains = $Forest.Domains
         } catch {
             Write-Warning "Get-WinADLastBackup - Failed to gather Forest Domains $($_.Exception.Message)"
