@@ -39,6 +39,8 @@ That's it. Whenever there's new version you simply run the command and you can e
 
 ## Changelog
 
+- 0.0.29 - 04.01.2020
+  - [x] Added Get-WinADTombstoneLifetime / Set-WinADTombstoneLifetime
 - 0.0.28 - 26.12.2019
   - [x] Added Get-WinADForestRoles (copied from PSWinDocumentation.AD)
 - 0.0.27 - 16.12.2019
