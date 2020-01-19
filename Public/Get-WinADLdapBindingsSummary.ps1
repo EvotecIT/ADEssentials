@@ -14,6 +14,7 @@
     foreach ($Event in $Events) {
         [PSCustomobject] @{
             'Domain Controller'                                                        = $Event.Computer
+            'Date'                                                                     = $Event.Date
             'Number of simple binds performed without SSL/TLS'                         = $Event.'NoNameA0'
             'Number of Negotiate/Kerberos/NTLM/Digest binds performed without signing' = $Event.'NoNameA1'
             'GatheredFrom'                                                             = $Event.'GatheredFrom'
