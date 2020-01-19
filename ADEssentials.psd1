@@ -12,7 +12,7 @@
     RootModule           = 'ADEssentials.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '0.0.33'
+    ModuleVersion        = '0.0.34'
 
     # Supported PSEditions
     CompatiblePSEditions = 'Desktop', 'Core'
@@ -51,8 +51,8 @@
     # ProcessorArchitecture = ''
 
     # Modules that must be imported into the global environment prior to importing this module
-    RequiredModules      = @(@{ModuleName = 'PSEventViewer'; GUID = '5df72a79-cdf6-4add-b38d-bcacf26fb7bc'; ModuleVersion = '1.0.10'; }, 
-        @{ModuleName = 'PSSharedGoods'; GUID = 'ee272aa8-baaa-4edf-9f45-b6d6f7d844fe'; ModuleVersion = '0.0.118'; })
+    RequiredModules      = @(@{ModuleName = 'PSEventViewer'; GUID = '5df72a79-cdf6-4add-b38d-bcacf26fb7bc'; ModuleVersion = '1.0.12'; }, 
+        @{ModuleName = 'PSSharedGoods'; GUID = 'ee272aa8-baaa-4edf-9f45-b6d6f7d844fe'; ModuleVersion = '0.0.119'; })
 
     # Assemblies that must be loaded prior to importing this module
     # RequiredAssemblies = @()
