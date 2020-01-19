@@ -12,7 +12,7 @@
     RootModule           = 'ADEssentials.psm1'
 
     # Version number of this module.
-    ModuleVersion        = '0.0.32'
+    ModuleVersion        = '0.0.33'
 
     # Supported PSEditions
     CompatiblePSEditions = 'Desktop', 'Core'
@@ -74,10 +74,10 @@
     'Get-WinADDiagnostics', 'Get-WinADForestObjectsConflict', 
     'Get-WinADForestReplication', 'Get-WinADForestRoles', 
     'Get-WinADGPOMissingPermissions', 'Get-WinADGPOSysvolFolders', 
-    'Get-WinADLastBackup', 'Get-WinADLMSettings', 
-    'Get-WinADPriviligedObjects', 'Get-WinADProxyAddresses', 
-    'Get-WinADSiteConnections', 'Get-WinADSiteLinks', 
-    'Get-WinADTombstoneLifetime', 'Get-WinADTrusts', 
+    'Get-WinADLastBackup', 'Get-WinADLDAPBindingsSummary', 
+    'Get-WinADLMSettings', 'Get-WinADPriviligedObjects', 
+    'Get-WinADProxyAddresses', 'Get-WinADSiteConnections', 
+    'Get-WinADSiteLinks', 'Get-WinADTombstoneLifetime', 'Get-WinADTrusts', 
     'Get-WinADUsersForeignSecurityPrincipalList', 
     'Repair-WinADEmailAddress', 'Set-WinADDiagnostics', 
     'Set-WinADReplication', 'Set-WinADReplicationConnections', 
