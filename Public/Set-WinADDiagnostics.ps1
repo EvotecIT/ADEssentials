@@ -70,7 +70,7 @@
         'Internal'  = 5
     }
     $Type = @{
-        'Knowledge Consistency Checker (KCC)' = '1 Knowledge Consistency Checker (KCC)'
+        'Knowledge Consistency Checker (KCC)' = '1 Knowledge Consistency Checker'
         'Security Events'                     = '2 Security Events'
         'ExDS Interface Events'               = '3 ExDS Interface Events'
         'MAPI Interface Events'               = '4 MAPI Interface Events'
@@ -80,7 +80,7 @@
         'Directory Access'                    = '8 Directory Access'
         'Internal Processing'                 = '9 Internal Processing'
         'Performance Counters'                = '10 Performance Counters'
-        'Initialization / Termination'        = '11 Initialization / Termination'
+        'Initialization / Termination'        = '11 Initialization/Termination'
         'Service Control'                     = '12 Service Control'
         'Name Resolution'                     = '13 Name Resolution'
         'Backup'                              = '14 Backup'
@@ -121,11 +121,11 @@
                         if ($Level -eq 'None') {
                             # nltest /dbflag:0x2080ffff # Enable
                             Write-Verbose "Set-WinADDiagnostics - Setting Netlogon Diagnostics to Enabled on $Computer"
-                            Set-PSRegistry -RegistryPath 'HKLM\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters' -Type REG_DWORD -Key 'DbFlag' -Value 0 -ComputerName $Computer
+                            Set-PSRegistry -RegistryPath 'HKLM\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters' -Type REG_DWORD -Key 'DbFlag' -Value 0 -ComputerName $Computer -Verbose:$false
                         } else {
                             # nltest /dbflag:0x0 # Disable
                             Write-Verbose "Set-WinADDiagnostics - Setting Netlogon Diagnostics to Disabled on $Computer"
-                            Set-PSRegistry -RegistryPath 'HKLM\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters' -Type REG_DWORD -Key 'DbFlag' -Value 545325055 -ComputerName $Computer
+                            Set-PSRegistry -RegistryPath 'HKLM\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters' -Type REG_DWORD -Key 'DbFlag' -Value 545325055 -ComputerName $Computer -Verbose:$false
                         }
                         # Retart of NetLogon service is not required.
                     }
