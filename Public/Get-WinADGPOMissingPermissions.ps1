@@ -18,19 +18,26 @@
 
     [cmdletBinding()]
     param(
-        [string] $Domain = $Env:USERDNSDOMAIN
+        [alias('ForestName')][string] $Forest,
+        [string[]] $ExcludeDomains,
+        [alias('Domain', 'Domains')][string[]] $IncludeDomains,
+        [switch] $SkipRODC
     )
-    $GPOs = Get-GPO -All -Domain $Domain
-    $MissingPermissions = @(
-        foreach ($GPO in $GPOs) {
-            If ($GPO.User.Enabled) {
-                $GPOPermissionForAuthUsers = Get-GPPermission -Guid $GPO.Id -All | Select-Object -ExpandProperty Trustee | Where-Object { $_.Name -eq "Authenticated Users" }
-                $GPOPermissionForDomainComputers = Get-GPPermission -Guid $GPO.Id -All | Select-Object -ExpandProperty Trustee | Where-Object { $_.Name -eq "Domain Computers" }
-                If (-not $GPOPermissionForAuthUsers -and -not $GPOPermissionForDomainComputers) {
-                    $GPO
+    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC
+    foreach ($Domain in $ForestInformation.Domains) {
+        $QueryServer = $ForestInformation['QueryServers']["$Domain"].HostName[0]
+        $GPOs = Get-GPO -All -Domain $Domain -Server $QueryServer
+        $MissingPermissions = @(
+            foreach ($GPO in $GPOs) {
+                If ($GPO.User.Enabled) {
+                    $GPOPermissionForAuthUsers = Get-GPPermission -Guid $GPO.Id -All -Server $QueryServer | Select-Object -ExpandProperty Trustee | Where-Object { $_.Name -eq "Authenticated Users" }
+                    $GPOPermissionForDomainComputers = Get-GPPermission -Guid $GPO.Id -All -Server $QueryServer | Select-Object -ExpandProperty Trustee | Where-Object { $_.Name -eq "Domain Computers" }
+                    If (-not $GPOPermissionForAuthUsers -and -not $GPOPermissionForDomainComputers) {
+                        $GPO
+                    }
                 }
             }
-        }
-    )
-    $MissingPermissions
+        )
+        $MissingPermissions
+    }
 }

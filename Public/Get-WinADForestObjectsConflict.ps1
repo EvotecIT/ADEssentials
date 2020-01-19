@@ -1,10 +1,16 @@
 ﻿Function Get-WinADForestObjectsConflict {
     [CmdletBinding()]
-    Param()
+    Param(
+        [alias('ForestName')][string] $Forest,
+        [string[]] $ExcludeDomains,
+        [alias('Domain', 'Domains')][string[]] $IncludeDomains
+    )
     # Based on https://gallery.technet.microsoft.com/scriptcenter/Get-ADForestConflictObjects-4667fa37
-    $Forest = Get-ADForest
-    foreach ($Domain in $Forest.Domains) {
-        $DC = Get-ADDomainController -DomainName $Domain -Discover
+    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains
+
+    #$Forest = Get-ADForest
+    foreach ($Domain in $ForestInformation.Domains) {
+        $DC = $ForestInformation['QueryServers']["$Domain"].HostName[0]
         #Get conflict objects
         Get-ADObject -LDAPFilter "(|(cn=*\0ACNF:*)(ou=*CNF:*))" -Properties WhenChanged -Server $DC |
         ForEach-Object {

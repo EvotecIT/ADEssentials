@@ -1,14 +1,22 @@
 ﻿function Get-WinADForestReplication {
     [CmdletBinding()]
     param(
-        [switch] $Extended,
-        [Array] $DomainControllers
+        [alias('ForestName')][string] $Forest,
+        [string[]] $ExcludeDomains,
+        [string[]] $ExcludeDomainControllers,
+        [alias('Domain', 'Domains')][string[]] $IncludeDomains,
+        [alias('DomainControllers')][string[]] $IncludeDomainControllers,
+        [switch] $SkipRODC,
+        [switch] $Extended
     )
-    if (-not $DomainControllers) {
-        $DomainControllers = Get-WinADForestControllers
-    }
+    #if (-not $DomainControllers) {
+    #    $DomainControllers = Get-WinADForestControllers
+    #}
     $ProcessErrors = [System.Collections.Generic.List[PSCustomObject]]::new()
-    $Replication = foreach ($DC in $DomainControllers) {
+
+    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC
+
+    $Replication = foreach ($DC in $ForestInformation.ForestDomainControllers) {
         try {
             Get-ADReplicationPartnerMetadata -Target $DC.HostName -Partition * -ErrorAction Stop #-ErrorVariable +ProcessErrors
         } catch {

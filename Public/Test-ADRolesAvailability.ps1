@@ -1,10 +1,15 @@
 ﻿function Test-ADRolesAvailability {
     [cmdletBinding()]
     param(
-        [string] $Domain
+        [alias('ForestName')][string] $Forest,
+        [string[]] $ExcludeDomains,
+        [string[]] $ExcludeDomainControllers,
+        [alias('Domain', 'Domains')][string[]] $IncludeDomains,
+        [alias('DomainControllers')][string[]] $IncludeDomainControllers,
+        [switch] $SkipRODC
     )
-    $Roles = Get-WinADForestRoles -Domain $Domain
-    if ($Domain -ne '') {
+    $Roles = Get-WinADForestRoles -Forest $Forest -IncludeDomains $IncludeDomains -IncludeDomainControllers $IncludeDomainControllers -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -SkipRODC:$SkipRODC
+    if ($IncludeDomains) {
         [PSCustomObject] @{
             PDCEmulator                      = $Roles['PDCEmulator']
             PDCEmulatorAvailability          = if ($Roles['PDCEmulator']) { (Test-NetConnection -ComputerName $Roles['PDCEmulator']).PingSucceeded } else { $false }
@@ -22,3 +27,5 @@
         }
     }
 }
+
+#Test-ADRolesAvailability

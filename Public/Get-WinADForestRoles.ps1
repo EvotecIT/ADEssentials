@@ -1,12 +1,18 @@
 ﻿function Get-WinADForestRoles {
     [alias('Get-WinADRoles', 'Get-WinADDomainRoles')]
     param(
-        [string] $Domain,
+        [alias('ForestName')][string] $Forest,
+        [string[]] $ExcludeDomains,
+        [string[]] $ExcludeDomainControllers,
+        [alias('Domain', 'Domains')][string[]] $IncludeDomains,
+        [alias('DomainControllers')][string[]] $IncludeDomainControllers,
+        [switch] $SkipRODC,
         [switch] $Formatted,
         [string] $Splitter = ', '
     )
 
-    $DomainControllers = Get-WinADForestControllers -Domain $Domain
+    #$DomainControllers = Get-WinADForestControllers -Domain $Domain
+    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC
 
     $Roles = [ordered] @{
         SchemaMaster         = $null
@@ -18,20 +24,20 @@
         IsGlobalCatalog      = $null
     }
 
-    foreach ($_ in $DomainControllers) {
-        if ($_.SchemaMaster -eq $true) {
+    foreach ($_ in $ForestInformation.ForestDomainControllers) {
+        if ($_.IsSchemaMaster -eq $true) {
             $Roles['SchemaMaster'] = if ($null -ne $Roles['SchemaMaster']) { @($Roles['SchemaMaster']) + $_.HostName } else { $_.HostName }
         }
-        if ($_.DomainNamingMaster -eq $true) {
+        if ($_.IsDomainNamingMaster -eq $true) {
             $Roles['DomainNamingMaster'] = if ($null -ne $Roles['DomainNamingMaster']) { @($Roles['DomainNamingMaster']) + $_.HostName } else { $_.HostName }
         }
-        if ($_.PDCEmulator -eq $true) {
+        if ($_.IsPDC -eq $true) {
             $Roles['PDCEmulator'] = if ($null -ne $Roles['PDCEmulator']) { @($Roles['PDCEmulator']) + $_.HostName } else { $_.HostName }
         }
-        if ($_.RIDMaster -eq $true) {
+        if ($_.IsRIDMaster -eq $true) {
             $Roles['RIDMaster'] = if ($null -ne $Roles['RIDMaster']) { @($Roles['RIDMaster']) + $_.HostName } else { $_.HostName }
         }
-        if ($_.InfrastructureMaster -eq $true) {
+        if ($_.IsInfrastructureMaster -eq $true) {
             $Roles['InfrastructureMaster'] = if ($null -ne $Roles['InfrastructureMaster']) { @($Roles['InfrastructureMaster']) + $_.HostName } else { $_.HostName }
         }
         if ($_.IsReadOnly -eq $true) {

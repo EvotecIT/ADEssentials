@@ -8,7 +8,7 @@
   <a href="https://www.powershellgallery.com/packages/ADEssentials"><img src="https://img.shields.io/powershellgallery/p/ADEssentials.svg"></a>
   <a href="https://github.com/EvotecIT/ADEssentials"><img src="https://img.shields.io/github/languages/top/evotecit/ADEssentials.svg"></a>
   <a href="https://github.com/EvotecIT/ADEssentials"><img src="https://img.shields.io/github/languages/code-size/evotecit/ADEssentials.svg"></a>
-  <a href="https://github.com/EvotecIT/ADEssentials"><img src="https://img.shields.io/powershellgallery/dt/ADEssentials.svg"></a>
+  <a href="https://www.powershellgallery.com/packages/ADEssentials"><img src="https://img.shields.io/powershellgallery/dt/ADEssentials.svg"></a>
 </p>
 
 <p align="center">
@@ -38,6 +38,12 @@ That's it. Whenever there's new version you simply run the command and you can e
 **The important thing** is if something works for you on production, keep using it till you test the new version on a test computer. I do changes that may not be big, but big enough that auto-update will break your code. For example, small rename to a parameter and your code stops working! Be responsible!
 
 ## Changelog
+
+- 0.0.30 -19.01.2020
+  - [x] Reworked most of the code to support forest/including/excluding domains and including/excluding DC's - needs testing
+  - [x] Added Get-ADACL
+  - [x] Added Get-WinADTrusts
+  - [x] Added Set-WinADDiagnostics
 
 - 0.0.29 - 04.01.2020
   - [x] Added Get-WinADTombstoneLifetime / Set-WinADTombstoneLifetime
