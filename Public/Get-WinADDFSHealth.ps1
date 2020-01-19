@@ -1,18 +1,26 @@
 ﻿function Get-WinADDFSHealth {
     [cmdletBinding()]
     param(
-        [string[]] $Domains,
-        [Array] $DomainControllers,
+        [alias('ForestName')][string] $Forest,
+        [string[]] $ExcludeDomains,
+        [string[]] $ExcludeDomainControllers,
+        [alias('Domain', 'Domains')][string[]] $IncludeDomains,
+        [alias('DomainControllers')][string[]] $IncludeDomainControllers,
+        [switch] $SkipRODC,
         [int] $EventDays = 1
     )
     $Today = (Get-Date)
     $Yesterday = (Get-Date -Hour 0 -Second 0 -Minute 0 -Millisecond 0).AddDays(-$EventDays)
-    if (-not $Domains) {
-        $Forest = Get-ADForest
-        $Domains = $Forest.Domains
-    }
-    [Array] $Table = foreach ($Domain in $Domains) {
+
+
+    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC
+    #if (-not $Domains) {
+    #    $Forest = Get-ADForest
+    #    $Domains = $Forest.Domains
+    #}
+    [Array] $Table = foreach ($Domain in $ForestInformation.Domains) {
         Write-Verbose "Get-WinADDFSHealth - Processing $Domain"
+        <#
         if (-not $DomainControllers) {
             $DomainControllersFull = Get-ADDomainController -Filter * -Server $Domain
         } else {
@@ -20,7 +28,14 @@
                 Get-ADDomainController -Identity $_ -Server $Domain
             }
         }
-        [Array]$GPOs = @(Get-GPO -All -Domain $Domain)
+        #>
+        $DomainControllersFull = $ForestInformation["$Domain"]
+        $QueryServer = $ForestInformation['QueryServers']["$Domain"].HostName[0]
+        try {
+            [Array]$GPOs = @(Get-GPO -All -Domain $Domain -Server $QueryServer)
+        } catch {
+            $GPOs = $null
+        }
         try {
             $CentralRepository = Get-ChildItem -Path "\\$Domain\SYSVOL\$Domain\policies\PolicyDefinitions" -ErrorAction Stop
             $CentralRepositoryDomain = if ($CentralRepository) { $true } else { $false }
@@ -33,7 +48,7 @@
             Write-Verbose "Get-WinADDFSHealth - Processing $DC for $Domain"
             $DCName = $DC.Name
             $Hostname = $DC.Hostname
-            $DN = $DC.ComputerObjectDN
+            $DN = $DC.DistinguishedName
 
             $LocalSettings = "CN=DFSR-LocalSettings,$DN"
             $Subscriber = "CN=Domain System Volume,$LocalSettings"
@@ -55,11 +70,12 @@
                 "Domain"                        = $Domain
                 "Status"                        = $false
                 "ReplicationState"              = 'Unknown'
-                "IsPDC"                         = $DC.OperationMasterRoles -contains 'PDCEmulator'
-                "GroupPolicyCount"              = $GPOs.Count
+                "IsPDC"                         = $DC.IsPDC
+                'GroupPolicyOutput'             = $null -ne $GPOs # This shows whether output was on Get-GPO
+                "GroupPolicyCount"              = if ($GPOs) { $GPOs.Count } else { 0 };
                 "SYSVOLCount"                   = 0
-                CentralRepository               = $CentralRepositoryDomain
-                CentralRepositoryDC             = $false
+                'CentralRepository'             = $CentralRepositoryDomain
+                'CentralRepositoryDC'           = $false
                 'IdenticalCount'                = $false
                 "Availability"                  = $false
                 "MemberReference"               = $false
@@ -69,7 +85,6 @@
                 "DomainSystemVolume"            = $false
                 "SYSVOLSubscription"            = $false
                 "StopReplicationOnAutoRecovery" = $false
-
             }
 
             <# NameSpace "root\microsoftdfs" Class 'dfsrreplicatedfolderinfo'
@@ -103,26 +118,26 @@
                 $DomainSummary['CentralRepositoryDC'] = $false
             }
             try {
-                $MemberReference = (Get-ADObject $Subscriber -Properties msDFSR-MemberReference -Server $Domain -ErrorAction Stop).'msDFSR-MemberReference' -like "CN=$DCName,*"
+                $MemberReference = (Get-ADObject $Subscriber -Properties msDFSR-MemberReference -Server $QueryServer -ErrorAction Stop).'msDFSR-MemberReference' -like "CN=$DCName,*"
                 $DomainSummary['MemberReference'] = if ($MemberReference) { $true } else { $false }
             } catch {
                 $DomainSummary['MemberReference'] = $false
             }
             try {
-                $DFSLocalSetting = Get-ADObject $LocalSettings -Server $Domain -ErrorAction Stop
+                $DFSLocalSetting = Get-ADObject $LocalSettings -Server $QueryServer -ErrorAction Stop
                 $DomainSummary['DFSLocalSetting'] = if ($DFSLocalSetting) { $true } else { $false }
             } catch {
                 $DomainSummary['DFSLocalSetting'] = $false
             }
 
             try {
-                $DomainSystemVolume = Get-ADObject $Subscriber -Server $Domain -ErrorAction Stop
+                $DomainSystemVolume = Get-ADObject $Subscriber -Server $QueryServer -ErrorAction Stop
                 $DomainSummary['DomainSystemVolume'] = if ($DomainSystemVolume) { $true } else { $false }
             } catch {
                 $DomainSummary['DomainSystemVolume'] = $false
             }
             try {
-                $SysVolSubscription = Get-ADObject $Subscription -Server $Domain -ErrorAction Stop
+                $SysVolSubscription = Get-ADObject $Subscription -Server $QueryServer -ErrorAction Stop
                 $DomainSummary['SYSVOLSubscription'] = if ($SysVolSubscription) { $true } else { $false }
             } catch {
                 $DomainSummary['SYSVOLSubscription'] = $false
@@ -163,6 +178,7 @@
             }
 
             $All = @(
+                $DomainSummary['GroupPolicyOutput']
                 $DomainSummary['SYSVOLSubscription']
                 $DomainSummary['ReplicationState'] -eq 'Normal'
                 $DomainSummary['DomainSystemVolume']

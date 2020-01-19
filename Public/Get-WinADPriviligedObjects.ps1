@@ -1,16 +1,28 @@
 ﻿Function Get-WinADPriviligedObjects {
     [cmdletbinding()]
     param(
+        [alias('ForestName')][string] $Forest,
+        [string[]] $ExcludeDomains,
+        [alias('Domain', 'Domains')][string[]] $IncludeDomains,
         [switch] $LegitimateOnly,
         [switch] $OrphanedOnly,
-        [switch] $Unique,
-        [switch] $SummaryOnly
+        #[switch] $Unique,
+        [switch] $SummaryOnly,
+        [switch] $DoNotShowCriticalSystemObjects,
+        [alias('Display')][switch] $Formatted,
+        [string] $Splitter = [System.Environment]::NewLine
     )
-    $Forest = Get-ADForest
-    $Domains = $Forest.Domains
+    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains
 
-    $UsersWithAdminCount = foreach ($domain in $Domains) {
-        $Objects = Get-ADObject -filter 'admincount -eq 1 -and iscriticalsystemobject -notlike "*"' -server $domain -properties whenchanged, whencreated, admincount, isCriticalSystemObject, "msDS-ReplAttributeMetaData", samaccountname
+    $Domains = $ForestInformation.Domains
+
+    $UsersWithAdminCount = foreach ($Domain in $Domains) {
+        $QueryServer = $ForestInformation['QueryServers']["$Domain"].HostName[0]
+        if ($DoNotShowCriticalSystemObjects) {
+            $Objects = Get-ADObject -filter 'admincount -eq 1 -and iscriticalsystemobject -notlike "*"' -server $QueryServer -properties whenchanged, whencreated, admincount, isCriticalSystemObject, samaccountname, "msDS-ReplAttributeMetaData"
+        } else {
+            $Objects = Get-ADObject -filter 'admincount -eq 1' -server $QueryServer -properties whenchanged, whencreated, admincount, isCriticalSystemObject, samaccountname, "msDS-ReplAttributeMetaData"
+        }
         foreach ($_ in $Objects) {
             [PSCustomObject] @{
                 Domain                 = $Domain
@@ -20,73 +32,73 @@
                 admincount             = $_.admincount
                 SamAccountName         = $_.SamAccountName
                 objectclass            = $_.objectclass
-                isCriticalSystemObject = $_.isCriticalSystemObject
+                isCriticalSystemObject = if ($_.isCriticalSystemObject) { $true } else { $false }
                 adminCountDate         = ($_.'msDS-ReplAttributeMetaData' | ForEach-Object { ([XML]$_.Replace("`0", "")).DS_REPL_ATTR_META_DATA | Where-Object { $_.pszAttributeName -eq "admincount" } }).ftimeLastOriginatingChange | Get-Date -Format MM/dd/yyyy
             }
         }
     }
 
-    $CriticalGroups = foreach ($domain in $Domains) {
-        Get-ADGroup -filter 'admincount -eq 1 -and iscriticalsystemobject -eq $true' -server $domain | Select-Object @{name = 'Domain'; expression = { $domain } }, distinguishedname
+    $CriticalGroups = foreach ($Domain in $Domains) {
+        $QueryServer = $ForestInformation['QueryServers']["$Domain"].HostName[0]
+        Get-ADGroup -filter 'admincount -eq 1 -and iscriticalsystemobject -eq $true' -server $QueryServer | Select-Object @{name = 'Domain'; expression = { $domain } }, distinguishedname
     }
 
-    $AdminCountLegitimate = [System.Collections.Generic.List[PSCustomObject]]::new()
-    $AdminCountOrphaned = [System.Collections.Generic.List[PSCustomObject]]::new()
-
     $AdminCountAll = foreach ($object in $UsersWithAdminCount) {
-        $DistinguishedName = ($object).distinguishedname
+        $DistinguishedName = $object.distinguishedname
         # https://blogs.msdn.microsoft.com/adpowershell/2009/04/14/active-directory-powershell-advanced-filter-part-ii/
-        $Results = foreach ($Group in $CriticalGroups) {
-            $IsMember = if (Get-ADGroup -Filter { Member -RecursiveMatch $DistinguishedName } -searchbase $Group.DistinguishedName -server $Group.Domain) { $True } else { $False }
+
+        $IsMember = foreach ($Group in $CriticalGroups) {
+            $QueryServer = $ForestInformation['QueryServers']["$($Group.Domain)"].HostName[0]
+            $Group = Get-ADGroup -Filter "Member -RecursiveMatch '$DistinguishedName'" -searchbase $Group.DistinguishedName -server $QueryServer
+            if ($Group) {
+                $Group.DistinguishedName
+            }
+        }
+
+        if ($IsMember.Count -gt 0) {
+            $GroupDomains = $IsMember
+        } else {
+            $GroupDomains = $null
+        }
+
+        if ($Formatted) {
+            $GroupDomains = $GroupDomains -join $Splitter
             $User = [PSCustomObject] @{
                 DistinguishedName      = $Object.DistinguishedName
                 Domain                 = $Object.domain
-                IsMember               = $IsMember
+                IsOrphaned             = (-not $Object.isCriticalSystemObject) -and (-not $IsMember -and -not $Object.isCriticalSystemObject )
+                IsMember               = $IsMember.Count -gt 0
+                IsCriticalSystemObject = $Object.isCriticalSystemObject
                 Admincount             = $Object.admincount
                 AdminCountDate         = $Object.adminCountDate
-                Whencreated            = $Object.whencreated
+                WhenCreated            = $Object.whencreated
                 ObjectClass            = $Object.objectclass
-                GroupDomain            = if ($IsMember) { $Group.Domain } else { $null }
-                GroupDistinguishedname = if ($IsMember) { $Group.DistinguishedName } else { $null }
+                GroupDomain            = $GroupDomains
             }
-            if ($User.IsMember) {
-                $AdminCountLegitimate.Add($User)
-                $User
-            }
-            if ($User.IsMember -eq $false -and $AdminCountLegitimate.DistinguishedName -notcontains $User.DistinguishedName -and $AdminCountOrphaned.DistinguishedName -notcontains $User.DistinguishedName) {
-
-                $Properties = @(
-                    'distinguishedname'
-                    'domain'
-                    'IsMember'
-                    'admincount'
-                    'adminCountDate'
-                    'whencreated'
-                    'objectclass'
-                )
-
-                $AdminCountOrphaned.Add(($User | Select-Object -Property $Properties))
-                $User
+        } else {
+            $User = [PSCustomObject] @{
+                'DistinguishedName'      = $Object.DistinguishedName
+                'Domain'                 = $Object.domain
+                'IsOrphaned'             = (-not $Object.isCriticalSystemObject) -and (-not $IsMember -and -not $Object.isCriticalSystemObject )
+                'IsMember'               = $IsMember.Count -gt 0
+                'IsCriticalSystemObject' = $Object.isCriticalSystemObject
+                'AdminCount'             = $Object.admincount
+                'AdminCountDate'         = $Object.adminCountDate
+                'WhenCreated'            = $Object.whencreated
+                'ObjectClass'            = $Object.objectclass
+                'GroupDomain'            = $GroupDomains
             }
         }
-        $Results
+        $User
     }
 
     $Output = @(
         if ($OrphanedOnly) {
-            $AdminCountOrphaned
+            $AdminCountAll | Where-Object { $_.IsOrphaned }
         } elseif ($LegitimateOnly) {
-            if ($Unique) {
-                $AdminCountLegitimate | Select-Object -Property DistinguishedName, Domain, IsMember, Admincount, AdminCountDate, Whencreated, ObjectClass -Unique
-            } else {
-                $AdminCountLegitimate
-            }
+            $AdminCountAll | Where-Object { $_.IsOrphaned -eq $false }
         } else {
-            if ($Unique) {
-                $AdminCountAll | Select-Object -Property DistinguishedName, Domain, IsMember, Admincount, AdminCountDate, Whencreated, ObjectClass -Unique
-            } else {
-                $AdminCountAll
-            }
+            $AdminCountAll
         }
     )
     if ($SummaryOnly) {

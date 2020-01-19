@@ -23,26 +23,20 @@
 
     [cmdletBinding()]
     param(
-        [string] $ForestName,
-        [string[]] $Domains
+        [alias('ForestName')][string] $Forest,
+        [string[]] $ExcludeDomains,
+        [alias('Domain', 'Domains')][string[]] $IncludeDomains
     )
     $NameUsed = [System.Collections.Generic.List[string]]::new()
     [DateTime] $CurrentDate = Get-Date
-    if (-not $Domains) {
+
+
+    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains
+
+    foreach ($Domain in $ForestInformation.Domains) {
+        $QueryServer = $ForestInformation['QueryServers']["$Domain"].HostName[0]
         try {
-            if ($ForestName) {
-                $Forest = Get-ADForest -ErrorAction Stop -Identity $ForestName
-            } else {
-                $Forest = Get-ADForest -ErrorAction Stop
-            }
-            $Domains = $Forest.Domains
-        } catch {
-            Write-Warning "Get-WinADLastBackup - Failed to gather Forest Domains $($_.Exception.Message)"
-        }
-    }
-    foreach ($Domain in $Domains) {
-        try {
-            [string[]]$Partitions = (Get-ADRootDSE -Server $Domain -ErrorAction Stop).namingContexts
+            [string[]]$Partitions = (Get-ADRootDSE -Server $QueryServer -ErrorAction Stop).namingContexts
             [System.DirectoryServices.ActiveDirectory.DirectoryContextType] $contextType = [System.DirectoryServices.ActiveDirectory.DirectoryContextType]::Domain
             [System.DirectoryServices.ActiveDirectory.DirectoryContext] $context = New-Object System.DirectoryServices.ActiveDirectory.DirectoryContext($contextType, $Domain)
             [System.DirectoryServices.ActiveDirectory.DomainController] $domainController = [System.DirectoryServices.ActiveDirectory.DomainController]::FindOne($context)
@@ -73,11 +67,3 @@
         $Output
     }
 }
-
-<#
-$Domain = 'ad.evotec.xyz'
-[System.DirectoryServices.ActiveDirectory.DirectoryContextType] $contextType = [System.DirectoryServices.ActiveDirectory.DirectoryContextType]::Domain
-[System.DirectoryServices.ActiveDirectory.DirectoryContext] $context = New-Object System.DirectoryServices.ActiveDirectory.DirectoryContext($contextType, $Domain)
-[System.DirectoryServices.ActiveDirectory.DomainController[]] $domainController = [System.DirectoryServices.ActiveDirectory.DomainController]::FindAll($context)
-$domainController
-#>
