@@ -39,6 +39,8 @@ That's it. Whenever there's new version you simply run the command and you can e
 
 ## Changelog
 
+- 0.0.34 - 19.01.2020
+  - Small fixes
 - 0.0.33 - 19.01.2020
   - [x] Added Get-WinADLdapBindingsSummary
 - 0.0.32 - 19.01.2020
