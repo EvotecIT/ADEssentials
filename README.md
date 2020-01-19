@@ -39,7 +39,10 @@ That's it. Whenever there's new version you simply run the command and you can e
 
 ## Changelog
 
-- 0.0.30 -19.01.2020
+- 0.0.32 - 19.01.2020
+  - Small fixes
+
+- 0.0.30 - 19.01.2020
   - [x] Reworked most of the code to support forest/including/excluding domains and including/excluding DC's - needs testing
   - [x] Added Get-ADACL
   - [x] Added Get-WinADTrusts
