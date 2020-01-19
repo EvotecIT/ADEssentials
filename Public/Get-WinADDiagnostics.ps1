@@ -123,5 +123,3 @@
         }
     }
 }
-
-Get-WinADDiagnostics | Format-List
