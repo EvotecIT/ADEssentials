@@ -34,7 +34,7 @@
                     continue
                 }
                 $ObjectDN = $DomainInformation.DistinguishedName
-                $DNConverted = (ConvertFrom-Distinguishedname -DistinguishedName $Object -ToDC) -replace '=' -replace ','
+                $DNConverted = (ConvertFrom-Distinguishedname -DistinguishedName $ObjectDN -ToDC) -replace '=' -replace ','
                 if (-not(Get-PSDrive -Name $DNConverted -ErrorAction SilentlyContinue)) {
                     try {
                         if ($Server) {

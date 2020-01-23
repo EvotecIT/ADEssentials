@@ -25,17 +25,23 @@
             } else {
 
             }
-            Write-Verbose "Get-ADACL - Enabling PSDrives"
-            New-ADForestDrives -ForestName $ForestName #-ObjectDN $Object
+
             $DNConverted = (ConvertFrom-DistinguishedName -DistinguishedName $Object -ToDC) -replace '=' -replace ','
-            Write-Verbose "Get-ADACL - Getting ACL from $Object"
-
             if (-not (Get-PSDrive -Name $DNConverted -ErrorAction SilentlyContinue)) {
-                Write-Warning "Get-ADACL - Drive $DNConverted not mapped. Terminating..."
-                return
+                Write-Verbose "Get-ADACL - Enabling PSDrives"
+                New-ADForestDrives -ForestName $ForestName #-ObjectDN $Object
+                if (-not (Get-PSDrive -Name $DNConverted -ErrorAction SilentlyContinue)) {
+                    Write-Warning "Get-ADACL - Drive $DNConverted not mapped. Terminating..."
+                    return
+                }
             }
-
-            $ACLs = Get-Acl -Path "$DNConverted`:\$($Object)" | Select-Object -ExpandProperty Access
+            Write-Verbose "Get-ADACL - Getting ACL from $Object"
+            try {
+                $PathACL = "$DNConverted`:\$($Object)"
+                $ACLs = Get-Acl -Path $PathACL | Select-Object -ExpandProperty Access
+            } catch {
+                Write-Warning "Get-ADACL - Path $PathACL - Error: $($_.Exception.Message)"
+            }
             foreach ($ACL in $ACLs) {
                 if ($ACL.IdentityReference -like '*\*') {
                     if ( $Script:ForestCache ) {
@@ -69,7 +75,7 @@
                 $ReturnObject = [ordered] @{
                     'DistinguishedName'       = $Object
                     'AccessControlType'       = $ACL.AccessControlType
-                    'Rights'                  = $Rights
+                    #'Rights'                  = $Rights
                     'Principal'               = $IdentityReference
                     'PrincipalType'           = $IdentityReferenceType
                     'ObjectTypeName'          = $Script:ForestGUIDs["$($ACL.objectType)"]
