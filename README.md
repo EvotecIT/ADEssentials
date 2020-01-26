@@ -39,6 +39,9 @@ That's it. Whenever there's new version you simply run the command and you can e
 
 ## Changelog
 
+- 0.0.36 - 26.01.2020
+  - Fixes for Get-ADACL (via PSSharedGoods integrated)
+
 - 0.0.35 - 23.01.2020
   - Fixes for Get-ADACL
 
