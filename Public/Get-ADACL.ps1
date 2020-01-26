@@ -20,15 +20,15 @@
     }
     Process {
         foreach ($Object in $ADObject) {
-            if ($Object -is [string]) {
+            #if ($Object -is [string]) {
 
-            } else {
+            #} else {
 
-            }
+            #}
 
             $DNConverted = (ConvertFrom-DistinguishedName -DistinguishedName $Object -ToDC) -replace '=' -replace ','
             if (-not (Get-PSDrive -Name $DNConverted -ErrorAction SilentlyContinue)) {
-                Write-Verbose "Get-ADACL - Enabling PSDrives"
+                Write-Verbose "Get-ADACL - Enabling PSDrives for $Object"
                 New-ADForestDrives -ForestName $ForestName #-ObjectDN $Object
                 if (-not (Get-PSDrive -Name $DNConverted -ErrorAction SilentlyContinue)) {
                     Write-Warning "Get-ADACL - Drive $DNConverted not mapped. Terminating..."
