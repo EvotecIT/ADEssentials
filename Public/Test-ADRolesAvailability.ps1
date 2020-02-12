@@ -6,9 +6,10 @@
         [string[]] $ExcludeDomainControllers,
         [alias('Domain', 'Domains')][string[]] $IncludeDomains,
         [alias('DomainControllers')][string[]] $IncludeDomainControllers,
-        [switch] $SkipRODC
+        [switch] $SkipRODC,
+        [System.Collections.IDictionary] $ExtendedForestInformation
     )
-    $Roles = Get-WinADForestRoles -Forest $Forest -IncludeDomains $IncludeDomains -IncludeDomainControllers $IncludeDomainControllers -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -SkipRODC:$SkipRODC
+    $Roles = Get-WinADForestRoles -Forest $Forest -IncludeDomains $IncludeDomains -IncludeDomainControllers $IncludeDomainControllers -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -SkipRODC:$SkipRODC -ExtendedForestInformation $ExtendedForestInformation
     if ($IncludeDomains) {
         [PSCustomObject] @{
             PDCEmulator                      = $Roles['PDCEmulator']

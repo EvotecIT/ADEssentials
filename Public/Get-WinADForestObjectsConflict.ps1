@@ -3,11 +3,15 @@
     Param(
         [alias('ForestName')][string] $Forest,
         [string[]] $ExcludeDomains,
-        [alias('Domain', 'Domains')][string[]] $IncludeDomains
+        [alias('Domain', 'Domains')][string[]] $IncludeDomains,
+        [System.Collections.IDictionary] $ExtendedForestInformation
     )
     # Based on https://gallery.technet.microsoft.com/scriptcenter/Get-ADForestConflictObjects-4667fa37
-    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains
-
+    if (-not $ExtendedForestInformation) {
+        $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains
+    } else {
+        $ForestInformation = $ExtendedForestInformation
+    }
     #$Forest = Get-ADForest
     foreach ($Domain in $ForestInformation.Domains) {
         $DC = $ForestInformation['QueryServers']["$Domain"].HostName[0]

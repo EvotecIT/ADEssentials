@@ -25,7 +25,7 @@
 Install-Module -Name ADEssentials -AllowClobber -Force
 ```
 
-Force and AllowClobber aren't really nessecary but they do skip errors in case some appear.
+Force and AllowClobber aren't necessary, but they do skip errors in case some appear.
 
 ## And to update
 
@@ -33,11 +33,14 @@ Force and AllowClobber aren't really nessecary but they do skip errors in case s
 Update-Module -Name ADEssentials
 ```
 
-That's it. Whenever there's new version you simply run the command and you can enjoy it. Remember, that you may need to close, reopen PowerShell session if you have already used module before updating it.
+That's it. Whenever there's a new version, you run the command, and you can enjoy it. Remember that you may need to close, reopen PowerShell session if you have already used module before updating it.
 
-**The important thing** is if something works for you on production, keep using it till you test the new version on a test computer. I do changes that may not be big, but big enough that auto-update will break your code. For example, small rename to a parameter and your code stops working! Be responsible!
+**The essential thing** is if something works for you on production, keep using it till you test the new version on a test computer. I do changes that may not be big, but big enough that auto-update may break your code. For example, small rename to a parameter and your code stops working! Be responsible!
 
 ## Changelog
+
+- 0.0.37 - Unreleased
+  - Added ExtendedForestInformation input to provide a way for Testimo to use
 
 - 0.0.36 - 26.01.2020
   - Fixes for Get-ADACL (via PSSharedGoods integrated)
@@ -69,9 +72,9 @@ That's it. Whenever there's new version you simply run the command and you can e
 - 0.0.25 - 15.11.2019
   - [x] Added two new commands for fixing and reading Proxy Addresses
 - 0.0.23 - 11.11.2019
-  - [x] Removed PSSharedGoods as dependency for modules published to releases and PowerShellGallery
+  - [x] Removed PSSharedGoods as a dependency for modules published to releases and PowerShellGallery
     - [ ] It's still part of development build. Releases are now merged with PSPublishModule functionality
-  - [x] Added PSEventViewer as depenedency as it was missing
+  - [x] Added PSEventViewer as a dependency as it was missing
   - [x] Fix for Get-WinADDFSHealth.ps1 SYSVol Count (tnx brianmccarty)
 - 0.0.22 - 28.10.2019
   - [x] Added some functions

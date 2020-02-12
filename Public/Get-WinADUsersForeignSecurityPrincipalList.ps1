@@ -3,9 +3,14 @@
     param(
         [alias('ForestName')][string] $Forest,
         [alias('Domain', 'Domains')][string[]] $IncludeDomains,
-        [string[]] $ExcludeDomains
+        [string[]] $ExcludeDomains,
+        [System.Collections.IDictionary] $ExtendedForestInformation
     )
-    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains
+    if (-not $ExtendedForestInformation) {
+        $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains
+    } else {
+        $ForestInformation = $ExtendedForestInformation
+    }
     foreach ($Domain in $ForestInformation.Domains) {
         $QueryServer = $ForestInformation['QueryServers']["$Domain"].HostName[0]
         $ForeignSecurityPrincipalList = Get-ADObject -Filter { ObjectClass -eq 'ForeignSecurityPrincipal' } -Properties * -Server $QueryServer

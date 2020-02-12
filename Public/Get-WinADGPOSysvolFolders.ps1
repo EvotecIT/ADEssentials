@@ -8,9 +8,14 @@
         [alias('Domain', 'Domains')][string[]] $IncludeDomains,
         [alias('DomainControllers')][string[]] $IncludeDomainControllers,
         [switch] $SkipRODC,
-        [Array] $GPOs
+        [Array] $GPOs,
+        [System.Collections.IDictionary] $ExtendedForestInformation
     )
-    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC
+    if (-not $ExtendedForestInformation) {
+        $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC
+    } else {
+        $ForestInformation = $ExtendedForestInformation
+    }
     foreach ($Domain in $ForestInformation.Domains) {
         Write-Verbose "Get-WinADGPOSysvolFolders - Processing $Domain"
         $QueryServer = $ForestInformation['QueryServers']["$Domain"].HostName[0]

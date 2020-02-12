@@ -50,7 +50,8 @@
         [Parameter(ParameterSetName = 'Default')]
         [Parameter(ParameterSetName = 'Computer')]
         #[ValidateSet('None', 'Minimal', 'Basic', 'Extensive', 'Verbose', 'Internal')]
-        [string] $Level
+        [string] $Level,
+        [System.Collections.IDictionary] $ExtendedForestInformation
     )
 
     <# Levels
@@ -103,7 +104,11 @@
     if ($ComputerName) {
         [Array] $Computers = $ComputerName
     } else {
-        $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC
+        if (-not $ExtendedForestInformation) {
+            $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC
+        } else {
+            $ForestInformation = $ExtendedForestInformation
+        }
         [Array] $Computers = $ForestInformation.ForestDomainControllers.HostName
     }
     foreach ($Computer in $Computers) {

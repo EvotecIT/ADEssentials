@@ -10,10 +10,14 @@
         [switch] $SummaryOnly,
         [switch] $DoNotShowCriticalSystemObjects,
         [alias('Display')][switch] $Formatted,
-        [string] $Splitter = [System.Environment]::NewLine
+        [string] $Splitter = [System.Environment]::NewLine,
+        [System.Collections.IDictionary] $ExtendedForestInformation
     )
-    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains
-
+    if (-not $ExtendedForestInformation) {
+        $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains
+    } else {
+        $ForestInformation = $ExtendedForestInformation
+    }
     $Domains = $ForestInformation.Domains
 
     $UsersWithAdminCount = foreach ($Domain in $Domains) {

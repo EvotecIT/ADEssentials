@@ -7,13 +7,17 @@
         [alias('Domain', 'Domains')][string[]] $IncludeDomains,
         [alias('DomainControllers')][string[]] $IncludeDomainControllers,
         [switch] $SkipRODC,
-        [int] $EventDays = 1
+        [int] $EventDays = 1,
+        [System.Collections.IDictionary] $ExtendedForestInformation
     )
     $Today = (Get-Date)
     $Yesterday = (Get-Date -Hour 0 -Second 0 -Minute 0 -Millisecond 0).AddDays(-$EventDays)
 
-
-    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC
+    if (-not $ExtendedForestInformation) {
+        $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC
+    } else {
+        $ForestInformation = $ExtendedForestInformation
+    }
     #if (-not $Domains) {
     #    $Forest = Get-ADForest
     #    $Domains = $Forest.Domains
