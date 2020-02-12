@@ -6,45 +6,102 @@
         # [Microsoft.ActiveDirectory.Management.ADDomainController] $Server,
         [Object] $Server,
         [string] $ForestName,
-        [switch] $Extended
+        [switch] $Extended,
+        [switch] $ResolveTypes,
+        [switch] $Inherited,
+        [switch] $NotInherited,
+        [System.DirectoryServices.ActiveDirectoryRights[]] $IncludeActiveDirectoryRights,
+        [System.DirectoryServices.ActiveDirectoryRights[]] $ExcludeActiveDirectoryRights,
+        [System.DirectoryServices.ActiveDirectorySecurityInheritance[]] $IncludeActiveDirectorySecurityInheritance,
+        [System.DirectoryServices.ActiveDirectorySecurityInheritance[]] $ExcludeActiveDirectorySecurityInheritance
     )
     Begin {
         if (-not $Script:ForestGUIDs) {
             Write-Verbose "Get-ADACL - Gathering Forest GUIDS"
             $Script:ForestGUIDs = Get-WinADForestGUIDs
         }
-        if (-not $Script:ForestCache) {
-            Write-Verbose "Get-ADACL - Building Cache"
-            $Script:ForestCache = Get-WinADCache -ByNetBiosName
+        if ($ResolveTypes) {
+            if (-not $Script:ForestCache) {
+                Write-Verbose "Get-ADACL - Building Cache"
+                $Script:ForestCache = Get-WinADCache -ByNetBiosName
+            }
         }
     }
     Process {
         foreach ($Object in $ADObject) {
-            #if ($Object -is [string]) {
-
-            #} else {
-
-            #}
-
-            $DNConverted = (ConvertFrom-DistinguishedName -DistinguishedName $Object -ToDC) -replace '=' -replace ','
+            if ($Object -is [Microsoft.ActiveDirectory.Management.ADOrganizationalUnit]) {
+                [string] $DistinguishedName = $Object.DistinguishedName
+                [string] $CanonicalName = $Object.CanonicalName
+            } elseif ($Object -is [string]) {
+                [string] $DistinguishedName = $Object
+                [string] $CanonicalName = ''
+            }
+            $DNConverted = (ConvertFrom-DistinguishedName -DistinguishedName $DistinguishedName -ToDC) -replace '=' -replace ','
             if (-not (Get-PSDrive -Name $DNConverted -ErrorAction SilentlyContinue)) {
-                Write-Verbose "Get-ADACL - Enabling PSDrives for $Object"
+                Write-Verbose "Get-ADACL - Enabling PSDrives for $DistinguishedName"
                 New-ADForestDrives -ForestName $ForestName #-ObjectDN $Object
                 if (-not (Get-PSDrive -Name $DNConverted -ErrorAction SilentlyContinue)) {
                     Write-Warning "Get-ADACL - Drive $DNConverted not mapped. Terminating..."
                     return
                 }
             }
-            Write-Verbose "Get-ADACL - Getting ACL from $Object"
+            Write-Verbose "Get-ADACL - Getting ACL from $DistinguishedName"
             try {
-                $PathACL = "$DNConverted`:\$($Object)"
+                $PathACL = "$DNConverted`:\$($DistinguishedName)"
                 $ACLs = Get-Acl -Path $PathACL | Select-Object -ExpandProperty Access
             } catch {
                 Write-Warning "Get-ADACL - Path $PathACL - Error: $($_.Exception.Message)"
             }
             foreach ($ACL in $ACLs) {
+                [Array] $ADRights = $ACL.ActiveDirectoryRights -split ', '
+                if ($Inherited) {
+                    if ($ACL.IsInherited -eq $false) {
+                        # if it's not inherited and we require inherited lets continue
+                        continue
+                    }
+                }
+                if ($NotInherited) {
+                    if ($ACL.IsInherited -eq $true) {
+                        continue
+                    }
+                }
+                if ($IncludeActiveDirectoryRights) {
+                    $FoundInclude = $false
+                    foreach ($Right in $ADRights) {
+                        if ($IncludeActiveDirectoryRights -contains $Right) {
+                            $FoundInclude = $true
+                            break
+                        }
+                    }
+                    if (-not $FoundInclude) {
+                        continue
+                    }
+                }
+                if ($ExcludeActiveDirectoryRights) {
+                    foreach ($Right in $ADRights) {
+                        $FoundExclusion = $false
+                        if ($ExcludeActiveDirectoryRights -contains $Right) {
+                            $FoundExclusion = $true
+                            break
+                        }
+                        if ($FoundExclusion) {
+                            continue
+                        }
+                    }
+                }
+                if ($IncludeActiveDirectorySecurityInheritance) {
+                    if ($IncludeActiveDirectorySecurityInheritance -notcontains $ACL.InheritanceType) {
+                        continue
+                    }
+                }
+                if ($ExcludeActiveDirectorySecurityInheritance) {
+                    if ($ExcludeActiveDirectorySecurityInheritance -contains $ACL.InheritanceType) {
+                        continue
+                    }
+                }
+
                 if ($ACL.IdentityReference -like '*\*') {
-                    if ( $Script:ForestCache ) {
+                    if ($ResolveTypes -and $Script:ForestCache ) {
                         $TemporaryIdentity = $Script:ForestCache["$($ACL.IdentityReference)"]
                         $IdentityReferenceType = $TemporaryIdentity.ObjectClass
                         $IdentityReference = $ACL.IdentityReference.Value
@@ -54,7 +111,7 @@
                     }
                 } elseif ($ACL.IdentityReference -like '*-*-*-*') {
                     $ConvertedSID = ConvertFrom-SID -sid $ACL.IdentityReference
-                    if ($Script:ForestCache) {
+                    if ($ResolveTypes -and $Script:ForestCache) {
                         $TemporaryIdentity = $Script:ForestCache["$($ConvertedSID.Name)"]
                         $IdentityReferenceType = $TemporaryIdentity.ObjectClass
                     } else {
@@ -65,25 +122,22 @@
                     $IdentityReference = $ACL.IdentityReference
                     $IdentityReferenceType = 'Unknown'
                 }
-
-                #$Rights = try {
-                #    $Script:Rights["$($ACL.ActiveDirectoryRights)"]["$($ACL.ObjectFlags)"]
-                #} catch {
-                #    "$($ACL.ActiveDirectoryRights) /$($ACL.ObjectFlags) "
-                #}
-
-                $ReturnObject = [ordered] @{
-                    'DistinguishedName'       = $Object
-                    'AccessControlType'       = $ACL.AccessControlType
-                    #'Rights'                  = $Rights
-                    'Principal'               = $IdentityReference
-                    'PrincipalType'           = $IdentityReferenceType
-                    'ObjectTypeName'          = $Script:ForestGUIDs["$($ACL.objectType)"]
-                    'InheritedObjectTypeName' = $Script:ForestGUIDs["$($ACL.inheritedObjectType)"]
-                    'ActiveDirectoryRights'   = $ACL.ActiveDirectoryRights
-                    'InheritanceType'         = $ACL.InheritanceType
-                    'IsInherited'             = $ACL.IsInherited
+                $ReturnObject = [ordered] @{ }
+                $ReturnObject['DistinguishedName' ] = $DistinguishedName
+                if ($CanonicalName) {
+                    $ReturnObject['CanonicalName'] = $CanonicalName
                 }
+                $ReturnObject['AccessControlType'] = $ACL.AccessControlType
+                $ReturnObject['Principal'] = $IdentityReference
+                if ($ResolveTypes) {
+                    $ReturnObject['PrincipalType'] = $IdentityReferenceType
+                }
+                $ReturnObject['ObjectTypeName'] = $Script:ForestGUIDs["$($ACL.objectType)"]
+                $ReturnObject['InheritedObjectTypeName'] = $Script:ForestGUIDs["$($ACL.inheritedObjectType)"]
+                $ReturnObject['ActiveDirectoryRights'] = $ACL.ActiveDirectoryRights
+                $ReturnObject['InheritanceType'] = $ACL.InheritanceType
+                $ReturnObject['IsInherited'] = $ACL.IsInherited
+
                 if ($Extended) {
                     $ReturnObject['ObjectType'] = $ACL.ObjectType
                     $ReturnObject['InheritedObjectType'] = $ACL.InheritedObjectType
@@ -92,8 +146,8 @@
                     $ReturnObject['PropagationFlags'] = $ACL.PropagationFlags
                 }
                 [PSCustomObject] $ReturnObject
-
-                <#
+            }
+            <#
                 [PSCustomObject] @{
                     Type          = $ACL.AccessControlType
                     Principal     = $IdentityReference
@@ -102,9 +156,9 @@
                     AppliesTo     = ''
                 }
                 #>
-            }
         }
     }
+
     End {
 
     }
