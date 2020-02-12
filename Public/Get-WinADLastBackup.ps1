@@ -25,14 +25,17 @@
     param(
         [alias('ForestName')][string] $Forest,
         [string[]] $ExcludeDomains,
-        [alias('Domain', 'Domains')][string[]] $IncludeDomains
+        [alias('Domain', 'Domains')][string[]] $IncludeDomains,
+        [System.Collections.IDictionary] $ExtendedForestInformation
     )
     $NameUsed = [System.Collections.Generic.List[string]]::new()
     [DateTime] $CurrentDate = Get-Date
 
-
-    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains
-
+    if (-not $ExtendedForestInformation) {
+        $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains
+    } else {
+        $ForestInformation = $ExtendedForestInformation
+    }
     foreach ($Domain in $ForestInformation.Domains) {
         $QueryServer = $ForestInformation['QueryServers']["$Domain"].HostName[0]
         try {

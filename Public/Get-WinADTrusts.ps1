@@ -4,10 +4,14 @@
         [string] $Forest,
         [alias('Domain')][string[]] $IncludeDomains,
         [string[]] $ExcludeDomains,
-        [switch] $Display
+        [switch] $Display,
+        [System.Collections.IDictionary] $ExtendedForestInformation
     )
-
-    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains
+    if (-not $ExtendedForestInformation) {
+        $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains
+    } else {
+        $ForestInformation = $ExtendedForestInformation
+    }
     <#
     Name                           Value
     ----                           -----

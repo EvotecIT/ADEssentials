@@ -33,10 +33,19 @@
 
 
         [Parameter(ParameterSetName = 'LapsOnly')][switch] $LapsOnly,
-        [Parameter(ParameterSetName = 'BitlockerOnly')][switch] $BitlockerOnly
+        [Parameter(ParameterSetName = 'BitlockerOnly')][switch] $BitlockerOnly,
+
+        [Parameter(ParameterSetName = 'Default')]
+        [Parameter(ParameterSetName = 'LapsOnly')]
+        [Parameter(ParameterSetName = 'BitlockerOnly')]
+        [System.Collections.IDictionary] $ExtendedForestInformation
     )
     $Today = Get-Date
-    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains
+    if (-not $ExtendedForestInformation) {
+        $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains
+    } else {
+        $ForestInformation = $ExtendedForestInformation
+    }
     $ComputerProperties = @(
         if ($Forest) {
             $Type = [System.DirectoryServices.ActiveDirectory.DirectoryContextType]::Forest
