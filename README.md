@@ -39,6 +39,9 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 
 ## Changelog
 
+- 0.0.38 - 16.02.2020
+  - Updates to PSSharedGoods code/PSEventViewer
+
 - 0.0.37 - 12.02.2020
   - Added ExtendedForestInformation input to provide a way for Testimo to use
   - Enhancements to Get-ADACL
