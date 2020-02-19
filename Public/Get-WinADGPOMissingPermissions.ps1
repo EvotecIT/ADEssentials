@@ -22,7 +22,8 @@
         [string[]] $ExcludeDomains,
         [alias('Domain', 'Domains')][string[]] $IncludeDomains,
         [switch] $SkipRODC,
-        [System.Collections.IDictionary] $ExtendedForestInformation
+        [System.Collections.IDictionary] $ExtendedForestInformation,
+        [validateset('AuthenticatedUsers', 'DomainComputers', 'Either')][string] $Mode = 'Either'
     )
     if (-not $ExtendedForestInformation) {
         $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC
@@ -34,10 +35,23 @@
         $GPOs = Get-GPO -All -Domain $Domain -Server $QueryServer
         $MissingPermissions = @(
             foreach ($GPO in $GPOs) {
-                If ($GPO.User.Enabled) {
-                    $GPOPermissionForAuthUsers = Get-GPPermission -Guid $GPO.Id -All -Server $QueryServer -DomainName $Domain | Select-Object -ExpandProperty Trustee | Where-Object { $_.Name -eq "Authenticated Users" }
-                    $GPOPermissionForDomainComputers = Get-GPPermission -Guid $GPO.Id -All -Server $QueryServer -DomainName $Domain | Select-Object -ExpandProperty Trustee | Where-Object { $_.Name -eq "Domain Computers" }
+                $Permissions = Get-GPPermission -Guid $GPO.Id -All -Server $QueryServer -DomainName $Domain | Select-Object -ExpandProperty Trustee
+                if ($Mode -eq 'Either' -or $Mode -eq 'AuthenticatedUsers') {
+                    $GPOPermissionForAuthUsers = $Permissions | Where-Object { $_.Name -eq "Authenticated Users" }
+                }
+                if ($Mode -eq 'Either' -or $Mode -eq 'DomainComputers') {
+                    $GPOPermissionForDomainComputers = $Permissions | Where-Object { $_.Name -eq "Domain Computers" }
+                }
+                if ($Mode -eq 'Either') {
                     If (-not $GPOPermissionForAuthUsers -and -not $GPOPermissionForDomainComputers) {
+                        $GPO
+                    }
+                } elseif ($Mode -eq 'AuthenticatedUsers') {
+                    If (-not $GPOPermissionForAuthUsers) {
+                        $GPO
+                    }
+                } elseif ($Mode -eq 'DomainComputers') {
+                    If (-not $GPOPermissionForDomainComputers) {
                         $GPO
                     }
                 }
