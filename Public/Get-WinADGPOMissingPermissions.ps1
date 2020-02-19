@@ -35,8 +35,8 @@
         $MissingPermissions = @(
             foreach ($GPO in $GPOs) {
                 If ($GPO.User.Enabled) {
-                    $GPOPermissionForAuthUsers = Get-GPPermission -Guid $GPO.Id -All -Server $QueryServer | Select-Object -ExpandProperty Trustee | Where-Object { $_.Name -eq "Authenticated Users" }
-                    $GPOPermissionForDomainComputers = Get-GPPermission -Guid $GPO.Id -All -Server $QueryServer | Select-Object -ExpandProperty Trustee | Where-Object { $_.Name -eq "Domain Computers" }
+                    $GPOPermissionForAuthUsers = Get-GPPermission -Guid $GPO.Id -All -Server $QueryServer -DomainName $Domain | Select-Object -ExpandProperty Trustee | Where-Object { $_.Name -eq "Authenticated Users" }
+                    $GPOPermissionForDomainComputers = Get-GPPermission -Guid $GPO.Id -All -Server $QueryServer -DomainName $Domain | Select-Object -ExpandProperty Trustee | Where-Object { $_.Name -eq "Domain Computers" }
                     If (-not $GPOPermissionForAuthUsers -and -not $GPOPermissionForDomainComputers) {
                         $GPO
                     }

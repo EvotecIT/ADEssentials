@@ -39,6 +39,8 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 
 ## Changelog
 
+- 0.0.39 - 19.02.2020
+  - [x] Fix for Get-WinADGPOMissingPermissions for multiple domains
 - 0.0.38 - 16.02.2020
   - Updates to PSSharedGoods code/PSEventViewer
 
