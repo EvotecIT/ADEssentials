@@ -39,6 +39,9 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 
 ## Changelog
 
+- 0.0.41 - 20.02.2020
+  - [x] Get-WinADGPOMissingPermissions updates to support SID instead (should work multi-language)
+
 - 0.0.40 - 19.02.2020
   - [x] Updates to Get-WinADGPOMissingPermissions
 - 0.0.39 - 19.02.2020
