@@ -1,7 +1,7 @@
 ﻿function Get-WinADProxyAddresses {
     [CmdletBinding()]
     param(
-        [Microsoft.ActiveDirectory.Management.ADAccount] $ADUser,
+        [Object] $ADUser,
         [switch] $RemovePrefix,
         [switch] $ToLower,
         [switch] $Formatted,
