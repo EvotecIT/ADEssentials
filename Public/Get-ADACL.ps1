@@ -38,7 +38,7 @@
             }
             $DNConverted = (ConvertFrom-DistinguishedName -DistinguishedName $DistinguishedName -ToDC) -replace '=' -replace ','
             if (-not (Get-PSDrive -Name $DNConverted -ErrorAction SilentlyContinue)) {
-                Write-Verbose "Get-ADACL - Enabling PSDrives for $DistinguishedName"
+                Write-Verbose "Get-ADACL - Enabling PSDrives for $DistinguishedName to $DNConverted"
                 New-ADForestDrives -ForestName $ForestName #-ObjectDN $Object
                 if (-not (Get-PSDrive -Name $DNConverted -ErrorAction SilentlyContinue)) {
                     Write-Warning "Get-ADACL - Drive $DNConverted not mapped. Terminating..."

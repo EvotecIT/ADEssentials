@@ -39,6 +39,13 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 
 ## Changelog
 
+- 0.0.42 - 27.02.2020
+  - [x] Fixes for Get-ADACL
+  - [x] Fixes for Get-WinADProxyAddresses
+  - Not really useful yet
+    - [x] Added Get-WinADUserPrincipalName
+    - [x] Added Rename-WinADUserPrincipalName
+
 - 0.0.41 - 20.02.2020
   - [x] Get-WinADGPOMissingPermissions updates to support SID instead (should work multi-language)
 
