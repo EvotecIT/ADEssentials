@@ -29,12 +29,15 @@
     }
     Process {
         foreach ($Object in $ADObject) {
-            if ($Object -is [Microsoft.ActiveDirectory.Management.ADOrganizationalUnit]) {
+            if ($Object -is [Microsoft.ActiveDirectory.Management.ADOrganizationalUnit] -or $Object -is [Microsoft.ActiveDirectory.Management.ADEntity]) {
                 [string] $DistinguishedName = $Object.DistinguishedName
                 [string] $CanonicalName = $Object.CanonicalName
             } elseif ($Object -is [string]) {
                 [string] $DistinguishedName = $Object
                 [string] $CanonicalName = ''
+            } else {
+                Write-Warning "Get-ADACL - Object not recognized. Skipping..."
+                continue
             }
             $DNConverted = (ConvertFrom-DistinguishedName -DistinguishedName $DistinguishedName -ToDC) -replace '=' -replace ','
             if (-not (Get-PSDrive -Name $DNConverted -ErrorAction SilentlyContinue)) {
@@ -48,7 +51,7 @@
             Write-Verbose "Get-ADACL - Getting ACL from $DistinguishedName"
             try {
                 $PathACL = "$DNConverted`:\$($DistinguishedName)"
-                $ACLs = Get-Acl -Path $PathACL | Select-Object -ExpandProperty Access
+                $ACLs = Get-Acl -Path $PathACL -ErrorAction Stop | Select-Object -ExpandProperty Access
             } catch {
                 Write-Warning "Get-ADACL - Path $PathACL - Error: $($_.Exception.Message)"
             }
