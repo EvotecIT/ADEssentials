@@ -32,9 +32,11 @@
             if ($Object -is [Microsoft.ActiveDirectory.Management.ADOrganizationalUnit] -or $Object -is [Microsoft.ActiveDirectory.Management.ADEntity]) {
                 [string] $DistinguishedName = $Object.DistinguishedName
                 [string] $CanonicalName = $Object.CanonicalName
+                [string] $ObjectClass = $Object.ObjectClass
             } elseif ($Object -is [string]) {
                 [string] $DistinguishedName = $Object
                 [string] $CanonicalName = ''
+                [string] $ObjectClass = ''
             } else {
                 Write-Warning "Get-ADACL - Object not recognized. Skipping..."
                 continue
@@ -129,6 +131,9 @@
                 $ReturnObject['DistinguishedName' ] = $DistinguishedName
                 if ($CanonicalName) {
                     $ReturnObject['CanonicalName'] = $CanonicalName
+                }
+                if ($ObjectClass) {
+                    $ReturnObject['ObjectClass'] = $ObjectClass
                 }
                 $ReturnObject['AccessControlType'] = $ACL.AccessControlType
                 $ReturnObject['Principal'] = $IdentityReference
