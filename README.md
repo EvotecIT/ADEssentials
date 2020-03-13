@@ -39,6 +39,9 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 
 ## Changelog
 
+- 0.0.45 - 13.03.2020
+  - [x] Improvement to commands to support different Forests
+
 - 0.0.44 - 3.03.2020
   - [x] Improvement to Get-ADACL
 

@@ -22,7 +22,7 @@
         #if (-not $GPOs) {
         [Array]$GPOs = @(Get-GPO -All -Domain $Domain -Server $QueryServer)
         #}
-        foreach ($Server in $ForestInformation["$Domain"]) {
+        foreach ($Server in $ForestInformation['DomainDomainControllers']["$Domain"]) {
             Write-Verbose "Get-WinADGPOSysvolFolders - Processing $Domain \ $($Server.Hostname)"
             $Differences = @{ }
             $SysvolHash = @{ }
