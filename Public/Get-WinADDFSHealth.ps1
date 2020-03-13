@@ -33,7 +33,7 @@
             }
         }
         #>
-        $DomainControllersFull = $ForestInformation["$Domain"]
+        $DomainControllersFull = $ForestInformation['DomainDomainControllers']["$Domain"]
         $QueryServer = $ForestInformation['QueryServers']["$Domain"].HostName[0]
         try {
             [Array]$GPOs = @(Get-GPO -All -Domain $Domain -Server $QueryServer)

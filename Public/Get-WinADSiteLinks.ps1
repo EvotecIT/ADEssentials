@@ -1,8 +1,10 @@
 ﻿function Get-WinADSiteLinks {
     [CmdletBinding()]
     param(
+        [alias('ForestName')][string] $Forest,
         [alias('Joiner')][string] $Splitter,
-        [string] $Formatted
+        [string] $Formatted,
+        [System.Collections.IDictionary] $ExtendedForestInformation
     )
     [Flags()]
     enum SiteLinksOptions {
@@ -12,8 +14,14 @@
         DisableCompression = 4
     }
 
-    $NamingContext = (Get-ADRootDSE).configurationNamingContext
-    $SiteLinks = Get-ADObject -LDAPFilter "(objectCategory=sitelink)" –Searchbase $NamingContext -Properties *
+    if (-not $ExtendedForestInformation) {
+        $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC
+    } else {
+        $ForestInformation = $ExtendedForestInformation
+    }
+    $QueryServer = $ForestInformation.QueryServers[$($ForestInformation.Forest.Name)]['HostName'][0]
+    $NamingContext = (Get-ADRootDSE -Server $QueryServer).configurationNamingContext
+    $SiteLinks = Get-ADObject -LDAPFilter "(objectCategory=sitelink)" –Searchbase $NamingContext -Properties * -Server $QueryServer
     foreach ($_ in $SiteLinks) {
 
         if ($null -eq $_.Options) {

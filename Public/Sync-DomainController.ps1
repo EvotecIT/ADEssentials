@@ -17,7 +17,7 @@
     foreach ($Domain in $ForestInformation.Domains) {
         $QueryServer = $ForestInformation['QueryServers']["$Domain"].HostName[0]
         $DistinguishedName = (Get-ADDomain -Server $QueryServer).DistinguishedName
-        ($ForestInformation["$Domain"]).Name | ForEach-Object {
+        ($ForestInformation['DomainDomainControllers']["$Domain"]).Name | ForEach-Object {
             Write-Verbose -Message "Sync-DomainController - Forcing synchronization $_"
             repadmin /syncall $_ $DistinguishedName /e /A | Out-Null
         }
