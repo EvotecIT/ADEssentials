@@ -15,7 +15,7 @@
     }
 
     if (-not $ExtendedForestInformation) {
-        $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC
+        $ForestInformation = Get-WinADForestDetails -Forest $Forest
     } else {
         $ForestInformation = $ExtendedForestInformation
     }
