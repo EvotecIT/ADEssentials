@@ -1,8 +1,10 @@
 ﻿function Get-WinADSiteConnections {
     [CmdletBinding()]
     param(
+        [alias('ForestName')][string] $Forest,
         [alias('Joiner')][string] $Splitter,
-        [switch] $Formatted
+        [switch] $Formatted,
+        [System.Collections.IDictionary] $ExtendedForestInformation
     )
 
     [Flags()]
@@ -17,8 +19,18 @@
         RodcTopology = 64
     }
 
-    $NamingContext = (Get-ADRootDSE).configurationNamingContext
-    $Connections = Get-ADObject –Searchbase $NamingContext -LDAPFilter "(objectCategory=ntDSConnection)" -Properties *
+
+    if (-not $ExtendedForestInformation) {
+        $ForestInformation = Get-WinADForestDetails -Forest $Forest
+    } else {
+        $ForestInformation = $ExtendedForestInformation
+    }
+
+    $QueryServer = $ForestInformation['QueryServers'][$($ForestInformation.Forest.Name)]['HostName'][0]
+
+
+    $NamingContext = (Get-ADRootDSE -Server $QueryServer).configurationNamingContext
+    $Connections = Get-ADObject –Searchbase $NamingContext -LDAPFilter "(objectCategory=ntDSConnection)" -Properties * -Server $QueryServer
     $FormmatedConnections = foreach ($_ in $Connections) {
         if ($null -eq $_.Options) {
             $Options = 'None'
