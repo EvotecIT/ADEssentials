@@ -46,19 +46,7 @@
     } else {
         $ForestInformation = $ExtendedForestInformation
     }
-    $ComputerProperties = @(
-        if ($Forest) {
-            $Type = [System.DirectoryServices.ActiveDirectory.DirectoryContextType]::Forest
-            $Context = [System.DirectoryServices.ActiveDirectory.DirectoryContext]::new($Type, $ForestInformation.Forest)
-            $Schema = [directoryservices.activedirectory.activedirectoryschema]::GetSchema($Context)
-        } else {
-            $Schema = [directoryservices.activedirectory.activedirectoryschema]::GetCurrentSchema()
-        }
-        @(
-            $Schema.FindClass("computer").mandatoryproperties | Select-Object name, commonname, description, syntax
-            $Schema.FindClass("computer").optionalproperties | Select-Object name, commonname, description, syntax
-        )
-    )
+    $ComputerProperties = Get-WinADForestSchemaProperties -Schema 'Computers' -Forest $Forest -ExtendedForestInformation $ForestInformation
     if ($ComputerProperties.Name -contains 'ms-Mcs-AdmPwd') {
         $LapsAvailable = $true
         $Properties = @(
