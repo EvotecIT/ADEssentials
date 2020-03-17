@@ -1,4 +1,5 @@
 ﻿Function Get-WinADPrivilegedObjects {
+	[alias('Get-WinADPriviligedObjects')]
     [cmdletbinding()]
     param(
         [alias('ForestName')][string] $Forest,
