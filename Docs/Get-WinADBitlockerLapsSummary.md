@@ -15,19 +15,22 @@ schema: 2.0.0
 ### Default (Default)
 ```
 Get-WinADBitlockerLapsSummary [-Forest <String>] [-IncludeDomains <String[]>] [-ExcludeDomains <String[]>]
- [-Filter <String>] [-SearchBase <String>] [-SearchScope <String>] [<CommonParameters>]
+ [-Filter <String>] [-SearchBase <String>] [-SearchScope <String>] [-ExtendedForestInformation <IDictionary>]
+ [<CommonParameters>]
 ```
 
 ### BitlockerOnly
 ```
 Get-WinADBitlockerLapsSummary [-Forest <String>] [-IncludeDomains <String[]>] [-ExcludeDomains <String[]>]
- [-Filter <String>] [-SearchBase <String>] [-SearchScope <String>] [-BitlockerOnly] [<CommonParameters>]
+ [-Filter <String>] [-SearchBase <String>] [-SearchScope <String>] [-BitlockerOnly]
+ [-ExtendedForestInformation <IDictionary>] [<CommonParameters>]
 ```
 
 ### LapsOnly
 ```
 Get-WinADBitlockerLapsSummary [-Forest <String>] [-IncludeDomains <String[]>] [-ExcludeDomains <String[]>]
- [-Filter <String>] [-SearchBase <String>] [-SearchScope <String>] [-LapsOnly] [<CommonParameters>]
+ [-Filter <String>] [-SearchBase <String>] [-SearchScope <String>] [-LapsOnly]
+ [-ExtendedForestInformation <IDictionary>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -64,6 +67,21 @@ Accept wildcard characters: False
 
 ```yaml
 Type: String[]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ExtendedForestInformation
+{{ Fill ExtendedForestInformation Description }}
+
+```yaml
+Type: IDictionary
 Parameter Sets: (All)
 Aliases:
 

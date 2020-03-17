@@ -5,7 +5,7 @@ online version:
 schema: 2.0.0
 ---
 
-# Get-WinADProxyAddresses
+# Get-WinADForestTomebstoneLifetime
 
 ## SYNOPSIS
 {{ Fill in the Synopsis }}
@@ -13,7 +13,7 @@ schema: 2.0.0
 ## SYNTAX
 
 ```
-Get-WinADProxyAddresses [[-ADUser] <Object>] [-RemovePrefix] [-ToLower] [-Formatted] [[-Splitter] <String>]
+Get-WinADForestTomebstoneLifetime [[-Forest] <String>] [[-ExtendedForestInformation] <IDictionary>]
  [<CommonParameters>]
 ```
 
@@ -31,58 +31,13 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
-### -ADUser
-{{ Fill ADUser Description }}
+### -ExtendedForestInformation
+{{ Fill ExtendedForestInformation Description }}
 
 ```yaml
-Type: Object
+Type: IDictionary
 Parameter Sets: (All)
 Aliases:
-
-Required: False
-Position: 0
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Formatted
-{{ Fill Formatted Description }}
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -RemovePrefix
-{{ Fill RemovePrefix Description }}
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Splitter
-{{ Fill Splitter Description }}
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases: Joiner
 
 Required: False
 Position: 1
@@ -91,16 +46,16 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -ToLower
-{{ Fill ToLower Description }}
+### -Forest
+{{ Fill Forest Description }}
 
 ```yaml
-Type: SwitchParameter
+Type: String
 Parameter Sets: (All)
-Aliases:
+Aliases: ForestName
 
 Required: False
-Position: Named
+Position: 0
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

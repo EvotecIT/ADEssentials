@@ -20,13 +20,28 @@ Locale: {{ Update Locale }}
 ### [Get-WinADDFSHealth](Get-WinADDFSHealth.md)
 {{ Fill in the Synopsis }}
 
+### [Get-WinADDiagnostics](Get-WinADDiagnostics.md)
+{{ Fill in the Synopsis }}
+
 ### [Get-WinADForestObjectsConflict](Get-WinADForestObjectsConflict.md)
+{{ Fill in the Synopsis }}
+
+### [Get-WinADForestOptionalFeatures](Get-WinADForestOptionalFeatures.md)
 {{ Fill in the Synopsis }}
 
 ### [Get-WinADForestReplication](Get-WinADForestReplication.md)
 {{ Fill in the Synopsis }}
 
 ### [Get-WinADForestRoles](Get-WinADForestRoles.md)
+{{ Fill in the Synopsis }}
+
+### [Get-WinADForestSchemaProperties](Get-WinADForestSchemaProperties.md)
+{{ Fill in the Synopsis }}
+
+### [Get-WinADForestSites](Get-WinADForestSites.md)
+{{ Fill in the Synopsis }}
+
+### [Get-WinADForestTomebstoneLifetime](Get-WinADForestTomebstoneLifetime.md)
 {{ Fill in the Synopsis }}
 
 ### [Get-WinADGPOMissingPermissions](Get-WinADGPOMissingPermissions.md)
@@ -37,6 +52,9 @@ Short description
 
 ### [Get-WinADLastBackup](Get-WinADLastBackup.md)
 Gets Active directory forest or domain last backup time
+
+### [Get-WinADLDAPBindingsSummary](Get-WinADLDAPBindingsSummary.md)
+{{ Fill in the Synopsis }}
 
 ### [Get-WinADLMSettings](Get-WinADLMSettings.md)
 {{ Fill in the Synopsis }}
@@ -59,7 +77,13 @@ Gets Active directory forest or domain last backup time
 ### [Get-WinADTrusts](Get-WinADTrusts.md)
 {{ Fill in the Synopsis }}
 
+### [Get-WinADUserPrincipalName](Get-WinADUserPrincipalName.md)
+{{ Fill in the Synopsis }}
+
 ### [Get-WinADUsersForeignSecurityPrincipalList](Get-WinADUsersForeignSecurityPrincipalList.md)
+{{ Fill in the Synopsis }}
+
+### [Rename-WinADUserPrincipalName](Rename-WinADUserPrincipalName.md)
 {{ Fill in the Synopsis }}
 
 ### [Repair-WinADEmailAddress](Repair-WinADEmailAddress.md)

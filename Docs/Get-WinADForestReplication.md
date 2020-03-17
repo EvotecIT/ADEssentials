@@ -15,7 +15,8 @@ schema: 2.0.0
 ```
 Get-WinADForestReplication [[-Forest] <String>] [[-ExcludeDomains] <String[]>]
  [[-ExcludeDomainControllers] <String[]>] [[-IncludeDomains] <String[]>]
- [[-IncludeDomainControllers] <String[]>] [-SkipRODC] [-Extended] [<CommonParameters>]
+ [[-IncludeDomainControllers] <String[]>] [-SkipRODC] [-Extended] [[-ExtendedForestInformation] <IDictionary>]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -72,6 +73,21 @@ Aliases:
 
 Required: False
 Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ExtendedForestInformation
+{{ Fill ExtendedForestInformation Description }}
+
+```yaml
+Type: IDictionary
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 5
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

@@ -5,7 +5,7 @@ online version:
 schema: 2.0.0
 ---
 
-# Get-WinADProxyAddresses
+# Get-WinADForestSchemaProperties
 
 ## SYNOPSIS
 {{ Fill in the Synopsis }}
@@ -13,8 +13,8 @@ schema: 2.0.0
 ## SYNTAX
 
 ```
-Get-WinADProxyAddresses [[-ADUser] <Object>] [-RemovePrefix] [-ToLower] [-Formatted] [[-Splitter] <String>]
- [<CommonParameters>]
+Get-WinADForestSchemaProperties [[-Forest] <String>] [[-Schema] <String[]>]
+ [[-ExtendedForestInformation] <IDictionary>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -31,13 +31,28 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
-### -ADUser
-{{ Fill ADUser Description }}
+### -ExtendedForestInformation
+{{ Fill ExtendedForestInformation Description }}
 
 ```yaml
-Type: Object
+Type: IDictionary
 Parameter Sets: (All)
 Aliases:
+
+Required: False
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Forest
+{{ Fill Forest Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases: ForestName
 
 Required: False
 Position: 0
@@ -46,61 +61,17 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Formatted
-{{ Fill Formatted Description }}
+### -Schema
+{{ Fill Schema Description }}
 
 ```yaml
-Type: SwitchParameter
+Type: String[]
 Parameter Sets: (All)
 Aliases:
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -RemovePrefix
-{{ Fill RemovePrefix Description }}
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Splitter
-{{ Fill Splitter Description }}
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases: Joiner
+Accepted values: Computers, Users
 
 Required: False
 Position: 1
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ToLower
-{{ Fill ToLower Description }}
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

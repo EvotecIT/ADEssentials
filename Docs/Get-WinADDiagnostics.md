@@ -5,18 +5,23 @@ online version:
 schema: 2.0.0
 ---
 
-# Get-WinADGPOSysvolFolders
+# Get-WinADDiagnostics
 
 ## SYNOPSIS
 {{ Fill in the Synopsis }}
 
 ## SYNTAX
 
+### Default (Default)
 ```
-Get-WinADGPOSysvolFolders [[-Forest] <String>] [[-ExcludeDomains] <String[]>]
- [[-ExcludeDomainControllers] <String[]>] [[-IncludeDomains] <String[]>]
- [[-IncludeDomainControllers] <String[]>] [-SkipRODC] [[-GPOs] <Array>]
- [[-ExtendedForestInformation] <IDictionary>] [<CommonParameters>]
+Get-WinADDiagnostics [-Forest <String>] [-ExcludeDomains <String[]>] [-ExcludeDomainControllers <String[]>]
+ [-IncludeDomains <String[]>] [-IncludeDomainControllers <String[]>] [-SkipRODC]
+ [-ExtendedForestInformation <IDictionary>] [<CommonParameters>]
+```
+
+### Computer
+```
+Get-WinADDiagnostics [-ComputerName <String[]>] [-ExtendedForestInformation <IDictionary>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -33,16 +38,31 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
+### -ComputerName
+{{ Fill ComputerName Description }}
+
+```yaml
+Type: String[]
+Parameter Sets: Computer
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -ExcludeDomainControllers
 {{ Fill ExcludeDomainControllers Description }}
 
 ```yaml
 Type: String[]
-Parameter Sets: (All)
+Parameter Sets: Default
 Aliases:
 
 Required: False
-Position: 2
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -53,11 +73,11 @@ Accept wildcard characters: False
 
 ```yaml
 Type: String[]
-Parameter Sets: (All)
+Parameter Sets: Default
 Aliases:
 
 Required: False
-Position: 1
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -72,7 +92,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 6
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -83,26 +103,11 @@ Accept wildcard characters: False
 
 ```yaml
 Type: String
-Parameter Sets: (All)
+Parameter Sets: Default
 Aliases: ForestName
 
 Required: False
-Position: 0
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -GPOs
-{{ Fill GPOs Description }}
-
-```yaml
-Type: Array
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 5
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -113,11 +118,11 @@ Accept wildcard characters: False
 
 ```yaml
 Type: String[]
-Parameter Sets: (All)
+Parameter Sets: Default
 Aliases: DomainControllers
 
 Required: False
-Position: 4
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -128,11 +133,11 @@ Accept wildcard characters: False
 
 ```yaml
 Type: String[]
-Parameter Sets: (All)
+Parameter Sets: Default
 Aliases: Domain, Domains
 
 Required: False
-Position: 3
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -143,7 +148,7 @@ Accept wildcard characters: False
 
 ```yaml
 Type: SwitchParameter
-Parameter Sets: (All)
+Parameter Sets: Default
 Aliases:
 
 Required: False

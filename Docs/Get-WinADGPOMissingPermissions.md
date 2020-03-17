@@ -14,7 +14,8 @@ Short description
 
 ```
 Get-WinADGPOMissingPermissions [[-Forest] <String>] [[-ExcludeDomains] <String[]>]
- [[-IncludeDomains] <String[]>] [-SkipRODC] [<CommonParameters>]
+ [[-IncludeDomains] <String[]>] [-SkipRODC] [[-ExtendedForestInformation] <IDictionary>] [[-Mode] <String>]
+ [-Extended] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -76,6 +77,51 @@ Accept wildcard characters: False
 
 ### -SkipRODC
 {{ Fill SkipRODC Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ExtendedForestInformation
+{{ Fill ExtendedForestInformation Description }}
+
+```yaml
+Type: IDictionary
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 4
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Mode
+{{ Fill Mode Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 5
+Default value: Either
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Extended
+{{ Fill Extended Description }}
 
 ```yaml
 Type: SwitchParameter

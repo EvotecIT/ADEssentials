@@ -5,7 +5,7 @@ online version:
 schema: 2.0.0
 ---
 
-# Get-WinADProxyAddresses
+# Get-WinADLDAPBindingsSummary
 
 ## SYNOPSIS
 {{ Fill in the Synopsis }}
@@ -13,8 +13,10 @@ schema: 2.0.0
 ## SYNTAX
 
 ```
-Get-WinADProxyAddresses [[-ADUser] <Object>] [-RemovePrefix] [-ToLower] [-Formatted] [[-Splitter] <String>]
- [<CommonParameters>]
+Get-WinADLDAPBindingsSummary [[-Forest] <String>] [[-ExcludeDomains] <String[]>]
+ [[-ExcludeDomainControllers] <String[]>] [[-IncludeDomains] <String[]>]
+ [[-IncludeDomainControllers] <String[]>] [-SkipRODC] [[-Days] <Int32>]
+ [[-ExtendedForestInformation] <IDictionary>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -31,58 +33,43 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
-### -ADUser
-{{ Fill ADUser Description }}
+### -Days
+{{ Fill Days Description }}
 
 ```yaml
-Type: Object
+Type: Int32
 Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 0
+Position: 5
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Formatted
-{{ Fill Formatted Description }}
+### -ExcludeDomainControllers
+{{ Fill ExcludeDomainControllers Description }}
 
 ```yaml
-Type: SwitchParameter
+Type: String[]
 Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: Named
+Position: 2
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -RemovePrefix
-{{ Fill RemovePrefix Description }}
+### -ExcludeDomains
+{{ Fill ExcludeDomains Description }}
 
 ```yaml
-Type: SwitchParameter
+Type: String[]
 Parameter Sets: (All)
 Aliases:
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Splitter
-{{ Fill Splitter Description }}
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases: Joiner
 
 Required: False
 Position: 1
@@ -91,8 +78,68 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -ToLower
-{{ Fill ToLower Description }}
+### -ExtendedForestInformation
+{{ Fill ExtendedForestInformation Description }}
+
+```yaml
+Type: IDictionary
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 6
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Forest
+{{ Fill Forest Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases: ForestName
+
+Required: False
+Position: 0
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -IncludeDomainControllers
+{{ Fill IncludeDomainControllers Description }}
+
+```yaml
+Type: String[]
+Parameter Sets: (All)
+Aliases: DomainControllers
+
+Required: False
+Position: 4
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -IncludeDomains
+{{ Fill IncludeDomains Description }}
+
+```yaml
+Type: String[]
+Parameter Sets: (All)
+Aliases: Domain, Domains
+
+Required: False
+Position: 3
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -SkipRODC
+{{ Fill SkipRODC Description }}
 
 ```yaml
 Type: SwitchParameter
