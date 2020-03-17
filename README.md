@@ -39,6 +39,14 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 
 ## Changelog
 
+- 0.0.46 - Unreleased
+  - [x] Added Get-WinADForestSites
+  - [x] Added Get-WinADForestOptionalFeatures
+  - [x] Added Get-WinADForestSchemaProperties
+  - [x] Added Get-WinADForestSites
+  - [x] Added Get-WinADForestTomebstoneLifetime
+  - [ ]
+
 - 0.0.45 - 13.03.2020
   - [x] Improvement to commands to support different Forests
 
