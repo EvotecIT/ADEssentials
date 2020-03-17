@@ -5,7 +5,7 @@ online version:
 schema: 2.0.0
 ---
 
-# Get-WinADPriviligedObjects
+# Get-WinADPrivilegedObjects
 
 ## SYNOPSIS
 {{ Fill in the Synopsis }}
@@ -13,7 +13,7 @@ schema: 2.0.0
 ## SYNTAX
 
 ```
-Get-WinADPriviligedObjects [[-Forest] <String>] [[-ExcludeDomains] <String[]>] [[-IncludeDomains] <String[]>]
+Get-WinADPrivilegedObjects [[-Forest] <String>] [[-ExcludeDomains] <String[]>] [[-IncludeDomains] <String[]>]
  [-LegitimateOnly] [-OrphanedOnly] [-SummaryOnly] [-DoNotShowCriticalSystemObjects] [-Formatted]
  [[-Splitter] <String>] [<CommonParameters>]
 ```
