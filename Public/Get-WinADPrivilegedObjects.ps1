@@ -1,4 +1,5 @@
-﻿Function Get-WinADPriviligedObjects {
+﻿Function Get-WinADPrivilegedObjects {
+	[alias('Get-WinADPriviligedObjects')]
     [cmdletbinding()]
     param(
         [alias('ForestName')][string] $Forest,
@@ -53,7 +54,7 @@
 
         $IsMember = foreach ($Group in $CriticalGroups) {
             $QueryServer = $ForestInformation['QueryServers']["$($Group.Domain)"].HostName[0]
-            $Group = Get-ADGroup -Filter "Member -RecursiveMatch '$DistinguishedName'" -searchbase $Group.DistinguishedName -server $QueryServer
+            $Group = Get-ADGroup -Filter "Member -RecursiveMatch `$DistinguishedName" -searchbase $Group.DistinguishedName -server $QueryServer
             if ($Group) {
                 $Group.DistinguishedName
             }
