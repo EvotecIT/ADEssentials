@@ -41,7 +41,7 @@ Gets Active directory forest or domain last backup time
 ### [Get-WinADLMSettings](Get-WinADLMSettings.md)
 {{ Fill in the Synopsis }}
 
-### [Get-WinADPriviligedObjects](Get-WinADPriviligedObjects.md)
+### [Get-WinADPrivilegedObjects](Get-WinADPrivilegedObjects.md)
 {{ Fill in the Synopsis }}
 
 ### [Get-WinADProxyAddresses](Get-WinADProxyAddresses.md)

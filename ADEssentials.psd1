@@ -75,7 +75,7 @@
     'Get-WinADForestReplication', 'Get-WinADForestRoles', 
     'Get-WinADGPOMissingPermissions', 'Get-WinADGPOSysvolFolders', 
     'Get-WinADLastBackup', 'Get-WinADLDAPBindingsSummary', 
-    'Get-WinADLMSettings', 'Get-WinADPriviligedObjects', 
+    'Get-WinADLMSettings', 'Get-WinADPrivilegedObjects', 
     'Get-WinADProxyAddresses', 'Get-WinADSiteConnections', 
     'Get-WinADSiteLinks', 'Get-WinADTombstoneLifetime', 'Get-WinADTrusts', 
     'Get-WinADUserPrincipalName', 
