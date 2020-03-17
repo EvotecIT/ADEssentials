@@ -3,7 +3,6 @@
     param(
         [Parameter(ValueFromPipeline)][Array] $ADObject,
         [string] $Domain = $Env:USERDNSDOMAIN,
-        # [Microsoft.ActiveDirectory.Management.ADDomainController] $Server,
         [Object] $Server,
         [string] $ForestName,
         [switch] $Extended,
