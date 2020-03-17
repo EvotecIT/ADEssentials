@@ -13,7 +13,8 @@ schema: 2.0.0
 ## SYNTAX
 
 ```
-Get-WinADSiteConnections [[-Splitter] <String>] [-Formatted] [<CommonParameters>]
+Get-WinADSiteConnections [[-Forest] <String>] [[-Splitter] <String>] [-Formatted]
+ [[-ExtendedForestInformation] <IDictionary>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -29,6 +30,36 @@ PS C:\> {{ Add example code here }}
 {{ Add example description here }}
 
 ## PARAMETERS
+
+### -ExtendedForestInformation
+{{ Fill ExtendedForestInformation Description }}
+
+```yaml
+Type: IDictionary
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Forest
+{{ Fill Forest Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases: ForestName
+
+Required: False
+Position: 0
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
 
 ### -Formatted
 {{ Fill Formatted Description }}
@@ -54,7 +85,7 @@ Parameter Sets: (All)
 Aliases: Joiner
 
 Required: False
-Position: 0
+Position: 1
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

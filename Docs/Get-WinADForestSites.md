@@ -5,7 +5,7 @@ online version:
 schema: 2.0.0
 ---
 
-# Get-WinADGPOSysvolFolders
+# Get-WinADForestSites
 
 ## SYNOPSIS
 {{ Fill in the Synopsis }}
@@ -13,9 +13,9 @@ schema: 2.0.0
 ## SYNTAX
 
 ```
-Get-WinADGPOSysvolFolders [[-Forest] <String>] [[-ExcludeDomains] <String[]>]
+Get-WinADForestSites [[-Forest] <String>] [[-ExcludeDomains] <String[]>]
  [[-ExcludeDomainControllers] <String[]>] [[-IncludeDomains] <String[]>]
- [[-IncludeDomainControllers] <String[]>] [-SkipRODC] [[-GPOs] <Array>]
+ [[-IncludeDomainControllers] <String[]>] [-SkipRODC] [-Formatted] [[-Splitter] <String>]
  [[-ExtendedForestInformation] <IDictionary>] [<CommonParameters>]
 ```
 
@@ -93,16 +93,16 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -GPOs
-{{ Fill GPOs Description }}
+### -Formatted
+{{ Fill Formatted Description }}
 
 ```yaml
-Type: Array
+Type: SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 5
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -148,6 +148,21 @@ Aliases:
 
 Required: False
 Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Splitter
+{{ Fill Splitter Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 5
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

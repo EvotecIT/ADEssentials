@@ -13,7 +13,8 @@ schema: 2.0.0
 ## SYNTAX
 
 ```
-Get-WinADSiteLinks [[-Splitter] <String>] [[-Formatted] <String>] [<CommonParameters>]
+Get-WinADSiteLinks [[-Forest] <String>] [[-Splitter] <String>] [[-Formatted] <String>]
+ [[-ExtendedForestInformation] <IDictionary>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -30,6 +31,36 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
+### -ExtendedForestInformation
+{{ Fill ExtendedForestInformation Description }}
+
+```yaml
+Type: IDictionary
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 3
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Forest
+{{ Fill Forest Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases: ForestName
+
+Required: False
+Position: 0
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -Formatted
 {{ Fill Formatted Description }}
 
@@ -39,7 +70,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 1
+Position: 2
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -54,7 +85,7 @@ Parameter Sets: (All)
 Aliases: Joiner
 
 Required: False
-Position: 0
+Position: 1
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

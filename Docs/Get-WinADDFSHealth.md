@@ -15,7 +15,7 @@ schema: 2.0.0
 ```
 Get-WinADDFSHealth [[-Forest] <String>] [[-ExcludeDomains] <String[]>] [[-ExcludeDomainControllers] <String[]>]
  [[-IncludeDomains] <String[]>] [[-IncludeDomainControllers] <String[]>] [-SkipRODC] [[-EventDays] <Int32>]
- [<CommonParameters>]
+ [[-ExtendedForestInformation] <IDictionary>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -72,6 +72,21 @@ Aliases:
 
 Required: False
 Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ExtendedForestInformation
+{{ Fill ExtendedForestInformation Description }}
+
+```yaml
+Type: IDictionary
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 6
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

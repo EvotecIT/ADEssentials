@@ -16,13 +16,13 @@ schema: 2.0.0
 ```
 Set-WinADDiagnostics [-Forest <String>] [-ExcludeDomains <String[]>] [-ExcludeDomainControllers <String[]>]
  [-IncludeDomains <String[]>] [-IncludeDomainControllers <String[]>] [-SkipRODC] [-Diagnostics <String[]>]
- [-Level <String>] [<CommonParameters>]
+ [-Level <String>] [-ExtendedForestInformation <IDictionary>] [<CommonParameters>]
 ```
 
 ### Computer
 ```
 Set-WinADDiagnostics [-ComputerName <String[]>] [-Diagnostics <String[]>] [-Level <String>]
- [<CommonParameters>]
+ [-ExtendedForestInformation <IDictionary>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -91,6 +91,21 @@ Accept wildcard characters: False
 ```yaml
 Type: String[]
 Parameter Sets: Default
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ExtendedForestInformation
+{{ Fill ExtendedForestInformation Description }}
+
+```yaml
+Type: IDictionary
+Parameter Sets: (All)
 Aliases:
 
 Required: False

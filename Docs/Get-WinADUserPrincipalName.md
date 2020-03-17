@@ -5,7 +5,7 @@ online version:
 schema: 2.0.0
 ---
 
-# Get-WinADProxyAddresses
+# Get-WinADUserPrincipalName
 
 ## SYNOPSIS
 {{ Fill in the Synopsis }}
@@ -13,8 +13,8 @@ schema: 2.0.0
 ## SYNTAX
 
 ```
-Get-WinADProxyAddresses [[-ADUser] <Object>] [-RemovePrefix] [-ToLower] [-Formatted] [[-Splitter] <String>]
- [<CommonParameters>]
+Get-WinADUserPrincipalName [-User] <Object> [-DomainName] <String> [-ReplaceDomain] [-NameSurname]
+ [-FixLatinChars] [-ToLower] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -31,61 +31,61 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
-### -ADUser
-{{ Fill ADUser Description }}
-
-```yaml
-Type: Object
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 0
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Formatted
-{{ Fill Formatted Description }}
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -RemovePrefix
-{{ Fill RemovePrefix Description }}
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Splitter
-{{ Fill Splitter Description }}
+### -DomainName
+{{ Fill DomainName Description }}
 
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases: Joiner
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -FixLatinChars
+{{ Fill FixLatinChars Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
 
 Required: False
-Position: 1
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -NameSurname
+{{ Fill NameSurname Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ReplaceDomain
+{{ Fill ReplaceDomain Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -101,6 +101,21 @@ Aliases:
 
 Required: False
 Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -User
+{{ Fill User Description }}
+
+```yaml
+Type: Object
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 0
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

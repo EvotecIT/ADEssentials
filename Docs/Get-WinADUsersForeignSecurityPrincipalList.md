@@ -14,7 +14,7 @@ schema: 2.0.0
 
 ```
 Get-WinADUsersForeignSecurityPrincipalList [[-Forest] <String>] [[-IncludeDomains] <String[]>]
- [[-ExcludeDomains] <String[]>] [<CommonParameters>]
+ [[-ExcludeDomains] <String[]>] [[-ExtendedForestInformation] <IDictionary>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -41,6 +41,21 @@ Aliases:
 
 Required: False
 Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ExtendedForestInformation
+{{ Fill ExtendedForestInformation Description }}
+
+```yaml
+Type: IDictionary
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 3
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
