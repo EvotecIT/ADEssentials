@@ -13,26 +13,9 @@
     $Today = (Get-Date)
     $Yesterday = (Get-Date -Hour 0 -Second 0 -Minute 0 -Millisecond 0).AddDays(-$EventDays)
 
-    if (-not $ExtendedForestInformation) {
-        $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC
-    } else {
-        $ForestInformation = $ExtendedForestInformation
-    }
-    #if (-not $Domains) {
-    #    $Forest = Get-ADForest
-    #    $Domains = $Forest.Domains
-    #}
+    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC -ExtendedForestInformation $ExtendedForestInformation
     [Array] $Table = foreach ($Domain in $ForestInformation.Domains) {
         Write-Verbose "Get-WinADDFSHealth - Processing $Domain"
-        <#
-        if (-not $DomainControllers) {
-            $DomainControllersFull = Get-ADDomainController -Filter * -Server $Domain
-        } else {
-            $DomainControllersFull = foreach ($_ in $DomainControllers) {
-                Get-ADDomainController -Identity $_ -Server $Domain
-            }
-        }
-        #>
         $DomainControllersFull = $ForestInformation['DomainDomainControllers']["$Domain"]
         $QueryServer = $ForestInformation['QueryServers']["$Domain"].HostName[0]
         try {
@@ -49,7 +32,7 @@
 
 
         foreach ($DC in $DomainControllersFull) {
-            Write-Verbose "Get-WinADDFSHealth - Processing $DC for $Domain"
+            Write-Verbose "Get-WinADDFSHealth - Processing $($DC.HostName) for $Domain"
             $DCName = $DC.Name
             $Hostname = $DC.Hostname
             $DN = $DC.DistinguishedName
@@ -89,7 +72,30 @@
                 "DomainSystemVolume"            = $false
                 "SYSVOLSubscription"            = $false
                 "StopReplicationOnAutoRecovery" = $false
+                "DFSReplicatedFolderInfo"       = $null
             }
+            <#
+            PS C:\Windows\system32> Get-CimData -NameSpace "root\microsoftdfs" -Class 'dfsrreplicatedfolderinfo' -ComputerName ad | Where-Object { $_.ReplicationGroupname -eq 'Domain System Volume' }
+
+
+            CurrentConflictSizeInMb  : 0
+            CurrentStageSizeInMb     : 1
+            LastConflictCleanupTime  : 2020-03-22 23:54:17
+            LastErrorCode            : 0
+            LastErrorMessageId       : 0
+            LastTombstoneCleanupTime : 2020-03-22 23:54:17
+            MemberGuid               : 9650D20E-0D00-43AC-AC1F-4D11EDC17E27
+            MemberName               : AD
+            ReplicatedFolderGuid     : 5FFB282C-A802-4700-89A5-B59B7A0EF671
+            ReplicatedFolderName     : SYSVOL Share
+            ReplicationGroupGuid     : C2E87E8F-18CC-41A4-8072-A1B9A4F2ACF6
+            ReplicationGroupName     : Domain System Volume
+            State                    : 4
+            PSComputerName           : AD
+
+
+            #>
+
 
             <# NameSpace "root\microsoftdfs" Class 'dfsrreplicatedfolderinfo'
             CurrentConflictSizeInMb  : 0
@@ -108,7 +114,8 @@
             PSComputerName           : AD1
             #>
             $WarningVar = $null
-            $DFSReplicatedFolderInfo = Get-CimData -NameSpace "root\microsoftdfs" -Class 'dfsrreplicatedfolderinfo' -ComputerName $Hostname -WarningAction SilentlyContinue -WarningVariable WarningVar
+            $DFSReplicatedFolderInfoAll = Get-CimData -NameSpace "root\microsoftdfs" -Class 'dfsrreplicatedfolderinfo' -ComputerName $Hostname -WarningAction SilentlyContinue -WarningVariable WarningVar
+            $DFSReplicatedFolderInfo = $DFSReplicatedFolderInfoAll | Where-Object { $_.ReplicationGroupName -eq 'Domain System Volume' }
             if ($WarningVar) {
                 $DomainSummary['ReplicationState'] = 'Unknown'
                 #$DomainSummary['ReplicationState'] = $WarningVar -join ', '
@@ -180,6 +187,7 @@
                 $DomainSummary['StopReplicationOnAutoRecovery'] = $null
                 # $DomainSummary['StopReplicationOnAutoRecovery'] = $ErrorMessage
             }
+            $DomainSummary['DFSReplicatedFolderInfo'] = $DFSReplicatedFolderInfoAll
 
             $All = @(
                 $DomainSummary['GroupPolicyOutput']
