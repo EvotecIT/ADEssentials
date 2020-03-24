@@ -45,6 +45,8 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
   - [x] Added Get-WinADForestSchemaProperties
   - [x] Renamed `Get-WinADPriviligedObjects` to `Get-WinADPrivilegedObjects` - tnx Subnet192 [#5](https://github.com/EvotecIT/ADEssentials/pull/5)
   - [x] Fix to `Get-WinADPrivilegedObjects` - tnx Subnet192 [#5](https://github.com/EvotecIT/ADEssentials/pull/5)
+  - [x] Improvement `Get-WinADDFSHealth` for DFS edge cases (may be subject to language issue)
+  - [x] Improvement of all commands for detecting forest/domain/dcs
 
 - 0.0.45 - 13.03.2020
   - [x] Improvement to commands to support different Forests
