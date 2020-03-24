@@ -1,13 +1,12 @@
 ﻿function Get-WinADDiagnostics {
-    [CmdletBinding(DefaultParameterSetName = 'Default')]
+    [CmdletBinding()]
     param(
-        [Parameter(ParameterSetName = 'Default')][alias('ForestName')][string] $Forest,
-        [Parameter(ParameterSetName = 'Default')][string[]] $ExcludeDomains,
-        [Parameter(ParameterSetName = 'Default')][string[]] $ExcludeDomainControllers,
-        [Parameter(ParameterSetName = 'Default')][alias('Domain', 'Domains')][string[]] $IncludeDomains,
-        [Parameter(ParameterSetName = 'Default')][alias('DomainControllers')][string[]] $IncludeDomainControllers,
-        [Parameter(ParameterSetName = 'Default')][switch] $SkipRODC,
-        [Parameter(ParameterSetName = 'Computer')][string[]] $ComputerName,
+        [alias('ForestName')][string] $Forest,
+        [string[]] $ExcludeDomains,
+        [string[]] $ExcludeDomainControllers,
+        [alias('Domain', 'Domains')][string[]] $IncludeDomains,
+        [alias('DomainControllers', 'ComputerName')][string[]] $IncludeDomainControllers,
+        [switch] $SkipRODC,
         [System.Collections.IDictionary] $ExtendedForestInformation
     )
 
@@ -29,16 +28,9 @@
         ''  = 'Unknown'
     }
 
-    if ($ComputerName) {
-        [Array] $Computers = $ComputerName
-    } else {
-        if (-not $ExtendedForestInformation) {
-            $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC
-        } else {
-            $ForestInformation = $ExtendedForestInformation
-        }
-        [Array] $Computers = $ForestInformation.ForestDomainControllers.HostName
-    }
+    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC -ExtendedForestInformation $ExtendedForestInformation
+    [Array] $Computers = $ForestInformation.ForestDomainControllers.HostName
+
     foreach ($Computer in $Computers) {
         try {
             $Output = Get-PSRegistry -RegistryPath 'HKLM\SYSTEM\CurrentControlSet\Services\NTDS\Diagnostics' -ComputerName $Computer -Verbose:$false -ErrorAction Stop

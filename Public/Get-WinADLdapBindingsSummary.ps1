@@ -10,11 +10,7 @@
         [int] $Days = 1,
         [System.Collections.IDictionary] $ExtendedForestInformation
     )
-    if (-not $ExtendedForestInformation) {
-        $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC
-    } else {
-        $ForestInformation = $ExtendedForestInformation
-    }
+    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC -ExtendedForestInformation $ExtendedForestInformation
     $Events = Get-Events -LogName 'Directory Service' -ID 2887 -Machine $ForestInformation.ForestDomainControllers.HostName -DateFrom ((Get-Date).Date.adddays(-$Days))
     foreach ($Event in $Events) {
         [PSCustomobject] @{

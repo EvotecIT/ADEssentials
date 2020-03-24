@@ -5,12 +5,8 @@
         [validateSet('Computers', 'Users')][string[]] $Schema = @('Computers', 'Users'),
         [System.Collections.IDictionary] $ExtendedForestInformation
     )
-    if (-not $ExtendedForestInformation) {
-        $ForestInformation = Get-WinADForestDetails -Forest $Forest
-    } else {
-        $ForestInformation = $ExtendedForestInformation
-    }
 
+    $ForestInformation = Get-WinADForestDetails -Forest $Forest -ExtendedForestInformation $ExtendedForestInformation
     if ($Forest) {
         $Type = [System.DirectoryServices.ActiveDirectory.DirectoryContextType]::Forest
         $Context = [System.DirectoryServices.ActiveDirectory.DirectoryContext]::new($Type, $ForestInformation.Forest)

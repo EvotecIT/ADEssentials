@@ -11,17 +11,11 @@
         [Array] $GPOs,
         [System.Collections.IDictionary] $ExtendedForestInformation
     )
-    if (-not $ExtendedForestInformation) {
-        $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC
-    } else {
-        $ForestInformation = $ExtendedForestInformation
-    }
+    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC -ExtendedForestInformation $ExtendedForestInformation
     foreach ($Domain in $ForestInformation.Domains) {
         Write-Verbose "Get-WinADGPOSysvolFolders - Processing $Domain"
         $QueryServer = $ForestInformation['QueryServers']["$Domain"].HostName[0]
-        #if (-not $GPOs) {
         [Array]$GPOs = @(Get-GPO -All -Domain $Domain -Server $QueryServer)
-        #}
         foreach ($Server in $ForestInformation['DomainDomainControllers']["$Domain"]) {
             Write-Verbose "Get-WinADGPOSysvolFolders - Processing $Domain \ $($Server.Hostname)"
             $Differences = @{ }

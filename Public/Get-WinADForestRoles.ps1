@@ -11,13 +11,7 @@
         [string] $Splitter = ', ',
         [System.Collections.IDictionary] $ExtendedForestInformation
     )
-
-    #$DomainControllers = Get-WinADForestControllers -Domain $Domain
-    if (-not $ExtendedForestInformation) {
-        $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC
-    } else {
-        $ForestInformation = $ExtendedForestInformation
-    }
+    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC -ExtendedForestInformation $ExtendedForestInformation
     $Roles = [ordered] @{
         SchemaMaster         = $null
         DomainNamingMaster   = $null

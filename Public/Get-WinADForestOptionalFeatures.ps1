@@ -5,11 +5,13 @@
         [Array] $ComputerProperties,
         [System.Collections.IDictionary] $ExtendedForestInformation
     )
+    $ForestInformation = Get-WinADForestDetails -Forest $Forest -ExtendedForestInformation $ExtendedForestInformation
     if (-not $ComputerProperties) {
-        $ComputerProperties = Get-WinADForestSchemaProperties -Schema 'Computers' -Forest $Forest -ExtendedForestInformation $ExtendedForestInformation
+        $ComputerProperties = Get-WinADForestSchemaProperties -Schema 'Computers' -Forest $Forest -ExtendedForestInformation $ForestInformation
     }
+    $QueryServer = $ForestInformation['QueryServers']["Forest"].HostName[0]
     $LapsProperties = 'ms-Mcs-AdmPwd'
-    $OptionalFeatures = $(Get-ADOptionalFeature -Filter * )
+    $OptionalFeatures = $(Get-ADOptionalFeature -Filter * -Server $QueryServer)
     $Optional = [ordered]@{
         'Recycle Bin Enabled'                          = $false
         'Privileged Access Management Feature Enabled' = $false

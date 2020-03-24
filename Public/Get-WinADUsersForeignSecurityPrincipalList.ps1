@@ -6,11 +6,7 @@
         [string[]] $ExcludeDomains,
         [System.Collections.IDictionary] $ExtendedForestInformation
     )
-    if (-not $ExtendedForestInformation) {
-        $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains
-    } else {
-        $ForestInformation = $ExtendedForestInformation
-    }
+    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation
     foreach ($Domain in $ForestInformation.Domains) {
         $QueryServer = $ForestInformation['QueryServers']["$Domain"].HostName[0]
         $ForeignSecurityPrincipalList = Get-ADObject -Filter { ObjectClass -eq 'ForeignSecurityPrincipal' } -Properties * -Server $QueryServer
