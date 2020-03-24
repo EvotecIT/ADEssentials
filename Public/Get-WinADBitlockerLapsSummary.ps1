@@ -41,11 +41,7 @@
         [System.Collections.IDictionary] $ExtendedForestInformation
     )
     $Today = Get-Date
-    if (-not $ExtendedForestInformation) {
-        $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains
-    } else {
-        $ForestInformation = $ExtendedForestInformation
-    }
+    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation
     $ComputerProperties = Get-WinADForestSchemaProperties -Schema 'Computers' -Forest $Forest -ExtendedForestInformation $ForestInformation
     if ($ComputerProperties.Name -contains 'ms-Mcs-AdmPwd') {
         $LapsAvailable = $true

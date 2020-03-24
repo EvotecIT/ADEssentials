@@ -1,16 +1,12 @@
 ﻿function Set-WinADDiagnostics {
-    [CmdletBinding(DefaultParameterSetName = 'Default')]
+    [CmdletBinding()]
     param(
-        [Parameter(ParameterSetName = 'Default')][alias('ForestName')][string] $Forest,
-        [Parameter(ParameterSetName = 'Default')][string[]] $ExcludeDomains,
-        [Parameter(ParameterSetName = 'Default')][string[]] $ExcludeDomainControllers,
-        [Parameter(ParameterSetName = 'Default')][alias('Domain', 'Domains')][string[]] $IncludeDomains,
-        [Parameter(ParameterSetName = 'Default')][alias('DomainControllers')][string[]] $IncludeDomainControllers,
-        [Parameter(ParameterSetName = 'Default')][switch] $SkipRODC,
-        [Parameter(ParameterSetName = 'Computer')][string[]] $ComputerName,
-
-        [Parameter(ParameterSetName = 'Default')]
-        [Parameter(ParameterSetName = 'Computer')]
+        [alias('ForestName')][string] $Forest,
+        [string[]] $ExcludeDomains,
+        [string[]] $ExcludeDomainControllers,
+        [alias('Domain', 'Domains')][string[]] $IncludeDomains,
+        [alias('DomainControllers', 'ComputerName')][string[]] $IncludeDomainControllers,
+        [switch] $SkipRODC,
         [ValidateSet(
             'Knowledge Consistency Checker (KCC)',
             'Security Events',
@@ -44,11 +40,7 @@
             'Claims-Based Access Control',
             # Added, but not setting in same place
             'Netlogon'
-
         )][string[]] $Diagnostics,
-
-        [Parameter(ParameterSetName = 'Default')]
-        [Parameter(ParameterSetName = 'Computer')]
         #[ValidateSet('None', 'Minimal', 'Basic', 'Extensive', 'Verbose', 'Internal')]
         [string] $Level,
         [System.Collections.IDictionary] $ExtendedForestInformation
@@ -100,17 +92,8 @@
         'Transformation Engine'               = '25 Transformation Engine'
         'Claims-Based Access Control'         = '26 Claims-Based Access Control'
     }
-
-    if ($ComputerName) {
-        [Array] $Computers = $ComputerName
-    } else {
-        if (-not $ExtendedForestInformation) {
-            $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC
-        } else {
-            $ForestInformation = $ExtendedForestInformation
-        }
-        [Array] $Computers = $ForestInformation.ForestDomainControllers.HostName
-    }
+    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC -ExtendedForestInformation $ExtendedForestInformation
+    [Array] $Computers = $ForestInformation.ForestDomainControllers.HostName
     foreach ($Computer in $Computers) {
         foreach ($D in $Diagnostics) {
             if ($D) {

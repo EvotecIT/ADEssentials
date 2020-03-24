@@ -1,8 +1,14 @@
 ﻿function Test-ADDomainController {
     [CmdletBinding()]
     param(
-        [string[]] $ComputerName,
-        [Parameter(Mandatory = $false)][PSCredential] $Credential = $null
+        [alias('ForestName')][string] $Forest,
+        [string[]] $ExcludeDomains,
+        [string[]] $ExcludeDomainControllers,
+        [alias('Domain', 'Domains')][string[]] $IncludeDomains,
+        [alias('DomainControllers', 'DomainController', 'ComputerName')][string[]] $IncludeDomainControllers,
+        [switch] $SkipRODC,
+        [Parameter(Mandatory = $false)][PSCredential] $Credential = $null,
+        [System.Collections.IDictionary] $ExtendedForestInformation
     )
 
     $CredentialParameter = @{ }
@@ -10,7 +16,8 @@
         $CredentialParameter['Credential'] = $Credential
     }
 
-    $Output = foreach ($Computer in $ComputerName) {
+    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC -ExtendedForestInformation $ExtendedForestInformation
+    $Output = foreach ($Computer in $ForestInformation.ForestDomainControllers.HostName) {
         $Result = Invoke-Command -ComputerName $Computer -ScriptBlock {
             dcdiag.exe /v /c /Skip:OutboundSecureChannels
         } @CredentialParameter

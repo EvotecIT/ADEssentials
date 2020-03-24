@@ -1,5 +1,5 @@
 ﻿Function Get-WinADPrivilegedObjects {
-	[alias('Get-WinADPriviligedObjects')]
+    [alias('Get-WinADPriviligedObjects')]
     [cmdletbinding()]
     param(
         [alias('ForestName')][string] $Forest,
@@ -14,13 +14,8 @@
         [string] $Splitter = [System.Environment]::NewLine,
         [System.Collections.IDictionary] $ExtendedForestInformation
     )
-    if (-not $ExtendedForestInformation) {
-        $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains
-    } else {
-        $ForestInformation = $ExtendedForestInformation
-    }
+    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation
     $Domains = $ForestInformation.Domains
-
     $UsersWithAdminCount = foreach ($Domain in $Domains) {
         $QueryServer = $ForestInformation['QueryServers']["$Domain"].HostName[0]
         if ($DoNotShowCriticalSystemObjects) {

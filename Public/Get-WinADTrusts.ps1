@@ -7,11 +7,7 @@
         [switch] $Display,
         [System.Collections.IDictionary] $ExtendedForestInformation
     )
-    if (-not $ExtendedForestInformation) {
-        $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains
-    } else {
-        $ForestInformation = $ExtendedForestInformation
-    }
+    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation
     <#
     Name                           Value
     ----                           -----
@@ -21,7 +17,8 @@
     ad.evotec.pl                   {@{Domain=ad.evotec.pl; HostName=ADPreview2019.ad.evotec.pl; Name=ADPREVIEW2019; Forest=ad.evotec.xyz; Site=KATOWICE-2; IPV4Address=192.16...
     #>
     foreach ($Domain in $ForestInformation.Domains) {
-        $Trusts = Get-ADTrust -Server $Domain -Filter * -Properties *
+        $QueryServer = $ForestInformation['QueryServers']["$Domain"].HostName[0]
+        $Trusts = Get-ADTrust -Server $QueryServer -Filter * -Properties *
         $DomainPDC = $ForestInformation[$Domain] | Where-Object { $_.IsPDC -eq $true }
 
         $PropertiesTrustWMI = @(

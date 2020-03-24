@@ -19,13 +19,7 @@
         RodcTopology = 64
     }
 
-
-    if (-not $ExtendedForestInformation) {
-        $ForestInformation = Get-WinADForestDetails -Forest $Forest
-    } else {
-        $ForestInformation = $ExtendedForestInformation
-    }
-
+    $ForestInformation = Get-WinADForestDetails -Forest $Forest -ExtendedForestInformation $ExtendedForestInformation
     $QueryServer = $ForestInformation['QueryServers'][$($ForestInformation.Forest.Name)]['HostName'][0]
 
 

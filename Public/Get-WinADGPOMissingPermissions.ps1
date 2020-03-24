@@ -26,13 +26,8 @@
         [validateset('AuthenticatedUsers', 'DomainComputers', 'Either')][string] $Mode = 'Either',
         [switch] $Extended
     )
-    if (-not $ExtendedForestInformation) {
-        $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC
-    } else {
-        $ForestInformation = $ExtendedForestInformation
-    }
+    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC -ExtendedForestInformation $ExtendedForestInformation
     foreach ($Domain in $ForestInformation.Domains) {
-
         $QueryServer = $ForestInformation['QueryServers']["$Domain"].HostName[0]
         if ($Extended) {
             $GPOs = Get-GPO -All -Domain $Domain -Server $QueryServer | ForEach-Object {

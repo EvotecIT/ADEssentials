@@ -6,12 +6,7 @@
         [System.Collections.IDictionary] $ExtendedForestInformation
     )
 
-    if (-not $ExtendedForestInformation) {
-        $ForestInformation = Get-WinADForestDetails -Forest $Forest
-    } else {
-        $ForestInformation = $ExtendedForestInformation
-    }
-
+    $ForestInformation = Get-WinADForestDetails -Forest $Forest -ExtendedForestInformation $ExtendedForestInformation
     if (($ForestInformation.ForestDomainControllers).Count -eq 1) {
         [ordered] @{
             SiteLinksManual              = 'No sitelinks, single DC'

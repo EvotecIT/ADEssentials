@@ -10,15 +10,8 @@
         [switch] $Extended,
         [System.Collections.IDictionary] $ExtendedForestInformation
     )
-    #if (-not $DomainControllers) {
-    #    $DomainControllers = Get-WinADForestControllers
-    #}
     $ProcessErrors = [System.Collections.Generic.List[PSCustomObject]]::new()
-    if (-not $ExtendedForestInformation) {
-        $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC
-    } else {
-        $ForestInformation = $ExtendedForestInformation
-    }
+    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC -ExtendedForestInformation $ExtendedForestInformation
     $Replication = foreach ($DC in $ForestInformation.ForestDomainControllers) {
         try {
             Get-ADReplicationPartnerMetadata -Target $DC.HostName -Partition * -ErrorAction Stop #-ErrorVariable +ProcessErrors
@@ -27,12 +20,6 @@
             $ProcessErrors.Add([PSCustomObject] @{ Server = $_.Exception.ServerName; StatusMessage = $_.Exception.Message })
         }
     }
-    #$Replication = Get-ADReplicationPartnerMetadata -Target * -Partition * -ErrorAction SilentlyContinue -ErrorVariable ProcessErrors
-    # if ($ProcessErrors) {
-    #     foreach ($_ in $ProcessErrors) {
-
-    #     }
-    # }
     foreach ($_ in $Replication) {
         $ServerPartner = (Resolve-DnsName -Name $_.PartnerAddress -Verbose:$false -ErrorAction SilentlyContinue)
         $ServerInitiating = (Resolve-DnsName -Name $_.Server -Verbose:$false -ErrorAction SilentlyContinue)
