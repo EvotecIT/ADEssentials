@@ -51,7 +51,7 @@
                 foreach ($GPO in $GPOS) {
 
                     if ($null -ne $SysvolHash[$GPO.Id.GUID].FullName) {
-                        $ACL = Get-Acl -Path $SysvolHash[$GPO.Id.GUID].FullName
+                        $ACL = Get-Acl -Path $SysvolHash[$GPO.Id.GUID].FullName -ErrorAction SilentlyContinue
                     } else {
                         $ACL = $null
                     }
@@ -84,7 +84,7 @@
                         if ($SysvolHash[$_].BaseName -notcontains 'PolicyDefinitions') {
 
                             if ($null -ne $SysvolHash[$_].FullName) {
-                                $ACL = Get-Acl -Path $SysvolHash[$_].FullName
+                                $ACL = Get-Acl -Path $SysvolHash[$_].FullName -ErrorAction SilentlyContinue
                             } else {
                                 $ACL = $null
                             }

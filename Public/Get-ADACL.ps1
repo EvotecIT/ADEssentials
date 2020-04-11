@@ -9,6 +9,7 @@
         [switch] $ResolveTypes,
         [switch] $Inherited,
         [switch] $NotInherited,
+        [switch] $Bundle,
         [System.DirectoryServices.ActiveDirectoryRights[]] $IncludeActiveDirectoryRights,
         [System.DirectoryServices.ActiveDirectoryRights[]] $ExcludeActiveDirectoryRights,
         [System.DirectoryServices.ActiveDirectorySecurityInheritance[]] $IncludeActiveDirectorySecurityInheritance,
@@ -52,11 +53,11 @@
             Write-Verbose "Get-ADACL - Getting ACL from $DistinguishedName"
             try {
                 $PathACL = "$DNConverted`:\$($DistinguishedName)"
-                $ACLs = Get-Acl -Path $PathACL -ErrorAction Stop | Select-Object -ExpandProperty Access
+                $ACLs = Get-Acl -Path $PathACL -ErrorAction Stop
             } catch {
                 Write-Warning "Get-ADACL - Path $PathACL - Error: $($_.Exception.Message)"
             }
-            foreach ($ACL in $ACLs) {
+            $AccessObjects = foreach ($ACL in $ACLs.Access) {
                 [Array] $ADRights = $ACL.ActiveDirectoryRights -split ', '
                 if ($Inherited) {
                     if ($ACL.IsInherited -eq $false) {
@@ -152,7 +153,21 @@
                     $ReturnObject['InheritanceFlags'] = $ACL.InheritanceFlags
                     $ReturnObject['PropagationFlags'] = $ACL.PropagationFlags
                 }
+                if ($Bundle) {
+                    $ReturnObject['Bundle'] = $ACL
+                }
                 [PSCustomObject] $ReturnObject
+            }
+            if ($Bundle) {
+                [PSCustomObject] @{
+                    DistinguishedName = $DistinguishedName
+                    CanonicalName     = $Object.CanonicalName
+                    ACL               = $ACLs
+                    ACLAccessRules    = $AccessObjects
+                    Path              = $PathACL
+                }
+            } else {
+                $AccessObjects
             }
             <#
                 [PSCustomObject] @{
@@ -165,7 +180,6 @@
                 #>
         }
     }
-
     End {
 
     }
