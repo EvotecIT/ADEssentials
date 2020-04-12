@@ -39,6 +39,9 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 
 ## Changelog
 
+- 0.0.47 - 12.04.2020
+  - [x] Added `Set-ADACLOwner` - experimental support
+
 - 0.0.46 - 11.04.2020
   - [x] Added `Get-WinADForestSites`
   - [x] Added `Get-WinADForestOptionalFeatures`
