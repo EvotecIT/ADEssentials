@@ -7,7 +7,7 @@
     Description          = 'Helper module for Active Directory'
     FunctionsToExport    = 'Add-ADACL', 'Get-ADACL', 'Get-WinADBitlockerLapsSummary', 'Get-WinADDFSHealth', 'Get-WinADDiagnostics', 'Get-WinADForestObjectsConflict', 'Get-WinADForestOptionalFeatures', 'Get-WinADForestReplication', 'Get-WinADForestRoles', 'Get-WinADForestSchemaProperties', 'Get-WinADForestSites', 'Get-WinADGPOMissingPermissions', 'Get-WinADGPOSysvolFolders', 'Get-WinADLastBackup', 'Get-WinADLDAPBindingsSummary', 'Get-WinADLMSettings', 'Get-WinADPrivilegedObjects', 'Get-WinADProxyAddresses', 'Get-WinADSiteConnections', 'Get-WinADSiteLinks', 'Get-WinADTomebstoneLifetime', 'Get-WinADTrusts', 'Get-WinADUserPrincipalName', 'Get-WinADUsersForeignSecurityPrincipalList', 'Remove-ADACL', 'Rename-WinADUserPrincipalName', 'Repair-WinADEmailAddress', 'Set-ADACLOwner', 'Set-WinADDiagnostics', 'Set-WinADReplication', 'Set-WinADReplicationConnections', 'Set-WinADTombstoneLifetime', 'Sync-DomainController', 'Test-ADDomainController', 'Test-ADRolesAvailability', 'Test-ADSiteLinks', 'Test-DNSNameServers', 'Test-FSMORolesAvailability', 'Test-LDAP'
     GUID                 = '9fc9fd61-7f11-4f4b-a527-084086f1905f'
-    ModuleVersion        = '0.0.49'
+    ModuleVersion        = '0.0.50'
     PowerShellVersion    = '5.1'
     PrivateData          = @{
         PSData = @{
