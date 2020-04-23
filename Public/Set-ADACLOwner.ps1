@@ -43,6 +43,7 @@
             $PathACL = "$DNConverted`:\$($DistinguishedName)"
             $ACLs = Get-Acl -Path $PathACL -ErrorAction Stop
             $CurrentOwner = $ACLs.Owner
+            #if ($PSCmdlet.ShouldProcess($ACLs.Path, "Changing owner from $($CurrentOwner) to $Identity for $($ACLs.Path)")) {
             Write-Verbose "Set-ADACLOwner - Changing owner from $($CurrentOwner) to $Identity for $($ACLs.Path)"
             try {
                 $ACLs.SetOwner($Identity)
@@ -55,6 +56,7 @@
             } catch {
                 Write-Warning "Set-ADACLOwner - Unable to change owner from $($CurrentOwner) to $Identity for $($ACLs.Path): $($_.Exception.Message)"
             }
+            # }
         }
     }
     End {
