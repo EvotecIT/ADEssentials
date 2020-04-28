@@ -39,6 +39,10 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 
 ## Changelog
 
+- 0.0.51 - 24.04.2020
+  - [x] Disabled WhatIf for `New-PSDrive` (for use within `New-ADForestDrives`)
+  - [x] Added `Get-ADACLOwner`
+
 - 0.0.50 - 23.04.2020
   - [x] Fix for bug where some functions from other modules were not merged correctly (`Copy-Dictionary`) causing problems if `PSSharedGoods` was not installed
 

@@ -1,7 +1,7 @@
 ﻿function Set-ADACLOwner {
     [cmdletBinding(SupportsShouldProcess)]
     param(
-        [string] $ADObject,
+        [Array] $ADObject,
         [Parameter(Mandatory)][string] $Principal
     )
     Begin {
