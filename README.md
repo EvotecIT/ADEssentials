@@ -39,7 +39,7 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 
 ## Changelog
 
-- 0.0.51 - 24.04.2020
+- 0.0.51 - 28.04.2020
   - [x] Disabled WhatIf for `New-PSDrive` (for use within `New-ADForestDrives`)
   - [x] Added `Get-ADACLOwner`
 
