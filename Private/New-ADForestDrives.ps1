@@ -15,10 +15,10 @@
             if (-not(Get-PSDrive -Name $DNConverted -ErrorAction SilentlyContinue)) {
                 try {
                     if ($Server) {
-                        $null = New-PSDrive -Name $DNConverted -Root '' -PsProvider ActiveDirectory -Server $Server.Hostname[0] -Scope Global
+                        $null = New-PSDrive -Name $DNConverted -Root '' -PsProvider ActiveDirectory -Server $Server.Hostname[0] -Scope Global -WhatIf:$false
                         Write-Verbose "New-ADForestDrives - Mapped drive $Domain / $($Server.Hostname[0])"
                     } else {
-                        $null = New-PSDrive -Name $DNConverted -Root '' -PsProvider ActiveDirectory -Server $Domain -Scope Global
+                        $null = New-PSDrive -Name $DNConverted -Root '' -PsProvider ActiveDirectory -Server $Domain -Scope Global -WhatIf:$false
                     }
                 } catch {
                     Write-Warning "New-ADForestDrives - Couldn't map new AD psdrive for $Domain / $($Server.Hostname[0])"
@@ -38,10 +38,10 @@
                 if (-not(Get-PSDrive -Name $DNConverted -ErrorAction SilentlyContinue)) {
                     try {
                         if ($Server) {
-                            $null = New-PSDrive -Name $DNConverted -Root '' -PsProvider ActiveDirectory -Server $Server.Hostname[0] -Scope Global
+                            $null = New-PSDrive -Name $DNConverted -Root '' -PsProvider ActiveDirectory -Server $Server.Hostname[0] -Scope Global -WhatIf:$false
                             Write-Verbose "New-ADForestDrives - Mapped drive $Domain / $Server"
                         } else {
-                            $null = New-PSDrive -Name $DNConverted -Root '' -PsProvider ActiveDirectory -Server $Domain -Scope Global
+                            $null = New-PSDrive -Name $DNConverted -Root '' -PsProvider ActiveDirectory -Server $Domain -Scope Global -WhatIf:$false
                         }
                     } catch {
                         Write-Warning "New-ADForestDrives - Couldn't map new AD psdrive for $Domain / $Server $($_.Exception.Message)"
