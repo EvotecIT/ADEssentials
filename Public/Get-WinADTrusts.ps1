@@ -19,7 +19,7 @@
     foreach ($Domain in $ForestInformation.Domains) {
         $QueryServer = $ForestInformation['QueryServers']["$Domain"].HostName[0]
         $Trusts = Get-ADTrust -Server $QueryServer -Filter * -Properties *
-        $DomainPDC = $ForestInformation[$Domain] | Where-Object { $_.IsPDC -eq $true }
+        $DomainPDC = $ForestInformation['DomainDomainControllers'][$Domain] | Where-Object { $_.IsPDC -eq $true }
 
         $PropertiesTrustWMI = @(
             'FlatName',
