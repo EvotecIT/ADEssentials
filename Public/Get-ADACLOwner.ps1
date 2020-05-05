@@ -1,9 +1,26 @@
 ﻿function Get-ADACLOwner {
     [cmdletBinding()]
     param(
-        [Array] $ADObject
+        [Array] $ADObject,
+        [switch] $Resolve,
+        [System.Collections.IDictionary] $ADAdministrativeGroups,
+
+        [alias('ForestName')][string] $Forest,
+        [string[]] $ExcludeDomains,
+        [alias('Domain', 'Domains')][string[]] $IncludeDomains,
+        [System.Collections.IDictionary] $ExtendedForestInformation
     )
-    Begin { }
+    Begin {
+        if (-not $ExtendedForestInformation) {
+            $ForestInformation = Get-WinADForestDetails -Extended -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation
+        } else {
+            $ForestInformation = $ExtendedForestInformation
+        }
+        if (-not $ADAdministrativeGroups -and $Resolve) {
+            #Write-Verbose "Get-GPOZaurrOwner - Getting ADAdministrativeGroups"
+            $ADAdministrativeGroups = Get-ADADministrativeGroups -Type DomainAdmins, EnterpriseAdmins -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation
+        }
+    }
     Process {
         foreach ($Object in $ADObject) {
             if ($Object -is [Microsoft.ActiveDirectory.Management.ADOrganizationalUnit] -or $Object -is [Microsoft.ActiveDirectory.Management.ADEntity]) {
@@ -29,13 +46,29 @@
             }
             $PathACL = "$DNConverted`:\$($DistinguishedName)"
             $ACLs = Get-Acl -Path $PathACL -ErrorAction Stop
-            [PSCustomObject] @{
+            $Hash = [ordered] @{
                 DistinguishedName = $DistinguishedName
                 Owner             = $ACLs.Owner
                 ACLs              = $ACLs
             }
-
+            if ($Resolve) {
+                #$Identity = ConvertTo-Identity -Identity $Hash.Owner -ExtendedForestInformation $ForestInformation -ADAdministrativeGroups $ADAdministrativeGroups
+                $Identity = Convert-Identity -Identity $Hash.Owner
+                if ($Identity) {
+                    $Hash['OwnerName'] = $Identity.Name
+                    $Hash['OwnerSid'] = $Identity.SID
+                    $Hash['OwnerType'] = $Identity.Type
+                    #$Hash['OwnerClass'] = $Identity.Class
+                } else {
+                    $Hash['OwnerName'] = ''
+                    $Hash['OwnerSid'] = ''
+                    $Hash['OwnerType'] = ''
+                    #$Hash['OwnerClass'] = ''
+                }
+            }
+            [PSCustomObject] $Hash
         }
+
     }
     End { }
 }
