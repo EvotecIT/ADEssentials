@@ -39,6 +39,12 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 
 ## Changelog
 
+- 0.0.52 - Unreleased
+  - [x] Fix for `Get-WinADTrusts`
+  - [x] Added experimantal `Get-ADACLOwner` - work in progress
+  - [x] Added experimental `Get-WinADShare` - work in progress
+  - [x] Added experimantal (not ready) `Set-WinADShare`- work in progress
+
 - 0.0.51 - 28.04.2020
   - [x] Disabled WhatIf for `New-PSDrive` (for use within `New-ADForestDrives`)
   - [x] Added `Get-ADACLOwner`
