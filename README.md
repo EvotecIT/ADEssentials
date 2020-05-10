@@ -39,7 +39,10 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 
 ## Changelog
 
-- 0.0.52 - Unreleased
+- 0.0.54 - 10.05.2020
+  - [x] Small update to `Remove-ADACL`
+
+- 0.0.53 - 9.05.2020
   - [x] Fix for `Get-WinADTrusts`
   - [x] Added experimantal `Get-ADACLOwner` - work in progress
   - [x] Added experimental `Get-WinADShare` - work in progress
