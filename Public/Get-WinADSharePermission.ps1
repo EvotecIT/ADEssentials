@@ -1,10 +1,9 @@
-﻿function Get-WinADShare {
-    [cmdletBinding()]
+﻿function Get-WinADSharePermission {
+    [cmdletBinding(DefaultParameterSetName = 'Path')]
     param(
-        [string] $Path,
-        [validateset('NetLogon', 'SYSVOL')][string[]] $ShareType,
+        [Parameter(ParameterSetName = 'Path', Mandatory)][string] $Path,
+        [Parameter(ParameterSetName = 'ShareType', Mandatory)][validateset('NetLogon', 'SYSVOL')][string[]] $ShareType,
         [switch] $Owner,
-
         [string[]] $Name,
         [alias('ForestName')][string] $Forest,
         [string[]] $ExcludeDomains,

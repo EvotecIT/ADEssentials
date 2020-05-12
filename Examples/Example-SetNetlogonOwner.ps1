@@ -2,4 +2,4 @@
 
 $Path = '\\ad.evotec.xyz\SYSVOL\ad.evotec.xyz\scripts'
 
-Set-WinADShare -Path $Path -Owner -Type Default -Verbose
+#Set-WinADShare -Path $Path -Owner -Type Default -Verbose
