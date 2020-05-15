@@ -11,14 +11,10 @@
         [System.Collections.IDictionary] $ExtendedForestInformation
     )
     Begin {
-        if (-not $ExtendedForestInformation) {
-            $ForestInformation = Get-WinADForestDetails -Extended -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation
-        } else {
-            $ForestInformation = $ExtendedForestInformation
-        }
         if (-not $ADAdministrativeGroups -and $Resolve) {
             #Write-Verbose "Get-GPOZaurrOwner - Getting ADAdministrativeGroups"
-            $ADAdministrativeGroups = Get-ADADministrativeGroups -Type DomainAdmins, EnterpriseAdmins -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation
+            $ForestInformation = Get-WinADForestDetails -Extended -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation
+            $ADAdministrativeGroups = Get-ADADministrativeGroups -Type DomainAdmins, EnterpriseAdmins -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ForestInformation
         }
     }
     Process {
@@ -45,15 +41,30 @@
                 }
             }
             $PathACL = "$DNConverted`:\$($DistinguishedName)"
-            $ACLs = Get-Acl -Path $PathACL -ErrorAction Stop
-            $Hash = [ordered] @{
-                DistinguishedName = $DistinguishedName
-                Owner             = $ACLs.Owner
-                ACLs              = $ACLs
+            try {
+                $ACLs = Get-Acl -Path $PathACL -ErrorAction Stop
+                $Hash = [ordered] @{
+                    DistinguishedName = $DistinguishedName
+                    Owner             = $ACLs.Owner
+                    ACLs              = $ACLs
+                }
+                $ErrorMessage = ''
+            } catch {
+                $Hash = [ordered] @{
+                    DistinguishedName = $DistinguishedName
+                    Owner             = $null
+                    ACLs              = $null
+                }
+                $ErrorMessage = $_.Exception.Message
             }
+
             if ($Resolve) {
                 #$Identity = ConvertTo-Identity -Identity $Hash.Owner -ExtendedForestInformation $ForestInformation -ADAdministrativeGroups $ADAdministrativeGroups
-                $Identity = Convert-Identity -Identity $Hash.Owner
+                if ($null -eq $Hash.Owner) {
+                    $Identity = $null
+                } else {
+                    $Identity = Convert-Identity -Identity $Hash.Owner
+                }
                 if ($Identity) {
                     $Hash['OwnerName'] = $Identity.Name
                     $Hash['OwnerSid'] = $Identity.SID
@@ -66,6 +77,7 @@
                     #$Hash['OwnerClass'] = ''
                 }
             }
+            $Hash['Error'] = $ErrorMessage
             [PSCustomObject] $Hash
         }
 

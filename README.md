@@ -39,6 +39,9 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 
 ## Changelog
 
+- 0.0.56 - 15.05.2020
+  - [x] Improved `Get-ADACLOwner` error handling
+
 - 0.0.55 - 12.05.2020
   - [x] Improved/Renamed experimental `Get-WinADShare` to `Get-WinADSharePermission` - work in progress
   - [x] Improved/Renamed experimantal `Set-WinADShare` to `Get-WinADSharePermission` - work in progress
