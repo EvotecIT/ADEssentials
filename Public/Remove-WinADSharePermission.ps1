@@ -10,7 +10,8 @@
     }
     Process {
         if ($Path -and (Test-Path -Path $Path)) {
-            @(Get-Item -Path $Path) + @(Get-ChildItem -Path $Path -Recurse:$true) | ForEach-Object -Process {
+            $Data = @(Get-Item -Path $Path) + @(Get-ChildItem -Path $Path -Recurse:$true)
+            foreach ($_ in $Data) {
                 $PathToProcess = $_.FullName
                 $Permissions = Get-FilePermission -Path $PathToProcess -Extended -IncludeACLObject -ResolveTypes
                 $OutputRequiresCommit = foreach ($Permission in $Permissions) {
