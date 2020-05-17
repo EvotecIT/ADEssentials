@@ -49,9 +49,13 @@
             }
             $GPOSummary = @(
                 foreach ($GPO in $GPOS) {
-
                     if ($null -ne $SysvolHash[$GPO.Id.GUID].FullName) {
-                        $ACL = Get-Acl -Path $SysvolHash[$GPO.Id.GUID].FullName -ErrorAction SilentlyContinue
+                        try {
+                            $ACL = Get-Acl -Path $SysvolHash[$GPO.Id.GUID].FullName -ErrorAction Stop
+                        } catch {
+                            Write-Warning "Get-WinADGPOSysvolFolders - ACL reading failed for $($SysvolHash[$GPO.Id.GUID].FullName) with error: $($_.Exception.Message)"
+                            $ACL = $null
+                        }
                     } else {
                         $ACL = $null
                     }
