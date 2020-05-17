@@ -7,7 +7,7 @@
     Description          = 'Helper module for Active Directory'
     FunctionsToExport    = 'Add-ADACL', 'Get-ADACL', 'Get-ADACLOwner', 'Get-WinADBitlockerLapsSummary', 'Get-WinADDFSHealth', 'Get-WinADDiagnostics', 'Get-WinADForestObjectsConflict', 'Get-WinADForestOptionalFeatures', 'Get-WinADForestReplication', 'Get-WinADForestRoles', 'Get-WinADForestSchemaProperties', 'Get-WinADForestSites', 'Get-WinADGPOMissingPermissions', 'Get-WinADGPOSysvolFolders', 'Get-WinADLastBackup', 'Get-WinADLDAPBindingsSummary', 'Get-WinADLMSettings', 'Get-WinADPrivilegedObjects', 'Get-WinADProxyAddresses', 'Get-WinADSharePermission', 'Get-WinADSiteConnections', 'Get-WinADSiteLinks', 'Get-WinADTomebstoneLifetime', 'Get-WinADTrusts', 'Get-WinADUserPrincipalName', 'Get-WinADUsersForeignSecurityPrincipalList', 'Remove-ADACL', 'Remove-WinADSharePermission', 'Rename-WinADUserPrincipalName', 'Repair-WinADEmailAddress', 'Set-ADACLOwner', 'Set-WinADDiagnostics', 'Set-WinADReplication', 'Set-WinADReplicationConnections', 'Set-WinADShare', 'Set-WinADTombstoneLifetime', 'Sync-DomainController', 'Test-ADDomainController', 'Test-ADRolesAvailability', 'Test-ADSiteLinks', 'Test-DNSNameServers', 'Test-FSMORolesAvailability', 'Test-LDAP'
     GUID                 = '9fc9fd61-7f11-4f4b-a527-084086f1905f'
-    ModuleVersion        = '0.0.56'
+    ModuleVersion        = '0.0.57'
     PowerShellVersion    = '5.1'
     PrivateData          = @{
         PSData = @{
@@ -17,7 +17,7 @@
         }
     }
     RequiredModules      = @{
-        ModuleVersion = '1.0.14'
+        ModuleVersion = '1.0.15'
         ModuleName    = 'PSEventViewer'
         Guid          = '5df72a79-cdf6-4add-b38d-bcacf26fb7bc'
     }, @{
