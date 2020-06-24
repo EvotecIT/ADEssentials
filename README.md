@@ -39,7 +39,10 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 
 ## Changelog
 
-- 0.0.57 - Unreleased
+- 0.0.58 - 24.06.2020
+  - [x] Added `Get-WinADWellKnownFolders`
+
+- 0.0.57 - 17.05.2020
   - [x] Improved `Remove-WinADSharePermission` (`foreach-object` to `foreach`)
   - [x] Improved `Get-WinADGPOSysvolFolders` error handling
 
