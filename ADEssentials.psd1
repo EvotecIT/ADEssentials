@@ -21,7 +21,7 @@
         ModuleName    = 'PSEventViewer'
         Guid          = '5df72a79-cdf6-4add-b38d-bcacf26fb7bc'
     }, @{
-        ModuleVersion = '0.0.155'
+        ModuleVersion = '0.0.156'
         ModuleName    = 'PSSharedGoods'
         Guid          = 'ee272aa8-baaa-4edf-9f45-b6d6f7d844fe'
     }, 'ActiveDirectory', 'GroupPolicy'
