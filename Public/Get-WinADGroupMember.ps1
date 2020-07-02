@@ -85,11 +85,12 @@
     }
     Process {
         foreach ($GroupName in $Group) {
-            $Nesting++
             if (-not $Nested.IsPresent) {
                 $InitialGroupName = $GroupName
                 $CollectedGroups = [System.Collections.Generic.List[object]]::new()
+                $Nesting = -1
             }
+            $Nesting++
             if ($GroupName -is [string]) {
                 $ADGroupName = Get-ADGroup -Identity $GroupName -Properties MemberOf, Members
                 $Script:WinADGroupMemberCache[$ADGroupName.DistinguishedName] = $ADGroupName

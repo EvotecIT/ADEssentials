@@ -39,7 +39,10 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 
 ## Changelog
 
-- 0.0.59 - Unreleased
+- 0.0.60 - 2.07.2020
+  - [x] Fix for `Get-WinADGroupMember`
+
+- 0.0.59 - 2.07.2020
   - [x] Added `Get-WinADDuplicateObject`
   - [x] Added `Remove-WinADDuplicateObject` - doesn't solve some issues, but should help with most. Use with `WhatIf`
   - [x] Added `Get-WinADGroupMember`
