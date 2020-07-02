@@ -5,5 +5,5 @@ Get-WinADGroupMember -Group 'Test Local Group', 'GDS-TestGroup5' -Cache | Format
 
 # How about all groups
 $Groups = Get-ADGroup -Filter *
-$AllGroups = $Groups | Get-WinADGroupMember
+$AllGroups = $Groups | Get-WinADGroupMember -Cache
 $AllGroups | Out-HtmlView -ScrollX -DisablePaging -Filtering
