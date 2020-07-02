@@ -7,7 +7,7 @@
     Function enumerates members of a given AD group recursively along with Nesting level and parent group information. It also displays if each user account is enabled.
 
     .PARAMETER Group
-    Parameter description
+    Group Name as string or DistinguishedName or AD Group Object
 
     .PARAMETER Nesting
     Internal use parameter. DO NOT USE
@@ -73,6 +73,15 @@
                 }
             }
         }
+        #if (-not $Script:GlobalCatalog) {
+        #    $Script:GlobalCatalog = (Get-ADDomainController -Discover -Service GlobalCatalog).HostName[0]
+        #}
+        # $PSDefaultParameterValues = @{
+        #     "Get-ADObject:Server"   = "$($Script:GlobalCatalog):3268"
+        #     "Get-ADUser:Server"     = "$($Script:GlobalCatalog):3268"
+        #     "Get-ADComputer:Server" = "$($Script:GlobalCatalog):3268"
+        #     "Get-ADGroup:Server"    = "$($Script:GlobalCatalog):3268"
+        # }
     }
     Process {
         foreach ($GroupName in $Group) {
@@ -107,31 +116,28 @@
                     $Circular = $null
                 } else {
                     $NestedMembers = Get-ADGroupMember -Identity $ADGroupName
-                    if (-not $NestedMembers) {
-                        if ($ADGroupName.Members) {
-                            $NestedMembers = foreach ($Member in $ADGroupName.Members) {
-                                Get-ADObject -Identity $Member
-                            }
-                        }
-
-                    }
                 }
-                foreach ($NestedMember in $NestedMembers) {
-                    <#
-                    $CreatedObject = [ordered] @{
-                        GroupName      = $InitialGroupName
-                        Type           = $NestedMember.objectclass
-                        Name           = $NestedMember.name
-                        SamAccountName = $NestedMember.SamAccountName
-                        DisplayName    = $NestedMember.DisplayName
-                        ParentGroup    = $ADGroupName.name
-                        Enabled        = $null
-                        Nesting        = $Nesting
-                        DN             = $NestedMember.DistinguishedName
-                        Circular       = $false
+                foreach ($FoundMember in $NestedMembers) {
+                    if ($FoundMember -is [string]) {
+                        $NestedMember = Get-ADObject -Identity $FoundMember
+                    } else {
+                        $NestedMember = $FoundMember
                     }
-                    #>
 
+                    $CreatedObject = [ordered] @{
+                        GroupName         = $InitialGroupName
+                        Type              = $NestedMember.objectclass
+                        Name              = $NestedMember.name
+                        SamAccountName    = $NestedMember.SamAccountName
+                        DomainName        = ConvertFrom-DistinguishedName -DistinguishedName $NestedMember.DistinguishedName -ToDomainCN
+                        DisplayName       = $NestedMember.DisplayName
+                        ParentGroup       = $ADGroupName.name
+                        Enabled           = $null
+                        Nesting           = $Nesting
+                        DistinguishedName = $NestedMember.DistinguishedName
+                        Circular          = $false
+                    }
+                    <#
                     $CreatedObject = [ordered] @{
                         GroupName      = $InitialGroupName
                         Type           = $null
@@ -141,9 +147,10 @@
                         ParentGroup    = $ADGroupName.name
                         Enabled        = $null
                         Nesting        = $Nesting
-                        DN             = $null
+                        DistinguishedName             = $null
                         Circular       = $false
                     }
+                    #>
                     if ($NestedMember.objectclass -eq "user") {
                         if ($Script:WinADGroupMemberCache[$NestedMember.DistinguishedName]) {
                             $NestedADMember = $Script:WinADGroupMemberCache[$NestedMember.DistinguishedName]
@@ -151,13 +158,11 @@
                             $NestedADMember = Get-ADUser -Identity $NestedMember -Properties Enabled, DisplayName
                             $Script:WinADGroupMemberCache[$NestedADMember.DistinguishedName] = $NestedADMember
                         }
-                        #
-                        $CreatedObject['Type'] = $NestedADMember.objectclass
-                        $CreatedObject['Name'] = $NestedADMember.name
-                        $CreatedObject['SamAccountName'] = $NestedADMember.SamAccountName
-                        $CreatedObject['DisplayName'] = $NestedADMember.DisplayName
-                        $CreatedObject['DN'] = $NestedADMember.DistinguishedName
-                        ### old
+                        #$CreatedObject['Type'] = $NestedADMember.objectclass
+                        #$CreatedObject['Name'] = $NestedADMember.name
+                        #$CreatedObject['SamAccountName'] = $NestedADMember.SamAccountName
+                        #$CreatedObject['DisplayName'] = $NestedADMember.DisplayName
+                        #$CreatedObject['DistinguishedName'] = $NestedADMember.DistinguishedName
                         $CreatedObject['Enabled'] = $NestedADMember.Enabled
                         $CreatedObject['Name'] = $NestedADMember.Name
                         $CreatedObject['DisplayName'] = $NestedADMember.DisplayName
@@ -169,12 +174,11 @@
                             $NestedADMember = Get-ADComputer -Identity $NestedMember -Properties Enabled, DisplayName
                             $Script:WinADGroupMemberCache[$NestedADMember.DistinguishedName] = $NestedADMember
                         }
-                        $CreatedObject['Type'] = $NestedADMember.objectclass
-                        $CreatedObject['Name'] = $NestedADMember.name
-                        $CreatedObject['SamAccountName'] = $NestedADMember.SamAccountName
-                        $CreatedObject['DisplayName'] = $NestedADMember.DisplayName
-                        $CreatedObject['DN'] = $NestedADMember.DistinguishedName
-                        ###
+                        #$CreatedObject['Type'] = $NestedADMember.objectclass
+                        #$CreatedObject['Name'] = $NestedADMember.name
+                        #$CreatedObject['SamAccountName'] = $NestedADMember.SamAccountName
+                        #$CreatedObject['DisplayName'] = $NestedADMember.DisplayName
+                        #$CreatedObject['DistinguishedName'] = $NestedADMember.DistinguishedName
                         $CreatedObject['Enabled'] = $NestedADMember.Enabled
                         $CreatedObject['Name'] = $NestedADMember.Name
                         $CreatedObject['DisplayName'] = $NestedADMember.DisplayName
@@ -185,12 +189,11 @@
                             $Circular = $ADGroupName.DistinguishedName
                             $CreatedObject['Circular'] = $true
                         }
-                        $CreatedObject['Type'] = $NestedMember.objectclass
-                        $CreatedObject['Name'] = $NestedMember.name
-                        $CreatedObject['SamAccountName'] = $NestedMember.SamAccountName
-                        $CreatedObject['DisplayName'] = $NestedMember.DisplayName
-                        $CreatedObject['DN'] = $NestedMember.DistinguishedName
-
+                        #$CreatedObject['Type'] = $NestedMember.objectclass
+                        #$CreatedObject['Name'] = $NestedMember.name
+                        #$CreatedObject['SamAccountName'] = $NestedMember.SamAccountName
+                        #$CreatedObject['DisplayName'] = $NestedMember.DisplayName
+                        #$CreatedObject['DistinguishedName'] = $NestedMember.DistinguishedName
                         [PSCustomObject] $CreatedObject
                         $CollectedGroups.Add($ADGroupName.DistinguishedName)
 
@@ -204,8 +207,10 @@
     }
 }
 
-#Measure-Command {
-#Get-WinADGroupMember -Group 'Test Local Group', 'GDS-TestGroup5' -Cache | Format-Table
+
+#    Get-WinADGroupMember -Group 'Test Local Group', 'GDS-TestGroup5' -Cache #| Format-Table
+
+#Get-WinADGroupMember -Group 'Test Local Group', 'GDS-TestGroup5' -Cache | Out-HtmlView
 #}
 
 <# 'Test Local Group', 'GDS-TestGroup5'
