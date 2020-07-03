@@ -9,6 +9,15 @@
     .PARAMETER Group
     Group Name as string or DistinguishedName or AD Group Object
 
+    .PARAMETER Cache
+    Gets all users, comptuers and groups before expanding group membership. Useful for multi group queries.
+
+    .PARAMETER ClearCache
+    Clears the cache. By default anything that is queried is saved into cache. If you want always fresh data use this parameter. Otherwise queries will be cached speeding up subsequent queries.
+
+    .PARAMETER Native
+    Use Get-ADGroupMember cmdlet instead of internal function.
+
     .PARAMETER Nesting
     Internal use parameter. DO NOT USE
 
@@ -50,14 +59,15 @@
     #>
     param (
         [alias('GroupName')][Parameter(ValuefromPipeline, Mandatory)][Object[]] $Group,
+        [switch] $Cache,
+        [switch] $ClearCache,
+        [switch] $Native,
         # All other parameters below are support parameters and shouldn't be used by users
         [Parameter(DontShow)][int] $Nesting = -1,
         [Parameter(DontShow)][System.Collections.Generic.List[object]] $CollectedGroups,
         [Parameter(DontShow)][System.Object] $Circular,
         [Parameter(DontShow)][string] $InitialGroupName,
-        [Parameter(DontShow)][switch] $Nested,
-        [switch] $Cache,
-        [switch] $ClearCache
+        [Parameter(DontShow)][switch] $Nested
     )
     Begin {
         if (-not $Script:WinADGroupMemberCache -or $ClearCache) {
@@ -73,15 +83,14 @@
                 }
             }
         }
-        #if (-not $Script:GlobalCatalog) {
-        #    $Script:GlobalCatalog = (Get-ADDomainController -Discover -Service GlobalCatalog).HostName[0]
-        #}
-        # $PSDefaultParameterValues = @{
-        #     "Get-ADObject:Server"   = "$($Script:GlobalCatalog):3268"
-        #     "Get-ADUser:Server"     = "$($Script:GlobalCatalog):3268"
-        #     "Get-ADComputer:Server" = "$($Script:GlobalCatalog):3268"
-        #     "Get-ADGroup:Server"    = "$($Script:GlobalCatalog):3268"
-        # }
+        if (-not $Native) {
+            if (-not $Script:GlobalCatalog) {
+                $Script:GlobalCatalog = (Get-ADDomainController -Discover -Service GlobalCatalog).HostName[0]
+            }
+            $AdditionalParameters = @{ Server = "$($Script:GlobalCatalog):3268" }
+        } else {
+            $AdditionalParameters = @{ }
+        }
     }
     Process {
         foreach ($GroupName in $Group) {
@@ -92,23 +101,36 @@
             }
             $Nesting++
             if ($GroupName -is [string]) {
-                $ADGroupName = Get-ADGroup -Identity $GroupName -Properties MemberOf, Members
+                $ADGroupName = Get-ADGroup -Identity $GroupName -Properties MemberOf, Members @AdditionalParameters
                 $Script:WinADGroupMemberCache[$ADGroupName.DistinguishedName] = $ADGroupName
             } elseif ($GroupName -is [Microsoft.ActiveDirectory.Management.ADPrincipal]) {
                 if ($Script:WinADGroupMemberCache[$GroupName.DistinguishedName]) {
                     $ADGroupName = $Script:WinADGroupMemberCache[$GroupName.DistinguishedName]
                 } else {
-                    $ADGroupName = Get-ADGroup -Identity $GroupName -Properties MemberOf, Members
+                    $ADGroupName = Get-ADGroup @AdditionalParameters -Identity $GroupName -Properties MemberOf, Members
                     $Script:WinADGroupMemberCache[$ADGroupName.DistinguishedName] = $ADGroupName
                 }
             } else {
                 # shouldn't happen, but maybe...
-                $ADGroupName = Get-ADGroup -Identity $GroupName -Properties MemberOf, Members
+                $ADGroupName = Get-ADGroup -Identity $GroupName -Properties MemberOf, Members @AdditionalParameters
                 $Script:WinADGroupMemberCache[$ADGroupName.DistinguishedName] = $ADGroupName
             }
             if ($ADGroupName) {
                 if ($Circular) {
-                    $NestedMembers = Get-ADGroupMember -Identity $ADGroupName
+                    if ($Native) {
+                        $NestedMembers = Get-ADGroupMember -Identity $ADGroupName
+                    } else {
+                        $NestedMembers = foreach ($Identity in $ADGroupName.Members) {
+                            if ($Script:WinADGroupMemberCache[$Identity]) {
+                                $Script:WinADGroupMemberCache[$Identity]
+                            } else {
+                                $ADObject = Get-ADObject -Identity $Identity -Properties SamAccountName, DisplayName, Enabled, userAccountControl @AdditionalParameters
+                                $ADObject.Enabled = (Convert-UAC -UAC $ADObject.userAccountControl) -notcontains 'ACCOUNTDISABLE'
+                                $Script:WinADGroupMemberCache[$Identity] = $ADObject
+                                $Script:WinADGroupMemberCache[$Identity]
+                            }
+                        }
+                    }
                     $NestedMembers = foreach ($Member in $NestedMembers) {
                         if ($CollectedGroups -notcontains $Member.DistinguishedName) {
                             $Member
@@ -116,15 +138,49 @@
                     }
                     $Circular = $null
                 } else {
-                    $NestedMembers = Get-ADGroupMember -Identity $ADGroupName
-                }
-                foreach ($FoundMember in $NestedMembers) {
-                    if ($FoundMember -is [string]) {
-                        $NestedMember = Get-ADObject -Identity $FoundMember
-                    } else {
-                        $NestedMember = $FoundMember
-                    }
+                    # There is a bug Get-ADGroupMember: https://www.reddit.com/r/PowerShell/comments/6pocuu/getadgroupmember_issue/
+                    # Or: https://stackoverflow.com/questions/58221736/powershell-5-1-16299-1146-get-adgroupmember-an-operations-error-occurred
+                    <# It works on
+                    Name                           Value
+                    ----                           -----
+                    PSVersion                      5.1.19041.1
+                    PSEdition                      Desktop
+                    PSCompatibleVersions           {1.0, 2.0, 3.0, 4.0...}
+                    BuildVersion                   10.0.19041.1
+                    CLRVersion                     4.0.30319.42000
+                    WSManStackVersion              3.0
+                    PSRemotingProtocolVersion      2.3
+                    SerializationVersion           1.1.0.1
+                    #>
 
+                    <# It doesn't work
+                    Name                           Value
+                    ----                           -----
+                    PSVersion                      5.1.14409.1018
+                    PSEdition                      Desktop
+                    PSCompatibleVersions           {1.0, 2.0, 3.0, 4.0...}
+                    BuildVersion                   10.0.14409.1018
+                    CLRVersion                     4.0.30319.42000
+                    WSManStackVersion              3.0
+                    PSRemotingProtocolVersion      2.3
+                    SerializationVersion           1.1.0.1
+                    #>
+                    if ($Native) {
+                        $NestedMembers = Get-ADGroupMember -Identity $ADGroupName
+                    } else {
+                        $NestedMembers = foreach ($Identity in $ADGroupName.Members) {
+                            if ($Script:WinADGroupMemberCache[$Identity]) {
+                                $Script:WinADGroupMemberCache[$Identity]
+                            } else {
+                                $ADObject = Get-ADObject -Identity $Identity -Properties SamAccountName, DisplayName, Enabled, userAccountControl @AdditionalParameters
+                                $ADObject.Enabled = (Convert-UAC -UAC $ADObject.userAccountControl) -notcontains 'ACCOUNTDISABLE'
+                                $Script:WinADGroupMemberCache[$Identity] = $ADObject
+                                $Script:WinADGroupMemberCache[$Identity]
+                            }
+                        }
+                    }
+                }
+                foreach ($NestedMember in $NestedMembers) {
                     $CreatedObject = [ordered] @{
                         GroupName         = $InitialGroupName
                         Type              = $NestedMember.objectclass
@@ -156,7 +212,7 @@
                         if ($Script:WinADGroupMemberCache[$NestedMember.DistinguishedName]) {
                             $NestedADMember = $Script:WinADGroupMemberCache[$NestedMember.DistinguishedName]
                         } else {
-                            $NestedADMember = Get-ADUser -Identity $NestedMember -Properties Enabled, DisplayName
+                            $NestedADMember = Get-ADUser -Identity $NestedMember -Properties Enabled, DisplayName @AdditionalParameters
                             $Script:WinADGroupMemberCache[$NestedADMember.DistinguishedName] = $NestedADMember
                         }
                         #$CreatedObject['Type'] = $NestedADMember.objectclass
@@ -172,7 +228,7 @@
                         if ($Script:WinADGroupMemberCache[$NestedMember.DistinguishedName]) {
                             $NestedADMember = $Script:WinADGroupMemberCache[$NestedMember.DistinguishedName]
                         } else {
-                            $NestedADMember = Get-ADComputer -Identity $NestedMember -Properties Enabled, DisplayName
+                            $NestedADMember = Get-ADComputer -Identity $NestedMember -Properties Enabled, DisplayName @AdditionalParameters
                             $Script:WinADGroupMemberCache[$NestedADMember.DistinguishedName] = $NestedADMember
                         }
                         #$CreatedObject['Type'] = $NestedADMember.objectclass
@@ -198,7 +254,7 @@
                         [PSCustomObject] $CreatedObject
                         $CollectedGroups.Add($ADGroupName.DistinguishedName)
 
-                        Get-WinADGroupMember -GroupName $NestedMember -Nesting $Nesting -Circular $Circular -InitialGroupName $InitialGroupName -CollectedGroups $CollectedGroups -Nested
+                        Get-WinADGroupMember -GroupName $NestedMember -Nesting $Nesting -Circular $Circular -InitialGroupName $InitialGroupName -CollectedGroups $CollectedGroups -Nested -Native:$Native.IsPresent
                     } else {
                         [PSCustomObject] $CreatedObject
                     }
@@ -208,6 +264,9 @@
     }
 }
 
+#Get-WinADGroupMember -Group 'Test Local Group' -ClearCache -Native | Out-HtmlView -DisablePaging -ScrollX
+
+#| Out-HtmlView -ScrollX -DisablePaging
 
 #    Get-WinADGroupMember -Group 'Test Local Group', 'GDS-TestGroup5' -Cache #| Format-Table
 
