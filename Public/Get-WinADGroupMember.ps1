@@ -243,7 +243,7 @@
     }
 }
 
-Get-WinADGroupMember -Group 'Test Local Group' -ClearCache | Out-HtmlView -DisablePaging -ScrollX
+#Get-WinADGroupMember -Group 'Test Local Group' -ClearCache | Out-HtmlView -DisablePaging -ScrollX
 
 #Get-WinADGroupMember -Group 'Test Local Group' -ClearCache | Out-HtmlView -DisablePaging -ScrollX
 
