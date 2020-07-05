@@ -62,6 +62,7 @@
         [switch] $Cache,
         [switch] $ClearCache,
         [switch] $Native,
+        #[switch] $FollowTrusts,
         # All other parameters below are support parameters and shouldn't be used by users
         [Parameter(DontShow)][int] $Nesting = -1,
         [Parameter(DontShow)][System.Collections.Generic.List[object]] $CollectedGroups,
@@ -101,18 +102,18 @@
             }
             $Nesting++
             if ($GroupName -is [string]) {
-                $ADGroupName = Get-ADGroup -Identity $GroupName -Properties MemberOf, Members @AdditionalParameters
+                $ADGroupName = Get-ADGroup -Identity $GroupName -Properties MemberOf, Members
                 $Script:WinADGroupMemberCache[$ADGroupName.DistinguishedName] = $ADGroupName
             } elseif ($GroupName -is [Microsoft.ActiveDirectory.Management.ADPrincipal]) {
                 if ($Script:WinADGroupMemberCache[$GroupName.DistinguishedName]) {
                     $ADGroupName = $Script:WinADGroupMemberCache[$GroupName.DistinguishedName]
                 } else {
-                    $ADGroupName = Get-ADGroup @AdditionalParameters -Identity $GroupName -Properties MemberOf, Members
+                    $ADGroupName = Get-ADGroup -Identity $GroupName -Properties MemberOf, Members
                     $Script:WinADGroupMemberCache[$ADGroupName.DistinguishedName] = $ADGroupName
                 }
             } else {
                 # shouldn't happen, but maybe...
-                $ADGroupName = Get-ADGroup -Identity $GroupName -Properties MemberOf, Members @AdditionalParameters
+                $ADGroupName = Get-ADGroup -Identity $GroupName -Properties MemberOf, Members
                 $Script:WinADGroupMemberCache[$ADGroupName.DistinguishedName] = $ADGroupName
             }
             if ($ADGroupName) {
@@ -124,7 +125,7 @@
                             if ($Script:WinADGroupMemberCache[$Identity]) {
                                 $Script:WinADGroupMemberCache[$Identity]
                             } else {
-                                $ADObject = Get-ADObject -Identity $Identity -Properties SamAccountName, DisplayName, Enabled, userAccountControl @AdditionalParameters
+                                $ADObject = Get-ADObject @AdditionalParameters -Identity $Identity -Properties SamAccountName, DisplayName, Enabled, userAccountControl, ObjectSID
                                 $ADObject.Enabled = (Convert-UAC -UAC $ADObject.userAccountControl) -notcontains 'ACCOUNTDISABLE'
                                 $Script:WinADGroupMemberCache[$Identity] = $ADObject
                                 $Script:WinADGroupMemberCache[$Identity]
@@ -138,42 +139,32 @@
                     }
                     $Circular = $null
                 } else {
-                    # There is a bug Get-ADGroupMember: https://www.reddit.com/r/PowerShell/comments/6pocuu/getadgroupmember_issue/
-                    # Or: https://stackoverflow.com/questions/58221736/powershell-5-1-16299-1146-get-adgroupmember-an-operations-error-occurred
-                    <# It works on
-                    Name                           Value
-                    ----                           -----
-                    PSVersion                      5.1.19041.1
-                    PSEdition                      Desktop
-                    PSCompatibleVersions           {1.0, 2.0, 3.0, 4.0...}
-                    BuildVersion                   10.0.19041.1
-                    CLRVersion                     4.0.30319.42000
-                    WSManStackVersion              3.0
-                    PSRemotingProtocolVersion      2.3
-                    SerializationVersion           1.1.0.1
-                    #>
-
-                    <# It doesn't work
-                    Name                           Value
-                    ----                           -----
-                    PSVersion                      5.1.14409.1018
-                    PSEdition                      Desktop
-                    PSCompatibleVersions           {1.0, 2.0, 3.0, 4.0...}
-                    BuildVersion                   10.0.14409.1018
-                    CLRVersion                     4.0.30319.42000
-                    WSManStackVersion              3.0
-                    PSRemotingProtocolVersion      2.3
-                    SerializationVersion           1.1.0.1
-                    #>
                     if ($Native) {
+                        # There is a bug Get-ADGroupMember: https://www.reddit.com/r/PowerShell/comments/6pocuu/getadgroupmember_issue/
+                        # Or: https://stackoverflow.com/questions/58221736/powershell-5-1-16299-1146-get-adgroupmember-an-operations-error-occurred
                         $NestedMembers = Get-ADGroupMember -Identity $ADGroupName
                     } else {
                         $NestedMembers = foreach ($Identity in $ADGroupName.Members) {
                             if ($Script:WinADGroupMemberCache[$Identity]) {
                                 $Script:WinADGroupMemberCache[$Identity]
                             } else {
-                                $ADObject = Get-ADObject -Identity $Identity -Properties SamAccountName, DisplayName, Enabled, userAccountControl @AdditionalParameters
-                                $ADObject.Enabled = (Convert-UAC -UAC $ADObject.userAccountControl) -notcontains 'ACCOUNTDISABLE'
+                                $ADObject = Get-ADObject -Identity $Identity -Properties SamAccountName, DisplayName, Enabled, userAccountControl, ObjectSID @AdditionalParameters
+                                if ($ADObject.ObjectClass -ne "group") {
+                                    $ADObject.Enabled = (Convert-UAC -UAC $ADObject.userAccountControl) -notcontains 'ACCOUNTDISABLE'
+                                }
+                                <#
+                                if ($FollowTrusts -and $ADObject.ObjectClass -eq 'foreignSecurityPrincipal') {
+                                    $ResolvedIdentity = Convert-Identity -Identity $ADObject.DistinguishedName
+                                    $SplittedIdentity = $ResolvedIdentity.Name.Split('\')
+                                    $DomainNETBIOS = $SplittedIdentity[0]
+                                    $ForeignDC = Get-ADDomainController -Service GlobalCatalog -Discover -DomainName $DomainNETBIOS
+                                    $NewADObject = Get-ADObject -Filter "ObjectSID -eq '$($ResolvedIdentity.Sid)'" -Server $ForeignDC.HostName[0] -Properties SamAccountName, DisplayName, Enabled, userAccountControl, ObjectSID
+                                    $NewADObject.Enabled = (Convert-UAC -UAC $NewADObject.userAccountControl) -notcontains 'ACCOUNTDISABLE'
+                                    $Script:WinADGroupMemberCache[$Identity] = $NewADObject
+                                } else {
+                                    $Script:WinADGroupMemberCache[$Identity] = $ADObject
+                                }
+                                #>
                                 $Script:WinADGroupMemberCache[$Identity] = $ADObject
                                 $Script:WinADGroupMemberCache[$Identity]
                             }
@@ -183,7 +174,7 @@
                 foreach ($NestedMember in $NestedMembers) {
                     $CreatedObject = [ordered] @{
                         GroupName         = $InitialGroupName
-                        Type              = $NestedMember.objectclass
+                        Type              = $NestedMember.ObjectClass
                         Name              = $NestedMember.name
                         SamAccountName    = $NestedMember.SamAccountName
                         DomainName        = ConvertFrom-DistinguishedName -DistinguishedName $NestedMember.DistinguishedName -ToDomainCN
@@ -191,70 +182,58 @@
                         ParentGroup       = $ADGroupName.name
                         Enabled           = $null
                         Nesting           = $Nesting
-                        DistinguishedName = $NestedMember.DistinguishedName
                         Circular          = $false
+                        TrustedDomain     = $false
+                        DistinguishedName = $NestedMember.DistinguishedName
+                        Sid               = $NestedMember.ObjectSID.Value
                     }
-                    <#
-                    $CreatedObject = [ordered] @{
-                        GroupName      = $InitialGroupName
-                        Type           = $null
-                        Name           = $null
-                        SamAccountName = $null
-                        DisplayName    = $null
-                        ParentGroup    = $ADGroupName.name
-                        Enabled        = $null
-                        Nesting        = $Nesting
-                        DistinguishedName             = $null
-                        Circular       = $false
-                    }
-                    #>
-                    if ($NestedMember.objectclass -eq "user") {
+                    if ($NestedMember.ObjectClass -eq "user") {
                         if ($Script:WinADGroupMemberCache[$NestedMember.DistinguishedName]) {
                             $NestedADMember = $Script:WinADGroupMemberCache[$NestedMember.DistinguishedName]
                         } else {
-                            $NestedADMember = Get-ADUser -Identity $NestedMember -Properties Enabled, DisplayName @AdditionalParameters
+                            $NestedADMember = Get-ADUser -Identity $NestedMember -Properties Enabled, DisplayName, ObjectSID @AdditionalParameters
                             $Script:WinADGroupMemberCache[$NestedADMember.DistinguishedName] = $NestedADMember
                         }
-                        #$CreatedObject['Type'] = $NestedADMember.objectclass
-                        #$CreatedObject['Name'] = $NestedADMember.name
-                        #$CreatedObject['SamAccountName'] = $NestedADMember.SamAccountName
-                        #$CreatedObject['DisplayName'] = $NestedADMember.DisplayName
-                        #$CreatedObject['DistinguishedName'] = $NestedADMember.DistinguishedName
                         $CreatedObject['Enabled'] = $NestedADMember.Enabled
                         $CreatedObject['Name'] = $NestedADMember.Name
                         $CreatedObject['DisplayName'] = $NestedADMember.DisplayName
                         [PSCustomObject] $CreatedObject
-                    } elseif ($NestedMember.objectclass -eq "computer") {
+                    } elseif ($NestedMember.ObjectClass -eq "computer") {
                         if ($Script:WinADGroupMemberCache[$NestedMember.DistinguishedName]) {
                             $NestedADMember = $Script:WinADGroupMemberCache[$NestedMember.DistinguishedName]
                         } else {
-                            $NestedADMember = Get-ADComputer -Identity $NestedMember -Properties Enabled, DisplayName @AdditionalParameters
+                            $NestedADMember = Get-ADComputer -Identity $NestedMember -Properties Enabled, DisplayName, ObjectSID @AdditionalParameters
                             $Script:WinADGroupMemberCache[$NestedADMember.DistinguishedName] = $NestedADMember
                         }
-                        #$CreatedObject['Type'] = $NestedADMember.objectclass
-                        #$CreatedObject['Name'] = $NestedADMember.name
-                        #$CreatedObject['SamAccountName'] = $NestedADMember.SamAccountName
-                        #$CreatedObject['DisplayName'] = $NestedADMember.DisplayName
-                        #$CreatedObject['DistinguishedName'] = $NestedADMember.DistinguishedName
                         $CreatedObject['Enabled'] = $NestedADMember.Enabled
                         $CreatedObject['Name'] = $NestedADMember.Name
                         $CreatedObject['DisplayName'] = $NestedADMember.DisplayName
                         [PSCustomObject] $CreatedObject
 
-                    } elseif ($NestedMember.objectclass -eq "group") {
+                    } elseif ($NestedMember.ObjectClass -eq "group") {
                         if ($ADGroupName.memberof -contains $NestedMember.DistinguishedName) {
                             $Circular = $ADGroupName.DistinguishedName
                             $CreatedObject['Circular'] = $true
                         }
-                        #$CreatedObject['Type'] = $NestedMember.objectclass
-                        #$CreatedObject['Name'] = $NestedMember.name
-                        #$CreatedObject['SamAccountName'] = $NestedMember.SamAccountName
-                        #$CreatedObject['DisplayName'] = $NestedMember.DisplayName
-                        #$CreatedObject['DistinguishedName'] = $NestedMember.DistinguishedName
                         [PSCustomObject] $CreatedObject
                         $CollectedGroups.Add($ADGroupName.DistinguishedName)
-
                         Get-WinADGroupMember -GroupName $NestedMember -Nesting $Nesting -Circular $Circular -InitialGroupName $InitialGroupName -CollectedGroups $CollectedGroups -Nested -Native:$Native.IsPresent
+                    } elseif ($NestedMember.ObjectClass -eq 'foreignSecurityPrincipal') {
+                        $ResolvedIdentity = Convert-Identity -Identity $NestedMember.DistinguishedName
+                        $SplittedIdentity = $ResolvedIdentity.Name.Split('\')
+                        $DomainNETBIOS = $SplittedIdentity[0]
+                        $ForeignDC = Get-ADDomainController -Service GlobalCatalog -Discover -DomainName $DomainNETBIOS
+                        $NewADObject = Get-ADObject -Filter "ObjectSID -eq '$($ResolvedIdentity.Sid)'" -Server $ForeignDC.HostName[0] -Properties SamAccountName, DisplayName, Enabled, userAccountControl, ObjectSID
+                        $NewADObject.Enabled = (Convert-UAC -UAC $NewADObject.userAccountControl) -notcontains 'ACCOUNTDISABLE'
+                        #$Script:WinADGroupMemberCache[$Identity] = $NewADObject
+                        $CreatedObject['Enabled'] = $NewADObject.Enabled
+                        $CreatedObject['DistinguishedName'] = $NewADObject.DistinguishedName
+                        $CreatedObject['Type'] = $NewADObject.ObjectClass
+                        $CreatedObject['Name'] = $NewADObject.Name
+                        $CreatedObject['SamAccountName'] = $NewADObject.SamAccountName
+                        $CreatedObject['DomainName'] = ConvertFrom-DistinguishedName -DistinguishedName $CreatedObject.DistinguishedName -ToDomainCN
+                        $CreatedObject['TrustedDomain'] = $true
+                        [PSCustomObject] $CreatedObject
                     } else {
                         [PSCustomObject] $CreatedObject
                     }
@@ -264,11 +243,13 @@
     }
 }
 
-#Get-WinADGroupMember -Group 'Test Local Group' -ClearCache -Native | Out-HtmlView -DisablePaging -ScrollX
+Get-WinADGroupMember -Group 'Test Local Group' -ClearCache | Out-HtmlView -DisablePaging -ScrollX
 
-#| Out-HtmlView -ScrollX -DisablePaging
+#Get-WinADGroupMember -Group 'Test Local Group' -ClearCache | Out-HtmlView -DisablePaging -ScrollX
 
-#    Get-WinADGroupMember -Group 'Test Local Group', 'GDS-TestGroup5' -Cache #| Format-Table
+#
+
+#Get-WinADGroupMember -Group 'Test Local Group', 'GDS-TestGroup5' -Cache | Out-HtmlView -ScrollX -DisablePaging
 
 #Get-WinADGroupMember -Group 'Test Local Group', 'GDS-TestGroup5' -Cache | Out-HtmlView
 #}
