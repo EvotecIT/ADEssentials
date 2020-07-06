@@ -102,18 +102,18 @@
             }
             $Nesting++
             if ($GroupName -is [string]) {
-                $ADGroupName = Get-ADGroup -Identity $GroupName -Properties MemberOf, Members
+                $ADGroupName = Get-ADGroup -Identity $GroupName -Properties MemberOf, Members, ObjectSID
                 $Script:WinADGroupMemberCache[$ADGroupName.DistinguishedName] = $ADGroupName
             } elseif ($GroupName -is [Microsoft.ActiveDirectory.Management.ADPrincipal]) {
                 if ($Script:WinADGroupMemberCache[$GroupName.DistinguishedName]) {
                     $ADGroupName = $Script:WinADGroupMemberCache[$GroupName.DistinguishedName]
                 } else {
-                    $ADGroupName = Get-ADGroup -Identity $GroupName -Properties MemberOf, Members
+                    $ADGroupName = Get-ADGroup -Identity $GroupName -Properties MemberOf, Members, ObjectSID
                     $Script:WinADGroupMemberCache[$ADGroupName.DistinguishedName] = $ADGroupName
                 }
             } else {
                 # shouldn't happen, but maybe...
-                $ADGroupName = Get-ADGroup -Identity $GroupName -Properties MemberOf, Members
+                $ADGroupName = Get-ADGroup -Identity $GroupName -Properties MemberOf, Members, ObjectSID
                 $Script:WinADGroupMemberCache[$ADGroupName.DistinguishedName] = $ADGroupName
             }
             if ($ADGroupName) {
@@ -171,6 +171,46 @@
                         }
                     }
                 }
+                <#
+                foreach ($NestedMember in $NestedMembers) {
+
+                    $CreatedObject = [ordered] @{
+                        GroupName         = $InitialGroupName
+                        Type              = $NestedMember.ObjectClass
+                        Name              = $NestedMember.name
+                        SamAccountName    = $NestedMember.SamAccountName
+                        DomainName        = ConvertFrom-DistinguishedName -DistinguishedName $NestedMember.DistinguishedName -ToDomainCN
+                        DisplayName       = $NestedMember.DisplayName
+                        ParentGroup       = $ADGroupName.name
+                        Enabled           = $null
+                        Nesting           = $Nesting
+                        Circular          = $false
+                        TrustedDomain     = $false
+                        DistinguishedName = $NestedMember.DistinguishedName
+                        Sid               = $NestedMember.ObjectSID.Value
+                    }
+
+                    $ResolvedIdentity = Convert-Identity -Identity $NestedMember.DistinguishedName
+                    $SplittedIdentity = $ResolvedIdentity.Name.Split('\')
+                    $DomainNETBIOS = $SplittedIdentity[0]
+                    $NewADObject = [adsi]"LDAP://$DomainNETBIOS/<SID=$($ResolvedIdentity.SID)>"
+                    if ($NewADObject.SchemaClassName -ne 'group') {
+                        $CreatedObject['Enabled'] = (Convert-UAC -UAC $NewADObject.userAccountControl) -notcontains 'ACCOUNTDISABLE'
+                    } else {
+                        $CreatedObject['Enabled'] = $null
+                    }
+                    $CreatedObject['DistinguishedName'] = $NewADObject.DistinguishedName.Value
+                    $CreatedObject['Type'] = $NewADObject.SchemaClassName
+                    $CreatedObject['Name'] = $NewADObject.Name.Value
+                    $CreatedObject['SamAccountName'] = $NewADObject.SamAccountName.Value
+                    $CreatedObject['DomainName'] = ConvertFrom-DistinguishedName -DistinguishedName $CreatedObject.DistinguishedName -ToDomainCN
+                    $CreatedObject['TrustedDomain'] = $true
+                    [PSCustomObject] $CreatedObject
+
+                }
+                continue
+                #>
+
                 foreach ($NestedMember in $NestedMembers) {
                     $CreatedObject = [ordered] @{
                         GroupName         = $InitialGroupName
@@ -219,6 +259,7 @@
                         $CollectedGroups.Add($ADGroupName.DistinguishedName)
                         Get-WinADGroupMember -GroupName $NestedMember -Nesting $Nesting -Circular $Circular -InitialGroupName $InitialGroupName -CollectedGroups $CollectedGroups -Nested -Native:$Native.IsPresent
                     } elseif ($NestedMember.ObjectClass -eq 'foreignSecurityPrincipal') {
+                        <# Old Version
                         $ResolvedIdentity = Convert-Identity -Identity $NestedMember.DistinguishedName
                         $SplittedIdentity = $ResolvedIdentity.Name.Split('\')
                         $DomainNETBIOS = $SplittedIdentity[0]
@@ -231,6 +272,22 @@
                         $CreatedObject['Type'] = $NewADObject.ObjectClass
                         $CreatedObject['Name'] = $NewADObject.Name
                         $CreatedObject['SamAccountName'] = $NewADObject.SamAccountName
+                        $CreatedObject['DomainName'] = ConvertFrom-DistinguishedName -DistinguishedName $CreatedObject.DistinguishedName -ToDomainCN
+                        $CreatedObject['TrustedDomain'] = $true
+                        #>
+                        $ResolvedIdentity = Convert-Identity -Identity $NestedMember.DistinguishedName
+                        $SplittedIdentity = $ResolvedIdentity.Name.Split('\')
+                        $DomainNETBIOS = $SplittedIdentity[0]
+                        $NewADObject = [adsi]"LDAP://$DomainNETBIOS/<SID=$($ResolvedIdentity.SID)>"
+                        if ($NewADObject.SchemaClassName -ne 'group') {
+                            $CreatedObject['Enabled'] = (Convert-UAC -UAC $NewADObject.userAccountControl) -notcontains 'ACCOUNTDISABLE'
+                        } else {
+                            $CreatedObject['Enabled'] = $null
+                        }
+                        $CreatedObject['DistinguishedName'] = $NewADObject.DistinguishedName.Value
+                        $CreatedObject['Type'] = $NewADObject.SchemaClassName
+                        $CreatedObject['Name'] = $NewADObject.Name.Value
+                        $CreatedObject['SamAccountName'] = $NewADObject.SamAccountName.Value
                         $CreatedObject['DomainName'] = ConvertFrom-DistinguishedName -DistinguishedName $CreatedObject.DistinguishedName -ToDomainCN
                         $CreatedObject['TrustedDomain'] = $true
                         [PSCustomObject] $CreatedObject
