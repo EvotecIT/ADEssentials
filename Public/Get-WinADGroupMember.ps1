@@ -71,7 +71,12 @@
         [Parameter(DontShow)][switch] $Nested
     )
     Begin {
-        if (-not $Script:WinADGroupMemberCache -or $ClearCache) {
+        if (-not $Script:WinADGroupMemberCache -or $ClearCache -or ($Cache -and -not $Script:WinADGroupMemberCacheGlobal)) {
+            if ($ClearCache) {
+                # This is to distinguish globally used cache and standard cache
+                # As it's entirely possible user used standard approach without cache and then enabled cache so we need to track whether that is the case
+                $Script:WinADGroupMemberCacheGlobal = $false
+            }
             $Script:WinADGroupMemberCache = @{}
             if ($Cache) {
                 $ADObjects = @(
@@ -82,6 +87,9 @@
                 foreach ($Object in $ADObjects) {
                     $Script:WinADGroupMemberCache[$Object.DistinguishedName] = $Object
                 }
+                # This is to distinguish globally used cache and standard cache
+                # As it's entirely possible user used standard approach without cache and then enabled cache so we need to track whether that is the case
+                $Script:WinADGroupMemberCacheGlobal = $true
             }
         }
         if (-not $Native) {
@@ -301,7 +309,6 @@
 }
 
 #Get-WinADGroupMember -Group 'Test Local Group' -ClearCache | Out-HtmlView -DisablePaging -ScrollX
-
 #Get-WinADGroupMember -Group 'Test Local Group' -ClearCache | Out-HtmlView -DisablePaging -ScrollX
 
 #
