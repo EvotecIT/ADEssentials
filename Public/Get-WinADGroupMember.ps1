@@ -80,9 +80,13 @@
             $Script:WinADGroupMemberCache = @{}
             if ($Cache) {
                 $ADObjects = @(
-                    Get-ADGroup -Filter * -Properties MemberOf, Members
-                    Get-ADComputer -Filter * -Properties Enabled, DisplayName
-                    Get-ADUser -Filter * -Properties Enabled, DisplayName
+                    $ForestInformation = Get-WinADForestDetails
+                    foreach ($Domain in $ForestInformation.Domains) {
+                        $QueryServer = $ForestInformation['QueryServers'][$Domain]['HostName'][0]
+                        Get-ADGroup -Filter * -Properties MemberOf, Members, ObjectSID -Server $QueryServer
+                        Get-ADComputer -Filter * -Properties SamAccountName, DisplayName, Enabled, userAccountControl, ObjectSID -Server $QueryServer
+                        Get-ADUser -Filter * -Properties SamAccountName, DisplayName, Enabled, userAccountControl, ObjectSID -Server $QueryServer
+                    }
                 )
                 foreach ($Object in $ADObjects) {
                     $Script:WinADGroupMemberCache[$Object.DistinguishedName] = $Object
@@ -308,8 +312,11 @@
     }
 }
 
-#Get-WinADGroupMember -Group 'Test Local Group' -ClearCache | Out-HtmlView -DisablePaging -ScrollX
-#Get-WinADGroupMember -Group 'Test Local Group' -ClearCache | Out-HtmlView -DisablePaging -ScrollX
+#Get-WinADGroupMember -Group 'Test Local Group' -Cache #| Out-HtmlView -DisablePaging -ScrollX
+#Get-WinADGroupMember -Group 'Test Local Group' -ClearCache #| Out-HtmlView -DisablePaging -ScrollX
+
+#Get-WinADGroupMember -Group 'GDS-TestGroup4' -ClearCache | Format-Table
+#Get-WinADGroupMember -Group 'GDS-TestGroup4' -Cache -ClearCache | Format-Table
 
 #
 
