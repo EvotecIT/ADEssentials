@@ -21,8 +21,10 @@
                     [PSCustomObject] $Output
                 } else {
                     $Output = Get-FilePermission -Path $_ -ResolveTypes -Extended -AsHashTable
-                    $Output['Attributes'] = $_.Attributes
-                    [PSCustomObject] $Output
+                    foreach ($O in $Output) {
+                        $O['Attributes'] = $_.Attributes
+                        [PSCustomObject] $O
+                    }
                 }
             }
         }
@@ -35,8 +37,10 @@
                     [PSCustomObject] $Output
                 } else {
                     $Output = Get-FilePermission -Path $_ -ResolveTypes -Extended -AsHashTable
-                    $Output['Attributes'] = $_.Attributes
-                    [PSCustomObject] $Output
+                    foreach ($O in $Output) {
+                        $O['Attributes'] = $_.Attributes
+                        [PSCustomObject] $O
+                    }
                 }
             }
         }
