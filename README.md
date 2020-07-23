@@ -42,7 +42,7 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 - 0.0.64 - 23.07.2020
   - [x] Improvements to `Get-WinADSharePermission`
 
-- 0.0.63 - 8.07.2020
+- 0.0.63 - 22.07.2020
   - [x] Improvements to `Get-WinADGroupMember`
   - [x] Signed module
 - 0.0.62 - 6.07.2020
