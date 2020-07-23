@@ -14,23 +14,34 @@
         $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation
         foreach ($Domain in $ForestInformation.Domains) {
             $Path = -join ("\\", $Domain, "\$ShareType")
-            @(Get-Item -Path $Path) + @(Get-ChildItem -Path $Path -Recurse:$true -Force) | ForEach-Object -Process {
+            @(Get-Item -Path $Path -Force) + @(Get-ChildItem -Path $Path -Recurse:$true -Force -ErrorAction SilentlyContinue -ErrorVariable Err) | ForEach-Object -Process {
                 if ($Owner) {
-                    Get-FileOwner -JustPath -Path $_ -Resolve
+                    $Output = Get-FileOwner -JustPath -Path $_ -Resolve -AsHashTable
+                    $Output['Attributes'] = $_.Attributes
+                    [PSCustomObject] $Output
                 } else {
-                    Get-FilePermission -Path $_ -ResolveTypes -Extended
+                    $Output = Get-FilePermission -Path $_ -ResolveTypes -Extended -AsHashTable
+                    $Output['Attributes'] = $_.Attributes
+                    [PSCustomObject] $Output
                 }
             }
         }
     } else {
         if ($Path -and (Test-Path -Path $Path)) {
-            @(Get-Item -Path $Path) + @(Get-ChildItem -Path $Path -Recurse:$true -Force) | ForEach-Object -Process {
+            @(Get-Item -Path $Path -Force) + @(Get-ChildItem -Path $Path -Recurse:$true -Force -ErrorAction SilentlyContinue -ErrorVariable Err) | ForEach-Object -Process {
                 if ($Owner) {
-                    Get-FileOwner -JustPath -Path $_ -Resolve
+                    $Output = Get-FileOwner -JustPath -Path $_ -Resolve -AsHashTable
+                    $Output['Attributes'] = $_.Attributes
+                    [PSCustomObject] $Output
                 } else {
-                    Get-FilePermission -Path $_ -ResolveTypes -Extended
+                    $Output = Get-FilePermission -Path $_ -ResolveTypes -Extended -AsHashTable
+                    $Output['Attributes'] = $_.Attributes
+                    [PSCustomObject] $Output
                 }
             }
         }
+    }
+    foreach ($e in $err) {
+        Write-Warning "Get-WinADSharePermission - $($e.Exception.Message) ($($e.CategoryInfo.Reason))"
     }
 }
