@@ -14,7 +14,7 @@
         $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation
         foreach ($Domain in $ForestInformation.Domains) {
             $Path = -join ("\\", $Domain, "\$ShareType")
-            @(Get-Item -Path $Path) + @(Get-ChildItem -Path $Path -Recurse:$true) | ForEach-Object -Process {
+            @(Get-Item -Path $Path) + @(Get-ChildItem -Path $Path -Recurse:$true -Force) | ForEach-Object -Process {
                 if ($Owner) {
                     Get-FileOwner -JustPath -Path $_ -Resolve
                 } else {
@@ -24,7 +24,7 @@
         }
     } else {
         if ($Path -and (Test-Path -Path $Path)) {
-            @(Get-Item -Path $Path) + @(Get-ChildItem -Path $Path -Recurse:$true) | ForEach-Object -Process {
+            @(Get-Item -Path $Path) + @(Get-ChildItem -Path $Path -Recurse:$true -Force) | ForEach-Object -Process {
                 if ($Owner) {
                     Get-FileOwner -JustPath -Path $_ -Resolve
                 } else {
