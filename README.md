@@ -39,6 +39,9 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 
 ## Changelog
 
+- 0.0.66 - 14.08.2020
+  - [x] Fixes to `Get-WinADProxyAddresses` - detects broken email address (for example one with ",")
+  - [x] Rewritten to `Repair-WinADEmailAddress` - was getting too complicated
 - 0.0.65 - 23.07.2020
   - [x] Fixed bug `Get-WinADSharePermission`
 
