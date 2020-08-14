@@ -1,4 +1,41 @@
 ﻿function Get-WinADProxyAddresses {
+    <#
+    .SYNOPSIS
+    Short description
+
+    .DESCRIPTION
+    Long description
+
+    .PARAMETER ADUser
+    ADUser Object
+
+    .PARAMETER RemovePrefix
+    Removes prefix from proxy address such as SMTP: or smtp:
+
+    .PARAMETER ToLower
+    Makes sure all returned data is lower case
+
+    .PARAMETER Formatted
+    Makes sure data is formatted for display, rather than for working with objects
+
+    .PARAMETER Splitter
+    Splitter or Joiner that connects data together such as an array of 3 aliases
+
+    .EXAMPLE
+    $ADUsers = Get-ADUser -Filter * -Properties ProxyAddresses
+    foreach ($User in $ADUsers) {
+        Get-WinADProxyAddresses -ADUser $User
+    }
+
+    .EXAMPLE
+    $ADUsers = Get-ADUser -Filter * -Properties ProxyAddresses
+    foreach ($User in $ADUsers) {
+        Get-WinADProxyAddresses -ADUser $User -RemovePrefix
+    }
+
+    .NOTES
+    General notes
+    #>
     [CmdletBinding()]
     param(
         [Object] $ADUser,
@@ -14,11 +51,13 @@
         Sip          = [System.Collections.Generic.List[string]]::new()
         x500         = [System.Collections.Generic.List[string]]::new()
         Other        = [System.Collections.Generic.List[string]]::new()
+        Broken       = [System.Collections.Generic.List[string]]::new()
     }
-
-    foreach ($_ in $ADUser.ProxyAddresses) {
-        $Proxy = $_
-        if ($_.StartsWith('SMTP:')) {
+    foreach ($Proxy in $ADUser.ProxyAddresses) {
+        if ($Proxy -like '*,*') {
+            # Most likely someone added proxy address with comma instead of each email address separatly
+            $Summary.Broken.Add($Proxy)
+        } elseif ($Proxy.StartsWith('SMTP:')) {
             if ($RemovePrefix) {
                 $Proxy = $Proxy -replace 'SMTP:', ''
             }
@@ -26,25 +65,25 @@
                 $Proxy = $Proxy.ToLower()
             }
             $Summary.Primary.Add($Proxy)
-        } elseif ($_.StartsWith('smtp:')) {
+        } elseif ($Proxy.StartsWith('smtp:') -or $Proxy -notlike "*:*") {
             if ($RemovePrefix) {
-                $Proxy = $Proxy -replace 'SMTP:', ''
+                $Proxy = $Proxy -replace 'smtp:', ''
             }
             if ($ToLower) {
                 $Proxy = $Proxy.ToLower()
             }
             $Summary.Secondary.Add($Proxy)
-        } elseif ($_.StartsWith('x500')) {
+        } elseif ($Proxy.StartsWith('x500')) {
             if ($RemovePrefix) {
-                $Proxy = $Proxy -replace 'SMTP:', ''
+                $Proxy = $Proxy #-replace 'SMTP:', ''
             }
             if ($ToLower) {
                 $Proxy = $Proxy.ToLower()
             }
             $Summary.x500.Add($Proxy)
-        } elseif ($_.StartsWith('sip:')) {
+        } elseif ($Proxy.StartsWith('sip:')) {
             if ($RemovePrefix) {
-                $Proxy = $Proxy -replace 'SMTP:', ''
+                $Proxy = $Proxy #-replace 'SMTP:', ''
             }
             if ($ToLower) {
                 $Proxy = $Proxy.ToLower()
@@ -52,7 +91,7 @@
             $Summary.Sip.Add($Proxy)
         } else {
             if ($RemovePrefix) {
-                $Proxy = $Proxy -replace 'SMTP:', ''
+                $Proxy = $Proxy #-replace 'SMTP:', ''
             }
             if ($ToLower) {
                 $Proxy = $Proxy.ToLower()
