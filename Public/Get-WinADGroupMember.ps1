@@ -7,7 +7,7 @@
         [Parameter(DontShow)][int] $Nesting = -1,
         [Parameter(DontShow)][System.Collections.Generic.List[object]] $CollectedGroups,
         [Parameter(DontShow)][System.Object] $Circular,
-        [Parameter(DontShow)][string] $InitialGroupName,
+        [Parameter(DontShow)][System.Collections.IDictionary] $InitialGroupName,
         [Parameter(DontShow)][switch] $Nested
     )
     Begin {
@@ -24,13 +24,18 @@
         foreach ($GroupName in $Group) {
             # lets initialize our variables
             if (-not $Nested.IsPresent) {
-                $InitialGroupName = $GroupName
+                $InitialGroupName = @{
+                    Name       = $GroupName
+                    DomainName = ''
+                }
                 $CollectedGroups = [System.Collections.Generic.List[object]]::new()
                 $Nesting = -1
             }
             $Nesting++
             # lets get our object
             $ADGroupName = Get-WinADObject -Identity $GroupName
+            # we add DomainName to hashtable so we can easily find which group we're dealing with
+            $InitialGroupName.DomainName = $ADGroupName.DomainName
             # Lets cache our object
             $Script:WinADGroupMemberCache[$ADGroupName.DistinguishedName] = $ADGroupName
 
@@ -77,18 +82,19 @@
             } else {
                 $DomainParentGroup = ConvertFrom-DistinguishedName -DistinguishedName $ADGroupName.DistinguishedName -ToDomainCN
                 $CreatedObject = [ordered] @{
-                    GroupName         = $InitialGroupName
+                    GroupName         = $InitialGroupName.Name
                     Type              = $NestedMember.ObjectClass
                     Name              = $NestedMember.name
                     SamAccountName    = $NestedMember.SamAccountName
-                    DomainName        = ConvertFrom-DistinguishedName -DistinguishedName $NestedMember.DistinguishedName -ToDomainCN
+                    DomainName        = $NestedMember.DomainName #ConvertFrom-DistinguishedName -DistinguishedName $NestedMember.DistinguishedName -ToDomainCN
                     DisplayName       = $NestedMember.DisplayName
-                    ParentGroup       = $ADGroupName.name
-                    ParentGroupDomain = $DomainParentGroup
                     Enabled           = $NestedMember.Enabled
                     Nesting           = $Nesting
                     Circular          = $false
                     TrustedDomain     = $false
+                    ParentGroup       = $ADGroupName.name
+                    ParentGroupDomain = $DomainParentGroup
+                    GroupDomainName   = $InitialGroupName.DomainName
                     DistinguishedName = $NestedMember.DistinguishedName
                     Sid               = $NestedMember.ObjectSID
                 }

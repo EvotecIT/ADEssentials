@@ -64,6 +64,7 @@
                     }
                     $Members = $GroupMembers
                 }
+                $DomainName = ConvertFrom-DistinguishedName -DistinguishedName ($Object.properties.distinguishedname -as [string]) -ToDomainCN
                 [PSCustomObject] @{
                     DisplayName         = $Object.properties.displayname -as [string]
                     Name                = $Object.properties.name -as [string]
@@ -72,6 +73,7 @@
                     Enabled             = if ($ObjectClass -eq 'group') { $null } else { $UAC -notcontains 'ACCOUNTDISABLE' }
                     PasswordNeverExpire = $UAC -contains 'DONT_EXPIRE_PASSWORD'
                     Description         = $Object.properties.description -as [string]
+                    DomainName          = $DomainName
                     Distinguishedname   = $Object.properties.distinguishedname -as [string]
                     #Adspath             = $Object.properties.adspath -as [string]
                     Lastlogon           = $Object.properties.lastlogon -as [string]
