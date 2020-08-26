@@ -41,7 +41,7 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 
 - 0.0.67 - 26.08.2020
   - [x] Added experimental `Get-WinADObject`
-  - [x] Added experimental `Get-WinADGroupMember`
+  - [x] Replaced experimental `Get-WinADGroupMember`
 
 - 0.0.66 - 14.08.2020
   - [x] Fixes to `Get-WinADProxyAddresses` - detects broken email address (for example one with ",")
