@@ -1,12 +1,20 @@
 ﻿function Get-WinADObject {
     [cmdletBinding()]
     param(
-        [Array] $Identity
+        [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
+        [Array] $Identity,
+        [alias('DomainName', 'Domain')][string] $DomainDistinguishedName,
+        [pscredential] $Credential,
+        [switch] $IncludeDeletedObjects
     )
     Begin {
         # This is purely for calling group workaround
         Add-Type -AssemblyName System.DirectoryServices.AccountManagement
-        $Context = [System.DirectoryServices.AccountManagement.PrincipalContext]::new('Domain')
+        if ($DomainName) {
+            $Context = [System.DirectoryServices.AccountManagement.PrincipalContext]::new('Domain', $DomainName)
+        } else {
+            $Context = [System.DirectoryServices.AccountManagement.PrincipalContext]::new('Domain')
+        }
     }
     process {
         foreach ($Ident in $Identity) {
@@ -44,7 +52,7 @@
                 $Search.SearchRoot = $DomainDistinguishedName
             }
             if ($PSBoundParameters['Credential']) {
-                $Cred = New-Object -TypeName System.DirectoryServices.DirectoryEntry -ArgumentList $DomainDistinguishedName, $($Credential.UserName), $($Credential.GetNetworkCredential().password)
+                $Cred = [System.DirectoryServices.DirectoryEntry]::new($DomainDistinguishedName, $($Credential.UserName), $($Credential.GetNetworkCredential().password))
                 $Search.SearchRoot = $Cred
             }
             if ($PSBoundParameters['IncludeDeletedObjects']) {
