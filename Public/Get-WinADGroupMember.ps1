@@ -2,6 +2,8 @@
     [cmdletBinding()]
     param(
         [alias('GroupName', 'Identity')][Parameter(ValuefromPipeline, Mandatory)][Array] $Group,
+        [switch] $CountMembers,
+        [switch] $AddSelf,
         [switch] $All,
         [switch] $ClearCache,
         [Parameter(DontShow)][int] $Nesting = -1,
@@ -19,28 +21,58 @@
             }
             $Script:WinADGroupMemberCache = @{}
         }
+        if ($Nesting -eq -1) {
+            $MembersCache = [ordered] @{}
+        }
     }
     Process {
-        foreach ($GroupName in $Group) {
+        $Output = foreach ($GroupName in $Group) {
             # lets initialize our variables
             if (-not $Nested.IsPresent) {
-                $InitialGroupName = @{
-                    Name       = $GroupName
-                    DomainName = ''
+                $InitialGroupName = [ordered] @{
+                    GroupName         = $GroupName
+                    Type              = 'group'
+                    Name              = $null
+                    SamAccountName    = $null
+                    DomainName        = $null
+                    DisplayName       = $null
+                    Enabled           = $null
+                    DirectMembers     = 0
+                    DirectGroups      = 0
+                    IndirectMembers   = 0
+                    Nesting           = $Nesting
+                    Circular          = $false
+                    TrustedDomain     = $false
+                    ParentGroup       = ''
+                    ParentGroupDomain = ''
+                    GroupDomainName   = $null
+                    DistinguishedName = $null
+                    Sid               = $null
                 }
-                $CollectedGroups = [System.Collections.Generic.List[object]]::new()
-                $Nesting = -1
+                $CollectedGroups = [System.Collections.Generic.List[string]]::new()
+                #$Nesting = -1
             }
             $Nesting++
             # lets get our object
             $ADGroupName = Get-WinADObject -Identity $GroupName
             # we add DomainName to hashtable so we can easily find which group we're dealing with
-            $InitialGroupName.DomainName = $ADGroupName.DomainName
+            if (-not $Nested.IsPresent) {
+                $InitialGroupName.GroupName = $ADGroupName.Name
+                $InitialGroupName.DomainName = $ADGroupName.DomainName
+                if ($AddSelf) {
+                    # Since we want in final run add primary object to array we need to make sure we have it filled
+                    $InitialGroupName.Name = $ADGroupName.Name
+                    $InitialGroupName.SamAccountName = $ADGroupName.SamAccountName
+                    $InitialGroupName.DisplayName = $ADGroupName.DisplayName
+                    $InitialGroupName.GroupDomainName = $ADGroupName.DomainName
+                    $InitialGroupName.DistinguishedName = $ADGroupName.DistinguishedName
+                    $InitialGroupName.Sid = $ADGroupName.ObjectSID
+                }
+            }
             # Lets cache our object
             $Script:WinADGroupMemberCache[$ADGroupName.DistinguishedName] = $ADGroupName
-
             if ($Circular) {
-                $NestedMembers = foreach ($Identity in $ADGroupName.Members) {
+                [Array] $NestedMembers = foreach ($Identity in $ADGroupName.Members) {
                     if ($Script:WinADGroupMemberCache[$Identity]) {
                         $Script:WinADGroupMemberCache[$Identity]
                     } else {
@@ -49,14 +81,14 @@
                         $Script:WinADGroupMemberCache[$Identity]
                     }
                 }
-                $NestedMembers = foreach ($Member in $NestedMembers) {
+                [Array] $NestedMembers = foreach ($Member in $NestedMembers) {
                     if ($CollectedGroups -notcontains $Member.DistinguishedName) {
                         $Member
                     }
                 }
                 $Circular = $null
             } else {
-                $NestedMembers = foreach ($Identity in $ADGroupName.Members) {
+                [Array] $NestedMembers = foreach ($Identity in $ADGroupName.Members) {
                     if ($Script:WinADGroupMemberCache[$Identity]) {
                         $Script:WinADGroupMemberCache[$Identity]
                     } else {
@@ -66,29 +98,35 @@
                     }
                 }
             }
-        }
-        $Output = foreach ($NestedMember in $NestedMembers) {
-            if ($Members) {
-                if ($NestedMember.ObjectClass -eq "group") {
-                    if ($ADGroupName.memberof -contains $NestedMember.DistinguishedName) {
-                        $Circular = $ADGroupName.DistinguishedName
-                        $CreatedObject['Circular'] = $true
+
+            if ($CountMembers) {
+                # This tracks amount of members for our groups
+                if (-not $MembersCache[$ADGroupName.DistinguishedName]) {
+                    $DirectMembers = $NestedMembers.Where( { $_.ObjectClass -ne 'group' }, 'split')
+                    $MembersCache[$ADGroupName.DistinguishedName] = [ordered] @{
+                        InDirectMembers    = $null
+                        DirectMembers      = $DirectMembers[0]
+                        DirectMembersCount = ($DirectMembers[0]).Count
+                        DirectGroups       = $DirectMembers[1]
+                        DirectGroupsCount  = ($DirectMembers[1]).Count
                     }
-                    $CollectedGroups.Add($ADGroupName.DistinguishedName)
-                    Get-WinADGroupMember -GroupName $NestedMember -Nesting $Nesting -Circular $Circular -InitialGroupName $InitialGroupName -CollectedGroups $CollectedGroups -Nested -All:$All.IsPresent
-                } else {
-                    $NestedMember
                 }
-            } else {
+            }
+            foreach ($NestedMember in $NestedMembers) {
+                # for each member we either create new user or group, if group we will dive into nesting
                 $DomainParentGroup = ConvertFrom-DistinguishedName -DistinguishedName $ADGroupName.DistinguishedName -ToDomainCN
                 $CreatedObject = [ordered] @{
-                    GroupName         = $InitialGroupName.Name
+                    GroupName         = $InitialGroupName.GroupName
                     Type              = $NestedMember.ObjectClass
                     Name              = $NestedMember.name
                     SamAccountName    = $NestedMember.SamAccountName
                     DomainName        = $NestedMember.DomainName #ConvertFrom-DistinguishedName -DistinguishedName $NestedMember.DistinguishedName -ToDomainCN
                     DisplayName       = $NestedMember.DisplayName
                     Enabled           = $NestedMember.Enabled
+                    DirectMembers     = 0
+                    DirectGroups      = 0
+                    IndirectMembers   = 0
+                    #TotalMembers      = 0
                     Nesting           = $Nesting
                     Circular          = $false
                     TrustedDomain     = $false
@@ -103,11 +141,12 @@
                         $Circular = $ADGroupName.DistinguishedName
                         $CreatedObject['Circular'] = $true
                     }
+                    $CollectedGroups.Add($ADGroupName.DistinguishedName)
+                    $OutputFromGroup = Get-WinADGroupMember -GroupName $NestedMember -Nesting $Nesting -Circular $Circular -InitialGroupName $InitialGroupName -CollectedGroups $CollectedGroups -Nested -All:$All.IsPresent -CountMembers:$CountMembers.IsPresent
                     if ($All) {
                         [PSCustomObject] $CreatedObject
                     }
-                    $CollectedGroups.Add($ADGroupName.DistinguishedName)
-                    Get-WinADGroupMember -GroupName $NestedMember -Nesting $Nesting -Circular $Circular -InitialGroupName $InitialGroupName -CollectedGroups $CollectedGroups -Nested -All:$All.IsPresent
+                    $OutputFromGroup
                 } else {
                     [PSCustomObject] $CreatedObject
                 }
@@ -115,10 +154,37 @@
         }
     }
     End {
-        if (-not $All) {
-            # this is standard way where we want to mimic -Recursive
-            $Output | Sort-Object -Unique -Property DistinguishedName
+        if ($Nesting -eq 0) {
+            # If nesting is 0 this means we are ending our run
+            if (-not $All) {
+                # If not ALL it means User wants to receive only users. Basically Get-ADGroupMember -Recursive
+                $Output | Sort-Object -Unique -Property DistinguishedName
+            } else {
+                if ($AddSelf) {
+                    $InitialGroupName.DirectMembers = $MembersCache[$InitialGroupName.DistinguishedName].DirectMembersCount
+                    $InitialGroupName.DirectGroups = $MembersCache[$InitialGroupName.DistinguishedName].DirectGroupsCount
+                    foreach ($Group in $MembersCache[$InitialGroupName.DistinguishedName].DirectGroups) {
+                        $InitialGroupName.IndirectMembers = $MembersCache[$InitialGroupName.DistinguishedName].DirectMembersCount + $InitialGroupName.IndirectMembers
+                    }
+                    [PSCustomObject] $InitialGroupName
+                }
+                foreach ($Object in $Output) {
+                    if ($Object.Type -eq 'group') {
+                        # Object is a group, we  add direct members, direct groups and other stuff
+                        $Object.DirectMembers = $MembersCache[$Object.DistinguishedName].DirectMembersCount
+                        $Object.DirectGroups = $MembersCache[$Object.DistinguishedName].DirectGroupsCount
+                        foreach ($Group in $MembersCache[$Object.DistinguishedName].DirectGroups) {
+                            $Object.IndirectMembers = $MembersCache[$Group.DistinguishedName].DirectMembersCount + $Object.IndirectMembers
+                        }
+                        $Object
+                    } else {
+                        # Object is not a group we push it as is
+                        $Object
+                    }
+                }
+            }
         } else {
+            # this is nested call so we want to get whatever it gives us
             $Output
         }
     }
