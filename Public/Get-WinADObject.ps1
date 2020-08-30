@@ -13,11 +13,47 @@
     }
     process {
         foreach ($Ident in $Identity) {
+            $TemporaryName = ''
+            # If it's an object we need to make sure we pass only DN
+            if ($Ident.DistinguishedName) {
+                $Ident = $Ident.DistinguishedName
+            }
             # we reset domain name to it's given value if at all
             $TemporaryDomainName = $DomainName
-            if ($Ident | Test-IsDistinguishedName) {
-                # We check if identity is DN and if so we provide Domain Name
-                $TemporaryDomainName = ConvertFrom-DistinguishedName -DistinguishedName $Ident -ToDomainCN
+            # Now we need to asses what kind of object is it
+            # this is important as we accept SID, DN, ForeignSID, ForeignSecurityPrincipals or even DOMAIN\Account
+            if (Test-IsDistinguishedName -Identity $Ident) {
+                if ([Regex]::IsMatch($Ident, "S-\d-\d+-(\d+-){1,14}\d+")) {
+                    # lets save it's value because we may need it if it's NT AUTHORITY
+                    $TemporaryName = $Ident
+                    $SIDConversion = Convert-Identity -Identity $Ident
+                    $TemporaryDomainName = $SIDConversion.DomainName
+                    $Ident = $SIDConversion.SID
+                } else {
+                    # We check if identity is DN and if so we provide Domain Name
+                    $TemporaryDomainName = ConvertFrom-DistinguishedName -DistinguishedName $Ident -ToDomainCN
+                }
+            } elseif ($Ident -like "*\*") {
+                # lets save it's value because we may need it if it's NT AUTHORITY
+                $TemporaryName = $Ident
+                $NetbiosConversion = Convert-Identity -Identity $Ident
+                $TemporaryDomainName = $NetbiosConversion.DomainName
+                $Ident = $NetbiosConversion.SID
+                #} elseif ($Ident1 -like "*\*") {
+                #    $NetbiosConversion = ConvertFrom-NetbiosName -Identity $Ident
+                #    if ($NetbiosConversion.DomainName) {
+                #        $TemporaryDomainName = $NetbiosConversion.DomainName
+                #        $Ident = $NetbiosConversion.Name
+                #    } else {
+                #        # We do nothing, because we were not able to process DomainName so maybe something else is going on
+                #    }
+            } elseif ([Regex]::IsMatch($Ident, "^S-\d-\d+-(\d+-){1,14}\d+$")) {
+                # This is for converting sids, including foreign ones
+                $SIDConversion = Convert-Identity -Identity $Ident
+                if ($SIDConversion.DomainName) {
+                    $TemporaryDomainName = $SIDConversion.DomainName
+                    #$Ident = $NetbiosConversion.Name
+                }
             }
             if ($TemporaryDomainName) {
                 if ($TemporaryDomainName | Test-IsDistinguishedName) {
@@ -37,14 +73,11 @@
                 }
             }
 
-            # If it's an object we need to make sure we pass only DN
-            if ($Ident.DistinguishedName) {
-                $Ident = $Ident.DistinguishedName
-            }
+
             # Building the basic search object with some parameters
             $Search = [System.DirectoryServices.DirectorySearcher]::new()
             $Search.SizeLimit = $SizeLimit
-            $Search.SearchRoot = $DomainName
+            #$Search.SearchRoot = $DomainName
             #$Props = "name", "employeeID", 'memberof','member', 'samaccountName', 'objectSid','schemaClassName'
             #foreach ($i in $Props) { $Search.PropertiesToLoad.Add($i) }
 
@@ -98,10 +131,43 @@
                     }
                 }
                 $ObjectDomainName = ConvertFrom-DistinguishedName -DistinguishedName ($Object.properties.distinguishedname -as [string]) -ToDomainCN
+                $DisplayName = $Object.properties.displayname -as [string]
+                $SamAccountName = $Object.properties.samaccountname -as [string]
+                $Name = $Object.properties.name -as [string]
+                if ($ObjectClass -eq 'foreignSecurityPrincipal' -and $DisplayName -eq '') {
+                    # If object is foreignSecurityPrincipal (which shouldn't happen at this point) we need to set it to temporary name we
+                    # used before. Usually this is to fix 'NT AUTHORITY\INTERACTIVE'
+                    # I have no clue if there's better way to do it
+                    if ($TemporaryName) {
+                        $DisplayName = $TemporaryName
+                        # We try to make the output similar to what is reported by Get-ADGroupMember
+                    } else {
+                        # But sometimes 'NT AUTHORITY\INTERACTIVE' can be searched via SID which would not hit any conditions above
+                        # So we try our suprt
+                        $TemporaryName = Convert-Identity -Identity $Ident
+                        if ($TemporaryName -is [string]) {
+                            $DisplayName = $TemporaryName
+                        }
+                    }
+                    if ($TemporaryName -like '*\*') {
+                        $NetbiosWithName = $TemporaryName -split '\\'
+                        if ($NetbiosWithName.Count -eq 2) {
+                            #$NetbiosName = $NetbiosWithName[0]
+                            $NetbiosUser = $NetbiosWithName[1]
+                            $Name = $NetbiosUser
+                            $SamAccountName = $NetbiosUser
+                        } else {
+                            $Name = $TemporaryName
+                        }
+                    } else {
+                        $Name = $TemporaryName
+                    }
+                }
+
                 [PSCustomObject] @{
-                    DisplayName         = $Object.properties.displayname -as [string]
-                    Name                = $Object.properties.name -as [string]
-                    SamAccountName      = $Object.properties.samaccountname -as [string]
+                    DisplayName         = $DisplayName
+                    Name                = $Name
+                    SamAccountName      = $SamAccountName
                     ObjectClass         = $ObjectClass
                     Enabled             = if ($ObjectClass -eq 'group') { $null } else { $UAC -notcontains 'ACCOUNTDISABLE' }
                     PasswordNeverExpire = $UAC -contains 'DONT_EXPIRE_PASSWORD'
