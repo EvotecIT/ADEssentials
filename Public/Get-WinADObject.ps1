@@ -3,28 +3,48 @@
     param(
         [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
         [Array] $Identity,
-        [alias('DomainName', 'Domain')][string] $DomainDistinguishedName,
+        [alias('Domain', 'DomainDistinguishedName')][string] $DomainName,
         [pscredential] $Credential,
         [switch] $IncludeDeletedObjects
     )
     Begin {
         # This is purely for calling group workaround
         Add-Type -AssemblyName System.DirectoryServices.AccountManagement
-        if ($DomainName) {
-            $Context = [System.DirectoryServices.AccountManagement.PrincipalContext]::new('Domain', $DomainName)
-        } else {
-            $Context = [System.DirectoryServices.AccountManagement.PrincipalContext]::new('Domain')
-        }
     }
     process {
         foreach ($Ident in $Identity) {
+            # we reset domain name to it's given value if at all
+            $TemporaryDomainName = $DomainName
+            if ($Ident | Test-IsDistinguishedName) {
+                # We check if identity is DN and if so we provide Domain Name
+                $TemporaryDomainName = ConvertFrom-DistinguishedName -DistinguishedName $Ident -ToDomainCN
+            }
+            if ($TemporaryDomainName) {
+                if ($TemporaryDomainName | Test-IsDistinguishedName) {
+                    # If Domain Name is DN we need to convert it to CN
+                    $TemporaryDomainName = ConvertFrom-DistinguishedName -DistinguishedName $TemporaryDomainName -ToDomainCN
+                }
+                try {
+                    $Context = [System.DirectoryServices.AccountManagement.PrincipalContext]::new('Domain', $TemporaryDomainName)
+                } catch {
+                    Write-Warning "Get-WinADObject - Error: $($_.Exception.Message)"
+                }
+            } else {
+                try {
+                    $Context = [System.DirectoryServices.AccountManagement.PrincipalContext]::new('Domain')
+                } catch {
+                    Write-Warning "Get-WinADObject - Error: $($_.Exception.Message)"
+                }
+            }
+
+            # If it's an object we need to make sure we pass only DN
             if ($Ident.DistinguishedName) {
                 $Ident = $Ident.DistinguishedName
             }
             # Building the basic search object with some parameters
             $Search = [System.DirectoryServices.DirectorySearcher]::new()
             $Search.SizeLimit = $SizeLimit
-            $Search.SearchRoot = $DomainDistinguishedName
+            $Search.SearchRoot = $DomainName
             #$Props = "name", "employeeID", 'memberof','member', 'samaccountName', 'objectSid','schemaClassName'
             #foreach ($i in $Props) { $Search.PropertiesToLoad.Add($i) }
 
@@ -44,15 +64,12 @@
                 }
             }
 
-            if ($PSBoundParameters['DomainDistinguishedName']) {
-                if ($DomainDistinguishedName -notlike "LDAP://*") {
-                    $DomainDistinguishedName = "LDAP://$DomainDistinguishedName"
-                }
-                Write-Verbose -Message "Different Domain specified: $DomainDistinguishedName"
-                $Search.SearchRoot = $DomainDistinguishedName
+            if ($TemporaryDomainName) {
+                Write-Verbose -Message "Different Domain specified: $TemporaryDomainName"
+                $Search.SearchRoot = "LDAP://$TemporaryDomainName"
             }
             if ($PSBoundParameters['Credential']) {
-                $Cred = [System.DirectoryServices.DirectoryEntry]::new($DomainDistinguishedName, $($Credential.UserName), $($Credential.GetNetworkCredential().password))
+                $Cred = [System.DirectoryServices.DirectoryEntry]::new("LDAP://$TemporaryDomainName", $($Credential.UserName), $($Credential.GetNetworkCredential().password))
                 $Search.SearchRoot = $Cred
             }
             if ($PSBoundParameters['IncludeDeletedObjects']) {
@@ -66,13 +83,21 @@
                 if ($ObjectClass -eq 'group') {
                     # This is weird case but for some reason $Object.properties.member doesn't always return all values
                     # the workaround is to do additional query for group and assing it
-                    $GroupMembers = [System.DirectoryServices.AccountManagement.GroupPrincipal]::FindByIdentity($Context, $Ident).Members.DistinguishedName
+                    $GroupMembers = [System.DirectoryServices.AccountManagement.GroupPrincipal]::FindByIdentity($Context, $Ident).Members
                     if ($GroupMembers.Count -ne $Members.Count) {
                         #Write-Warning "Get-WinADObject - Weird. Members count different."
                     }
-                    $Members = $GroupMembers
+                    [Array] $Members = foreach ($Member in $GroupMembers) {
+                        if ($Member.DistinguishedName) {
+                            $Member.DistinguishedName
+                        } elseif ($Member.DisplayName) {
+                            $Member.DisplayName
+                        } else {
+                            $Member.Sid
+                        }
+                    }
                 }
-                $DomainName = ConvertFrom-DistinguishedName -DistinguishedName ($Object.properties.distinguishedname -as [string]) -ToDomainCN
+                $ObjectDomainName = ConvertFrom-DistinguishedName -DistinguishedName ($Object.properties.distinguishedname -as [string]) -ToDomainCN
                 [PSCustomObject] @{
                     DisplayName         = $Object.properties.displayname -as [string]
                     Name                = $Object.properties.name -as [string]
@@ -81,7 +106,7 @@
                     Enabled             = if ($ObjectClass -eq 'group') { $null } else { $UAC -notcontains 'ACCOUNTDISABLE' }
                     PasswordNeverExpire = $UAC -contains 'DONT_EXPIRE_PASSWORD'
                     Description         = $Object.properties.description -as [string]
-                    DomainName          = $DomainName
+                    DomainName          = $ObjectDomainName
                     Distinguishedname   = $Object.properties.distinguishedname -as [string]
                     #Adspath             = $Object.properties.adspath -as [string]
                     Lastlogon           = $Object.properties.lastlogon -as [string]
