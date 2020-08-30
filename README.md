@@ -39,6 +39,8 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 
 ## Changelog
 
+- 0.0.70 - Unreleased
+  - [x] Improvements to `Get-WinADObject`
 - 0.0.69 - 28.08.2020
   - [x] Improvements to `Get-WinADGroupMember`
 - 0.0.68 - 28.08.2020
