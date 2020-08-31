@@ -13,11 +13,11 @@
     Begin {
         if (-not $Script:WinADGroupObjectCache -or $ClearCache) {
             $Script:WinADGroupObjectCache = @{}
-            $Forest = [System.DirectoryServices.ActiveDirectory.Forest]::GetCurrentForest()
-            $Script:WinADForestCache = @{
-                Forest  = $Forest
-                Domains = $Forest.Domains.Name
-            }
+            #$Forest = [System.DirectoryServices.ActiveDirectory.Forest]::GetCurrentForest()
+            #$Script:WinADForestCache = @{
+            #    Forest  = $Forest
+            #    Domains = $Forest.Domains.Name
+            #}
         }
     }
     Process {
@@ -35,7 +35,7 @@
                     Type                 = $Object.ObjectClass
                     Nesting              = $Nesting
                     Circular             = $false
-                    CrossForest          = $false
+                    #CrossForest          = $false
                     ParentGroup          = ''
                     ParentGroupDomain    = ''
                     ObjectDomainName     = $Object.DomainName
@@ -91,16 +91,16 @@
                         Type                 = $NestedMember.ObjectClass
                         Nesting              = $Nesting
                         Circular             = $false
-                        CrossForest          = $false
+                        #CrossForest          = $false
                         ParentGroup          = $Object.name
                         ParentGroupDomain    = $Object.DomainName
                         ObjectDomainName     = $InitialObject.DomainName
                         DistinguishedName    = $NestedMember.DistinguishedName
                         Sid                  = $NestedMember.ObjectSID
                     }
-                    if ($NestedMember.DomainName -notin $Script:WinADForestCache['Domains']) {
-                        $CreatedObject['CrossForest'] = $true
-                    }
+                    #if ($NestedMember.DomainName -notin $Script:WinADForestCache['Domains']) {
+                    #    $CreatedObject['CrossForest'] = $true
+                    #}
                     if ($NestedMember.ObjectClass -eq "group") {
                         if ($Object.members -contains $NestedMember.DistinguishedName) {
                             $Circular = $Object.DistinguishedName

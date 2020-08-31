@@ -2,4 +2,4 @@
 
 # Don't do it for large domains, even small ones may be problematic
 $Groups = Get-ADGroup -Filter *
-Show-ADGroupMember -GroupName $Groups -FilePath $PSScriptRoot\Reports\GroupMembership.html -RemoveUsers
+Show-WinADGroupMember -GroupName $Groups -FilePath $PSScriptRoot\Reports\GroupMembership.html -RemoveUsers
