@@ -1,5 +1,5 @@
-﻿function Show-ADGroupMember {
-    [alias('Show-WinADGroupMember')]
+﻿function Show-WinADGroupMember {
+    [alias('Show-ADGroupMember')]
     [cmdletBinding(DefaultParameterSetName = 'Default')]
     param(
         [string[]] $GroupName,
@@ -11,8 +11,11 @@
         [Parameter(ParameterSetName = 'Default')][switch] $Summary,
         [Parameter(ParameterSetName = 'SummaryOnly')][switch] $SummaryOnly
     )
+    if ($FilePath -eq '') {
+        $FilePath = Get-FileName -Extension 'html' -Temporary
+    }
     $GroupsList = [System.Collections.Generic.List[object]]::new()
-    New-HTML -TitleText "Group Membership for $GroupName" {
+    New-HTML -TitleText "Visual Group Membership" {
         New-HTMLSectionStyle -BorderRadius 0px -HeaderBackGroundColor Grey -RemoveShadow
         New-HTMLTableOption -DataStore JavaScript
         New-HTMLTabStyle -BorderRadius 0px -TextTransform capitalize -BackgroundColorActive SlateGrey
@@ -25,7 +28,7 @@
                     }
                 }
             } catch {
-                Write-Warning "Show-GroupMember - Error processing group $Group. Skipping. Needs investigation why it failed. Error: $($_.Exception.Message)"
+                Write-Warning "Show-WinADGroupMember - Error processing group $Group. Skipping. Needs investigation why it failed. Error: $($_.Exception.Message)"
                 continue
             }
             if ($ADGroup -and -not $SummaryOnly) {
