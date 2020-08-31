@@ -31,9 +31,10 @@
                             New-HTMLTable -DataTable $ADGroup -Filtering -DataStoreID $DataStoreID {
                                 New-TableHeader -Names Name, SamAccountName, DomainName, DisplayName -Title 'Member'
                                 New-TableHeader -Names DirectMembers, DirectGroups, IndirectMembers, TotalMembers -Title 'Statistics'
-                                New-TableCondition -BackgroundColor Red -ComparisonType bool -Value $false -Name Enabled -Operator eq
+                                New-TableCondition -BackgroundColor CoralRed -ComparisonType bool -Value $false -Name Enabled -Operator eq
                                 New-TableCondition -BackgroundColor LightBlue -ComparisonType string -Value '' -Name ParentGroup -Operator eq -Row
                                 New-TableCondition -BackgroundColor CoralRed -ComparisonType bool -Value $true -Name CrossForest -Operator eq
+                                New-TableCondition -BackgroundColor CoralRed -ComparisonType bool -Value $true -Name Circular -Operator eq
                             }
                         }
                     }
