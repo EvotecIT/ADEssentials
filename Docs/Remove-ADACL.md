@@ -5,7 +5,7 @@ online version:
 schema: 2.0.0
 ---
 
-# Set-WinADReplication
+# Remove-ADACL
 
 ## SYNOPSIS
 {{ Fill in the Synopsis }}
@@ -13,8 +13,8 @@ schema: 2.0.0
 ## SYNTAX
 
 ```
-Set-WinADReplication [[-Forest] <String>] [[-ReplicationInterval] <Int32>] [-Instant]
- [[-ExtendedForestInformation] <IDictionary>] [<CommonParameters>]
+Remove-ADACL [[-ACL] <Array>] [[-Principal] <String>] [[-AccessRule] <ActiveDirectoryRights>]
+ [[-AccessControlType] <AccessControlType>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -31,28 +31,13 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
-### -ExtendedForestInformation
-{{ Fill ExtendedForestInformation Description }}
+### -ACL
+{{ Fill ACL Description }}
 
 ```yaml
-Type: IDictionary
+Type: Array
 Parameter Sets: (All)
 Aliases:
-
-Required: False
-Position: 2
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Forest
-{{ Fill Forest Description }}
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases: ForestName
 
 Required: False
 Position: 0
@@ -61,13 +46,45 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Instant
-{{ Fill Instant Description }}
+### -AccessControlType
+{{ Fill AccessControlType Description }}
+
+```yaml
+Type: AccessControlType
+Parameter Sets: (All)
+Aliases:
+Accepted values: Allow, Deny
+
+Required: False
+Position: 3
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -AccessRule
+{{ Fill AccessRule Description }}
+
+```yaml
+Type: ActiveDirectoryRights
+Parameter Sets: (All)
+Aliases:
+Accepted values: CreateChild, DeleteChild, ListChildren, Self, ReadProperty, WriteProperty, DeleteTree, ListObject, ExtendedRight, Delete, ReadControl, GenericExecute, GenericWrite, GenericRead, WriteDacl, WriteOwner, GenericAll, Synchronize, AccessSystemSecurity
+
+Required: False
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Confirm
+Prompts you for confirmation before running the cmdlet.
 
 ```yaml
 Type: SwitchParameter
 Parameter Sets: (All)
-Aliases:
+Aliases: cf
 
 Required: False
 Position: Named
@@ -76,16 +93,32 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -ReplicationInterval
-{{ Fill ReplicationInterval Description }}
+### -Principal
+{{ Fill Principal Description }}
 
 ```yaml
-Type: Int32
+Type: String
 Parameter Sets: (All)
 Aliases:
 
 Required: False
 Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -WhatIf
+Shows what would happen if the cmdlet runs.
+The cmdlet is not run.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases: wi
+
+Required: False
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

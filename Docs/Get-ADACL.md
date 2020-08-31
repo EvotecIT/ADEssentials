@@ -14,7 +14,8 @@ schema: 2.0.0
 
 ```
 Get-ADACL [[-ADObject] <Array>] [[-Domain] <String>] [[-Server] <Object>] [[-ForestName] <String>] [-Extended]
- [-ResolveTypes] [-Inherited] [-NotInherited] [[-IncludeActiveDirectoryRights] <ActiveDirectoryRights[]>]
+ [-ResolveTypes] [-Inherited] [-NotInherited] [-Bundle]
+ [[-IncludeActiveDirectoryRights] <ActiveDirectoryRights[]>]
  [[-ExcludeActiveDirectoryRights] <ActiveDirectoryRights[]>]
  [[-IncludeActiveDirectorySecurityInheritance] <ActiveDirectorySecurityInheritance[]>]
  [[-ExcludeActiveDirectorySecurityInheritance] <ActiveDirectorySecurityInheritance[]>] [<CommonParameters>]
@@ -46,6 +47,21 @@ Required: False
 Position: 0
 Default value: None
 Accept pipeline input: True (ByValue)
+Accept wildcard characters: False
+```
+
+### -Bundle
+{{ Fill Bundle Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
 Accept wildcard characters: False
 ```
 

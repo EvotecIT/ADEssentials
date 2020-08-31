@@ -5,7 +5,7 @@ online version:
 schema: 2.0.0
 ---
 
-# Set-WinADReplicationConnections
+# Get-WinADObject
 
 ## SYNOPSIS
 {{ Fill in the Synopsis }}
@@ -13,8 +13,8 @@ schema: 2.0.0
 ## SYNTAX
 
 ```
-Set-WinADReplicationConnections [[-Forest] <String>] [-Force] [[-ExtendedForestInformation] <IDictionary>]
- [<CommonParameters>]
+Get-WinADObject [-Identity] <Array> [-DomainName <String>] [-Credential <PSCredential>]
+ [-IncludeDeletedObjects] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -31,23 +31,53 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
-### -ExtendedForestInformation
-{{ Fill ExtendedForestInformation Description }}
+### -Credential
+{{ Fill Credential Description }}
 
 ```yaml
-Type: IDictionary
+Type: PSCredential
 Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 1
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Force
-{{ Fill Force Description }}
+### -DomainName
+{{ Fill DomainName Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases: Domain, DomainDistinguishedName
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Identity
+{{ Fill Identity Description }}
+
+```yaml
+Type: Array
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 0
+Default value: None
+Accept pipeline input: True (ByPropertyName, ByValue)
+Accept wildcard characters: False
+```
+
+### -IncludeDeletedObjects
+{{ Fill IncludeDeletedObjects Description }}
 
 ```yaml
 Type: SwitchParameter
@@ -61,27 +91,12 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Forest
-{{ Fill Forest Description }}
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases: ForestName
-
-Required: False
-Position: 0
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
 ### CommonParameters
 This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable. For more information, see [about_CommonParameters](http://go.microsoft.com/fwlink/?LinkID=113216).
 
 ## INPUTS
 
-### None
+### System.Array
 
 ## OUTPUTS
 

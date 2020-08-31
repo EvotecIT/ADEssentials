@@ -5,7 +5,7 @@ online version:
 schema: 2.0.0
 ---
 
-# Set-WinADReplicationConnections
+# Get-WinADTomebstoneLifetime
 
 ## SYNOPSIS
 {{ Fill in the Synopsis }}
@@ -13,7 +13,7 @@ schema: 2.0.0
 ## SYNTAX
 
 ```
-Set-WinADReplicationConnections [[-Forest] <String>] [-Force] [[-ExtendedForestInformation] <IDictionary>]
+Get-WinADTomebstoneLifetime [[-Forest] <String>] [[-ExtendedForestInformation] <IDictionary>]
  [<CommonParameters>]
 ```
 
@@ -41,21 +41,6 @@ Aliases:
 
 Required: False
 Position: 1
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Force
-{{ Fill Force Description }}
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

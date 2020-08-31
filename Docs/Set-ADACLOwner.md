@@ -5,7 +5,7 @@ online version:
 schema: 2.0.0
 ---
 
-# Set-WinADReplicationConnections
+# Set-ADACLOwner
 
 ## SYNOPSIS
 {{ Fill in the Synopsis }}
@@ -13,8 +13,7 @@ schema: 2.0.0
 ## SYNTAX
 
 ```
-Set-WinADReplicationConnections [[-Forest] <String>] [-Force] [[-ExtendedForestInformation] <IDictionary>]
- [<CommonParameters>]
+Set-ADACLOwner [[-ADObject] <Array>] [-Principal] <String> [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -31,28 +30,28 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
-### -ExtendedForestInformation
-{{ Fill ExtendedForestInformation Description }}
+### -ADObject
+{{ Fill ADObject Description }}
 
 ```yaml
-Type: IDictionary
+Type: Array
 Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 1
+Position: 0
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Force
-{{ Fill Force Description }}
+### -Confirm
+Prompts you for confirmation before running the cmdlet.
 
 ```yaml
 Type: SwitchParameter
 Parameter Sets: (All)
-Aliases:
+Aliases: cf
 
 Required: False
 Position: Named
@@ -61,16 +60,32 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Forest
-{{ Fill Forest Description }}
+### -Principal
+{{ Fill Principal Description }}
 
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases: ForestName
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -WhatIf
+Shows what would happen if the cmdlet runs.
+The cmdlet is not run.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases: wi
 
 Required: False
-Position: 0
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

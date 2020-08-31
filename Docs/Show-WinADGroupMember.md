@@ -5,18 +5,23 @@ online version:
 schema: 2.0.0
 ---
 
-# Set-WinADDiagnostics
+# Show-WinADGroupMember
 
 ## SYNOPSIS
 {{ Fill in the Synopsis }}
 
 ## SYNTAX
 
+### Default (Default)
 ```
-Set-WinADDiagnostics [[-Forest] <String>] [[-ExcludeDomains] <String[]>]
- [[-ExcludeDomainControllers] <String[]>] [[-IncludeDomains] <String[]>]
- [[-IncludeDomainControllers] <String[]>] [-SkipRODC] [[-Diagnostics] <String[]>] [[-Level] <String>]
- [[-ExtendedForestInformation] <IDictionary>] [<CommonParameters>]
+Show-WinADGroupMember [-GroupName <String[]>] [-FilePath <String>] [-RemoveAppliesTo <String>]
+ [-RemoveComputers] [-RemoveUsers] [-RemoveOther] [-Summary] [<CommonParameters>]
+```
+
+### SummaryOnly
+```
+Show-WinADGroupMember [-GroupName <String[]>] [-FilePath <String>] [-RemoveAppliesTo <String>]
+ [-RemoveComputers] [-RemoveUsers] [-RemoveOther] [-SummaryOnly] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -33,114 +38,8 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
-### -Diagnostics
-{{ Fill Diagnostics Description }}
-
-```yaml
-Type: String[]
-Parameter Sets: (All)
-Aliases:
-Accepted values: Knowledge Consistency Checker (KCC), Security Events, ExDS Interface Events, MAPI Interface Events, Replication Events, Garbage Collection, Internal Configuration, Directory Access, Internal Processing, Performance Counters, Initialization / Termination, Service Control, Name Resolution, Backup, Field Engineering, LDAP Interface Events, Setup, Global Catalog, Inter-site Messaging, Group Caching, Linked-Value Replication, DS RPC Client, DS RPC Server, DS Schema, Transformation Engine, Claims-Based Access Control, Netlogon
-
-Required: False
-Position: 5
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ExcludeDomainControllers
-{{ Fill ExcludeDomainControllers Description }}
-
-```yaml
-Type: String[]
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 2
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ExcludeDomains
-{{ Fill ExcludeDomains Description }}
-
-```yaml
-Type: String[]
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 1
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ExtendedForestInformation
-{{ Fill ExtendedForestInformation Description }}
-
-```yaml
-Type: IDictionary
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 7
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Forest
-{{ Fill Forest Description }}
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases: ForestName
-
-Required: False
-Position: 0
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -IncludeDomainControllers
-{{ Fill IncludeDomainControllers Description }}
-
-```yaml
-Type: String[]
-Parameter Sets: (All)
-Aliases: DomainControllers, ComputerName
-
-Required: False
-Position: 4
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -IncludeDomains
-{{ Fill IncludeDomains Description }}
-
-```yaml
-Type: String[]
-Parameter Sets: (All)
-Aliases: Domain, Domains
-
-Required: False
-Position: 3
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Level
-{{ Fill Level Description }}
+### -FilePath
+{{ Fill FilePath Description }}
 
 ```yaml
 Type: String
@@ -148,18 +47,109 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 6
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -SkipRODC
-{{ Fill SkipRODC Description }}
+### -GroupName
+{{ Fill GroupName Description }}
+
+```yaml
+Type: String[]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -RemoveAppliesTo
+{{ Fill RemoveAppliesTo Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+Accepted values: Default, Hierarchical, Both
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -RemoveComputers
+{{ Fill RemoveComputers Description }}
 
 ```yaml
 Type: SwitchParameter
 Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -RemoveOther
+{{ Fill RemoveOther Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -RemoveUsers
+{{ Fill RemoveUsers Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Summary
+{{ Fill Summary Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: Default
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -SummaryOnly
+{{ Fill SummaryOnly Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: SummaryOnly
 Aliases:
 
 Required: False

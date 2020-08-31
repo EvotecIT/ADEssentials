@@ -71,9 +71,6 @@ Gets Active directory forest or domain last backup time
 ### [Get-WinADSiteLinks](Get-WinADSiteLinks.md)
 {{ Fill in the Synopsis }}
 
-### [Get-WinADTombstoneLifetime](Get-WinADTombstoneLifetime.md)
-{{ Fill in the Synopsis }}
-
 ### [Get-WinADTrusts](Get-WinADTrusts.md)
 {{ Fill in the Synopsis }}
 

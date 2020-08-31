@@ -40,14 +40,14 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 0
+Position: 1
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Formatted
-{{ Fill Formatted Description }}
+### -RemovePrefix
+{{ Fill RemovePrefix Description }}
 
 ```yaml
 Type: SwitchParameter
@@ -61,8 +61,23 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -RemovePrefix
-{{ Fill RemovePrefix Description }}
+### -ToLower
+{{ Fill ToLower Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Formatted
+{{ Fill Formatted Description }}
 
 ```yaml
 Type: SwitchParameter
@@ -85,22 +100,7 @@ Parameter Sets: (All)
 Aliases: Joiner
 
 Required: False
-Position: 1
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ToLower
-{{ Fill ToLower Description }}
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
+Position: 2
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

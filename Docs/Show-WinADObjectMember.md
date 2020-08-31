@@ -5,7 +5,7 @@ online version:
 schema: 2.0.0
 ---
 
-# Set-WinADReplicationConnections
+# Show-WinADObjectMember
 
 ## SYNOPSIS
 {{ Fill in the Synopsis }}
@@ -13,8 +13,8 @@ schema: 2.0.0
 ## SYNTAX
 
 ```
-Set-WinADReplicationConnections [[-Forest] <String>] [-Force] [[-ExtendedForestInformation] <IDictionary>]
- [<CommonParameters>]
+Show-WinADObjectMember [[-Identity] <String[]>] [[-FilePath] <String>] [[-RemoveAppliesTo] <String>]
+ [-RemoveComputers] [-RemoveUsers] [-RemoveOther] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -31,11 +31,11 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
-### -ExtendedForestInformation
-{{ Fill ExtendedForestInformation Description }}
+### -FilePath
+{{ Fill FilePath Description }}
 
 ```yaml
-Type: IDictionary
+Type: String
 Parameter Sets: (All)
 Aliases:
 
@@ -46,8 +46,39 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Force
-{{ Fill Force Description }}
+### -Identity
+{{ Fill Identity Description }}
+
+```yaml
+Type: String[]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 0
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -RemoveAppliesTo
+{{ Fill RemoveAppliesTo Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+Accepted values: Default, Hierarchical, Both
+
+Required: False
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -RemoveComputers
+{{ Fill RemoveComputers Description }}
 
 ```yaml
 Type: SwitchParameter
@@ -61,16 +92,31 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Forest
-{{ Fill Forest Description }}
+### -RemoveOther
+{{ Fill RemoveOther Description }}
 
 ```yaml
-Type: String
+Type: SwitchParameter
 Parameter Sets: (All)
-Aliases: ForestName
+Aliases:
 
 Required: False
-Position: 0
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -RemoveUsers
+{{ Fill RemoveUsers Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

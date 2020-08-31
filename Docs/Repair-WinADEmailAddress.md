@@ -13,8 +13,8 @@ schema: 2.0.0
 ## SYNTAX
 
 ```
-Repair-WinADEmailAddress [[-ADUser] <ADAccount>] [[-FromEmail] <String>] [[-ToEmail] <String>] [-Display]
- [-WhatIf] [-Confirm] [<CommonParameters>]
+Repair-WinADEmailAddress [[-ADUser] <ADAccount>] [[-ToEmail] <String>] [-Display] [-WhatIf] [-Confirm]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -76,21 +76,6 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -FromEmail
-{{ Fill FromEmail Description }}
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 1
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
 ### -ToEmail
 {{ Fill ToEmail Description }}
 
@@ -100,7 +85,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 2
+Position: 1
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
