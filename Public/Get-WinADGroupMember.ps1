@@ -1,7 +1,7 @@
 ﻿function Get-WinADGroupMember {
     [cmdletBinding()]
     param(
-        [alias('GroupName', 'Identity')][Parameter(ValuefromPipeline, Mandatory)][Array] $Group,
+        [alias('GroupName', 'Group')][Parameter(ValuefromPipeline, Mandatory)][Array] $Identity,
         #[switch] $CountMembers,
         [switch] $AddSelf,
         [switch] $All,
@@ -32,7 +32,7 @@
         }
     }
     Process {
-        [Array] $Output = foreach ($GroupName in $Group) {
+        [Array] $Output = foreach ($GroupName in $Identity) {
             # lets initialize our variables
             if (-not $Nested.IsPresent) {
                 $InitialGroup = [ordered] @{
@@ -80,13 +80,13 @@
                 # Lets cache our object
                 $Script:WinADGroupMemberCache[$ADGroupName.DistinguishedName] = $ADGroupName
                 if ($Circular) {
-                    [Array] $NestedMembers = foreach ($Identity in $ADGroupName.Members) {
-                        if ($Script:WinADGroupMemberCache[$Identity]) {
-                            $Script:WinADGroupMemberCache[$Identity]
+                    [Array] $NestedMembers = foreach ($MyIdentity in $ADGroupName.Members) {
+                        if ($Script:WinADGroupMemberCache[$MyIdentity]) {
+                            $Script:WinADGroupMemberCache[$MyIdentity]
                         } else {
-                            $ADObject = Get-WinADObject -Identity $Identity # -Properties SamAccountName, DisplayName, Enabled, userAccountControl, ObjectSID
-                            $Script:WinADGroupMemberCache[$Identity] = $ADObject
-                            $Script:WinADGroupMemberCache[$Identity]
+                            $ADObject = Get-WinADObject -Identity $MyIdentity # -Properties SamAccountName, DisplayName, Enabled, userAccountControl, ObjectSID
+                            $Script:WinADGroupMemberCache[$MyIdentity] = $ADObject
+                            $Script:WinADGroupMemberCache[$MyIdentity]
                         }
                     }
                     [Array] $NestedMembers = foreach ($Member in $NestedMembers) {
@@ -96,32 +96,32 @@
                     }
                     $Circular = $null
                 } else {
-                    [Array] $NestedMembers = foreach ($Identity in $ADGroupName.Members) {
-                        if ($Script:WinADGroupMemberCache[$Identity]) {
-                            $Script:WinADGroupMemberCache[$Identity]
+                    [Array] $NestedMembers = foreach ($MyIdentity in $ADGroupName.Members) {
+                        if ($Script:WinADGroupMemberCache[$MyIdentity]) {
+                            $Script:WinADGroupMemberCache[$MyIdentity]
                         } else {
-                            $ADObject = Get-WinADObject -Identity $Identity
-                            $Script:WinADGroupMemberCache[$Identity] = $ADObject
-                            $Script:WinADGroupMemberCache[$Identity]
+                            $ADObject = Get-WinADObject -Identity $MyIdentity
+                            $Script:WinADGroupMemberCache[$MyIdentity] = $ADObject
+                            $Script:WinADGroupMemberCache[$MyIdentity]
                         }
                     }
                 }
 
                 #if ($CountMembers) {
-                    # This tracks amount of members for our groups
-                    if (-not $MembersCache[$ADGroupName.DistinguishedName]) {
-                        $DirectMembers = $NestedMembers.Where( { $_.ObjectClass -ne 'group' }, 'split')
-                        $MembersCache[$ADGroupName.DistinguishedName] = [ordered] @{
-                            DirectMembers        = ($DirectMembers[0])
-                            DirectMembersCount   = ($DirectMembers[0]).Count
-                            DirectGroups         = ($DirectMembers[1])
-                            DirectGroupsCount    = ($DirectMembers[1]).Count
-                            IndirectMembers      = [System.Collections.Generic.List[PSCustomObject]]::new()
-                            IndirectMembersCount = $null
-                            IndirectGroups       = [System.Collections.Generic.List[PSCustomObject]]::new()
-                            IndirectGroupsCount  = $null
-                        }
+                # This tracks amount of members for our groups
+                if (-not $MembersCache[$ADGroupName.DistinguishedName]) {
+                    $DirectMembers = $NestedMembers.Where( { $_.ObjectClass -ne 'group' }, 'split')
+                    $MembersCache[$ADGroupName.DistinguishedName] = [ordered] @{
+                        DirectMembers        = ($DirectMembers[0])
+                        DirectMembersCount   = ($DirectMembers[0]).Count
+                        DirectGroups         = ($DirectMembers[1])
+                        DirectGroupsCount    = ($DirectMembers[1]).Count
+                        IndirectMembers      = [System.Collections.Generic.List[PSCustomObject]]::new()
+                        IndirectMembersCount = $null
+                        IndirectGroups       = [System.Collections.Generic.List[PSCustomObject]]::new()
+                        IndirectGroupsCount  = $null
                     }
+                }
                 #}
                 foreach ($NestedMember in $NestedMembers) {
                     # for each member we either create new user or group, if group we will dive into nesting
@@ -162,13 +162,13 @@
                         $OutputFromGroup = Get-WinADGroupMember -GroupName $NestedMember -Nesting $Nesting -Circular $Circular -InitialGroup $InitialGroup -CollectedGroups $CollectedGroups -Nested -All:$All.IsPresent #-CountMembers:$CountMembers.IsPresent
                         $OutputFromGroup
                         #if ($CountMembers) {
-                            foreach ($Member in $OutputFromGroup) {
-                                if ($Member.Type -eq 'group') {
-                                    $MembersCache[$ADGroupName.DistinguishedName]['IndirectGroups'].Add($Member)
-                                } else {
-                                    $MembersCache[$ADGroupName.DistinguishedName]['IndirectMembers'].Add($Member)
-                                }
+                        foreach ($Member in $OutputFromGroup) {
+                            if ($Member.Type -eq 'group') {
+                                $MembersCache[$ADGroupName.DistinguishedName]['IndirectGroups'].Add($Member)
+                            } else {
+                                $MembersCache[$ADGroupName.DistinguishedName]['IndirectMembers'].Add($Member)
                             }
+                        }
                         #}
                     } else {
                         [PSCustomObject] $CreatedObject
@@ -191,13 +191,13 @@
                         $InitialGroup.DirectMembers = $MembersCache[$InitialGroup.DistinguishedName].DirectMembersCount
                         $InitialGroup.DirectGroups = $MembersCache[$InitialGroup.DistinguishedName].DirectGroupsCount
                         foreach ($Group in $MembersCache[$InitialGroup.DistinguishedName].DirectGroups) {
-                            $InitialGroup.IndirectMembers = $MembersCache[$InitialGroup.DistinguishedName].DirectMembersCount + $InitialGroup.IndirectMembers
+                            $InitialGroup.IndirectMembers = $MembersCache[$Group.DistinguishedName].DirectMembersCount + $InitialGroup.IndirectMembers
                         }
                         # To get total memebers for given group we need to add all members from all groups + direct members of a group
                         $AllMembersForGivenGroup = @(
                             # Scan all groups for members
-                            foreach ($Group in $MembersCache[$InitialGroup.DistinguishedName].DirectGroups) {
-                                $MembersCache[$Group.DistinguishedName].DirectMembers
+                            foreach ($DirectGroup in $MembersCache[$InitialGroup.DistinguishedName].DirectGroups) {
+                                $MembersCache[$DirectGroup.DistinguishedName].DirectMembers
                             }
                             # Scan all direct members of this group
                             $MembersCache[$InitialGroup.DistinguishedName].DirectMembers
@@ -213,14 +213,14 @@
                             # Object is a group, we  add direct members, direct groups and other stuff
                             $Object.DirectMembers = $MembersCache[$Object.DistinguishedName].DirectMembersCount
                             $Object.DirectGroups = $MembersCache[$Object.DistinguishedName].DirectGroupsCount
-                            foreach ($Group in $MembersCache[$Object.DistinguishedName].DirectGroups) {
-                                $Object.IndirectMembers = $MembersCache[$Group.DistinguishedName].DirectMembersCount + $Object.IndirectMembers
+                            foreach ($DirectGroup in $MembersCache[$Object.DistinguishedName].DirectGroups) {
+                                $Object.IndirectMembers = $MembersCache[$DirectGroup.DistinguishedName].DirectMembersCount + $Object.IndirectMembers
                             }
                             # To get total memebers for given group we need to add all members from all groups + direct members of a group
                             $AllMembersForGivenGroup = @(
                                 # Scan all groups for members
-                                foreach ($Group in $MembersCache[$Object.DistinguishedName].DirectGroups) {
-                                    $MembersCache[$Group.DistinguishedName].DirectMembers
+                                foreach ($DirectGroup in $MembersCache[$Object.DistinguishedName].DirectGroups) {
+                                    $MembersCache[$DirectGroup.DistinguishedName].DirectMembers
                                 }
                                 # Scan all direct members of this group
                                 $MembersCache[$Object.DistinguishedName].DirectMembers
