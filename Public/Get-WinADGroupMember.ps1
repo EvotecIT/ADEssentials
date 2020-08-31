@@ -14,19 +14,24 @@
     )
     Begin {
         if (-not $Script:WinADGroupMemberCache -or $ClearCache -or ($Cache -and -not $Script:WinADGroupMemberCacheGlobal)) {
-            if ($ClearCache) {
-                # This is to distinguish globally used cache and standard cache
-                # As it's entirely possible user used standard approach without cache and then enabled cache so we need to track whether that is the case
-                $Script:WinADGroupMemberCacheGlobal = $false
-            }
+            #if ($ClearCache) {
+            # This is to distinguish globally used cache and standard cache
+            # As it's entirely possible user used standard approach without cache and then enabled cache so we need to track whether that is the case
+            # $Script:WinADGroupMemberCacheGlobal = $false
+            #}
             $Script:WinADGroupMemberCache = @{}
+            $Forest = [System.DirectoryServices.ActiveDirectory.Forest]::GetCurrentForest()
+            $Script:WinADForestCache = @{
+                Forest  = $Forest
+                Domains = $Forest.Domains.Name
+            }
         }
         if ($Nesting -eq -1) {
             $MembersCache = [ordered] @{}
         }
     }
     Process {
-        $Output = foreach ($GroupName in $Group) {
+        [Array] $Output = foreach ($GroupName in $Group) {
             # lets initialize our variables
             if (-not $Nested.IsPresent) {
                 $InitialGroup = [ordered] @{
@@ -43,7 +48,7 @@
                     TotalMembers      = 0
                     Nesting           = $Nesting
                     Circular          = $false
-                    TrustedDomain     = $false
+                    CrossForest       = $false
                     ParentGroup       = ''
                     ParentGroupDomain = ''
                     GroupDomainName   = $null
@@ -134,12 +139,15 @@
                         TotalMembers      = 0
                         Nesting           = $Nesting
                         Circular          = $false
-                        TrustedDomain     = $false
+                        CrossForest       = $false
                         ParentGroup       = $ADGroupName.name
                         ParentGroupDomain = $DomainParentGroup
                         GroupDomainName   = $InitialGroup.DomainName
                         DistinguishedName = $NestedMember.DistinguishedName
                         Sid               = $NestedMember.ObjectSID
+                    }
+                    if ($NestedMember.DomainName -notin $Script:WinADForestCache['Domains']) {
+                        $CreatedObject['CrossForest'] = $true
                     }
                     if ($NestedMember.ObjectClass -eq "group") {
                         if ($ADGroupName.memberof -contains $NestedMember.DistinguishedName) {
