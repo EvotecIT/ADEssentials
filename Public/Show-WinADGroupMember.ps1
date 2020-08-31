@@ -16,9 +16,9 @@
         New-HTMLTabStyle -BorderRadius 0px -TextTransform capitalize -BackgroundColorActive SlateGrey
         foreach ($Group in $GroupName) {
             try {
-                $ADGroup = Get-WinADGroupMember -Group $Group -All -AddSelf -CountMembers
+                $ADGroup = Get-WinADGroupMember -Group $Group -All -AddSelf
             } catch {
-                Write-Warning "Show-GroupMember - Error processing group $Group. Skipping. Needs investigation why it failed."
+                Write-Warning "Show-GroupMember - Error processing group $Group. Skipping. Needs investigation why it failed. Error: $($_.Exception.Message)"
                 continue
             }
             if ($ADGroup) {

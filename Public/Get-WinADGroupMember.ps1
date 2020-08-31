@@ -2,7 +2,7 @@
     [cmdletBinding()]
     param(
         [alias('GroupName', 'Identity')][Parameter(ValuefromPipeline, Mandatory)][Array] $Group,
-        [switch] $CountMembers,
+        #[switch] $CountMembers,
         [switch] $AddSelf,
         [switch] $All,
         [switch] $ClearCache,
@@ -13,6 +13,7 @@
         [Parameter(DontShow)][switch] $Nested
     )
     Begin {
+        $Properties = 'GroupName', 'Name', 'SamAccountName', 'DisplayName', 'Enabled', 'Type', 'Nesting', 'Circular', 'CrossForest', 'ParentGroup', 'ParentGroupDomain', 'GroupDomainName', 'DistinguishedName', 'Sid'
         if (-not $Script:WinADGroupMemberCache -or $ClearCache -or ($Cache -and -not $Script:WinADGroupMemberCacheGlobal)) {
             #if ($ClearCache) {
             # This is to distinguish globally used cache and standard cache
@@ -106,14 +107,14 @@
                     }
                 }
 
-                if ($CountMembers) {
+                #if ($CountMembers) {
                     # This tracks amount of members for our groups
                     if (-not $MembersCache[$ADGroupName.DistinguishedName]) {
                         $DirectMembers = $NestedMembers.Where( { $_.ObjectClass -ne 'group' }, 'split')
                         $MembersCache[$ADGroupName.DistinguishedName] = [ordered] @{
-                            DirectMembers        = $DirectMembers[0]
+                            DirectMembers        = ($DirectMembers[0])
                             DirectMembersCount   = ($DirectMembers[0]).Count
-                            DirectGroups         = $DirectMembers[1]
+                            DirectGroups         = ($DirectMembers[1])
                             DirectGroupsCount    = ($DirectMembers[1]).Count
                             IndirectMembers      = [System.Collections.Generic.List[PSCustomObject]]::new()
                             IndirectMembersCount = $null
@@ -121,7 +122,7 @@
                             IndirectGroupsCount  = $null
                         }
                     }
-                }
+                #}
                 foreach ($NestedMember in $NestedMembers) {
                     # for each member we either create new user or group, if group we will dive into nesting
                     $DomainParentGroup = ConvertFrom-DistinguishedName -DistinguishedName $ADGroupName.DistinguishedName -ToDomainCN
@@ -158,9 +159,9 @@
                         if ($All) {
                             [PSCustomObject] $CreatedObject
                         }
-                        $OutputFromGroup = Get-WinADGroupMember -GroupName $NestedMember -Nesting $Nesting -Circular $Circular -InitialGroup $InitialGroup -CollectedGroups $CollectedGroups -Nested -All:$All.IsPresent -CountMembers:$CountMembers.IsPresent
+                        $OutputFromGroup = Get-WinADGroupMember -GroupName $NestedMember -Nesting $Nesting -Circular $Circular -InitialGroup $InitialGroup -CollectedGroups $CollectedGroups -Nested -All:$All.IsPresent #-CountMembers:$CountMembers.IsPresent
                         $OutputFromGroup
-                        if ($CountMembers) {
+                        #if ($CountMembers) {
                             foreach ($Member in $OutputFromGroup) {
                                 if ($Member.Type -eq 'group') {
                                     $MembersCache[$ADGroupName.DistinguishedName]['IndirectGroups'].Add($Member)
@@ -168,7 +169,7 @@
                                     $MembersCache[$ADGroupName.DistinguishedName]['IndirectMembers'].Add($Member)
                                 }
                             }
-                        }
+                        #}
                     } else {
                         [PSCustomObject] $CreatedObject
                     }
@@ -182,7 +183,7 @@
                 # If nesting is 0 this means we are ending our run
                 if (-not $All) {
                     # If not ALL it means User wants to receive only users. Basically Get-ADGroupMember -Recursive
-                    $Output | Sort-Object -Unique -Property DistinguishedName
+                    $Output | Sort-Object -Unique -Property DistinguishedName | Select-Object -Property $Properties
                 } else {
                     # User requested ALL
                     if ($AddSelf) {
