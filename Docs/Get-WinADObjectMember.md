@@ -5,7 +5,7 @@ online version:
 schema: 2.0.0
 ---
 
-# Set-WinADDiagnostics
+# Get-WinADObjectMember
 
 ## SYNOPSIS
 {{ Fill in the Synopsis }}
@@ -13,10 +13,9 @@ schema: 2.0.0
 ## SYNTAX
 
 ```
-Set-WinADDiagnostics [[-Forest] <String>] [[-ExcludeDomains] <String[]>]
- [[-ExcludeDomainControllers] <String[]>] [[-IncludeDomains] <String[]>]
- [[-IncludeDomainControllers] <String[]>] [-SkipRODC] [[-Diagnostics] <String[]>] [[-Level] <String>]
- [[-ExtendedForestInformation] <IDictionary>] [<CommonParameters>]
+Get-WinADObjectMember [[-Identity] <Array>] [-AddSelf] [-ClearCache] [[-Nesting] <Int32>]
+ [[-CollectedGroups] <System.Collections.Generic.List`1[System.Object]>] [[-Circular] <Object>]
+ [[-InitialObject] <IDictionary>] [-Nested] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -33,27 +32,56 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
-### -Diagnostics
-{{ Fill Diagnostics Description }}
+### -AddSelf
+{{ Fill AddSelf Description }}
 
 ```yaml
-Type: String[]
+Type: SwitchParameter
 Parameter Sets: (All)
 Aliases:
-Accepted values: Knowledge Consistency Checker (KCC), Security Events, ExDS Interface Events, MAPI Interface Events, Replication Events, Garbage Collection, Internal Configuration, Directory Access, Internal Processing, Performance Counters, Initialization / Termination, Service Control, Name Resolution, Backup, Field Engineering, LDAP Interface Events, Setup, Global Catalog, Inter-site Messaging, Group Caching, Linked-Value Replication, DS RPC Client, DS RPC Server, DS Schema, Transformation Engine, Claims-Based Access Control, Netlogon
 
 Required: False
-Position: 5
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -ExcludeDomainControllers
-{{ Fill ExcludeDomainControllers Description }}
+### -Circular
+{{ Fill Circular Description }}
 
 ```yaml
-Type: String[]
+Type: Object
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 3
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ClearCache
+{{ Fill ClearCache Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -CollectedGroups
+{{ Fill CollectedGroups Description }}
+
+```yaml
+Type: System.Collections.Generic.List`1[System.Object]
 Parameter Sets: (All)
 Aliases:
 
@@ -64,43 +92,13 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -ExcludeDomains
-{{ Fill ExcludeDomains Description }}
+### -Identity
+{{ Fill Identity Description }}
 
 ```yaml
-Type: String[]
+Type: Array
 Parameter Sets: (All)
 Aliases:
-
-Required: False
-Position: 1
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ExtendedForestInformation
-{{ Fill ExtendedForestInformation Description }}
-
-```yaml
-Type: IDictionary
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 7
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Forest
-{{ Fill Forest Description }}
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases: ForestName
 
 Required: False
 Position: 0
@@ -109,13 +107,13 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -IncludeDomainControllers
-{{ Fill IncludeDomainControllers Description }}
+### -InitialObject
+{{ Fill InitialObject Description }}
 
 ```yaml
-Type: String[]
+Type: IDictionary
 Parameter Sets: (All)
-Aliases: DomainControllers, ComputerName
+Aliases:
 
 Required: False
 Position: 4
@@ -124,38 +122,8 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -IncludeDomains
-{{ Fill IncludeDomains Description }}
-
-```yaml
-Type: String[]
-Parameter Sets: (All)
-Aliases: Domain, Domains
-
-Required: False
-Position: 3
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Level
-{{ Fill Level Description }}
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 6
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -SkipRODC
-{{ Fill SkipRODC Description }}
+### -Nested
+{{ Fill Nested Description }}
 
 ```yaml
 Type: SwitchParameter
@@ -164,6 +132,21 @@ Aliases:
 
 Required: False
 Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Nesting
+{{ Fill Nesting Description }}
+
+```yaml
+Type: Int32
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 1
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

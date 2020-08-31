@@ -12,16 +12,11 @@ schema: 2.0.0
 
 ## SYNTAX
 
-### Default (Default)
 ```
-Get-WinADDiagnostics [-Forest <String>] [-ExcludeDomains <String[]>] [-ExcludeDomainControllers <String[]>]
- [-IncludeDomains <String[]>] [-IncludeDomainControllers <String[]>] [-SkipRODC]
- [-ExtendedForestInformation <IDictionary>] [<CommonParameters>]
-```
-
-### Computer
-```
-Get-WinADDiagnostics [-ComputerName <String[]>] [-ExtendedForestInformation <IDictionary>] [<CommonParameters>]
+Get-WinADDiagnostics [[-Forest] <String>] [[-ExcludeDomains] <String[]>]
+ [[-ExcludeDomainControllers] <String[]>] [[-IncludeDomains] <String[]>]
+ [[-IncludeDomainControllers] <String[]>] [-SkipRODC] [[-ExtendedForestInformation] <IDictionary>]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -38,31 +33,16 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
-### -ComputerName
-{{ Fill ComputerName Description }}
-
-```yaml
-Type: String[]
-Parameter Sets: Computer
-Aliases:
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
 ### -ExcludeDomainControllers
 {{ Fill ExcludeDomainControllers Description }}
 
 ```yaml
 Type: String[]
-Parameter Sets: Default
+Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: Named
+Position: 2
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -73,11 +53,11 @@ Accept wildcard characters: False
 
 ```yaml
 Type: String[]
-Parameter Sets: Default
+Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: Named
+Position: 1
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -92,7 +72,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: Named
+Position: 5
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -103,11 +83,11 @@ Accept wildcard characters: False
 
 ```yaml
 Type: String
-Parameter Sets: Default
+Parameter Sets: (All)
 Aliases: ForestName
 
 Required: False
-Position: Named
+Position: 0
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -118,11 +98,11 @@ Accept wildcard characters: False
 
 ```yaml
 Type: String[]
-Parameter Sets: Default
-Aliases: DomainControllers
+Parameter Sets: (All)
+Aliases: DomainControllers, ComputerName
 
 Required: False
-Position: Named
+Position: 4
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -133,11 +113,11 @@ Accept wildcard characters: False
 
 ```yaml
 Type: String[]
-Parameter Sets: Default
+Parameter Sets: (All)
 Aliases: Domain, Domains
 
 Required: False
-Position: Named
+Position: 3
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -148,7 +128,7 @@ Accept wildcard characters: False
 
 ```yaml
 Type: SwitchParameter
-Parameter Sets: Default
+Parameter Sets: (All)
 Aliases:
 
 Required: False

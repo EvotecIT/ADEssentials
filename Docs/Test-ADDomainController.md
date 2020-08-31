@@ -13,7 +13,10 @@ schema: 2.0.0
 ## SYNTAX
 
 ```
-Test-ADDomainController [[-ComputerName] <String[]>] [[-Credential] <PSCredential>] [<CommonParameters>]
+Test-ADDomainController [[-Forest] <String>] [[-ExcludeDomains] <String[]>]
+ [[-ExcludeDomainControllers] <String[]>] [[-IncludeDomains] <String[]>]
+ [[-IncludeDomainControllers] <String[]>] [-SkipRODC] [[-Credential] <PSCredential>]
+ [[-ExtendedForestInformation] <IDictionary>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -30,21 +33,6 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
-### -ComputerName
-{{ Fill ComputerName Description }}
-
-```yaml
-Type: String[]
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 0
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
 ### -Credential
 {{ Fill Credential Description }}
 
@@ -54,7 +42,112 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
+Position: 5
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ExcludeDomainControllers
+{{ Fill ExcludeDomainControllers Description }}
+
+```yaml
+Type: String[]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ExcludeDomains
+{{ Fill ExcludeDomains Description }}
+
+```yaml
+Type: String[]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
 Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ExtendedForestInformation
+{{ Fill ExtendedForestInformation Description }}
+
+```yaml
+Type: IDictionary
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 6
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Forest
+{{ Fill Forest Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases: ForestName
+
+Required: False
+Position: 0
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -IncludeDomainControllers
+{{ Fill IncludeDomainControllers Description }}
+
+```yaml
+Type: String[]
+Parameter Sets: (All)
+Aliases: DomainControllers, DomainController, ComputerName
+
+Required: False
+Position: 4
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -IncludeDomains
+{{ Fill IncludeDomains Description }}
+
+```yaml
+Type: String[]
+Parameter Sets: (All)
+Aliases: Domain, Domains
+
+Required: False
+Position: 3
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -SkipRODC
+{{ Fill SkipRODC Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

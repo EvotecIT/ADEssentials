@@ -5,7 +5,7 @@ online version:
 schema: 2.0.0
 ---
 
-# Get-WinADLMSettings
+# Add-ADACL
 
 ## SYNOPSIS
 {{ Fill in the Synopsis }}
@@ -13,10 +13,8 @@ schema: 2.0.0
 ## SYNTAX
 
 ```
-Get-WinADLMSettings [[-Forest] <String>] [[-ExcludeDomains] <String[]>]
- [[-ExcludeDomainControllers] <String[]>] [[-IncludeDomains] <String[]>]
- [[-IncludeDomainControllers] <String[]>] [-SkipRODC] [[-Days] <Int32>]
- [[-ExtendedForestInformation] <IDictionary>] [<CommonParameters>]
+Add-ADACL [-ACL] <Array> [-Principal] <String> [-AccessRule] <ActiveDirectoryRights>
+ [-AccessControlType] <AccessControlType> [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -33,118 +31,91 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
-### -Days
-{{ Fill Days Description }}
+### -ACL
+{{ Fill ACL Description }}
 
 ```yaml
-Type: Int32
+Type: Array
 Parameter Sets: (All)
 Aliases:
 
-Required: False
-Position: 5
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ExcludeDomainControllers
-{{ Fill ExcludeDomainControllers Description }}
-
-```yaml
-Type: String[]
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 2
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ExcludeDomains
-{{ Fill ExcludeDomains Description }}
-
-```yaml
-Type: String[]
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 1
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ExtendedForestInformation
-{{ Fill ExtendedForestInformation Description }}
-
-```yaml
-Type: IDictionary
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 6
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Forest
-{{ Fill Forest Description }}
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases: ForestName
-
-Required: False
+Required: True
 Position: 0
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -IncludeDomainControllers
-{{ Fill IncludeDomainControllers Description }}
+### -AccessControlType
+{{ Fill AccessControlType Description }}
 
 ```yaml
-Type: String[]
+Type: AccessControlType
 Parameter Sets: (All)
-Aliases: DomainControllers, DomainController
+Aliases:
+Accepted values: Allow, Deny
 
-Required: False
-Position: 4
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -IncludeDomains
-{{ Fill IncludeDomains Description }}
-
-```yaml
-Type: String[]
-Parameter Sets: (All)
-Aliases: Domain, Domains
-
-Required: False
+Required: True
 Position: 3
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -SkipRODC
-{{ Fill SkipRODC Description }}
+### -AccessRule
+{{ Fill AccessRule Description }}
+
+```yaml
+Type: ActiveDirectoryRights
+Parameter Sets: (All)
+Aliases:
+Accepted values: CreateChild, DeleteChild, ListChildren, Self, ReadProperty, WriteProperty, DeleteTree, ListObject, ExtendedRight, Delete, ReadControl, GenericExecute, GenericWrite, GenericRead, WriteDacl, WriteOwner, GenericAll, Synchronize, AccessSystemSecurity
+
+Required: True
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Confirm
+Prompts you for confirmation before running the cmdlet.
 
 ```yaml
 Type: SwitchParameter
 Parameter Sets: (All)
+Aliases: cf
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Principal
+{{ Fill Principal Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
 Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -WhatIf
+Shows what would happen if the cmdlet runs.
+The cmdlet is not run.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases: wi
 
 Required: False
 Position: Named

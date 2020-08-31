@@ -5,7 +5,7 @@ online version:
 schema: 2.0.0
 ---
 
-# Set-WinADReplicationConnections
+# Get-WinADWellKnownFolders
 
 ## SYNOPSIS
 {{ Fill in the Synopsis }}
@@ -13,8 +13,8 @@ schema: 2.0.0
 ## SYNTAX
 
 ```
-Set-WinADReplicationConnections [[-Forest] <String>] [-Force] [[-ExtendedForestInformation] <IDictionary>]
- [<CommonParameters>]
+Get-WinADWellKnownFolders [[-Forest] <String>] [[-IncludeDomains] <String[]>] [[-ExcludeDomains] <String[]>]
+ [[-ExtendedForestInformation] <IDictionary>] [-AsCustomObject] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -31,23 +31,8 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
-### -ExtendedForestInformation
-{{ Fill ExtendedForestInformation Description }}
-
-```yaml
-Type: IDictionary
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 1
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Force
-{{ Fill Force Description }}
+### -AsCustomObject
+{{ Fill AsCustomObject Description }}
 
 ```yaml
 Type: SwitchParameter
@@ -61,16 +46,61 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
+### -ExcludeDomains
+{{ Fill ExcludeDomains Description }}
+
+```yaml
+Type: String[]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ExtendedForestInformation
+{{ Fill ExtendedForestInformation Description }}
+
+```yaml
+Type: IDictionary
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 3
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -Forest
 {{ Fill Forest Description }}
 
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases: ForestName
+Aliases:
 
 Required: False
 Position: 0
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -IncludeDomains
+{{ Fill IncludeDomains Description }}
+
+```yaml
+Type: String[]
+Parameter Sets: (All)
+Aliases: Domain
+
+Required: False
+Position: 1
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

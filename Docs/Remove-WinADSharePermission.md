@@ -5,7 +5,7 @@ online version:
 schema: 2.0.0
 ---
 
-# Set-WinADReplicationConnections
+# Remove-WinADSharePermission
 
 ## SYNOPSIS
 {{ Fill in the Synopsis }}
@@ -13,7 +13,7 @@ schema: 2.0.0
 ## SYNTAX
 
 ```
-Set-WinADReplicationConnections [[-Forest] <String>] [-Force] [[-ExtendedForestInformation] <IDictionary>]
+Remove-WinADSharePermission -Path <String> [-Type <String>] [-LimitProcessing <Int32>] [-WhatIf] [-Confirm]
  [<CommonParameters>]
 ```
 
@@ -31,26 +31,26 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
-### -ExtendedForestInformation
-{{ Fill ExtendedForestInformation Description }}
+### -Confirm
+Prompts you for confirmation before running the cmdlet.
 
 ```yaml
-Type: IDictionary
+Type: SwitchParameter
 Parameter Sets: (All)
-Aliases:
+Aliases: cf
 
 Required: False
-Position: 1
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Force
-{{ Fill Force Description }}
+### -LimitProcessing
+{{ Fill LimitProcessing Description }}
 
 ```yaml
-Type: SwitchParameter
+Type: Int32
 Parameter Sets: (All)
 Aliases:
 
@@ -61,16 +61,48 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Forest
-{{ Fill Forest Description }}
+### -Path
+{{ Fill Path Description }}
 
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases: ForestName
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Type
+{{ Fill Type Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+Accepted values: Unknown
 
 Required: False
-Position: 0
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -WhatIf
+Shows what would happen if the cmdlet runs.
+The cmdlet is not run.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases: wi
+
+Required: False
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

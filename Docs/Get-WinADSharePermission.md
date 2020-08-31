@@ -5,18 +5,25 @@ online version:
 schema: 2.0.0
 ---
 
-# Set-WinADDiagnostics
+# Get-WinADSharePermission
 
 ## SYNOPSIS
 {{ Fill in the Synopsis }}
 
 ## SYNTAX
 
+### Path (Default)
 ```
-Set-WinADDiagnostics [[-Forest] <String>] [[-ExcludeDomains] <String[]>]
- [[-ExcludeDomainControllers] <String[]>] [[-IncludeDomains] <String[]>]
- [[-IncludeDomainControllers] <String[]>] [-SkipRODC] [[-Diagnostics] <String[]>] [[-Level] <String>]
- [[-ExtendedForestInformation] <IDictionary>] [<CommonParameters>]
+Get-WinADSharePermission -Path <String> [-Owner] [-Name <String[]>] [-Forest <String>]
+ [-ExcludeDomains <String[]>] [-IncludeDomains <String[]>] [-ExtendedForestInformation <IDictionary>]
+ [<CommonParameters>]
+```
+
+### ShareType
+```
+Get-WinADSharePermission -ShareType <String[]> [-Owner] [-Name <String[]>] [-Forest <String>]
+ [-ExcludeDomains <String[]>] [-IncludeDomains <String[]>] [-ExtendedForestInformation <IDictionary>]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -33,37 +40,6 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
-### -Diagnostics
-{{ Fill Diagnostics Description }}
-
-```yaml
-Type: String[]
-Parameter Sets: (All)
-Aliases:
-Accepted values: Knowledge Consistency Checker (KCC), Security Events, ExDS Interface Events, MAPI Interface Events, Replication Events, Garbage Collection, Internal Configuration, Directory Access, Internal Processing, Performance Counters, Initialization / Termination, Service Control, Name Resolution, Backup, Field Engineering, LDAP Interface Events, Setup, Global Catalog, Inter-site Messaging, Group Caching, Linked-Value Replication, DS RPC Client, DS RPC Server, DS Schema, Transformation Engine, Claims-Based Access Control, Netlogon
-
-Required: False
-Position: 5
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ExcludeDomainControllers
-{{ Fill ExcludeDomainControllers Description }}
-
-```yaml
-Type: String[]
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 2
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
 ### -ExcludeDomains
 {{ Fill ExcludeDomains Description }}
 
@@ -73,7 +49,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 1
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -88,7 +64,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 7
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -103,22 +79,7 @@ Parameter Sets: (All)
 Aliases: ForestName
 
 Required: False
-Position: 0
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -IncludeDomainControllers
-{{ Fill IncludeDomainControllers Description }}
-
-```yaml
-Type: String[]
-Parameter Sets: (All)
-Aliases: DomainControllers, ComputerName
-
-Required: False
-Position: 4
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -133,29 +94,29 @@ Parameter Sets: (All)
 Aliases: Domain, Domains
 
 Required: False
-Position: 3
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Level
-{{ Fill Level Description }}
+### -Name
+{{ Fill Name Description }}
 
 ```yaml
-Type: String
+Type: String[]
 Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 6
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -SkipRODC
-{{ Fill SkipRODC Description }}
+### -Owner
+{{ Fill Owner Description }}
 
 ```yaml
 Type: SwitchParameter
@@ -163,6 +124,37 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Path
+{{ Fill Path Description }}
+
+```yaml
+Type: String
+Parameter Sets: Path
+Aliases:
+
+Required: True
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ShareType
+{{ Fill ShareType Description }}
+
+```yaml
+Type: String[]
+Parameter Sets: ShareType
+Aliases:
+Accepted values: NetLogon, SYSVOL
+
+Required: True
 Position: Named
 Default value: None
 Accept pipeline input: False
