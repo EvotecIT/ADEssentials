@@ -23,6 +23,7 @@
     Process {
         [Array] $Output = foreach ($MyObject in $Identity) {
             $Object = Get-WinADObject -Identity $MyObject
+            Write-Verbose "Get-WinADObjectMember - processing $($Object.Name)/$($Object.DomainName)"
             if (-not $Nested.IsPresent) {
                 $InitialObject = [ordered] @{
                     ObjectName           = $Object.Name
@@ -79,6 +80,7 @@
                     }
                 }
                 foreach ($NestedMember in $NestedMembers) {
+                    Write-Verbose "Get-WinADObjectMember - processing $($InitialObject.ObjectName) nested member $($NestedMember.name)"
                     #$DomainParentGroup = ConvertFrom-DistinguishedName -DistinguishedName $Object.DistinguishedName -ToDomainCN
                     $CreatedObject = [ordered] @{
                         ObjectName           = $InitialObject.ObjectName
