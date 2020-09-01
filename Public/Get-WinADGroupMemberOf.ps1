@@ -1,4 +1,4 @@
-﻿function Get-WinADObjectMember {
+﻿function Get-WinADGroupMemberOf {
     [cmdletBinding()]
     param(
         [parameter(Position = 0, Mandatory)][Array] $Identity,
@@ -34,6 +34,8 @@
                     DisplayName          = $Object.DisplayName
                     Enabled              = $Object.Enabled
                     Type                 = $Object.ObjectClass
+                    GroupType            = $Object.GroupType
+                    GroupScope           = $Object.GroupScope
                     Nesting              = $Nesting
                     Circular             = $false
                     #CrossForest          = $false
@@ -93,6 +95,8 @@
                         DisplayName          = $NestedMember.DisplayName
                         Enabled              = $NestedMember.Enabled
                         Type                 = $NestedMember.ObjectClass
+                        GroupType            = $NestedMember.GroupType
+                        GroupScope           = $NestedMember.GroupScope
                         Nesting              = $Nesting
                         Circular             = $false
                         #CrossForest          = $false
@@ -112,8 +116,8 @@
                         }
                         $CollectedGroups.Add($Object.DistinguishedName)
                         [PSCustomObject] $CreatedObject
-                        Write-Verbose "Get-WinADObjectMember - Going deeper with $($NestedMember.name)"
-                        $OutputFromGroup = Get-WinADObjectMember -Identity $NestedMember -Nesting $Nesting -Circular $Circular -InitialObject $InitialObject -CollectedGroups $CollectedGroups -Nested
+                        Write-Verbose "Get-WinADGroupMemberOf - Going deeper with $($NestedMember.name)"
+                        $OutputFromGroup = Get-WinADGroupMemberOf -Identity $NestedMember -Nesting $Nesting -Circular $Circular -InitialObject $InitialObject -CollectedGroups $CollectedGroups -Nested
                         $OutputFromGroup
                     } else {
                         [PSCustomObject] $CreatedObject
