@@ -1,4 +1,4 @@
-﻿function New-HTMLObjectDiagramHierachical {
+﻿function New-HTMLGroupOfDiagramHierarchical {
     [cmdletBinding()]
     param(
         [Array] $Identity,

@@ -1,34 +1,30 @@
-﻿function New-HTMLObjectDiagramDefault {
+﻿function New-HTMLGroupOfDiagramSummaryHierarchical {
     [cmdletBinding()]
     param(
-        [Array] $Identity,
+        [Array] $ADGroup,
         [ValidateSet('Default', 'Hierarchical', 'Both')][string] $RemoveAppliesTo = 'Both',
         [switch] $RemoveComputers,
         [switch] $RemoveUsers,
-        [switch] $RemoveOther,
-        [string] $DataTableID,
-        [int] $ColumnID
+        [switch] $RemoveOther
     )
     New-HTMLDiagram -Height 'calc(100vh - 200px)' {
-        #if ($DataTableID) {
-        #    New-DiagramEvent -ID $DataTableID -ColumnID $ColumnID
-        #}
-        #New-DiagramOptionsLayout -HierarchicalEnabled $true -HierarchicalDirection FromLeftToRight #-HierarchicalSortMethod directed
-        #New-DiagramOptionsPhysics -Enabled $true -HierarchicalRepulsionAvoidOverlap 1 -HierarchicalRepulsionNodeDistance 50
-        New-DiagramOptionsPhysics -RepulsionNodeDistance 150 -Solver repulsion
-        if ($Identity) {
+        New-DiagramOptionsLayout -HierarchicalEnabled $true #-HierarchicalDirection FromLeftToRight #-HierarchicalSortMethod directed
+        New-DiagramOptionsPhysics -Enabled $true -HierarchicalRepulsionAvoidOverlap 1 -HierarchicalRepulsionNodeDistance 200
+        #New-DiagramOptionsPhysics -RepulsionNodeDistance 150 -Solver repulsion
+        if ($ADGroup) {
             # Add it's members to diagram
-            foreach ($ADObject in $Identity) {
+            foreach ($ADObject in $ADGroup) {
                 # Lets build our diagram
                 #[int] $Level = $($ADObject.Nesting) + 1
                 $ID = "$($ADObject.DomainName)$($ADObject.Name)"
                 #[int] $LevelParent = $($ADObject.Nesting)
                 $IDParent = "$($ADObject.ParentGroupDomain)$($ADObject.ParentGroup)"
 
+                [int] $Level = $($ADObject.Nesting) + 1
                 if ($ADObject.Type -eq 'User') {
-                    if (-not $RemoveUsers -or $RemoveAppliesTo -notin 'Both', 'Default') {
+                    if (-not $RemoveUsers -or $RemoveAppliesTo -notin 'Both', 'Hierarchical') {
                         $Label = $ADObject.Name + [System.Environment]::NewLine + $ADObject.DomainName
-                        New-DiagramNode -Id $ID -Label $Label -Image 'https://image.flaticon.com/icons/svg/3135/3135715.svg'
+                        New-DiagramNode -Id $ID -Label $Label -Image 'https://image.flaticon.com/icons/svg/3135/3135715.svg' -Level $Level
                         New-DiagramLink -ColorOpacity 0.2 -From $ID -To $IDParent -Color Blue -ArrowsFromEnabled -Dashes
                     }
                 } elseif ($ADObject.Type -eq 'Group') {
@@ -39,20 +35,20 @@
                         $BorderColor = 'Blue'
                         $Image = 'https://image.flaticon.com/icons/svg/166/166258.svg'
                     }
-                    #$SummaryMembers = -join ('Total: ', $ADObject.TotalMembers, ' Direct: ', $ADObject.DirectMembers, ' Groups: ', $ADObject.DirectGroups, ' Indirect: ', $ADObject.IndirectMembers)
-                    $Label = $ADObject.Name + [System.Environment]::NewLine + $ADObject.DomainName + [System.Environment]::NewLine #+ $SummaryMembers
-                    New-DiagramNode -Id $ID -Label $Label -Image $Image -ArrowsFromEnabled -ColorBorder $BorderColor
+                    $SummaryMembers = -join ('Total: ', $ADObject.TotalMembers, ' Direct: ', $ADObject.DirectMembers, ' Groups: ', $ADObject.DirectGroups, ' Indirect: ', $ADObject.IndirectMembers)
+                    $Label = $ADObject.Name + [System.Environment]::NewLine + $ADObject.DomainName + [System.Environment]::NewLine + $SummaryMembers
+                    New-DiagramNode -Id $ID -Label $Label -Image $Image -Level $Level -LinkColor Orange -ColorBorder $BorderColor
                     New-DiagramLink -ColorOpacity 0.5 -From $ID -To $IDParent -Color Orange -ArrowsFromEnabled
                 } elseif ($ADObject.Type -eq 'Computer') {
-                    if (-not $RemoveComputers -or $RemoveAppliesTo -notin 'Both', 'Default') {
+                    if (-not $RemoveComputers -or $RemoveAppliesTo -notin 'Both', 'Hierarchical') {
                         $Label = $ADObject.Name + [System.Environment]::NewLine + $ADObject.DomainName
-                        New-DiagramNode -Id $ID -Label $Label -Image 'https://image.flaticon.com/icons/svg/3003/3003040.svg'
+                        New-DiagramNode -Id $ID -Label $Label -Image 'https://image.flaticon.com/icons/svg/3003/3003040.svg' -Level $Level
                         New-DiagramLink -ColorOpacity 0.2 -From $ID -To $IDParent -Color Arsenic -ArrowsFromEnabled -Dashes
                     }
                 } else {
-                    if (-not $RemoveOther -or $RemoveAppliesTo -notin 'Both', 'Default') {
+                    if (-not $RemoveOther -or $RemoveAppliesTo -notin 'Both', 'Hierarchical') {
                         $Label = $ADObject.Name + [System.Environment]::NewLine + $ADObject.DomainName
-                        New-DiagramNode -Id $ID -Label $Label -Image 'https://image.flaticon.com/icons/svg/3347/3347551.svg'
+                        New-DiagramNode -Id $ID -Label $Label -Image 'https://image.flaticon.com/icons/svg/3347/3347551.svg' -Level $Level
                         New-DiagramLink -ColorOpacity 0.2 -From $ID -To $IDParent -Color Boulder -ArrowsFromEnabled -Dashes
                     }
                 }

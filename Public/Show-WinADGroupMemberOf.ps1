@@ -2,19 +2,19 @@
     [alias('Show-ADGroupMemberOf')]
     [cmdletBinding(DefaultParameterSetName = 'Default')]
     param(
-        [string[]] $Identity,
+        [parameter(Position = 0, Mandatory)][string[]] $Identity,
         [string] $FilePath,
         [ValidateSet('Default', 'Hierarchical', 'Both')][string] $RemoveAppliesTo = 'Both',
         [switch] $RemoveComputers,
         [switch] $RemoveUsers,
-        [switch] $RemoveOther
-        #[Parameter(ParameterSetName = 'Default')][switch] $Summary,
-        #[Parameter(ParameterSetName = 'SummaryOnly')][switch] $SummaryOnly
+        [switch] $RemoveOther,
+        [Parameter(ParameterSetName = 'Default')][switch] $Summary,
+        [Parameter(ParameterSetName = 'SummaryOnly')][switch] $SummaryOnly
     )
     if ($FilePath -eq '') {
         $FilePath = Get-FileName -Extension 'html' -Temporary
     }
-    #$GroupsList = [System.Collections.Generic.List[object]]::new()
+    $GroupsList = [System.Collections.Generic.List[object]]::new()
     New-HTML -TitleText "Visual Object MemberOf" {
         New-HTMLSectionStyle -BorderRadius 0px -HeaderBackGroundColor Grey -RemoveShadow
         New-HTMLTableOption -DataStore JavaScript
@@ -23,11 +23,11 @@
             try {
                 Write-Verbose "Show-WinADObjectMember - requesting $Identity member of property"
                 $MyObject = Get-WinADGroupMemberOf -Identity $ADObject -AddSelf
-                # if ($Summary -or $SummaryOnly) {
-                #     foreach ($Object in $MyObject) {
-                #         $GroupsList.Add($Object)
-                #    }
-                # }
+                if ($Summary -or $SummaryOnly) {
+                    foreach ($Object in $MyObject) {
+                        $GroupsList.Add($Object)
+                    }
+                }
             } catch {
                 Write-Warning "Show-WinADGroupMemberOf - Error processing group $Group. Skipping. Needs investigation why it failed. Error: $($_.Exception.Message)"
                 continue
@@ -51,7 +51,7 @@
                     }
                     New-HTMLTab -TabName 'Diagram Basic' {
                         New-HTMLSection -Title "Diagram for $ObjectName" {
-                            New-HTMLObjectDiagramDefault -Identity $MyObject -RemoveAppliesTo $RemoveAppliesTo -RemoveUsers:$RemoveUsers -RemoveComputers:$RemoveComputeres -RemoveOther:$RemoveOther -DataTableID $DataTableID -ColumnID 1
+                            New-HTMLGroupOfDiagramDefault -Identity $MyObject -RemoveAppliesTo $RemoveAppliesTo -RemoveUsers:$RemoveUsers -RemoveComputers:$RemoveComputeres -RemoveOther:$RemoveOther -DataTableID $DataTableID -ColumnID 1
                         }
                         #New-HTMLSection -Title "Group membership table $GroupName" {
                         #    New-HTMLTable -DataTable $ADGroup -Filtering -DataStoreID $DataStoreID -DataTableID $DataTableID
@@ -59,7 +59,7 @@
                     }
                     New-HTMLTab -TabName 'Diagram Hierarchy' {
                         New-HTMLSection -Title "Diagram for $ObjectName" {
-                            New-HTMLObjectDiagramHierachical -Identity $MyObject -RemoveAppliesTo $RemoveAppliesTo -RemoveUsers:$RemoveUsers -RemoveComputers:$RemoveComputeres -RemoveOther:$RemoveOther
+                            New-HTMLGroupOfDiagramHierarchical -Identity $MyObject -RemoveAppliesTo $RemoveAppliesTo -RemoveUsers:$RemoveUsers -RemoveComputers:$RemoveComputeres -RemoveOther:$RemoveOther
                         }
                         #New-HTMLSection -Title "Group membership table $GroupName" {
                         #    New-HTMLTable -DataTable $ADGroup -Filtering -DataStoreID $DataStoreID
@@ -68,21 +68,19 @@
                 }
             }
         }
-        <#
         if ($Summary -or $SummaryOnly) {
             New-HTMLTab -Name 'Summary' {
                 New-HTMLTab -TabName 'Diagram Basic' {
                     New-HTMLSection -Title "Diagram for Summary" {
-                        New-HTMLGroupDiagramSummary -ADGroup $GroupsList -RemoveAppliesTo $RemoveAppliesTo -RemoveUsers:$RemoveUsers -RemoveComputers:$RemoveComputeres -RemoveOther:$RemoveOther -DataTableID $DataTableID -ColumnID 1
+                        New-HTMLGroupOfDiagramSummary -ADGroup $GroupsList -RemoveAppliesTo $RemoveAppliesTo -RemoveUsers:$RemoveUsers -RemoveComputers:$RemoveComputeres -RemoveOther:$RemoveOther -DataTableID $DataTableID -ColumnID 1
                     }
                 }
                 New-HTMLTab -TabName 'Diagram Hierarchy' {
                     New-HTMLSection -Title "Diagram for Summary" {
-                        New-HTMLGroupDiagramSummaryHierarchical -ADGroup $GroupsList -RemoveAppliesTo $RemoveAppliesTo -RemoveUsers:$RemoveUsers -RemoveComputers:$RemoveComputeres -RemoveOther:$RemoveOther
+                        New-HTMLGroupOfDiagramSummaryHierarchical -ADGroup $GroupsList -RemoveAppliesTo $RemoveAppliesTo -RemoveUsers:$RemoveUsers -RemoveComputers:$RemoveComputeres -RemoveOther:$RemoveOther
                     }
                 }
             }
         }
-        #>
     } -Online -FilePath $FilePath -ShowHTML
 }
