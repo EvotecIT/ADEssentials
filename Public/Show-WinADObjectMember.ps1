@@ -21,6 +21,7 @@
         New-HTMLTabStyle -BorderRadius 0px -TextTransform capitalize -BackgroundColorActive SlateGrey
         foreach ($ADObject in $Identity) {
             try {
+                Write-Verbose "Show-WinADObjectMember - requesting $Identity member of property"
                 $MyObject = Get-WinADObjectMember -Identity $ADObject -AddSelf
                 # if ($Summary -or $SummaryOnly) {
                 #     foreach ($Object in $MyObject) {

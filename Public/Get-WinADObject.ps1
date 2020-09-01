@@ -98,7 +98,7 @@
             }
 
             if ($TemporaryDomainName) {
-                Write-Verbose -Message "Different Domain specified: $TemporaryDomainName"
+                #Write-Verbose -Message "Different Domain specified: $TemporaryDomainName"
                 $Search.SearchRoot = "LDAP://$TemporaryDomainName"
             }
             if ($PSBoundParameters['Credential']) {

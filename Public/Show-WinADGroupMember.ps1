@@ -21,6 +21,7 @@
         New-HTMLTabStyle -BorderRadius 0px -TextTransform capitalize -BackgroundColorActive SlateGrey
         foreach ($Group in $GroupName) {
             try {
+                Write-Verbose "Show-WinADGroupMember - requesting $Group group nested membership"
                 $ADGroup = Get-WinADGroupMember -Group $Group -All -AddSelf
                 if ($Summary -or $SummaryOnly) {
                     foreach ($Object in $ADGroup) {
