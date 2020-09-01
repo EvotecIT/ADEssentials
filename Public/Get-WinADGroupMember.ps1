@@ -61,7 +61,7 @@
             }
             $Nesting++
             # lets get our object
-            $ADGroupName = Get-WinADObject -Identity $GroupName
+            $ADGroupName = Get-WinADObject -Identity $GroupName -IncludeGroupMembership
             if ($ADGroupName) {
                 # we add DomainName to hashtable so we can easily find which group we're dealing with
                 if (-not $Nested.IsPresent) {
@@ -84,7 +84,7 @@
                         if ($Script:WinADGroupMemberCache[$MyIdentity]) {
                             $Script:WinADGroupMemberCache[$MyIdentity]
                         } else {
-                            $ADObject = Get-WinADObject -Identity $MyIdentity # -Properties SamAccountName, DisplayName, Enabled, userAccountControl, ObjectSID
+                            $ADObject = Get-WinADObject -Identity $MyIdentity -IncludeGroupMembership # -Properties SamAccountName, DisplayName, Enabled, userAccountControl, ObjectSID
                             $Script:WinADGroupMemberCache[$MyIdentity] = $ADObject
                             $Script:WinADGroupMemberCache[$MyIdentity]
                         }
@@ -100,7 +100,7 @@
                         if ($Script:WinADGroupMemberCache[$MyIdentity]) {
                             $Script:WinADGroupMemberCache[$MyIdentity]
                         } else {
-                            $ADObject = Get-WinADObject -Identity $MyIdentity
+                            $ADObject = Get-WinADObject -Identity $MyIdentity -IncludeGroupMembership
                             $Script:WinADGroupMemberCache[$MyIdentity] = $ADObject
                             $Script:WinADGroupMemberCache[$MyIdentity]
                         }

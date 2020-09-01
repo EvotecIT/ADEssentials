@@ -2,7 +2,7 @@
     [alias('Show-ADGroupMember')]
     [cmdletBinding(DefaultParameterSetName = 'Default')]
     param(
-        [string[]] $GroupName,
+        [parameter(Position = 0, Mandatory)][alias('GroupName', 'Group')][string[]] $Identity,
         [string] $FilePath,
         [ValidateSet('Default', 'Hierarchical', 'Both')][string] $RemoveAppliesTo = 'Both',
         [switch] $RemoveComputers,
@@ -19,7 +19,7 @@
         New-HTMLSectionStyle -BorderRadius 0px -HeaderBackGroundColor Grey -RemoveShadow
         New-HTMLTableOption -DataStore JavaScript
         New-HTMLTabStyle -BorderRadius 0px -TextTransform capitalize -BackgroundColorActive SlateGrey
-        foreach ($Group in $GroupName) {
+        foreach ($Group in $Identity) {
             try {
                 Write-Verbose "Show-WinADGroupMember - requesting $Group group nested membership"
                 $ADGroup = Get-WinADGroupMember -Group $Group -All -AddSelf
@@ -53,17 +53,11 @@
                         New-HTMLSection -Title "Diagram for $GroupName" {
                             New-HTMLGroupDiagramDefault -ADGroup $ADGroup -RemoveAppliesTo $RemoveAppliesTo -RemoveUsers:$RemoveUsers -RemoveComputers:$RemoveComputeres -RemoveOther:$RemoveOther -DataTableID $DataTableID -ColumnID 1
                         }
-                        #New-HTMLSection -Title "Group membership table $GroupName" {
-                        #    New-HTMLTable -DataTable $ADGroup -Filtering -DataStoreID $DataStoreID -DataTableID $DataTableID
-                        #}
                     }
                     New-HTMLTab -TabName 'Diagram Hierarchy' {
                         New-HTMLSection -Title "Diagram for $GroupName" {
                             New-HTMLGroupDiagramHierachical -ADGroup $ADGroup -RemoveAppliesTo $RemoveAppliesTo -RemoveUsers:$RemoveUsers -RemoveComputers:$RemoveComputeres -RemoveOther:$RemoveOther
                         }
-                        #New-HTMLSection -Title "Group membership table $GroupName" {
-                        #    New-HTMLTable -DataTable $ADGroup -Filtering -DataStoreID $DataStoreID
-                        #}
                     }
                 }
             }
