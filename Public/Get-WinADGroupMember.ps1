@@ -42,6 +42,8 @@
                     DomainName        = $null
                     DisplayName       = $null
                     Enabled           = $null
+                    GroupType         = $null
+                    GroupScope        = $null
                     Type              = 'group'
                     DirectMembers     = 0
                     DirectGroups      = 0
@@ -75,6 +77,8 @@
                         $InitialGroup.GroupDomainName = $ADGroupName.DomainName
                         $InitialGroup.DistinguishedName = $ADGroupName.DistinguishedName
                         $InitialGroup.Sid = $ADGroupName.ObjectSID
+                        $InitialGroup.GroupType = $ADGroupName.GroupType
+                        $InitialGroup.GroupScope = $ADGroupName.GroupScope
                     }
                 }
                 # Lets cache our object
@@ -133,6 +137,8 @@
                         DomainName        = $NestedMember.DomainName #ConvertFrom-DistinguishedName -DistinguishedName $NestedMember.DistinguishedName -ToDomainCN
                         DisplayName       = $NestedMember.DisplayName
                         Enabled           = $NestedMember.Enabled
+                        GroupType         = $NestedMember.GroupType
+                        GroupScope        = $NestedMember.GroupScope
                         Type              = $NestedMember.ObjectClass
                         DirectMembers     = 0
                         DirectGroups      = 0

@@ -41,6 +41,7 @@
                         New-HTMLSection -Title "Information for $ObjectName" {
                             New-HTMLTable -DataTable $MyObject -Filtering -DataStoreID $DataStoreID {
                                 New-TableHeader -Names Name, SamAccountName, DomainName, DisplayName -Title 'Member'
+                                New-TableHeader -Names GroupType, GroupScope -Title 'Group Details'
                                 # New-TableHeader -Names DirectMembers, DirectGroups, IndirectMembers, TotalMembers -Title 'Statistics'
                                 New-TableCondition -BackgroundColor CoralRed -ComparisonType bool -Value $false -Name Enabled -Operator eq
                                 New-TableCondition -BackgroundColor LightBlue -ComparisonType string -Value '' -Name ParentGroup -Operator eq -Row
