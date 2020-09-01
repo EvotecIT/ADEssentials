@@ -39,6 +39,8 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 
 ## Changelog
 
+- 0.0.78 - 1.09.2020
+  - Improvements
 - 0.0.77 - 1.09.2020
   - [x] Performance improvements to `Get-WinADObject` - new switch added `IncludeGroupMembership`
   - [x] Small fixes to `Get-WinADObjectMember`
