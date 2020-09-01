@@ -23,7 +23,7 @@
     Process {
         [Array] $Output = foreach ($MyObject in $Identity) {
             $Object = Get-WinADObject -Identity $MyObject
-            Write-Verbose "Get-WinADObjectMember - processing $($Object.Name)/$($Object.DomainName)"
+            Write-Verbose "Get-WinADObjectMember - starting $($Object.Name)/$($Object.DomainName)"
             if (-not $Nested.IsPresent) {
                 $InitialObject = [ordered] @{
                     ObjectName           = $Object.Name
@@ -57,6 +57,7 @@
                         if ($Script:WinADGroupObjectCache[$MyIdentity]) {
                             $Script:WinADGroupObjectCache[$MyIdentity]
                         } else {
+                            Write-Verbose "Get-WinADObjectMember - Requesting more data on $MyIdentity (Circular: $true)"
                             $ADObject = Get-WinADObject -Identity $MyIdentity
                             $Script:WinADGroupObjectCache[$MyIdentity] = $ADObject
                             $Script:WinADGroupObjectCache[$MyIdentity]
@@ -73,6 +74,7 @@
                         if ($Script:WinADGroupObjectCache[$MyIdentity]) {
                             $Script:WinADGroupObjectCache[$MyIdentity]
                         } else {
+                            Write-Verbose "Get-WinADObjectMember - Requesting more data on $MyIdentity (Circular: $false)"
                             $ADObject = Get-WinADObject -Identity $MyIdentity
                             $Script:WinADGroupObjectCache[$MyIdentity] = $ADObject
                             $Script:WinADGroupObjectCache[$MyIdentity]
@@ -110,7 +112,7 @@
                         }
                         $CollectedGroups.Add($Object.DistinguishedName)
                         [PSCustomObject] $CreatedObject
-
+                        Write-Verbose "Get-WinADObjectMember - Going deeper with $($NestedMember.name)"
                         $OutputFromGroup = Get-WinADObjectMember -Identity $NestedMember -Nesting $Nesting -Circular $Circular -InitialObject $InitialObject -CollectedGroups $CollectedGroups -Nested
                         $OutputFromGroup
                     } else {
