@@ -1,5 +1,5 @@
-﻿function Show-WinADObjectMember {
-    [alias('Show-ADObjectMember')]
+﻿function Show-WinADGroupMemberOf {
+    [alias('Show-ADGroupMemberOf')]
     [cmdletBinding(DefaultParameterSetName = 'Default')]
     param(
         [string[]] $Identity,
@@ -22,14 +22,14 @@
         foreach ($ADObject in $Identity) {
             try {
                 Write-Verbose "Show-WinADObjectMember - requesting $Identity member of property"
-                $MyObject = Get-WinADObjectMember -Identity $ADObject -AddSelf
+                $MyObject = Get-WinADGroupMemberOf -Identity $ADObject -AddSelf
                 # if ($Summary -or $SummaryOnly) {
                 #     foreach ($Object in $MyObject) {
                 #         $GroupsList.Add($Object)
                 #    }
                 # }
             } catch {
-                Write-Warning "Show-WinADObjectMember - Error processing group $Group. Skipping. Needs investigation why it failed. Error: $($_.Exception.Message)"
+                Write-Warning "Show-WinADGroupMemberOf - Error processing group $Group. Skipping. Needs investigation why it failed. Error: $($_.Exception.Message)"
                 continue
             }
             if ($MyObject -and -not $SummaryOnly) {

@@ -169,6 +169,47 @@
                     }
                 }
 
+
+                $GroupTypes = @{
+                    '2'           = @{
+                        Name  = 'Distribution Group - Global' # distribution
+                        Type  = 'Distribution'
+                        Scope = 'Global'
+                    }
+                    '4'           = @{
+                        Name  = 'Distribution Group - Domain Local' # distribution
+                        Type  = 'Distribution'
+                        Scope = 'Domain local'
+                    }
+                    '8'           = @{
+                        Name  = 'Distribution Group - Universal'
+                        Type  = 'Distribution'
+                        Scope = 'Universal'
+                    }
+                    '-2147483640' = @{
+                        Name  = 'Security Group - Universal'
+                        Type  = 'Security'
+                        Scope = 'Universal'
+                    }
+                    '-2147483643' = @{
+                        Name  = 'Security Group - Builtin Local' # Builtin local Security Group
+                        Type  = 'Security'
+                        Scope = 'Builtin local'
+                    }
+                    '-2147483644' = @{
+                        Name  = 'Security Group - Domain Local'
+                        Type  = 'Security'
+                        Scope = 'Domain local'
+                    }
+                    '-2147483646' = @{
+                        Name  = 'Security Group - Global' # security
+                        Type  = 'Security'
+                        Scope = 'Global'
+                    }
+                }
+                $GroupType = $Object.properties.grouptype -as [string]
+
+
                 [PSCustomObject] @{
                     DisplayName         = $DisplayName
                     Name                = $Name
@@ -190,6 +231,10 @@
                     MemberOf            = $Object.properties.memberof -as [array]
                     Members             = $Members
                     DirectReports       = $Object.Properties.directreports
+                    GroupScopedType     = $GroupTypes[$GroupType].Name
+                    GroupScope          = $GroupTypes[$GroupType].Scope
+                    GroupType           = $GroupTypes[$GroupType].Type
+                    #Administrative      = if ($Object.properties.admincount -eq '1') { $true } else { $false }
                 }
             }
         }
