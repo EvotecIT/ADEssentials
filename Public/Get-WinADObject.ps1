@@ -5,7 +5,8 @@
         [Array] $Identity,
         [alias('Domain', 'DomainDistinguishedName')][string] $DomainName,
         [pscredential] $Credential,
-        [switch] $IncludeDeletedObjects
+        [switch] $IncludeDeletedObjects,
+        [switch] $IncludeGroupMembership
     )
     Begin {
         # This is purely for calling group workaround
@@ -114,19 +115,23 @@
                 $ObjectClass = ($Object.properties.objectclass -as [array])[-1]
                 $Members = $Object.properties.member -as [array]
                 if ($ObjectClass -eq 'group') {
-                    # This is weird case but for some reason $Object.properties.member doesn't always return all values
-                    # the workaround is to do additional query for group and assing it
-                    $GroupMembers = [System.DirectoryServices.AccountManagement.GroupPrincipal]::FindByIdentity($Context, $Ident).Members
-                    if ($GroupMembers.Count -ne $Members.Count) {
-                        #Write-Warning "Get-WinADObject - Weird. Members count different."
-                    }
-                    [Array] $Members = foreach ($Member in $GroupMembers) {
-                        if ($Member.DistinguishedName) {
-                            $Member.DistinguishedName
-                        } elseif ($Member.DisplayName) {
-                            $Member.DisplayName
-                        } else {
-                            $Member.Sid
+                    # we only do this additional step when requested. It's not nessecary for day to day use but can hurt performance real bad for normal use cases
+                    # This was especially visible for group with 50k members and Get-WinADObjectMember which doesn't even require this data
+                    if ($IncludeGroupMembership) {
+                        # This is weird case but for some reason $Object.properties.member doesn't always return all values
+                        # the workaround is to do additional query for group and assing it
+                        $GroupMembers = [System.DirectoryServices.AccountManagement.GroupPrincipal]::FindByIdentity($Context, $Ident).Members
+                        if ($GroupMembers.Count -ne $Members.Count) {
+                            #Write-Warning "Get-WinADObject - Weird. Members count different."
+                        }
+                        [Array] $Members = foreach ($Member in $GroupMembers) {
+                            if ($Member.DistinguishedName) {
+                                $Member.DistinguishedName
+                            } elseif ($Member.DisplayName) {
+                                $Member.DisplayName
+                            } else {
+                                $Member.Sid
+                            }
                         }
                     }
                 }

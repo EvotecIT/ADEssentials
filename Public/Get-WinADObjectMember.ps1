@@ -1,7 +1,7 @@
 ﻿function Get-WinADObjectMember {
     [cmdletBinding()]
     param(
-        [Array] $Identity,
+        [parameter(Position = 0, Mandatory)][Array] $Identity,
         [switch] $AddSelf,
         [switch] $ClearCache,
         [Parameter(DontShow)][int] $Nesting = -1,
