@@ -39,6 +39,9 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 
 ## Changelog
 
+- 0.0.84 - 2.09.2020
+  - [x] `ActiveDirectory`/`GroupPolicy` are now optional to not block module from working without RSAT (for commands that work without it)
+  - [x] Made `Show-WinADGroupMember`, `Show-WinADGroupMemberOf` work offline by default
 - 0.0.83 - 2.09.2020
   - [x] Updated `Show-WinADGroupMemberOf` removed `Hide` parameters as there is nothing to hide
 - 0.0.82 - 2.09.2020
