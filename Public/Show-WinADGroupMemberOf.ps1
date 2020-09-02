@@ -5,9 +5,9 @@
         [parameter(Position = 0, Mandatory)][string[]] $Identity,
         [string] $FilePath,
         [ValidateSet('Default', 'Hierarchical', 'Both')][string] $HideAppliesTo = 'Both',
-        [switch] $HideComputers,
-        [switch] $HideUsers,
-        [switch] $HideOther,
+        #[switch] $HideComputers,
+        #[switch] $HideUsers,
+        #[switch] $HideOther,
         [Parameter(ParameterSetName = 'Default')][switch] $Summary,
         [Parameter(ParameterSetName = 'SummaryOnly')][switch] $SummaryOnly
     )

@@ -39,6 +39,8 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 
 ## Changelog
 
+- 0.0.83 - 2.09.2020
+  - [x] Updated `Show-WinADGroupMemberOf` removed `Hide` parameters as there is nothing to hide
 - 0.0.82 - 2.09.2020
   - [x] Updated `Show-WinADGroupMember` renaming parameters from `Remove` to `Hide` which is original intention to hide them on diagram
   - [x] Updated `Show-WinADGroupMemberOf` renaming parameters from `Remove` to `Hide` which is original intention to hide them on diagram
