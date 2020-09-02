@@ -41,7 +41,7 @@
                 [PsCustomObject] @{
                     'Trust Source'               = $Domain
                     'Trust Target'               = $Trust.Target
-                    'Trust Direction'            = $Trust.Direction
+                    'Trust Direction'            = $Trust.Direction.ToString()
                     'Trust Attributes'           = if ($Trust.TrustAttributes -is [int]) { Get-ADTrustAttributes -Value $Trust.TrustAttributes } else { 'Error - needs fixing' }
                     'Trust Status'               = if ($null -ne $TrustWMI) { $TrustWMI.TrustStatusString } else { 'N/A' }
                     'Forest Transitive'          = $Trust.ForestTransitive
@@ -55,7 +55,7 @@
                     'TGTDelegation'              = $Trust.TGTDelegation
                     'TrustedPolicy'              = $Trust.TrustedPolicy
                     'TrustingPolicy'             = $Trust.TrustingPolicy
-                    'TrustType'                  = $Trust.TrustType
+                    'TrustType'                  = $Trust.TrustType.ToString()
                     'UplevelOnly'                = $Trust.UplevelOnly
                     'UsesAESKeys'                = $Trust.UsesAESKeys
                     'UsesRC4Encryption'          = $Trust.UsesRC4Encryption
@@ -74,7 +74,7 @@
                 [PsCustomObject] @{
                     'TrustSource'               = $Domain
                     'TrustTarget'               = $Trust.Target
-                    'TrustDirection'            = $Trust.Direction
+                    'TrustDirection'            = $Trust.Direction.ToString()
                     'TrustAttributes'           = if ($Trust.TrustAttributes -is [int]) { Get-ADTrustAttributes -Value $Trust.TrustAttributes } else { 'Error - needs fixing' }
                     'TrustStatus'               = if ($null -ne $TrustWMI) { $TrustWMI.TrustStatusString } else { 'N/A' }
                     'ForestTransitive'          = $Trust.ForestTransitive
@@ -88,7 +88,7 @@
                     'TGTDelegation'             = $Trust.TGTDelegation
                     'TrustedPolicy'             = $Trust.TrustedPolicy
                     'TrustingPolicy'            = $Trust.TrustingPolicy
-                    'TrustType'                 = $Trust.TrustType
+                    'TrustType'                 = $Trust.TrustType.ToString()
                     'UplevelOnly'               = $Trust.UplevelOnly
                     'UsesAESKeys'               = $Trust.UsesAESKeys
                     'UsesRC4Encryption'         = $Trust.UsesRC4Encryption
