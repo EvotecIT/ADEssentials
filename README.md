@@ -39,6 +39,8 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 
 ## Changelog
 
+- 0.0.81 - 2.09.2020
+  - Improvements
 - 0.0.80 - 1.09.2020
   - Improvements
 - 0.0.79 - 1.09.2020

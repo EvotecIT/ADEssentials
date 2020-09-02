@@ -7,7 +7,7 @@
     Description          = 'Helper module for Active Directory'
     FunctionsToExport    = 'Add-ADACL', 'Get-ADACL', 'Get-ADACLOwner', 'Get-WinADBitlockerLapsSummary', 'Get-WinADDFSHealth', 'Get-WinADDiagnostics', 'Get-WinADDuplicateObject', 'Get-WinADForestObjectsConflict', 'Get-WinADForestOptionalFeatures', 'Get-WinADForestReplication', 'Get-WinADForestRoles', 'Get-WinADForestSchemaProperties', 'Get-WinADForestSites', 'Get-WinADGPOMissingPermissions', 'Get-WinADGPOSysvolFolders', 'Get-WinADGroupMember', 'Get-WinADGroupMemberOf', 'Get-WinADLastBackup', 'Get-WinADLDAPBindingsSummary', 'Get-WinADLMSettings', 'Get-WinADObject', 'Get-WinADPrivilegedObjects', 'Get-WinADProxyAddresses', 'Get-WinADSharePermission', 'Get-WinADSiteConnections', 'Get-WinADSiteLinks', 'Get-WinADTomebstoneLifetime', 'Get-WinADTrusts', 'Get-WinADUserPrincipalName', 'Get-WinADUsersForeignSecurityPrincipalList', 'Get-WinADWellKnownFolders', 'Remove-ADACL', 'Remove-WinADDuplicateObject', 'Remove-WinADSharePermission', 'Rename-WinADUserPrincipalName', 'Repair-WinADEmailAddress', 'Set-ADACLOwner', 'Set-WinADDiagnostics', 'Set-WinADReplication', 'Set-WinADReplicationConnections', 'Set-WinADShare', 'Set-WinADTombstoneLifetime', 'Show-WinADGroupMember', 'Show-WinADGroupMemberOf', 'Sync-DomainController', 'Test-ADDomainController', 'Test-ADRolesAvailability', 'Test-ADSiteLinks', 'Test-DNSNameServers', 'Test-FSMORolesAvailability', 'Test-LDAP'
     GUID                 = '9fc9fd61-7f11-4f4b-a527-084086f1905f'
-    ModuleVersion        = '0.0.80'
+    ModuleVersion        = '0.0.81'
     PowerShellVersion    = '5.1'
     PrivateData          = @{
         PSData = @{
