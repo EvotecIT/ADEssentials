@@ -2,10 +2,10 @@
     [cmdletBinding()]
     param(
         [Array] $ADGroup,
-        [ValidateSet('Default', 'Hierarchical', 'Both')][string] $RemoveAppliesTo = 'Both',
-        [switch] $RemoveComputers,
-        [switch] $RemoveUsers,
-        [switch] $RemoveOther,
+        [ValidateSet('Default', 'Hierarchical', 'Both')][string] $HideAppliesTo = 'Both',
+        [switch] $HideComputers,
+        [switch] $HideUsers,
+        [switch] $HideOther,
         [string] $DataTableID,
         [int] $ColumnID
     )
@@ -31,7 +31,7 @@
                 }
                 if (-not $ConnectionsTracker[$ID][$IDParent]) {
                     if ($ADObject.Type -eq 'User') {
-                        if (-not $RemoveUsers -or $RemoveAppliesTo -notin 'Both', 'Default') {
+                        if (-not $HideUsers -or $HideAppliesTo -notin 'Both', 'Default') {
                             $Label = $ADObject.Name + [System.Environment]::NewLine + $ADObject.DomainName
                             New-DiagramNode -Id $ID -Label $Label -Image 'https://image.flaticon.com/icons/svg/3135/3135715.svg'
                             New-DiagramLink -ColorOpacity 0.2 -From $ID -To $IDParent -Color Blue -ArrowsFromEnabled -Dashes
@@ -49,13 +49,13 @@
                         New-DiagramNode -Id $ID -Label $Label -Image $Image -ColorBorder $BorderColor
                         New-DiagramLink -ColorOpacity 0.5 -From $ID -To $IDParent -Color Orange -ArrowsFromEnabled
                     } elseif ($ADObject.Type -eq 'Computer') {
-                        if (-not $RemoveComputers -or $RemoveAppliesTo -notin 'Both', 'Default') {
+                        if (-not $HideComputers -or $HideAppliesTo -notin 'Both', 'Default') {
                             $Label = $ADObject.Name + [System.Environment]::NewLine + $ADObject.DomainName
                             New-DiagramNode -Id $ID -Label $Label -Image 'https://image.flaticon.com/icons/svg/3003/3003040.svg'
                             New-DiagramLink -ColorOpacity 0.2 -From $ID -To $IDParent -Color Arsenic -ArrowsFromEnabled -Dashes
                         }
                     } else {
-                        if (-not $RemoveOther -or $RemoveAppliesTo -notin 'Both', 'Default') {
+                        if (-not $HideOther -or $HideAppliesTo -notin 'Both', 'Default') {
                             $Label = $ADObject.Name + [System.Environment]::NewLine + $ADObject.DomainName
                             New-DiagramNode -Id $ID -Label $Label -Image 'https://image.flaticon.com/icons/svg/3347/3347551.svg'
                             New-DiagramLink -ColorOpacity 0.2 -From $ID -To $IDParent -Color Boulder -ArrowsFromEnabled -Dashes
