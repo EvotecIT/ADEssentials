@@ -9,7 +9,8 @@
         [switch] $HideUsers,
         [switch] $HideOther,
         [Parameter(ParameterSetName = 'Default')][switch] $Summary,
-        [Parameter(ParameterSetName = 'SummaryOnly')][switch] $SummaryOnly
+        [Parameter(ParameterSetName = 'SummaryOnly')][switch] $SummaryOnly,
+        [switch] $Online
     )
     if ($FilePath -eq '') {
         $FilePath = Get-FileName -Extension 'html' -Temporary
@@ -52,12 +53,12 @@
                     }
                     New-HTMLTab -TabName 'Diagram Basic' {
                         New-HTMLSection -Title "Diagram for $GroupName" {
-                            New-HTMLGroupDiagramDefault -ADGroup $ADGroup -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -DataTableID $DataTableID -ColumnID 1
+                            New-HTMLGroupDiagramDefault -ADGroup $ADGroup -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -DataTableID $DataTableID -ColumnID 1 -Online:$Online
                         }
                     }
                     New-HTMLTab -TabName 'Diagram Hierarchy' {
                         New-HTMLSection -Title "Diagram for $GroupName" {
-                            New-HTMLGroupDiagramHierachical -ADGroup $ADGroup -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther
+                            New-HTMLGroupDiagramHierachical -ADGroup $ADGroup -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -Online:$Online
                         }
                     }
                 }
@@ -67,15 +68,15 @@
             New-HTMLTab -Name 'Summary' {
                 New-HTMLTab -TabName 'Diagram Basic' {
                     New-HTMLSection -Title "Diagram for Summary" {
-                        New-HTMLGroupDiagramSummary -ADGroup $GroupsList -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -DataTableID $DataTableID -ColumnID 1
+                        New-HTMLGroupDiagramSummary -ADGroup $GroupsList -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -DataTableID $DataTableID -ColumnID 1 -Online:$Online
                     }
                 }
                 New-HTMLTab -TabName 'Diagram Hierarchy' {
                     New-HTMLSection -Title "Diagram for Summary" {
-                        New-HTMLGroupDiagramSummaryHierarchical -ADGroup $GroupsList -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther
+                        New-HTMLGroupDiagramSummaryHierarchical -ADGroup $GroupsList -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -Online:$Online
                     }
                 }
             }
         }
-    } -Online -FilePath $FilePath -ShowHTML
+    } -Online:$Online -FilePath $FilePath -ShowHTML
 }

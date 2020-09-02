@@ -9,7 +9,8 @@
         #[switch] $HideUsers,
         #[switch] $HideOther,
         [Parameter(ParameterSetName = 'Default')][switch] $Summary,
-        [Parameter(ParameterSetName = 'SummaryOnly')][switch] $SummaryOnly
+        [Parameter(ParameterSetName = 'SummaryOnly')][switch] $SummaryOnly,
+        [switch] $Online
     )
     if ($FilePath -eq '') {
         $FilePath = Get-FileName -Extension 'html' -Temporary
@@ -52,7 +53,7 @@
                     }
                     New-HTMLTab -TabName 'Diagram Basic' {
                         New-HTMLSection -Title "Diagram for $ObjectName" {
-                            New-HTMLGroupOfDiagramDefault -Identity $MyObject -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -DataTableID $DataTableID -ColumnID 1
+                            New-HTMLGroupOfDiagramDefault -Identity $MyObject -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -DataTableID $DataTableID -ColumnID 1 -Online:$Online
                         }
                         #New-HTMLSection -Title "Group membership table $GroupName" {
                         #    New-HTMLTable -DataTable $ADGroup -Filtering -DataStoreID $DataStoreID -DataTableID $DataTableID
@@ -60,7 +61,7 @@
                     }
                     New-HTMLTab -TabName 'Diagram Hierarchy' {
                         New-HTMLSection -Title "Diagram for $ObjectName" {
-                            New-HTMLGroupOfDiagramHierarchical -Identity $MyObject -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther
+                            New-HTMLGroupOfDiagramHierarchical -Identity $MyObject -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -Online:$Online
                         }
                         #New-HTMLSection -Title "Group membership table $GroupName" {
                         #    New-HTMLTable -DataTable $ADGroup -Filtering -DataStoreID $DataStoreID
@@ -73,15 +74,15 @@
             New-HTMLTab -Name 'Summary' {
                 New-HTMLTab -TabName 'Diagram Basic' {
                     New-HTMLSection -Title "Diagram for Summary" {
-                        New-HTMLGroupOfDiagramSummary -ADGroup $GroupsList -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -DataTableID $DataTableID -ColumnID 1
+                        New-HTMLGroupOfDiagramSummary -ADGroup $GroupsList -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -DataTableID $DataTableID -ColumnID 1 -Online:$Online
                     }
                 }
                 New-HTMLTab -TabName 'Diagram Hierarchy' {
                     New-HTMLSection -Title "Diagram for Summary" {
-                        New-HTMLGroupOfDiagramSummaryHierarchical -ADGroup $GroupsList -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther
+                        New-HTMLGroupOfDiagramSummaryHierarchical -ADGroup $GroupsList -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -Online:$Online
                     }
                 }
             }
         }
-    } -Online -FilePath $FilePath -ShowHTML
+    } -Online:$Online -FilePath $FilePath -ShowHTML
 }

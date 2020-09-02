@@ -7,7 +7,8 @@
         [switch] $HideUsers,
         [switch] $HideOther,
         [string] $DataTableID,
-        [int] $ColumnID
+        [int] $ColumnID,
+        [switch] $Online
     )
     $ConnectionsTracker = @{}
     New-HTMLDiagram -Height 'calc(100vh - 200px)' {
@@ -33,7 +34,11 @@
                     if ($ADObject.Type -eq 'User') {
                         if (-not $HideUsers -or $HideAppliesTo -notin 'Both', 'Default') {
                             $Label = $ADObject.Name + [System.Environment]::NewLine + $ADObject.DomainName
-                            New-DiagramNode -Id $ID -Label $Label -Image 'https://image.flaticon.com/icons/svg/3135/3135715.svg'
+                            if ($Online) {
+                                New-DiagramNode -Id $ID -Label $Label -Image 'https://image.flaticon.com/icons/svg/3135/3135715.svg'
+                            } else {
+                                New-DiagramNode -Id $ID -Label $Label -IconSolid user -IconColor LightSteelBlue
+                            }
                             New-DiagramLink -ColorOpacity 0.2 -From $ID -To $IDParent -Color Blue -ArrowsFromEnabled -Dashes
                         }
                     } elseif ($ADObject.Type -eq 'Group') {
@@ -46,18 +51,30 @@
                         }
                         $SummaryMembers = -join ('Total: ', $ADObject.TotalMembers, ' Direct: ', $ADObject.DirectMembers, ' Groups: ', $ADObject.DirectGroups, ' Indirect: ', $ADObject.IndirectMembers)
                         $Label = $ADObject.Name + [System.Environment]::NewLine + $ADObject.DomainName + [System.Environment]::NewLine + $SummaryMembers
-                        New-DiagramNode -Id $ID -Label $Label -Image $Image -ColorBorder $BorderColor
+                        if ($Online) {
+                            New-DiagramNode -Id $ID -Label $Label -Image $Image -ColorBorder $BorderColor
+                        } else {
+                            New-DiagramNode -Id $ID -Label $Label -IconSolid user-friends -IconColor VeryLightGrey
+                        }
                         New-DiagramLink -ColorOpacity 0.5 -From $ID -To $IDParent -Color Orange -ArrowsFromEnabled
                     } elseif ($ADObject.Type -eq 'Computer') {
                         if (-not $HideComputers -or $HideAppliesTo -notin 'Both', 'Default') {
                             $Label = $ADObject.Name + [System.Environment]::NewLine + $ADObject.DomainName
-                            New-DiagramNode -Id $ID -Label $Label -Image 'https://image.flaticon.com/icons/svg/3003/3003040.svg'
+                            if ($Online) {
+                                New-DiagramNode -Id $ID -Label $Label -Image 'https://image.flaticon.com/icons/svg/3003/3003040.svg'
+                            } else {
+                                New-DiagramNode -Id $ID -Label $Label -IconSolid desktop -IconColor LightGray
+                            }
                             New-DiagramLink -ColorOpacity 0.2 -From $ID -To $IDParent -Color Arsenic -ArrowsFromEnabled -Dashes
                         }
                     } else {
                         if (-not $HideOther -or $HideAppliesTo -notin 'Both', 'Default') {
                             $Label = $ADObject.Name + [System.Environment]::NewLine + $ADObject.DomainName
-                            New-DiagramNode -Id $ID -Label $Label -Image 'https://image.flaticon.com/icons/svg/3347/3347551.svg'
+                            if ($Online) {
+                                New-DiagramNode -Id $ID -Label $Label -Image 'https://image.flaticon.com/icons/svg/3347/3347551.svg'
+                            } else {
+                                New-DiagramNode -Id $ID -Label $Label -IconSolid robot -IconColor LightSalmon
+                            }
                             New-DiagramLink -ColorOpacity 0.2 -From $ID -To $IDParent -Color Boulder -ArrowsFromEnabled -Dashes
                         }
                     }
