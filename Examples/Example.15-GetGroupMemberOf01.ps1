@@ -2,3 +2,5 @@
 
 Get-WinADGroupMemberOf -Identity 'przemyslaw.klys' -AddSelf | Format-Table *
 Get-WinADGroupMemberOf -Identity 'adm.pklys' -AddSelf | Format-Table *
+
+(Get-WinADGroupMemberOf -Identity 'przemyslaw.klys' -AddSelf)[1]

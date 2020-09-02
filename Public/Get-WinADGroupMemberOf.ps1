@@ -23,7 +23,7 @@
     Process {
         [Array] $Output = foreach ($MyObject in $Identity) {
             $Object = Get-WinADObject -Identity $MyObject
-            Write-Verbose "Get-WinADObjectMember - starting $($Object.Name)/$($Object.DomainName)"
+            Write-Verbose "Get-WinADGroupMemberOf - starting $($Object.Name)/$($Object.DomainName)"
             if (-not $Nested.IsPresent) {
                 $InitialObject = [ordered] @{
                     ObjectName           = $Object.Name
@@ -59,7 +59,7 @@
                         if ($Script:WinADGroupObjectCache[$MyIdentity]) {
                             $Script:WinADGroupObjectCache[$MyIdentity]
                         } else {
-                            Write-Verbose "Get-WinADObjectMember - Requesting more data on $MyIdentity (Circular: $true)"
+                            Write-Verbose "Get-WinADGroupMemberOf - Requesting more data on $MyIdentity (Circular: $true)"
                             $ADObject = Get-WinADObject -Identity $MyIdentity
                             $Script:WinADGroupObjectCache[$MyIdentity] = $ADObject
                             $Script:WinADGroupObjectCache[$MyIdentity]
@@ -76,7 +76,7 @@
                         if ($Script:WinADGroupObjectCache[$MyIdentity]) {
                             $Script:WinADGroupObjectCache[$MyIdentity]
                         } else {
-                            Write-Verbose "Get-WinADObjectMember - Requesting more data on $MyIdentity (Circular: $false)"
+                            Write-Verbose "Get-WinADGroupMemberOf - Requesting more data on $MyIdentity (Circular: $false)"
                             $ADObject = Get-WinADObject -Identity $MyIdentity
                             $Script:WinADGroupObjectCache[$MyIdentity] = $ADObject
                             $Script:WinADGroupObjectCache[$MyIdentity]
@@ -84,7 +84,7 @@
                     }
                 }
                 foreach ($NestedMember in $NestedMembers) {
-                    Write-Verbose "Get-WinADObjectMember - processing $($InitialObject.ObjectName) nested member $($NestedMember.name)"
+                    Write-Verbose "Get-WinADGroupMemberOf - processing $($InitialObject.ObjectName) nested member $($NestedMember.name)"
                     #$DomainParentGroup = ConvertFrom-DistinguishedName -DistinguishedName $Object.DistinguishedName -ToDomainCN
                     $CreatedObject = [ordered] @{
                         ObjectName           = $InitialObject.ObjectName
