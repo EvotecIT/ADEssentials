@@ -2,7 +2,7 @@
 
 # Lets check only two groups
 Get-WinADGroupMember -Group 'GDS-TestGroup9' | Format-Table *
-Get-WinADGroupMember -Group 'GDS-TestGroup9' -All -CountMembers -AddSelf | Format-Table *
+Get-WinADGroupMember -Group 'GDS-TestGroup9' -All -AddSelf | Format-Table *
 
 # Another groups
 Get-WinADGroupMember -Group 'Test Local Group' | Format-Table *
@@ -14,5 +14,5 @@ Get-WinADGroupMember -Group 'GDS-TestGroup3' -All | Format-Table *
 
 # Another one
 Get-WinADGroupMember -Group 'Domain Admins' | Format-Table
-Get-WinADGroupMember -Group 'Domain Admins' -All -CountMembers -AddSelf | Format-Table *
+Get-WinADGroupMember -Group 'Domain Admins' -All -AddSelf | Format-Table *
 
