@@ -10,11 +10,25 @@
         [switch] $HideOther,
         [Parameter(ParameterSetName = 'Default')][switch] $Summary,
         [Parameter(ParameterSetName = 'SummaryOnly')][switch] $SummaryOnly,
-        [switch] $Online
+        [switch] $Online,
+        [switch] $HideHTML
     )
     if ($FilePath -eq '') {
         $FilePath = Get-FileName -Extension 'html' -Temporary
     }
+
+    if ($PSBoundParameters.ContainsKey('HideHTML')) {
+        $ShowHTML = $false
+    } else {
+        $ShowHTML = $true
+    }
+
+    $params = @{
+        FilePath = $FilePath
+        ShowHTML = $ShowHTML
+        Online = $Online
+    }
+
     $GroupsList = [System.Collections.Generic.List[object]]::new()
     New-HTML -TitleText "Visual Group Membership" {
         New-HTMLSectionStyle -BorderRadius 0px -HeaderBackGroundColor Grey -RemoveShadow
@@ -78,5 +92,9 @@
                 }
             }
         }
-    } -Online:$Online -FilePath $FilePath -ShowHTML
+    }  @params
+
+        if ($PSBoundParameters.ContainsKey('HideHTML')) {
+            return $FilePath
+        }
 }
