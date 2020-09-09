@@ -39,6 +39,12 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 
 ## Changelog
 
+- 0.0.85 - 9.09.2020
+  - [x] Some improvements to `Get-WinADTrusts`
+  - [x] Added `Get-WinADForest` adsi based
+  - [x] Added `Get-WinADDomain` adsi based
+  - [x] Added HideHTML switch for Get-WinADGroupMember
+  - [x] Added HideHTML switch for Get-WinADGroupMemberOf
 - 0.0.84 - 2.09.2020 - [Visually display Active Directory Nested Group Membership using PowerShell](https://evotec.xyz/visually-display-active-directory-nested-group-membership-using-powershell/)
   - [x] `ActiveDirectory`/`GroupPolicy` are now optional to not block module from working without RSAT (for commands that work without it)
   - [x] Made `Show-WinADGroupMember`, `Show-WinADGroupMemberOf` work offline by default

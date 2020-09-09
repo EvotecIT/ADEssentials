@@ -8,6 +8,7 @@
         [alias('DomainControllers')][string[]] $IncludeDomainControllers,
         [switch] $SkipRODC,
         [int] $EventDays = 1,
+        [switch] $SkipGPO,
         [System.Collections.IDictionary] $ExtendedForestInformation
     )
     $Today = (Get-Date)
@@ -18,10 +19,12 @@
         Write-Verbose "Get-WinADDFSHealth - Processing $Domain"
         $DomainControllersFull = $ForestInformation['DomainDomainControllers']["$Domain"]
         $QueryServer = $ForestInformation['QueryServers']["$Domain"].HostName[0]
-        try {
-            [Array]$GPOs = @(Get-GPO -All -Domain $Domain -Server $QueryServer)
-        } catch {
-            $GPOs = $null
+        if (-not $SkipGPO) {
+            try {
+                [Array]$GPOs = @(Get-GPO -All -Domain $Domain -Server $QueryServer)
+            } catch {
+                $GPOs = $null
+            }
         }
         try {
             $CentralRepository = Get-ChildItem -Path "\\$Domain\SYSVOL\$Domain\policies\PolicyDefinitions" -ErrorAction Stop
@@ -29,7 +32,6 @@
         } catch {
             $CentralRepositoryDomain = $false
         }
-
 
         foreach ($DC in $DomainControllersFull) {
             Write-Verbose "Get-WinADDFSHealth - Processing $($DC.HostName) for $Domain"
@@ -153,14 +155,14 @@
             } catch {
                 $DomainSummary['SYSVOLSubscription'] = $false
             }
-
-            try {
-                [Array] $SYSVOL = Get-ChildItem -Path "\\$Hostname\SYSVOL\$Domain\Policies" -Exclude "PolicyDefinitions*" -ErrorAction Stop
-                $DomainSummary['SysvolCount'] = $SYSVOL.Count
-            } catch {
-                $DomainSummary['SysvolCount'] = 0
+            if (-not $SkipGPO) {
+                try {
+                    [Array] $SYSVOL = Get-ChildItem -Path "\\$Hostname\SYSVOL\$Domain\Policies" -Exclude "PolicyDefinitions*" -ErrorAction Stop
+                    $DomainSummary['SysvolCount'] = $SYSVOL.Count
+                } catch {
+                    $DomainSummary['SysvolCount'] = 0
+                }
             }
-
             if (Test-Connection $Hostname -ErrorAction SilentlyContinue) {
                 $DomainSummary['Availability'] = $true
             } else {
@@ -190,7 +192,9 @@
             $DomainSummary['DFSReplicatedFolderInfo'] = $DFSReplicatedFolderInfoAll
 
             $All = @(
-                $DomainSummary['GroupPolicyOutput']
+                if (-not $SkipGPO) {
+                    $DomainSummary['GroupPolicyOutput']
+                }
                 $DomainSummary['SYSVOLSubscription']
                 $DomainSummary['ReplicationState'] -eq 'Normal'
                 $DomainSummary['DomainSystemVolume']

@@ -5,7 +5,9 @@
         [alias('Domain')][string[]] $IncludeDomains,
         [string[]] $ExcludeDomains,
         [switch] $Display,
-        [System.Collections.IDictionary] $ExtendedForestInformation
+        [System.Collections.IDictionary] $ExtendedForestInformation,
+        [switch] $Unique,
+        [switch] $Recursive
     )
     $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation
     <#
@@ -16,6 +18,7 @@
     ad.evotec.xyz                  {@{Domain=ad.evotec.xyz; HostName=AD1.ad.evotec.xyz; Name=AD1; Forest=ad.evotec.xyz; Site=KATOWICE-1; IPV4Address=192.168.240.189; IPV6Add...
     ad.evotec.pl                   {@{Domain=ad.evotec.pl; HostName=ADPreview2019.ad.evotec.pl; Name=ADPREVIEW2019; Forest=ad.evotec.xyz; Site=KATOWICE-2; IPV4Address=192.16...
     #>
+    $UniqueTrusts = [ordered]@{}
     foreach ($Domain in $ForestInformation.Domains) {
         $QueryServer = $ForestInformation['QueryServers']["$Domain"].HostName[0]
         $Trusts = Get-ADTrust -Server $QueryServer -Filter * -Properties *
@@ -36,13 +39,27 @@
         $TrustStatatuses = Get-CimInstance -ClassName Microsoft_DomainTrustStatus -Namespace root\MicrosoftActiveDirectory -ComputerName $DomainPDC.HostName -ErrorAction SilentlyContinue -Verbose:$false -Property $PropertiesTrustWMI
 
         $ReturnData = foreach ($Trust in $Trusts) {
+            if ($Unique) {
+                $UniqueID1 = -join ($Domain, $Trust.trustPartner)
+                $UniqueID2 = -join ($Trust.trustPartner, $Domain)
+                if (-not $UniqueTrusts[$UniqueID1]) {
+                    $UniqueTrusts[$UniqueID1] = $true
+                } else {
+                    continue
+                }
+                if (-not $UniqueTrusts[$UniqueID2]) {
+                    $UniqueTrusts[$UniqueID2] = $true
+                } else {
+                    continue
+                }
+            }
             $TrustWMI = $TrustStatatuses | & { process { if ($_.TrustedDomain -eq $Trust.Target ) { $_ } } }
             if ($Display) {
                 [PsCustomObject] @{
                     'Trust Source'               = $Domain
                     'Trust Target'               = $Trust.Target
                     'Trust Direction'            = $Trust.Direction.ToString()
-                    'Trust Attributes'           = if ($Trust.TrustAttributes -is [int]) { Get-ADTrustAttributes -Value $Trust.TrustAttributes } else { 'Error - needs fixing' }
+                    'Trust Attributes'           = if ($Trust.TrustAttributes -is [int]) { (Get-ADTrustAttributes -Value $Trust.TrustAttributes) -join '; ' } else { 'Error - needs fixing' }
                     'Trust Status'               = if ($null -ne $TrustWMI) { $TrustWMI.TrustStatusString } else { 'N/A' }
                     'Forest Transitive'          = $Trust.ForestTransitive
                     'Selective Authentication'   = $Trust.SelectiveAuthentication
