@@ -9,16 +9,46 @@
         [switch] $SkipRODC,
         [int] $EventDays = 1,
         [switch] $SkipGPO,
+        [switch] $SkipAutodetection,
         [System.Collections.IDictionary] $ExtendedForestInformation
     )
     $Today = (Get-Date)
     $Yesterday = (Get-Date -Hour 0 -Second 0 -Minute 0 -Millisecond 0).AddDays(-$EventDays)
 
-    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC -ExtendedForestInformation $ExtendedForestInformation
+    if (-not $SkipAutodetection) {
+        $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC -ExtendedForestInformation $ExtendedForestInformation
+    } else {
+        if (-not $IncludeDomains) {
+            Write-Warning "Get-WinADDFSHealth - You need to specify domain when using SkipAutodetection."
+            return
+        }
+        # This is for case when Get-ADDomainController -Filter * is broken
+        $ForestInformation = @{
+            Domains                 = $IncludeDomains
+            DomainDomainControllers = @{}
+        }
+        foreach ($Domain in $IncludeDomains) {
+            foreach ($DC in $IncludeDomainControllers) {
+                try {
+                    $ForestInformation['DomainDomainControllers'][$Domain] = Get-ADDomainController -Identity $DC -Server $Domain -ErrorAction Stop
+                } catch {
+                    Write-Warning "Get-WinADDFSHealth - Can't get DC details. Skipping with error: $($_.Exception.Message)"
+                    continue
+                }
+            }
+        }
+    }
     [Array] $Table = foreach ($Domain in $ForestInformation.Domains) {
         Write-Verbose "Get-WinADDFSHealth - Processing $Domain"
-        $DomainControllersFull = $ForestInformation['DomainDomainControllers']["$Domain"]
-        $QueryServer = $ForestInformation['QueryServers']["$Domain"].HostName[0]
+        [Array] $DomainControllersFull = $ForestInformation['DomainDomainControllers']["$Domain"]
+        if ($DomainControllersFull.Count -eq 0) {
+            continue
+        }
+        if (-not $SkipAutodetection) {
+            $QueryServer = $ForestInformation['QueryServers']["$Domain"].HostName[0]
+        } else {
+            $QueryServer = $DomainControllersFull[0]
+        }
         if (-not $SkipGPO) {
             try {
                 [Array]$GPOs = @(Get-GPO -All -Domain $Domain -Server $QueryServer)
