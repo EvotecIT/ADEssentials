@@ -39,6 +39,8 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 
 ## Changelog
 
+- 0.0.86 - 9.09.2020
+  - [x] Some improvements to `Get-WinADDFSHealth`
 - 0.0.85 - 9.09.2020
   - [x] Some improvements to `Get-WinADTrusts`
   - [x] Some improvements to `Get-WinADDFSHealth` - added `SkipGPO`, `SkipAutodection`
