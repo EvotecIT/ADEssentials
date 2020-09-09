@@ -41,6 +41,7 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 
 - 0.0.85 - 9.09.2020
   - [x] Some improvements to `Get-WinADTrusts`
+  - [x] Some improvements to `Get-WinADDFSHealth` - added `SkipGPO`, `SkipAutodection`
   - [x] Added `Get-WinADForest` adsi based
   - [x] Added `Get-WinADDomain` adsi based
   - [x] Added HideHTML switch for Get-WinADGroupMember
