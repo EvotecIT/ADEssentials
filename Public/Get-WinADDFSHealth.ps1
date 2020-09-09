@@ -28,9 +28,12 @@
             DomainDomainControllers = @{}
         }
         foreach ($Domain in $IncludeDomains) {
+            $ForestInformation['DomainDomainControllers'][$Domain] = [System.Collections.Generic.List[Object]]::new()
             foreach ($DC in $IncludeDomainControllers) {
                 try {
-                    $ForestInformation['DomainDomainControllers'][$Domain] = Get-ADDomainController -Identity $DC -Server $Domain -ErrorAction Stop
+                    $DCInformation = Get-ADDomainController -Identity $DC -Server $Domain -ErrorAction Stop
+                    Add-Member -InputObject $DCInformation -MemberType NoteProperty -Value $DCInformation.ComputerObjectDN -Name 'DistinguishedName' -Force
+                    $ForestInformation['DomainDomainControllers'][$Domain].Add($DCInformation)
                 } catch {
                     Write-Warning "Get-WinADDFSHealth - Can't get DC details. Skipping with error: $($_.Exception.Message)"
                     continue
@@ -47,7 +50,7 @@
         if (-not $SkipAutodetection) {
             $QueryServer = $ForestInformation['QueryServers']["$Domain"].HostName[0]
         } else {
-            $QueryServer = $DomainControllersFull[0]
+            $QueryServer = $DomainControllersFull[0].HostName
         }
         if (-not $SkipGPO) {
             try {
@@ -161,26 +164,26 @@
                 $DomainSummary['CentralRepositoryDC'] = $false
             }
             try {
-                $MemberReference = (Get-ADObject $Subscriber -Properties msDFSR-MemberReference -Server $QueryServer -ErrorAction Stop).'msDFSR-MemberReference' -like "CN=$DCName,*"
+                $MemberReference = (Get-ADObject -Identity $Subscriber -Properties msDFSR-MemberReference -Server $QueryServer -ErrorAction Stop).'msDFSR-MemberReference' -like "CN=$DCName,*"
                 $DomainSummary['MemberReference'] = if ($MemberReference) { $true } else { $false }
             } catch {
                 $DomainSummary['MemberReference'] = $false
             }
             try {
-                $DFSLocalSetting = Get-ADObject $LocalSettings -Server $QueryServer -ErrorAction Stop
+                $DFSLocalSetting = Get-ADObject -Identity $LocalSettings -Server $QueryServer -ErrorAction Stop
                 $DomainSummary['DFSLocalSetting'] = if ($DFSLocalSetting) { $true } else { $false }
             } catch {
                 $DomainSummary['DFSLocalSetting'] = $false
             }
 
             try {
-                $DomainSystemVolume = Get-ADObject $Subscriber -Server $QueryServer -ErrorAction Stop
+                $DomainSystemVolume = Get-ADObject -Identity $Subscriber -Server $QueryServer -ErrorAction Stop
                 $DomainSummary['DomainSystemVolume'] = if ($DomainSystemVolume) { $true } else { $false }
             } catch {
                 $DomainSummary['DomainSystemVolume'] = $false
             }
             try {
-                $SysVolSubscription = Get-ADObject $Subscription -Server $QueryServer -ErrorAction Stop
+                $SysVolSubscription = Get-ADObject -Identity $Subscription -Server $QueryServer -ErrorAction Stop
                 $DomainSummary['SYSVOLSubscription'] = if ($SysVolSubscription) { $true } else { $false }
             } catch {
                 $DomainSummary['SYSVOLSubscription'] = $false
