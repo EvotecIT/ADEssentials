@@ -10,7 +10,8 @@
         [switch] $HideOther,
         [Parameter(ParameterSetName = 'Default')][switch] $Summary,
         [Parameter(ParameterSetName = 'SummaryOnly')][switch] $SummaryOnly,
-        [switch] $Online
+        [switch] $Online,
+        [switch] $HideHTML
     )
     if ($FilePath -eq '') {
         $FilePath = Get-FileName -Extension 'html' -Temporary
@@ -78,5 +79,5 @@
                 }
             }
         }
-    } -Online:$Online -FilePath $FilePath -ShowHTML
+    } -Online:$Online -FilePath $FilePath -ShowHTML:(-not $HideHTML)
 }
