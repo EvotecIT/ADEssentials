@@ -109,8 +109,13 @@
             if ($PSBoundParameters['IncludeDeletedObjects']) {
                 $Search.Tombstone = $true
             }
-
-            foreach ($Object in $($Search.FindAll())) {
+            try {
+                $SearchResults = $($Search.FindAll())
+            } catch {
+                Write-Warning "Get-WinADObject - Requesting $Ident failed. Error: $($_.Exception.Message.Replace([System.Environment]::NewLine,''))"
+                continue
+            }
+            foreach ($Object in $SearchResults) {
                 $UAC = Convert-UserAccountControl -UserAccountControl ($Object.properties.useraccountcontrol -as [string])
                 $ObjectClass = ($Object.properties.objectclass -as [array])[-1]
                 $Members = $Object.properties.member -as [array]
