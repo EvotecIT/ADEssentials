@@ -48,7 +48,7 @@
             }
         )
         [Array] $Output = foreach ($Trust in $Trusts) {
-            Write-Verbose "Get-WinTrust - From: $($Trust.SourceName) To: $($Trust.TargetName) Nesting: $Nesting"
+            Write-Verbose "Get-WinADTrust - From: $($Trust.SourceName) To: $($Trust.TargetName) Nesting: $Nesting"
             $UniqueID1 = -join ($Trust.Details.SourceName, $Trust.Details.TargetName)
             $UniqueID2 = -join ($Trust.Details.TargetName, $Trust.Details.SourceName)
             if (-not $UniqueTrusts[$UniqueID1]) {
@@ -123,7 +123,7 @@
         if ($Recursive) {
             foreach ($Trust in $Output) {
                 if ($Trust.TrustType -notin 'TreeRoot', 'ParentChild') {
-                    Get-WinTrust -Forest $Trust.TrustTarget -Recursive -Nesting $Nesting -UniqueTrusts $UniqueTrusts
+                    Get-WinADTrust -Forest $Trust.TrustTarget -Recursive -Nesting $Nesting -UniqueTrusts $UniqueTrusts
                 }
             }
         }
