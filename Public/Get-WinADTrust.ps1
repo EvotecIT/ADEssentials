@@ -48,7 +48,7 @@
             }
         )
         [Array] $Output = foreach ($Trust in $Trusts) {
-            Write-Verbose "Get-WinADTrust - From: $($Trust.SourceName) To: $($Trust.TargetName) Nesting: $Nesting"
+            Write-Verbose "Get-WinADTrust - From: $($Trust.Details.SourceName) To: $($Trust.Details.TargetName) Nesting: $Nesting"
             $UniqueID1 = -join ($Trust.Details.SourceName, $Trust.Details.TargetName)
             $UniqueID2 = -join ($Trust.Details.TargetName, $Trust.Details.SourceName)
             if (-not $UniqueTrusts[$UniqueID1]) {
@@ -101,6 +101,7 @@
                 'UplevelOnly'             = $TrustObject[$Trust.Details.TargetName].TrustAttributes -contains "UpLevel Only"
                 'UsesAESKeys'             = $TrustObject[$Trust.Details.TargetName].msDSSupportedEncryptionTypes -contains "AES128-CTS-HMAC-SHA1-96" -or $TrustObject[$Trust.Details.TargetName].msDSSupportedEncryptionTypes -contains 'AES256-CTS-HMAC-SHA1-96'
                 'UsesRC4Encryption'       = $TrustObject[$Trust.Details.TargetName].TrustAttributes -contains "Uses RC4 Encryption"
+                'EncryptionTypes'         = $TrustObject[$Trust.Details.TargetName].msDSSupportedEncryptionTypes -join ', '
                 'TrustSourceDC'           = $TrustStatus.TrustSourceDC
                 'TrustTargetDC'           = $TrustStatus.TrustTargetDC
                 'ObjectGUID'              = $TrustObject[$Trust.Details.TargetName].ObjectGuid

@@ -45,7 +45,11 @@
         } else {
             $msDSTrustForestTrustInfo = $null
         }
-
+        if ($Trust.properties.trustattributes) {
+            $TrustAttributes = Get-ADTrustAttributes -Value ([int] $Trust.properties.trustattributes[0])
+        } else {
+            $TrustAttributes = $null
+        }
         $TrustObject = [PSCustomObject] @{
             #Name                   = [string] $Trust.properties.name              #        {ad.evotec.xyz}
             TrustSource                  = $TrustSource
@@ -53,7 +57,7 @@
             TrustPartnerNetBios          = [string] $Trust.properties.flatname               #        {EVOTEC}
             TrustDirection               = $TrustD.ToString()         #        {3}
             TrustType                    = $TrustT.ToString()             #        {2}
-            TrustAttributes              = Get-ADTrustAttributes -Value ([int] $Trust.properties.trustattributes[0])        #        {32}
+            TrustAttributes              = $TrustAttributes       #        {32}
             TrustDirectionText           = $TrustDirection[$TrustD.ToString()]
             TrustTypeText                = $TrustType[$TrustT.ToString()]
             WhenCreated                  = [DateTime] $Trust.properties.whencreated[0]         #        {26.07.2018 10:59:52}
