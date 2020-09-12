@@ -40,10 +40,11 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 ## Changelog
 
 - 0.0.87 - 12.09.2020
-  - [x] Rewritten `Get-WinADTrust` to use ADSI instead of ActiveDirectory module
-    - [ ] Added objects testing, trust testing, included suffix status
-    - [ ] Added recursive switch
+  - [x] Rewritten `Get-WinADTrust` to use ADSI instead of ActiveDirectory module (**Work in progress**)
+    - [x] Added objects testing, trust testing, included suffix status
+    - [x] Added recursive switch
   - [x] Renamed old `Get-WinADTrust` to `Get-WinADTrustLegacy` just in case for now
+  - [x] Added `Show-WinADTrust` (**Work in progress**)
 - 0.0.86 - 9.09.2020
   - [x] Some improvements to `Get-WinADDFSHealth`
 - 0.0.85 - 9.09.2020
