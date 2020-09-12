@@ -86,13 +86,13 @@
                 'SuffixesExcluded'        = $Trust.Details.ExcludedTopLevelNames.Name
                 'TrustAttributes'         = $TrustObject[$Trust.Details.TargetName].TrustAttributes
                 'TrustStatus'             = $TrustStatus.TrustStatus
-                'QueryStatus'             = if ($GroupExists) { $true } else { $false }
+                'QueryStatus'             = if ($GroupExists) { 'OK' } else { 'NOT OK' }
                 'ForestTransitive'        = $TrustObject[$Trust.Details.TargetName].TrustAttributes -contains "Forest Transitive"
                 'SelectiveAuthentication' = $TrustObject[$Trust.Details.TargetName].TrustAttributes -contains "Cross Organization"
-                'SIDFilteringForestAware' = $null
+                #'SIDFilteringForestAware' = $null
                 'SIDFilteringQuarantined' = $TrustObject[$Trust.Details.TargetName].TrustAttributes -contains "Quarantined Domain"
-                'DisallowTransivity'      = $TrustObject[$Trust.Details.TargetName].TrustAttributes -contains "Non Transitive"
-                #'IntraForest'             = $null #$Trust.IntraForest
+                'DisallowTransitivity'    = $TrustObject[$Trust.Details.TargetName].TrustAttributes -contains "Non Transitive"
+                'IntraForest'             = $TrustObject[$Trust.Details.TargetName].TrustAttributes -contains "Within Forest"
                 #'IsTreeParent'            = $null #$Trust.IsTreeParent
                 #'IsTreeRoot'              = $Trust.Details.TrustType.ToString() -eq 'TreeRoot'
                 'IsTGTDelegationEnabled'  = $TGTDelegation
