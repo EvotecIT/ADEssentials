@@ -1,4 +1,4 @@
-﻿function Get-WinADTrusts {
+﻿function Get-WinADTrustLegacy {
     [CmdletBinding()]
     param(
         [string] $Forest,
@@ -6,18 +6,9 @@
         [string[]] $ExcludeDomains,
         [switch] $Display,
         [System.Collections.IDictionary] $ExtendedForestInformation,
-        [switch] $Unique,
-        [switch] $Recursive
+        [switch] $Unique
     )
     $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation
-    <#
-    Name                           Value
-    ----                           -----
-    Forest                         ad.evotec.xyz
-    Domains                        {ad.evotec.xyz, ad.evotec.pl}
-    ad.evotec.xyz                  {@{Domain=ad.evotec.xyz; HostName=AD1.ad.evotec.xyz; Name=AD1; Forest=ad.evotec.xyz; Site=KATOWICE-1; IPV4Address=192.168.240.189; IPV6Add...
-    ad.evotec.pl                   {@{Domain=ad.evotec.pl; HostName=ADPreview2019.ad.evotec.pl; Name=ADPREVIEW2019; Forest=ad.evotec.xyz; Site=KATOWICE-2; IPV4Address=192.16...
-    #>
     $UniqueTrusts = [ordered]@{}
     foreach ($Domain in $ForestInformation.Domains) {
         $QueryServer = $ForestInformation['QueryServers']["$Domain"].HostName[0]

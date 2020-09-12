@@ -1,5 +1,5 @@
-﻿function Show-WinADTrusts {
-    [alias('Show-ADTrusts')]
+﻿function Show-WinADTrust {
+    [alias('Show-ADTrust')]
     [cmdletBinding()]
     param(
         [string] $FilePath,
@@ -34,7 +34,7 @@
                     #New-TableCondition -BackgroundColor CoralRed -ComparisonType bool -Value $true -Name Circular -Operator eq
                 }
             }
-            New-HTMLSection  {
+            New-HTMLSection {
                 New-HTMLDiagram {
                     foreach ($Node in $AllNodes) {
                         New-DiagramNode -Label $Node.'Trust'
