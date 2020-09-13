@@ -64,13 +64,13 @@
                 try {
                     $Context = [System.DirectoryServices.AccountManagement.PrincipalContext]::new('Domain', $TemporaryDomainName)
                 } catch {
-                    Write-Warning "Get-WinADObject - Error: $($_.Exception.Message)"
+                    Write-Warning "Get-WinADObject - Building context failed ($TemporaryDomainName), error: $($_.Exception.Message)"
                 }
             } else {
                 try {
                     $Context = [System.DirectoryServices.AccountManagement.PrincipalContext]::new('Domain')
                 } catch {
-                    Write-Warning "Get-WinADObject - Error: $($_.Exception.Message)"
+                    Write-Warning "Get-WinADObject - Building context failed, error: $($_.Exception.Message)"
                 }
             }
 
@@ -112,7 +112,7 @@
             try {
                 $SearchResults = $($Search.FindAll())
             } catch {
-                Write-Warning "Get-WinADObject - Requesting $Ident failed. Error: $($_.Exception.Message.Replace([System.Environment]::NewLine,''))"
+                Write-Warning "Get-WinADObject - Requesting $Ident ($TemporaryDomainName) failed. Error: $($_.Exception.Message.Replace([System.Environment]::NewLine,''))"
                 continue
             }
             foreach ($Object in $SearchResults) {

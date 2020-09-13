@@ -84,7 +84,7 @@
                 'Level'                   = $Nesting
                 'SuffixesIncluded'        = (($Trust.Details.TopLevelNames | Where-Object { $_.Status -eq 'Enabled' }).Name) -join ', '
                 'SuffixesExcluded'        = $Trust.Details.ExcludedTopLevelNames.Name
-                'TrustAttributes'         = $TrustObject[$Trust.Details.TargetName].TrustAttributes
+                'TrustAttributes'         = $TrustObject[$Trust.Details.TargetName].TrustAttributes -join ', '
                 'TrustStatus'             = $TrustStatus.TrustStatus
                 'QueryStatus'             = if ($GroupExists) { 'OK' } else { 'NOT OK' }
                 'ForestTransitive'        = $TrustObject[$Trust.Details.TargetName].TrustAttributes -contains "Forest Transitive"

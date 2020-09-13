@@ -12,7 +12,7 @@
             $ForestInformation = ([System.DirectoryServices.ActiveDirectory.Forest]::GetCurrentForest())
         }
     } catch {
-        Write-Warning "Get-WinADForest - Error: $($_.Exception.Message)"
+        Write-Warning "Get-WinADForest - Can't get $Forest information, error: $($_.Exception.Message.Replace([System.Environment]::NewLine,''))"
     }
     $ForestInformation
 }

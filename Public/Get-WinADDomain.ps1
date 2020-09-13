@@ -12,7 +12,7 @@
             $DomainInformaiton = [System.DirectoryServices.ActiveDirectory.Domain]::GetComputerDomain()
         }
     } catch {
-        Write-Warning "Get-WinADDomain - Error: $($_.Exception.Message)"
+        Write-Warning "Get-WinADDomain - Can't get $Domain information, error: $($_.Exception.Message.Replace([System.Environment]::NewLine,''))"
     }
     $DomainInformaiton
 }
