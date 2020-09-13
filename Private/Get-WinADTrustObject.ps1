@@ -50,6 +50,16 @@
         } else {
             $TrustAttributes = $null
         }
+        if ($Trust.properties.securityidentifier) {
+            try {
+                $ObjectSID = [System.Security.Principal.SecurityIdentifier]::new($Trust.properties.securityidentifier[0], 0).Value
+            } catch {
+                $ObjectSID = $null
+            }
+        } else {
+            $ObjectSID = $null
+        }
+
         $TrustObject = [PSCustomObject] @{
             #Name                   = [string] $Trust.properties.name              #        {ad.evotec.xyz}
             TrustSource                  = $TrustSource
@@ -62,12 +72,12 @@
             TrustTypeText                = $TrustType[$TrustT.ToString()]
             WhenCreated                  = [DateTime] $Trust.properties.whencreated[0]         #        {26.07.2018 10:59:52}
             WhenChanged                  = [DateTime] $Trust.properties.whenchanged[0]            #        {14.08.2020 22:23:14}
-            ObjectSID                    = [System.Security.Principal.SecurityIdentifier]::new($Trust.properties.securityidentifier[0], 0).Value
+            ObjectSID                    = $ObjectSID
             Distinguishedname            = [string] $Trust.properties.distinguishedname      #        {CN=ad.evotec.xyz,CN=System,DC=ad,DC=evotec,DC=pl}
             IsCriticalSystemObject       = [bool]::Parse($Trust.properties.iscriticalsystemobject[0]) #        {True}
             ObjectGuid                   = [guid]::new($Trust.properties.objectguid[0])
             ObjectCategory               = [string] $Trust.properties.objectcategory         #        {CN=Trusted-Domain,CN=Schema,CN=Configuration,DC=ad,DC=evotec,DC=xyz}
-            ObjectClass                  = ([array] $Trust.properties.objectclass)[ - 1]           #        {top, leaf, trustedDomain}
+            ObjectClass                  = ([array] $Trust.properties.objectclass)[-1]           #        {top, leaf, trustedDomain}
             UsnCreated                   = [string] $Trust.properties.usncreated             #        {14149}
             UsnChanged                   = [string] $Trust.properties.usnchanged             #        {4926091}
             ShowInAdvancedViewOnly       = [bool]::Parse($Trust.properties.showinadvancedviewonly) #        {True}

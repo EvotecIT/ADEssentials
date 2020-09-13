@@ -20,6 +20,7 @@
         New-HTMLTab -TabName 'Summary' {
             New-HTMLSection -HeaderText 'Trusts Diagram' {
                 New-HTMLDiagram -Height 'calc(50vh)' {
+                    #New-DiagramEvent -ID 'DT-TrustsInformation' -ColumnID 0
                     New-DiagramOptionsPhysics -RepulsionNodeDistance 150 -Solver repulsion
                     foreach ($Node in $AllNodes) {
                         New-DiagramNode -Label $Node.'Trust'
@@ -31,7 +32,7 @@
                         $newDiagramLinkSplat = @{
                             From         = $Trust.'TrustSource'
                             To           = $Trust.'TrustTarget'
-                            ColorOpacity = 0.5
+                            ColorOpacity = 0.7
                         }
                         if ($Trust.'TrustDirection' -eq 'Disabled') {
 
@@ -56,8 +57,10 @@
                         }
                         if ($Trust.IsTGTDelegationEnabled) {
                             $newDiagramLinkSplat.Color = 'Red'
+                            $newDiagramLinkSplat.Label = "Delegation Enabled"
+                        } else {
+                            $newDiagramLinkSplat.Label = $Trust.QueryStatus
                         }
-                        $newDiagramLinkSplat.Label = $Trust.QueryStatus
                         New-DiagramLink @newDiagramLinkSplat
                     }
                 }
@@ -74,7 +77,7 @@
                     New-TableCondition -BackgroundColor MediumSeaGreen -ComparisonType string -Value 'OK' -Name QueryStatus -Operator eq
                     New-TableCondition -BackgroundColor CoralRed -ComparisonType string -Value 'NOT OK' -Name QueryStatus -Operator eq
                     New-TableCondition -BackgroundColor CoralRed -ComparisonType bool -Value $true -Name IsTGTDelegationEnabled -Operator eq
-                }
+                } -DataTableID 'DT-TrustsInformation'
             }
         }
         # Lets try to sort it into source domain per tab
