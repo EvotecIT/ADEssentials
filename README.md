@@ -39,6 +39,10 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 
 ## Changelog
 
+- 0.0.90 - 13.09.2020
+  - [x] Updates to `Get-WinADTrust` for better verbose
+  - [x] Updates to `Show-WinADTrust` visual parts
+  - [x] Updates to `Get-WinADObject` for better verbose
 - 0.0.89 - 13.09.2020
   - [x] Updates to `Get-WinADTrust` (**Work in progress**)
   - [x] Updates to `Show-WinADTrust` (**Work in progress**)
