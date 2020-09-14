@@ -48,10 +48,10 @@
                                     New-TableHeader -Names Name, SamAccountName, DomainName, DisplayName -Title 'Member'
                                     New-TableHeader -Names DirectMembers, DirectGroups, IndirectMembers, TotalMembers -Title 'Statistics'
                                     New-TableHeader -Names GroupType, GroupScope -Title 'Group Details'
-                                    New-TableCondition -BackgroundColor CoralRed -ComparisonType bool -Value $false -Name Enabled -Operator eq
+                                    New-TableCondition -BackgroundColor CoralRed -Color White -ComparisonType bool -Value $false -Name Enabled -Operator eq
                                     New-TableCondition -BackgroundColor LightBlue -ComparisonType string -Value '' -Name ParentGroup -Operator eq -Row
-                                    New-TableCondition -BackgroundColor CoralRed -ComparisonType bool -Value $true -Name CrossForest -Operator eq
-                                    New-TableCondition -BackgroundColor CoralRed -ComparisonType bool -Value $true -Name Circular -Operator eq -Row
+                                    New-TableCondition -BackgroundColor CoralRed -Color White -ComparisonType bool -Value $true -Name CrossForest -Operator eq
+                                    New-TableCondition -BackgroundColor CoralRed -Color White -ComparisonType bool -Value $true -Name Circular -Operator eq -Row
                                 }
                                 if ($Conditions) {
                                     & $Conditions
