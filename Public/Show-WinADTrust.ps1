@@ -2,10 +2,12 @@
     [alias('Show-ADTrust', 'Show-ADTrusts', 'Show-WinADTrusts')]
     [cmdletBinding()]
     param(
+        [Parameter(Position = 0)][scriptblock] $Conditions,
         [switch] $Recursive,
         [string] $FilePath,
         [switch] $Online,
-        [switch] $HideHTML
+        [switch] $HideHTML,
+        [switch] $DisableBuiltinConditions
     )
     if ($FilePath -eq '') {
         $FilePath = Get-FileName -Extension 'html' -Temporary
@@ -70,16 +72,15 @@
             }
             New-HTMLSection -Title "Information about Trusts" {
                 New-HTMLTable -DataTable $ADTrusts -Filtering {
-                    #New-TableHeader -Names Name, SamAccountName, DomainName, DisplayName -Title 'Member'
-                    #New-TableHeader -Names DirectMembers, DirectGroups, IndirectMembers, TotalMembers -Title 'Statistics'
-                    #New-TableHeader -Names GroupType, GroupScope -Title 'Group Details'
-                    #New-TableCondition -BackgroundColor CoralRed -ComparisonType bool -Value $false -Name Enabled -Operator eq
-                    #New-TableCondition -BackgroundColor LightBlue -ComparisonType string -Value '' -Name ParentGroup -Operator eq -Row
-                    #New-TableCondition -BackgroundColor CoralRed -ComparisonType bool -Value $true -Name CrossForest -Operator eq
-                    New-TableCondition -BackgroundColor MediumSeaGreen -ComparisonType string -Value 'OK' -Name TrustStatus -Operator eq
-                    New-TableCondition -BackgroundColor MediumSeaGreen -ComparisonType string -Value 'OK' -Name QueryStatus -Operator eq
-                    New-TableCondition -BackgroundColor CoralRed -ComparisonType string -Value 'NOT OK' -Name QueryStatus -Operator eq
-                    New-TableCondition -BackgroundColor CoralRed -ComparisonType bool -Value $true -Name IsTGTDelegationEnabled -Operator eq
+                    if (-not $DisableBuiltinConditions) {
+                        New-TableCondition -BackgroundColor MediumSeaGreen -ComparisonType string -Value 'OK' -Name TrustStatus -Operator eq
+                        New-TableCondition -BackgroundColor MediumSeaGreen -ComparisonType string -Value 'OK' -Name QueryStatus -Operator eq
+                        New-TableCondition -BackgroundColor CoralRed -ComparisonType string -Value 'NOT OK' -Name QueryStatus -Operator eq
+                        New-TableCondition -BackgroundColor CoralRed -ComparisonType bool -Value $true -Name IsTGTDelegationEnabled -Operator eq
+                    }
+                    if ($Conditions) {
+                        & $Conditions
+                    }
                 } -DataTableID 'DT-TrustsInformation'
             }
         }
