@@ -2,6 +2,7 @@
     [alias('Show-ADGroupMember')]
     [cmdletBinding(DefaultParameterSetName = 'Default')]
     param(
+        [Parameter(Position = 1)][scriptblock] $Conditions,
         [parameter(Position = 0, Mandatory)][alias('GroupName', 'Group')][string[]] $Identity,
         [string] $FilePath,
         [ValidateSet('Default', 'Hierarchical', 'Both')][string] $HideAppliesTo = 'Both',
@@ -11,7 +12,8 @@
         [Parameter(ParameterSetName = 'Default')][switch] $Summary,
         [Parameter(ParameterSetName = 'SummaryOnly')][switch] $SummaryOnly,
         [switch] $Online,
-        [switch] $HideHTML
+        [switch] $HideHTML,
+        [switch] $DisableBuiltinConditions
     )
     if ($FilePath -eq '') {
         $FilePath = Get-FileName -Extension 'html' -Temporary
@@ -42,13 +44,18 @@
                     New-HTMLTab -TabName 'Information' {
                         New-HTMLSection -Title "Information for $GroupName" {
                             New-HTMLTable -DataTable $ADGroup -Filtering -DataStoreID $DataStoreID {
-                                New-TableHeader -Names Name, SamAccountName, DomainName, DisplayName -Title 'Member'
-                                New-TableHeader -Names DirectMembers, DirectGroups, IndirectMembers, TotalMembers -Title 'Statistics'
-                                New-TableHeader -Names GroupType, GroupScope -Title 'Group Details'
-                                New-TableCondition -BackgroundColor CoralRed -ComparisonType bool -Value $false -Name Enabled -Operator eq
-                                New-TableCondition -BackgroundColor LightBlue -ComparisonType string -Value '' -Name ParentGroup -Operator eq -Row
-                                New-TableCondition -BackgroundColor CoralRed -ComparisonType bool -Value $true -Name CrossForest -Operator eq
-                                New-TableCondition -BackgroundColor CoralRed -ComparisonType bool -Value $true -Name Circular -Operator eq
+                                if (-not $DisableBuiltinConditions) {
+                                    New-TableHeader -Names Name, SamAccountName, DomainName, DisplayName -Title 'Member'
+                                    New-TableHeader -Names DirectMembers, DirectGroups, IndirectMembers, TotalMembers -Title 'Statistics'
+                                    New-TableHeader -Names GroupType, GroupScope -Title 'Group Details'
+                                    New-TableCondition -BackgroundColor CoralRed -ComparisonType bool -Value $false -Name Enabled -Operator eq
+                                    New-TableCondition -BackgroundColor LightBlue -ComparisonType string -Value '' -Name ParentGroup -Operator eq -Row
+                                    New-TableCondition -BackgroundColor CoralRed -ComparisonType bool -Value $true -Name CrossForest -Operator eq
+                                    New-TableCondition -BackgroundColor CoralRed -ComparisonType bool -Value $true -Name Circular -Operator eq -Row
+                                }
+                                if ($Conditions) {
+                                    & $Conditions
+                                }
                             }
                         }
                     }
