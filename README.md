@@ -39,6 +39,9 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 
 ## Changelog
 
+- 0.0.92 - Unreleased
+  - [x] Some visual improvements to `Show-WinADGroupMember`/`Show-WinADGroupMemberOf`
+  - [x] Added `IncludeObjectTypeName`,`ExcludeObjectTypeName`,`IncludeInheritedObjectTypeName`,`ExcludeInheritedObjectTypeName` to `Get-ADACL`
 - 0.0.91 - 14.09.2020
   - [x] Added ability to define own conditions/rules to `Show-WinADGroupMember`,`Show-WinADGroupMemberOf` using `PSWriteHTML` options
 - 0.0.90 - 13.09.2020

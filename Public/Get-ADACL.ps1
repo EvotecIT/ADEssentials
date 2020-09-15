@@ -10,6 +10,10 @@
         [switch] $Inherited,
         [switch] $NotInherited,
         [switch] $Bundle,
+        [string[]] $IncludeObjectTypeName,
+        [string[]] $IncludeInheritedObjectTypeName,
+        [string[]] $ExcludeObjectTypeName,
+        [string[]] $ExcludeInheritedObjectTypeName,
         [System.DirectoryServices.ActiveDirectoryRights[]] $IncludeActiveDirectoryRights,
         [System.DirectoryServices.ActiveDirectoryRights[]] $ExcludeActiveDirectoryRights,
         [System.DirectoryServices.ActiveDirectorySecurityInheritance[]] $IncludeActiveDirectorySecurityInheritance,
@@ -115,7 +119,7 @@
                         $IdentityReference = $ACL.IdentityReference.Value
                     }
                 } elseif ($ACL.IdentityReference -like '*-*-*-*') {
-                    $ConvertedSID = ConvertFrom-SID -sid $ACL.IdentityReference
+                    $ConvertedSID = ConvertFrom-SID -SID $ACL.IdentityReference
                     if ($ResolveTypes -and $Script:ForestCache) {
                         $TemporaryIdentity = $Script:ForestCache["$($ConvertedSID.Name)"]
                         $IdentityReferenceType = $TemporaryIdentity.ObjectClass
@@ -142,6 +146,26 @@
                 }
                 $ReturnObject['ObjectTypeName'] = $Script:ForestGUIDs["$($ACL.objectType)"]
                 $ReturnObject['InheritedObjectTypeName'] = $Script:ForestGUIDs["$($ACL.inheritedObjectType)"]
+                if ($IncludeObjectTypeName) {
+                    if ($IncludeObjectTypeName -notcontains $ReturnObject['ObjectTypeName']) {
+                        continue
+                    }
+                }
+                if ($IncludeInheritedObjectTypeName) {
+                    if ($IncludeInheritedObjectTypeName -notcontains $ReturnObject['InheritedObjectTypeName']) {
+                        continue
+                    }
+                }
+                if ($ExcludeObjectTypeName) {
+                    if ($ExcludeObjectTypeName -contains $ReturnObject['ObjectTypeName']) {
+                        continue
+                    }
+                }
+                if ($ExcludeInheritedObjectTypeName) {
+                    if ($ExcludeInheritedObjectTypeName -contains $ReturnObject['InheritedObjectTypeName']) {
+                        continue
+                    }
+                }
                 $ReturnObject['ActiveDirectoryRights'] = $ACL.ActiveDirectoryRights
                 $ReturnObject['InheritanceType'] = $ACL.InheritanceType
                 $ReturnObject['IsInherited'] = $ACL.IsInherited
