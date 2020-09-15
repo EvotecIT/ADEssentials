@@ -10,6 +10,7 @@
         [switch] $Inherited,
         [switch] $NotInherited,
         [switch] $Bundle,
+        [System.Security.AccessControl.AccessControlType] $AccessControlType,
         [string[]] $IncludeObjectTypeName,
         [string[]] $IncludeInheritedObjectTypeName,
         [string[]] $ExcludeObjectTypeName,
@@ -17,7 +18,8 @@
         [System.DirectoryServices.ActiveDirectoryRights[]] $IncludeActiveDirectoryRights,
         [System.DirectoryServices.ActiveDirectoryRights[]] $ExcludeActiveDirectoryRights,
         [System.DirectoryServices.ActiveDirectorySecurityInheritance[]] $IncludeActiveDirectorySecurityInheritance,
-        [System.DirectoryServices.ActiveDirectorySecurityInheritance[]] $ExcludeActiveDirectorySecurityInheritance
+        [System.DirectoryServices.ActiveDirectorySecurityInheritance[]] $ExcludeActiveDirectorySecurityInheritance,
+        [switch] $ADRightsAsArray
     )
     Begin {
         if (-not $Script:ForestGUIDs) {
@@ -63,6 +65,11 @@
             }
             $AccessObjects = foreach ($ACL in $ACLs.Access) {
                 [Array] $ADRights = $ACL.ActiveDirectoryRights -split ', '
+                if ($AccessControlType) {
+                    if ($ACL.AccessControlType -ne $AccessControlType) {
+                        continue
+                    }
+                }
                 if ($Inherited) {
                     if ($ACL.IsInherited -eq $false) {
                         # if it's not inherited and we require inherited lets continue
@@ -166,7 +173,11 @@
                         continue
                     }
                 }
-                $ReturnObject['ActiveDirectoryRights'] = $ACL.ActiveDirectoryRights
+                if ($ADRightsAsArray) {
+                    $ReturnObject['ActiveDirectoryRights'] = $ADRights
+                } else {
+                    $ReturnObject['ActiveDirectoryRights'] = $ACL.ActiveDirectoryRights
+                }
                 $ReturnObject['InheritanceType'] = $ACL.InheritanceType
                 $ReturnObject['IsInherited'] = $ACL.IsInherited
 
