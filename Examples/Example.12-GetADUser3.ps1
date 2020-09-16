@@ -9,4 +9,5 @@
     Get-WinADObject -Identity 'CN=Domain Admins,CN=Users,DC=ad,DC=evotec,DC=xyz'
     Get-WinADObject -Identity 'CN=Domain Admins,CN=Users,DC=test,DC=evotec,DC=pl'
     Get-WinADObject -Identity 'CN=Administrator,CN=Users,DC=test,DC=evotec,DC=pl'
+    Get-WinADObject -Identity 'przemyslaw.klys'
 ) | Format-Table *

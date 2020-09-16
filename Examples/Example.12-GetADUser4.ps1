@@ -1,21 +1,26 @@
 ﻿Import-Module $PSScriptRoot\..\ADEssentials.psd1 -Force
 
-# This is very slow, we need to improve
-@(
-    Get-WinADObject -Identity 'NT AUTHORITY\INTERACTIVE'
-    Get-WinADObject -Identity 'INTERACTIVE'
-    Get-WinADObject -Identity 'NT AUTHORITY\IUSR'
-    Get-WinADObject -Identity 'NT AUTHORITY\ENTERPRISE DOMAIN CONTROLLERS'
-    Get-WinADObject -Identity 'S-1-5-4'
-    Get-WinADObject -Identity 'S-1-5-11'
-    Get-WinADObject -Identity 'EVOTEC\Domain Admins'
-) | Format-Table *
+$Object = @(
+    'CN=S-1-5-4,CN=ForeignSecurityPrincipals,DC=ad,DC=evotec,DC=xyz'
+    'NT AUTHORITY\INTERACTIVE'
+    'INTERACTIVE'
+    'NT AUTHORITY\IUSR'
+    'NT AUTHORITY\ENTERPRISE DOMAIN CONTROLLERS'
+    'S-1-5-4'
+    'S-1-5-11'
+    'EVOTEC\Domain Admins'
+    'EVOTECPL\Domain Admins'
+    'EVOTECPL\Domain Admins'
+    'EVOTECPL\Domain Admins'
+    'EVOTECPL\Protected Users'
+    'EVOTECPL\Print Operators'
+    'EVOTEC\Protected Users'
+    'EVOTEC\Print Operators'
+    'TEST\Protected Users'
+    'TEST\Print Operators'
+)
 
-return
-
-@(
-    Convert-Identity -Identity 'NT AUTHORITY\INTERACTIVE'
-    Convert-Identity -Identity 'INTERACTIVE'
-    Convert-Identity -Identity 'EVOTEC\Domain Admins'
-    Convert-Identity -Identity 'EVOTECPL\Domain Admins'
-) | Format-Table
+$Results = Get-WinADObject -Identity $Object
+$Results | Format-Table
+$Results.Count
+$Object.Count
