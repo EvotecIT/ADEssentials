@@ -11,4 +11,26 @@ Foreach ($import in @($Public + $Private)) {
     }
 }
 
+<# To be implemented as part of PSPublishModule
+$FunctionsAll = 'Get-WinADObject', 'Get-WinADLastBackup', 'Get-WinADDuplicateObject'
+$ModuleFunctions = @{
+    ActiveDirectory = 'Get-WinADObject', 'Get-WinADLastBackup'
+    GroupPolicy     = 'Get-WinADDuplicateObject'
+}
+
+
+[Array] $FunctionsToRemove = foreach ($Module in $ModuleFunctions.Keys) {
+    try {
+        Import-Module -Name $Module -ErrorAction Stop
+    } catch {
+        $ModuleFunctions[$Module]
+    }
+}
+$FunctionsToLoad = foreach ($Function in $FunctionsAll) {
+    if ($Function -notin $FunctionsToRemove) {
+        $Function
+    }
+}
+Export-ModuleMember -Function $FunctionsToLoad -Alias $AliasesToLoad
+#>
 Export-ModuleMember -Function '*' -Alias '*'

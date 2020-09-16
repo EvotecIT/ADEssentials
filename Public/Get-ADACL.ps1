@@ -1,7 +1,7 @@
 ﻿function Get-ADACL {
     [cmdletbinding()]
     param(
-        [Parameter(ValueFromPipeline)][Array] $ADObject,
+        [Parameter(Mandatory, Position = 0, ValueFromPipeline, ValueFromPipelineByPropertyName)][Array] $ADObject,
         [string] $Domain = $Env:USERDNSDOMAIN,
         [Object] $Server,
         [string] $ForestName,
@@ -25,12 +25,6 @@
         if (-not $Script:ForestGUIDs) {
             Write-Verbose "Get-ADACL - Gathering Forest GUIDS"
             $Script:ForestGUIDs = Get-WinADForestGUIDs
-        }
-        if ($ResolveTypes) {
-            if (-not $Script:ForestCache) {
-                Write-Verbose "Get-ADACL - Building Cache"
-                $Script:ForestCache = Get-WinADCache -ByNetBiosName
-            }
         }
     }
     Process {
@@ -115,29 +109,8 @@
                         continue
                     }
                 }
+                $IdentityReference = $ACL.IdentityReference.Value
 
-                if ($ACL.IdentityReference -like '*\*') {
-                    if ($ResolveTypes -and $Script:ForestCache ) {
-                        $TemporaryIdentity = $Script:ForestCache["$($ACL.IdentityReference)"]
-                        $IdentityReferenceType = $TemporaryIdentity.ObjectClass
-                        $IdentityReference = $ACL.IdentityReference.Value
-                    } else {
-                        $IdentityReferenceType = ''
-                        $IdentityReference = $ACL.IdentityReference.Value
-                    }
-                } elseif ($ACL.IdentityReference -like '*-*-*-*') {
-                    $ConvertedSID = ConvertFrom-SID -SID $ACL.IdentityReference
-                    if ($ResolveTypes -and $Script:ForestCache) {
-                        $TemporaryIdentity = $Script:ForestCache["$($ConvertedSID.Name)"]
-                        $IdentityReferenceType = $TemporaryIdentity.ObjectClass
-                    } else {
-                        $IdentityReferenceType = ''
-                    }
-                    $IdentityReference = $ConvertedSID.Name
-                } else {
-                    $IdentityReference = $ACL.IdentityReference
-                    $IdentityReferenceType = 'Unknown'
-                }
                 $ReturnObject = [ordered] @{ }
                 $ReturnObject['DistinguishedName' ] = $DistinguishedName
                 if ($CanonicalName) {
@@ -149,7 +122,11 @@
                 $ReturnObject['AccessControlType'] = $ACL.AccessControlType
                 $ReturnObject['Principal'] = $IdentityReference
                 if ($ResolveTypes) {
-                    $ReturnObject['PrincipalType'] = $IdentityReferenceType
+                    $IdentityResolve = Get-WinADObject -Identity $IdentityReference -ResolveType
+                    $ReturnObject['PrincipalType'] = $IdentityResolve.Type
+                    $ReturnObject['PrincipalObjectType'] = $IdentityResolve.ObjectClass
+                    $ReturnObject['PrincipalObjectDomain' ] = $IdentityResolve.DomainName
+                    $ReturnObject['PrincipalObjectSid'] = $IdentityResolve.ObjectSID
                 }
                 $ReturnObject['ObjectTypeName'] = $Script:ForestGUIDs["$($ACL.objectType)"]
                 $ReturnObject['InheritedObjectTypeName'] = $Script:ForestGUIDs["$($ACL.inheritedObjectType)"]
@@ -204,18 +181,7 @@
             } else {
                 $AccessObjects
             }
-            <#
-                [PSCustomObject] @{
-                    Type          = $ACL.AccessControlType
-                    Principal     = $IdentityReference
-                    Access        = ''
-                    InheritedFrom = ''
-                    AppliesTo     = ''
-                }
-                #>
         }
     }
-    End {
-
-    }
+    End {}
 }
