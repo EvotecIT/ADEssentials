@@ -22,7 +22,7 @@ $Users = @(
     'EVOTECPL\Domain Admins'
 )
 
-$Output = Get-WinADObject -Identity $Users
+$Output = Get-WinADObject -Identity $Users -Verbose
 $Output | Format-Table *
 $Users.Count
 $Output.Count

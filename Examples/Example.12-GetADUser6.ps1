@@ -1,5 +1,15 @@
 ﻿Import-Module $PSScriptRoot\..\ADEssentials.psd1 -Force
 
-Get-WinADObject -Identity 'Administrators'
-Get-WinADObject -Identity 'Domain Admins'
-Get-WinADObject -Identity 'przemyslaw.klys'
+$Object = @(
+    'Administrators'
+    'Domain Admins'
+    'przemyslaw.klys'
+    'EVOTECPL\Print Operators'
+    'EVOTEC\Administrator'
+    'EVOTECPL\Domain Computers'
+    'EVOTECPL\Protected Users'
+)
+$Results = Get-WinADObject -Identity $Object
+$Results | Format-Table
+$Results.Count
+$Object.Count

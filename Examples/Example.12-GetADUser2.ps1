@@ -9,5 +9,8 @@ $Identity = @(
     'CN=DnsAdmins,CN=Users,DC=ad,DC=evotec,DC=pl'
     'S-1-5-21-3661168273-3802070955-2987026695-1101' # 'CN=DnsAdmins,CN=Users,DC=ad,DC=evotec,DC=pl'
 )
-Get-WinADObject -Identity $Identity | Format-Table *
+$Output = Get-WinADObject -Identity $Identity
+$Output | Format-Table *
+$Output.Count
+$Identity.Count
 #Get-WinADObject -Identity $Identity | Format-List
