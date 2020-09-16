@@ -20,7 +20,7 @@
         ModuleName    = 'PSEventViewer'
         GUID          = '5df72a79-cdf6-4add-b38d-bcacf26fb7bc'
     }, @{
-        ModuleVersion = '0.0.178'
+        ModuleVersion = '0.0.179'
         ModuleName    = 'PSSharedGoods'
         GUID          = 'ee272aa8-baaa-4edf-9f45-b6d6f7d844fe'
     }, @{
