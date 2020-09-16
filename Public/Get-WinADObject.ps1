@@ -1,17 +1,54 @@
 ﻿function Get-WinADObject {
     [cmdletBinding()]
     param(
-        [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
-        [Array] $Identity,
-        [alias('Domain', 'DomainDistinguishedName')][string] $DomainName,
+        [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)][Array] $Identity,
+        [string] $DomainName,
         [pscredential] $Credential,
         [switch] $IncludeDeletedObjects,
-        [switch] $IncludeGroupMembership,
-        [switch] $ResolveType
+        [switch] $IncludeGroupMembership
+        #[switch] $ResolveType
     )
     Begin {
         # This is purely for calling group workaround
         Add-Type -AssemblyName System.DirectoryServices.AccountManagement
+
+        $GroupTypes = @{
+            '2'           = @{
+                Name  = 'Distribution Group - Global' # distribution
+                Type  = 'Distribution'
+                Scope = 'Global'
+            }
+            '4'           = @{
+                Name  = 'Distribution Group - Domain Local' # distribution
+                Type  = 'Distribution'
+                Scope = 'Domain local'
+            }
+            '8'           = @{
+                Name  = 'Distribution Group - Universal'
+                Type  = 'Distribution'
+                Scope = 'Universal'
+            }
+            '-2147483640' = @{
+                Name  = 'Security Group - Universal'
+                Type  = 'Security'
+                Scope = 'Universal'
+            }
+            '-2147483643' = @{
+                Name  = 'Security Group - Builtin Local' # Builtin local Security Group
+                Type  = 'Security'
+                Scope = 'Builtin local'
+            }
+            '-2147483644' = @{
+                Name  = 'Security Group - Domain Local'
+                Type  = 'Security'
+                Scope = 'Domain local'
+            }
+            '-2147483646' = @{
+                Name  = 'Security Group - Global' # security
+                Type  = 'Security'
+                Scope = 'Global'
+            }
+        }
     }
     process {
         foreach ($Ident in $Identity) {
@@ -21,7 +58,9 @@
                 $Ident = $Ident.DistinguishedName
             }
             # we reset domain name to it's given value if at all
+            $TemporaryName = $Ident
             $TemporaryDomainName = $DomainName
+            <#
             # Now we need to asses what kind of object is it
             # this is important as we accept SID, DN, ForeignSID, ForeignSecurityPrincipals or even DOMAIN\Account
             if (Test-IsDistinguishedName -Identity $Ident) {
@@ -60,11 +99,27 @@
                     #$Ident = $NetbiosConversion.Name
                 }
             }
-            if ($TemporaryDomainName) {
-                if ($TemporaryDomainName | Test-IsDistinguishedName) {
-                    # If Domain Name is DN we need to convert it to CN
-                    $TemporaryDomainName = ConvertFrom-DistinguishedName -DistinguishedName $TemporaryDomainName -ToDomainCN
+            #>
+
+            $ResolvedIdentity = Convert-Identity -Identity $Ident
+            if ($ResolvedIdentity.SID) {
+                $TemporaryDomainName = $ResolvedIdentity.DomainName
+                $Ident = $ResolvedIdentity.SID
+            } else {
+                # It happens that sometimes things like EVOTECPL\Print Operators are not resolved, we try different method
+                $NetbiosConversion = ConvertFrom-NetbiosName -Identity $Ident
+                if ($NetbiosConversion.DomainName) {
+                    $TemporaryDomainName = $NetbiosConversion.DomainName
+                    $Ident = $NetbiosConversion.Name
                 }
+                # if nothing helpeed we leave it as is
+            }
+
+            if ($TemporaryDomainName) {
+                #if ($TemporaryDomainName | Test-IsDistinguishedName) {
+                #    # If Domain Name is DN we need to convert it to CN
+                #    $TemporaryDomainName = ConvertFrom-DistinguishedName -DistinguishedName $TemporaryDomainName -ToDomainCN
+                #}
                 try {
                     $Context = [System.DirectoryServices.AccountManagement.PrincipalContext]::new('Domain', $TemporaryDomainName)
                 } catch {
@@ -83,8 +138,6 @@
             $Search = [System.DirectoryServices.DirectorySearcher]::new()
             $Search.SizeLimit = $SizeLimit
             #$Search.SearchRoot = $DomainName
-            #$Props = "name", "employeeID", 'memberof','member', 'samaccountName', 'objectSid','schemaClassName'
-            #foreach ($i in $Props) { $Search.PropertiesToLoad.Add($i) }
 
             #Convert Identity Input String to HEX
             $IdentityGUID = ""
@@ -94,12 +147,10 @@
                 $IdentityGUID = "null"
             }
 
-            if ($PSBoundParameters['Identity']) {
-                if ($PSBoundParameters['DeletedOnly']) {
-                    $Search.filter = "(&(isDeleted=True)(|(DistinguishedName=$Ident)(Name=$Ident)(SamAccountName=$Ident)(UserPrincipalName=$Ident)(objectGUID=$IdentityGUID)(objectSid=$Ident)))"
-                } else {
-                    $Search.filter = "(|(DistinguishedName=$Ident)(Name=$Ident)(SamAccountName=$Ident)(UserPrincipalName=$Ident)(objectGUID=$IdentityGUID)(objectSid=$Ident))"
-                }
+            if ($PSBoundParameters['DeletedOnly']) {
+                $Search.filter = "(&(isDeleted=True)(|(DistinguishedName=$Ident)(Name=$Ident)(SamAccountName=$Ident)(UserPrincipalName=$Ident)(objectGUID=$IdentityGUID)(objectSid=$Ident)))"
+            } else {
+                $Search.filter = "(|(DistinguishedName=$Ident)(Name=$Ident)(SamAccountName=$Ident)(UserPrincipalName=$Ident)(objectGUID=$IdentityGUID)(objectSid=$Ident))"
             }
 
             if ($TemporaryDomainName) {
@@ -148,10 +199,12 @@
                 $DisplayName = $Object.properties.displayname -as [string]
                 $SamAccountName = $Object.properties.samaccountname -as [string]
                 $Name = $Object.properties.name -as [string]
+
                 if ($ObjectClass -eq 'foreignSecurityPrincipal' -and $DisplayName -eq '') {
                     # If object is foreignSecurityPrincipal (which shouldn't happen at this point) we need to set it to temporary name we
                     # used before. Usually this is to fix 'NT AUTHORITY\INTERACTIVE'
                     # I have no clue if there's better way to do it
+                    <#
                     if ($TemporaryName) {
                         $DisplayName = $TemporaryName
                         # We try to make the output similar to what is reported by Get-ADGroupMember
@@ -163,61 +216,28 @@
                             $DisplayName = $TemporaryName
                         }
                     }
-                    if ($TemporaryName -like '*\*') {
-                        $NetbiosWithName = $TemporaryName -split '\\'
+                    #>
+                    #if ($TemporaryName) {
+                    #    $DisplayName = $TemporaryName
+                    #} else {
+                    $DisplayName = $ResolvedIdentity.Name
+                    #}
+                    if ($DisplayName -like '*\*') {
+                        $NetbiosWithName = $DisplayName -split '\\'
                         if ($NetbiosWithName.Count -eq 2) {
                             #$NetbiosName = $NetbiosWithName[0]
                             $NetbiosUser = $NetbiosWithName[1]
                             $Name = $NetbiosUser
                             $SamAccountName = $NetbiosUser
                         } else {
-                            $Name = $TemporaryName
+                            $Name = $DisplayName
                         }
                     } else {
-                        $Name = $TemporaryName
+                        $Name = $DisplayName
                     }
                 }
 
-
-                $GroupTypes = @{
-                    '2'           = @{
-                        Name  = 'Distribution Group - Global' # distribution
-                        Type  = 'Distribution'
-                        Scope = 'Global'
-                    }
-                    '4'           = @{
-                        Name  = 'Distribution Group - Domain Local' # distribution
-                        Type  = 'Distribution'
-                        Scope = 'Domain local'
-                    }
-                    '8'           = @{
-                        Name  = 'Distribution Group - Universal'
-                        Type  = 'Distribution'
-                        Scope = 'Universal'
-                    }
-                    '-2147483640' = @{
-                        Name  = 'Security Group - Universal'
-                        Type  = 'Security'
-                        Scope = 'Universal'
-                    }
-                    '-2147483643' = @{
-                        Name  = 'Security Group - Builtin Local' # Builtin local Security Group
-                        Type  = 'Security'
-                        Scope = 'Builtin local'
-                    }
-                    '-2147483644' = @{
-                        Name  = 'Security Group - Domain Local'
-                        Type  = 'Security'
-                        Scope = 'Domain local'
-                    }
-                    '-2147483646' = @{
-                        Name  = 'Security Group - Global' # security
-                        Type  = 'Security'
-                        Scope = 'Global'
-                    }
-                }
                 $GroupType = $Object.properties.grouptype -as [string]
-
                 $ObjectSID = [System.Security.Principal.SecurityIdentifier]::new($Object.Properties.objectsid[0], 0).Value
 
                 $ReturnObject = [ordered] @{
@@ -226,16 +246,14 @@
                     SamAccountName      = $SamAccountName
                     ObjectClass         = $ObjectClass
                     Enabled             = if ($ObjectClass -eq 'group') { $null } else { $UAC -notcontains 'ACCOUNTDISABLE' }
-                    PasswordNeverExpire = $UAC -contains 'DONT_EXPIRE_PASSWORD'
-                    Description         = $Object.properties.description -as [string]
+                    PasswordNeverExpire = if ($ObjectClass -eq 'group') { $null } else { $UAC -contains 'DONT_EXPIRE_PASSWORD' }
                     DomainName          = $ObjectDomainName
                     Distinguishedname   = $Object.properties.distinguishedname -as [string]
                     #Adspath             = $Object.properties.adspath -as [string]
-                    Lastlogon           = $Object.properties.lastlogon -as [string]
                     WhenCreated         = $Object.properties.whencreated -as [string]
                     WhenChanged         = $Object.properties.whenchanged -as [string]
-                    Deleted             = $Object.properties.isDeleted -as [string]
-                    Recycled            = $Object.properties.isRecycled -as [string]
+                    #Deleted             = $Object.properties.isDeleted -as [string]
+                    #Recycled            = $Object.properties.isRecycled -as [string]
                     UserPrincipalName   = $Object.properties.userprincipalname -as [string]
                     ObjectSID           = $ObjectSID
                     MemberOf            = $Object.properties.memberof -as [array]
@@ -245,11 +263,39 @@
                     GroupScope          = $GroupTypes[$GroupType].Scope
                     GroupType           = $GroupTypes[$GroupType].Type
                     #Administrative      = if ($Object.properties.admincount -eq '1') { $true } else { $false }
+                    Type                = $ResolvedIdentity.Type
+                    Description         = $Object.properties.description -as [string]
                 }
-                if ($ResolveType) {
-                    $Conversion = ConvertFrom-SID -SID $ObjectSID
-                    $ReturnObject['Type'] = $Conversion.Type
+
+                <#
+                $LastLogon = $Object.properties.lastlogon -as [string]
+                if ($LastLogon) {
+                    $LastLogonDate = [datetime]::FromFileTime($LastLogon)
+                } else {
+                    $LastLogonDate = $null
                 }
+
+                $AccountExpires = $Object.Properties.accountexpires -as [string]
+                $AccountExpiresDate = ConvertTo-Date -accountExpires $AccountExpires
+
+                $PasswordLastSet = $Object.Properties.pwdlastset -as [string]
+                if ($PasswordLastSet) {
+                    $PasswordLastSetDate = [datetime]::FromFileTime($PasswordLastSet)
+                } else {
+                    $PasswordLastSetDate = $null
+                }
+                $BadPasswordTime = $Object.Properties.badpasswordtime -as [string]
+                if ($BadPasswordTime) {
+                    $BadPasswordDate = [datetime]::FromFileTime($BadPasswordTime)
+                } else {
+                    $BadPasswordDate = $null
+                }
+
+                $ReturnObject['LastLogonDate'] = $LastLogonDate
+                $ReturnObject['PasswordLastSet'] = $PasswordLastSetDate
+                $ReturnObject['BadPasswordTime'] = $BadPasswordDate
+                $ReturnObject['AccountExpiresDate'] = $AccountExpiresDate
+                #>
                 [PSCustomObject] $ReturnObject
             }
         }
@@ -336,41 +382,4 @@ msds-site-affinity             {139 135 16 187 58 3 140 71 131 93 48 118 91 131 
 msds-keycredentiallink         {B:854:0002000020000133A552F2508CAC5C3D3ECF4CDA1414C87DFD9544C699E34D7A6D7582D7EC36A220000262390DFF3F290C897505B3B6F36AC36A9B2F32CBF66679CFBFB3C21AEF0CACC01B0103525341310008000003000000000100000000000000000000010001B0FB634056ED41754D49B02DF98B1F1AB82029119A190F0C17403BBC39BDDEE67D7F0E2A1E6466B188346CF4E8E8454A4E8ABBC9F7DABDF87079B70A651805F7784CC8ADE62F8B56F51F69E2E07B964EE4CA888C1D856B2CD3BC94B782582AA4A46E737067BC91AF54C03BE8D21A8D5634A51FC3DCE9E690F537D0F092D85B847C5DC90FC3074657B978BF53BEE7EE0A25CADA9C85CCD228AA2961D2A0EA7ED66F2ED0DD4AB62FDF9137E575700316CA96D53600A3C40A467BA9E8B4BEE04C3E86D3417C8138DF0EEA0D268AD18580C18...
 accountexpires                 {9223372036854775807}
 userprincipalname              {przemyslaw.klys@evotec.pl}
-#>
-
-
-<#
-function Get-WinADObject1 {
-    [cmdletBinding()]
-    param(
-        [string] $Identity
-    )
-
-    $Name = [System.Security.Principal.NTAccount] $Identity
-    $SIDValue = [System.Security.Principal.SecurityIdentifier]::new($Identity, 0).Value
-
-    if (-not $Script:WinADGroupMemberCache) {
-        $Script:WinADGroupMemberCache = @{}
-    }
-    if ($Script:WinADGroupMemberCache[$Identity]) {
-        $Script:WinADGroupMemberCache[$Identity]
-    } else {
-        $ADObject = [adsi]"LDAP://$Identity"
-        if ($ADObject.SchemaClassName -notin "group", 'foreignSecurityPrincipal') {
-            $ADObject.Enabled = (Convert-UAC -UAC $ADObject.userAccountControl) -notcontains 'ACCOUNTDISABLE'
-        }
-        $NewObject = [PSCustomObject] @{
-            Name              = $ADObject.Name.Value
-            sAMAccountName    = $ADObject.sAMAccountName.Value
-            Member            = $ADObject.Member.Value
-            MemberOf          = $ADObject.memberof.Value
-            ObjectClass       = $ADObject.SchemaClassName
-            distinguishedName = $ADObject.distinguishedName.Value
-            cn                = $ADObject.cn.Value
-            ObjectSID         = [System.Security.Principal.SecurityIdentifier]::new($ADObject.objectSid.Value, 0).Value
-        }
-        $Script:WinADGroupMemberCache[$Identity] = $NewObject
-        $Script:WinADGroupMemberCache[$Identity]
-    }
-}
 #>
