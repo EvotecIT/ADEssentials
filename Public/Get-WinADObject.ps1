@@ -6,7 +6,8 @@
         [alias('Domain', 'DomainDistinguishedName')][string] $DomainName,
         [pscredential] $Credential,
         [switch] $IncludeDeletedObjects,
-        [switch] $IncludeGroupMembership
+        [switch] $IncludeGroupMembership,
+        [switch] $ResolveType
     )
     Begin {
         # This is purely for calling group workaround
@@ -38,16 +39,19 @@
                 # lets save it's value because we may need it if it's NT AUTHORITY
                 $TemporaryName = $Ident
                 $NetbiosConversion = Convert-Identity -Identity $Ident
-                $TemporaryDomainName = $NetbiosConversion.DomainName
-                $Ident = $NetbiosConversion.SID
-                #} elseif ($Ident1 -like "*\*") {
-                #    $NetbiosConversion = ConvertFrom-NetbiosName -Identity $Ident
-                #    if ($NetbiosConversion.DomainName) {
-                #        $TemporaryDomainName = $NetbiosConversion.DomainName
-                #        $Ident = $NetbiosConversion.Name
-                #    } else {
-                #        # We do nothing, because we were not able to process DomainName so maybe something else is going on
-                #    }
+                if ($NetbiosConversion.SID) {
+                    $TemporaryDomainName = $NetbiosConversion.DomainName
+                    $Ident = $NetbiosConversion.SID
+                } else {
+                    # It happens that sometimes things like EVOTECPL\Print Operators are not resolved, we try different method
+                    $NetbiosConversion = ConvertFrom-NetbiosName -Identity $Ident
+                    if ($NetbiosConversion.DomainName) {
+                        $TemporaryDomainName = $NetbiosConversion.DomainName
+                        $Ident = $NetbiosConversion.Name
+                    }
+                }
+                # if no conditions happen, we let it as is
+                # We do nothing, because we were not able to process DomainName so maybe something else is going on
             } elseif ([Regex]::IsMatch($Ident, "^S-\d-\d+-(\d+-){1,14}\d+$")) {
                 # This is for converting sids, including foreign ones
                 $SIDConversion = Convert-Identity -Identity $Ident
@@ -214,8 +218,9 @@
                 }
                 $GroupType = $Object.properties.grouptype -as [string]
 
+                $ObjectSID = [System.Security.Principal.SecurityIdentifier]::new($Object.Properties.objectsid[0], 0).Value
 
-                [PSCustomObject] @{
+                $ReturnObject = [ordered] @{
                     DisplayName         = $DisplayName
                     Name                = $Name
                     SamAccountName      = $SamAccountName
@@ -232,7 +237,7 @@
                     Deleted             = $Object.properties.isDeleted -as [string]
                     Recycled            = $Object.properties.isRecycled -as [string]
                     UserPrincipalName   = $Object.properties.userprincipalname -as [string]
-                    ObjectSID           = [System.Security.Principal.SecurityIdentifier]::new($Object.Properties.objectsid[0], 0).Value
+                    ObjectSID           = $ObjectSID
                     MemberOf            = $Object.properties.memberof -as [array]
                     Members             = $Members
                     DirectReports       = $Object.Properties.directreports
@@ -241,6 +246,11 @@
                     GroupType           = $GroupTypes[$GroupType].Type
                     #Administrative      = if ($Object.properties.admincount -eq '1') { $true } else { $false }
                 }
+                if ($ResolveType) {
+                    $Conversion = ConvertFrom-SID -SID $ObjectSID
+                    $ReturnObject['Type'] = $Conversion.Type
+                }
+                [PSCustomObject] $ReturnObject
             }
         }
     }
