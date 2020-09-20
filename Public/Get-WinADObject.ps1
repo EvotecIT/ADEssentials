@@ -107,10 +107,16 @@
                 $Ident = $ResolvedIdentity.SID
             } else {
                 # It happens that sometimes things like EVOTECPL\Print Operators are not resolved, we try different method
-                $NetbiosConversion = ConvertFrom-NetbiosName -Identity $Ident
-                if ($NetbiosConversion.DomainName) {
-                    $TemporaryDomainName = $NetbiosConversion.DomainName
-                    $Ident = $NetbiosConversion.Name
+                if ($Ident -like "*\*") {
+                    $NetbiosConversion = ConvertFrom-NetbiosName -Identity $Ident
+                    if ($NetbiosConversion.DomainName) {
+                        $TemporaryDomainName = $NetbiosConversion.DomainName
+                        $Ident = $NetbiosConversion.Name
+                    }
+                } else {
+                    $CNConversion = $Ident -split '\.', 2
+                    $Ident = $CNConversion[0]
+                    $TemporaryDomainName = $CNConversion[1]
                 }
                 # if nothing helpeed we leave it as is
             }
@@ -238,7 +244,16 @@
                 }
 
                 $GroupType = $Object.properties.grouptype -as [string]
-                $ObjectSID = [System.Security.Principal.SecurityIdentifier]::new($Object.Properties.objectsid[0], 0).Value
+                if ($Object.Properties.objectsid) {
+                    try {
+                        $ObjectSID = [System.Security.Principal.SecurityIdentifier]::new($Object.Properties.objectsid[0], 0).Value
+                    } catch {
+                        Write-Warning "Get-WinADObject - Getting objectsid failed, error: $($_.Exception.Message)"
+                        $ObjectSID = $null
+                    }
+                } else {
+                    $ObjectSID = $null
+                }
 
                 $ReturnObject = [ordered] @{
                     DisplayName         = $DisplayName
