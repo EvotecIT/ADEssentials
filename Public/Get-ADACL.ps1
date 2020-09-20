@@ -2,8 +2,8 @@
     [cmdletbinding()]
     param(
         [Parameter(Mandatory, Position = 0, ValueFromPipeline, ValueFromPipelineByPropertyName)][Array] $ADObject,
-        [string] $Domain = $Env:USERDNSDOMAIN,
-        [Object] $Server,
+        #[string] $Domain = $Env:USERDNSDOMAIN,
+        #[Object] $Server,
         [string] $ForestName,
         [switch] $Extended,
         [switch] $ResolveTypes,
@@ -125,10 +125,6 @@
                     $IdentityResolve = Get-WinADObject -Identity $IdentityReference
                     if (-not $IdentityResolve) {
                         $ConvertIdentity = Convert-Identity -Identity $IdentityReference
-                        if (-not $ConvertIdentity.DomainName) {
-                            # for NT AUTHORITY\SYSTEM would be empty. We need to provide some option here, so we take it from the DistinguishedName
-                            $ConvertIdentity.DomainName = ConvertFrom-DistinguishedName -DistinguishedName $DistinguishedName -ToDomainCN
-                        }
                         $ReturnObject['PrincipalType'] = $ConvertIdentity.Type
                         $ReturnObject['PrincipalObjectType'] = $ConvertIdentity.Type
                         $ReturnObject['PrincipalObjectDomain' ] = $ConvertIdentity.DomainName
