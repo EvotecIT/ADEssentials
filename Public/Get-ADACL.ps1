@@ -123,10 +123,22 @@
                 $ReturnObject['Principal'] = $IdentityReference
                 if ($ResolveTypes) {
                     $IdentityResolve = Get-WinADObject -Identity $IdentityReference
-                    $ReturnObject['PrincipalType'] = $IdentityResolve.Type
-                    $ReturnObject['PrincipalObjectType'] = $IdentityResolve.ObjectClass
-                    $ReturnObject['PrincipalObjectDomain' ] = $IdentityResolve.DomainName
-                    $ReturnObject['PrincipalObjectSid'] = $IdentityResolve.ObjectSID
+                    if (-not $IdentityResolve) {
+                        $ConvertIdentity = Convert-Identity -Identity $IdentityReference
+                        if (-not $ConvertIdentity.DomainName) {
+                            # for NT AUTHORITY\SYSTEM would be empty. We need to provide some option here, so we take it from the DistinguishedName
+                            $ConvertIdentity.DomainName = ConvertFrom-DistinguishedName -DistinguishedName $DistinguishedName -ToDomainCN
+                        }
+                        $ReturnObject['PrincipalType'] = $ConvertIdentity.Type
+                        $ReturnObject['PrincipalObjectType'] = $ConvertIdentity.Type
+                        $ReturnObject['PrincipalObjectDomain' ] = $ConvertIdentity.DomainName
+                        $ReturnObject['PrincipalObjectSid'] = $ConvertIdentity.SID
+                    } else {
+                        $ReturnObject['PrincipalType'] = $IdentityResolve.Type
+                        $ReturnObject['PrincipalObjectType'] = $IdentityResolve.ObjectClass
+                        $ReturnObject['PrincipalObjectDomain' ] = $IdentityResolve.DomainName
+                        $ReturnObject['PrincipalObjectSid'] = $IdentityResolve.ObjectSID
+                    }
                 }
                 $ReturnObject['ObjectTypeName'] = $Script:ForestGUIDs["$($ACL.objectType)"]
                 $ReturnObject['InheritedObjectTypeName'] = $Script:ForestGUIDs["$($ACL.inheritedObjectType)"]
