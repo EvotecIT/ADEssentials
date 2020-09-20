@@ -31,7 +31,7 @@
         foreach ($Object in $ADObject) {
             if ($Object -is [Microsoft.ActiveDirectory.Management.ADOrganizationalUnit] -or $Object -is [Microsoft.ActiveDirectory.Management.ADEntity]) {
                 [string] $DistinguishedName = $Object.DistinguishedName
-                [string] $CanonicalName = $Object.CanonicalName
+                [string] $CanonicalName = $Object.CanonicalName.TrimEnd('/')
                 [string] $ObjectClass = $Object.ObjectClass
             } elseif ($Object -is [string]) {
                 [string] $DistinguishedName = $Object
