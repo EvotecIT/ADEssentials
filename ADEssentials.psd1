@@ -1,6 +1,7 @@
 ﻿@{
     AliasesToExport      = 'Get-WinADRoles', 'Get-WinADDomainRoles', 'Get-WinADGPOSysvol', 'Get-WinADPriviligedObjects', 'Get-WinADForestTomebstoneLifetime', 'Get-WinADTrusts', 'Get-WinADUsersFP', 'Show-ADGroupMember', 'Show-ADGroupMemberOf', 'Show-ADTrust', 'Show-ADTrusts', 'Show-WinADTrusts'
     Author               = 'Przemyslaw Klys'
+    CmdletsToExport      = @()
     CompanyName          = 'Evotec'
     CompatiblePSEditions = 'Desktop'
     Copyright            = '(c) 2011 - 2020 Przemyslaw Klys @ Evotec. All rights reserved.'
