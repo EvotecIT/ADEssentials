@@ -4,8 +4,9 @@
         [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)][Array] $Identity,
         [string] $DomainName,
         [pscredential] $Credential,
-        [switch] $IncludeDeletedObjects,
-        [switch] $IncludeGroupMembership
+        #[switch] $IncludeDeletedObjects,
+        [switch] $IncludeGroupMembership,
+        [switch] $IncludeAllTypes
         #[switch] $ResolveType
     )
     Begin {
@@ -52,13 +53,13 @@
     }
     process {
         foreach ($Ident in $Identity) {
-            $TemporaryName = ''
+            #$TemporaryName = ''
             # If it's an object we need to make sure we pass only DN
             if ($Ident.DistinguishedName) {
                 $Ident = $Ident.DistinguishedName
             }
             # we reset domain name to it's given value if at all
-            $TemporaryName = $Ident
+            #$TemporaryName = $Ident
             $TemporaryDomainName = $DomainName
             <#
             # Now we need to asses what kind of object is it
@@ -117,14 +118,14 @@
                     $CNConversion = $Ident -split '@', 2
                     $Ident = $CNConversion[0]
                     $TemporaryDomainName = $CNConversion[1]
-                } else {
+                } elseif ($Ident -like '*.*') {
                     $CNConversion = $Ident -split '\.', 2
                     $Ident = $CNConversion[0]
                     $TemporaryDomainName = $CNConversion[1]
+                } else {
+                    # if nothing helpeed we leave it as is
                 }
-                # if nothing helpeed we leave it as is
             }
-
             if ($TemporaryDomainName) {
                 #if ($TemporaryDomainName | Test-IsDistinguishedName) {
                 #    # If Domain Name is DN we need to convert it to CN
@@ -142,26 +143,24 @@
                     Write-Warning "Get-WinADObject - Building context failed, error: $($_.Exception.Message)"
                 }
             }
-
-
             # Building the basic search object with some parameters
             $Search = [System.DirectoryServices.DirectorySearcher]::new()
-            $Search.SizeLimit = $SizeLimit
+            #$Search.SizeLimit = $SizeLimit
             #$Search.SearchRoot = $DomainName
 
             #Convert Identity Input String to HEX
-            $IdentityGUID = ""
             Try {
+                $IdentityGUID = ""
                 ([System.Guid]$Ident).ToByteArray() | ForEach-Object { $IdentityGUID += $("\{0:x2}" -f $_) }
             } Catch {
                 $IdentityGUID = "null"
             }
 
-            if ($PSBoundParameters['DeletedOnly']) {
-                $Search.filter = "(&(isDeleted=True)(|(DistinguishedName=$Ident)(Name=$Ident)(SamAccountName=$Ident)(UserPrincipalName=$Ident)(objectGUID=$IdentityGUID)(objectSid=$Ident)))"
-            } else {
-                $Search.filter = "(|(DistinguishedName=$Ident)(Name=$Ident)(SamAccountName=$Ident)(UserPrincipalName=$Ident)(objectGUID=$IdentityGUID)(objectSid=$Ident))"
-            }
+            #if ($PSBoundParameters['DeletedOnly']) {
+            #    $Search.filter = "(&(isDeleted=True)(|(DistinguishedName=$Ident)(Name=$Ident)(SamAccountName=$Ident)(UserPrincipalName=$Ident)(objectGUID=$IdentityGUID)(objectSid=$Ident)))"
+            #} else {
+            $Search.filter = "(|(DistinguishedName=$Ident)(Name=$Ident)(SamAccountName=$Ident)(UserPrincipalName=$Ident)(objectGUID=$IdentityGUID)(objectSid=$Ident))"
+            #}
 
             if ($TemporaryDomainName) {
                 #Write-Verbose -Message "Different Domain specified: $TemporaryDomainName"
@@ -171,9 +170,9 @@
                 $Cred = [System.DirectoryServices.DirectoryEntry]::new("LDAP://$TemporaryDomainName", $($Credential.UserName), $($Credential.GetNetworkCredential().password))
                 $Search.SearchRoot = $Cred
             }
-            if ($PSBoundParameters['IncludeDeletedObjects']) {
-                $Search.Tombstone = $true
-            }
+            #if ($PSBoundParameters['IncludeDeletedObjects']) {
+            #    $Search.Tombstone = $true
+            #}
             try {
                 $SearchResults = $($Search.FindAll())
             } catch {
@@ -183,7 +182,7 @@
             foreach ($Object in $SearchResults) {
                 $UAC = Convert-UserAccountControl -UserAccountControl ($Object.properties.useraccountcontrol -as [string])
                 $ObjectClass = ($Object.properties.objectclass -as [array])[-1]
-                if ($ObjectClass -notin 'group', 'computer', 'user', 'foreignSecurityPrincipal') {
+                if ($ObjectClass -notin 'group', 'computer', 'user', 'foreignSecurityPrincipal' -and (-not $IncludeAllTypes)) {
                     Write-Warning "Get-WinADObject - Unsupported object ($Ident) of type $ObjectClass. Only user,computer,group and foreignSecurityPrincipal is supported."
                     continue
                 }
