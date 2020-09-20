@@ -113,6 +113,10 @@
                         $TemporaryDomainName = $NetbiosConversion.DomainName
                         $Ident = $NetbiosConversion.Name
                     }
+                } elseif ($Ident -like '*@*') {
+                    $CNConversion = $Ident -split '@', 2
+                    $Ident = $CNConversion[0]
+                    $TemporaryDomainName = $CNConversion[1]
                 } else {
                     $CNConversion = $Ident -split '\.', 2
                     $Ident = $CNConversion[0]
@@ -179,6 +183,10 @@
             foreach ($Object in $SearchResults) {
                 $UAC = Convert-UserAccountControl -UserAccountControl ($Object.properties.useraccountcontrol -as [string])
                 $ObjectClass = ($Object.properties.objectclass -as [array])[-1]
+                if ($ObjectClass -notin 'group', 'computer', 'user', 'foreignSecurityPrincipal') {
+                    Write-Warning "Get-WinADObject - Unsupported object ($Ident) of type $ObjectClass. Only user,computer,group and foreignSecurityPrincipal is supported."
+                    continue
+                }
                 $Members = $Object.properties.member -as [array]
                 if ($ObjectClass -eq 'group') {
                     # we only do this additional step when requested. It's not nessecary for day to day use but can hurt performance real bad for normal use cases
