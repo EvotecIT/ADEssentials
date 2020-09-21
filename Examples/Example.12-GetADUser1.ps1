@@ -31,7 +31,7 @@ $Users = @(
     'BUILTIN\Administrators'
 )
 
-[Array] $Output = Get-WinADObject -Identity $Users -Verbose #-DomainName 'ad.evotec.pl'
+[Array] $Output = Get-WinADObject -Identity $Users -Verbose -Cache #-DomainName 'ad.evotec.pl'
 $Output | Format-Table *
 $Users.Count
 $Output.Count

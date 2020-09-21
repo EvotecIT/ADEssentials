@@ -86,19 +86,21 @@
     }
     process {
         foreach ($Ident in $Identity) {
-            if ($Cache -and $Script:CacheObjectsWinADObject[$Ident]) {
-                Write-Verbose "Get-WinADObject - Requesting $Ident from Cache"
-                $Script:CacheObjectsWinADObject[$Ident]
-                continue
-            }
             $ResolvedIdentity = $null
             # If it's an object we need to make sure we pass only DN
             if ($Ident.DistinguishedName) {
                 $Ident = $Ident.DistinguishedName
             }
             # we reset domain name to it's given value if at all
-            #$TemporaryName = $Ident
+            $TemporaryName = $Ident
             $TemporaryDomainName = $DomainName
+
+            # Since we change $Ident below to different names we need to be sure we use original query for cache
+            if ($Cache -and $Script:CacheObjectsWinADObject[$TemporaryName]) {
+                Write-Verbose "Get-WinADObject - Requesting $TemporaryName from Cache"
+                $Script:CacheObjectsWinADObject[$TemporaryName]
+                continue
+            }
             <#
             # Now we need to asses what kind of object is it
             # this is important as we accept SID, DN, ForeignSID, ForeignSecurityPrincipals or even DOMAIN\Account
@@ -414,8 +416,8 @@
                 $ReturnObject['AccountExpiresDate'] = $AccountExpiresDate
                 #>
                 if ($Cache) {
-                    $Script:CacheObjectsWinADObject[$Ident] = [PSCustomObject] $ReturnObject
-                    $Script:CacheObjectsWinADObject[$Ident]
+                    $Script:CacheObjectsWinADObject[$TemporaryName] = [PSCustomObject] $ReturnObject
+                    $Script:CacheObjectsWinADObject[$TemporaryName]
                 } else {
                     [PSCustomObject] $ReturnObject
                 }
