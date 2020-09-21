@@ -122,7 +122,8 @@
                 $ReturnObject['AccessControlType'] = $ACL.AccessControlType
                 $ReturnObject['Principal'] = $IdentityReference
                 if ($ResolveTypes) {
-                    $IdentityResolve = Get-WinADObject -Identity $IdentityReference
+                    $DomainNameCN = ConvertFrom-DistinguishedName -DistinguishedName $DistinguishedName -ToDomainCN
+                    $IdentityResolve = Get-WinADObject -Identity $IdentityReference -DomainName $DomainNameCN
                     if (-not $IdentityResolve) {
                         $ConvertIdentity = Convert-Identity -Identity $IdentityReference
                         $ReturnObject['PrincipalType'] = $ConvertIdentity.Type
