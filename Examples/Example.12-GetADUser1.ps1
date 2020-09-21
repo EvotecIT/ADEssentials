@@ -1,10 +1,18 @@
 ﻿Import-Module $PSScriptRoot\..\ADEssentials.psd1 -Force
 
 $Users = @(
+    'BUILTIN\Administrators'
     'CN=Administrator,CN=Users,DC=test,DC=evotec,DC=pl'
     'S-1-5-21-1928204107-2710010574-1926425344-500' # CN=Administrator,CN=Users,DC=test,DC=evotec,DC=pl
     'CN=Domain Admins,CN=Users,DC=test,DC=evotec,DC=pl'
     'S-1-5-21-1928204107-2710010574-1926425344-512' # CN=Domain Admins,CN=Users,DC=test,DC=evotec,DC=pl
+    'CN=S-1-5-21-1928204107-2710010574-1926425344-512,CN=ForeignSecurityPrincipals,DC=ad,DC=evotec,DC=xyz'
+    'TEST\Domain Admins'
+    'EVOTECPL\Domain Admins'
+    'BUILTIN\Administrators'
+    'S-1-5-21-1928204107-2710010574-1926425344-500' # CN=Administrator,CN=Users,DC=test,DC=evotec,DC=pl
+    'S-1-5-21-3661168273-3802070955-2987026695-512' # CN=Domain Admins,CN=Users,DC=ad,DC=evotec,DC=pl
+    'EVOWIN'
     'Test Local Group'
     'przemyslaw.klys'
     'EVOWIN'
@@ -20,9 +28,10 @@ $Users = @(
     'S-1-5-21-1928204107-2710010574-1926425344-500' # CN=Administrator,CN=Users,DC=test,DC=evotec,DC=pl
     'S-1-5-21-3661168273-3802070955-2987026695-512' # CN=Domain Admins,CN=Users,DC=ad,DC=evotec,DC=pl
     'EVOTECPL\Domain Admins'
+    'BUILTIN\Administrators'
 )
 
-$Output = Get-WinADObject -Identity $Users -Verbose
+[Array] $Output = Get-WinADObject -Identity $Users -Verbose #-DomainName 'ad.evotec.pl'
 $Output | Format-Table *
 $Users.Count
 $Output.Count
