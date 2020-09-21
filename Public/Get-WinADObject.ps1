@@ -1,4 +1,32 @@
 ﻿function Get-WinADObject {
+    <#
+    .SYNOPSIS
+    Gets Active Directory Object
+
+    .DESCRIPTION
+    Returns Active Directory Object (Computers, Groups, Users or ForeignSecurityPrincipal) using ADSI
+
+    .PARAMETER Identity
+    Identity of an object. It can be SamAccountName, SID, DistinguishedName or multiple other options
+
+    .PARAMETER DomainName
+    Choose domain name the objects resides in. This is optional for most objects
+
+    .PARAMETER Credential
+    Parameter description
+
+    .PARAMETER IncludeGroupMembership
+    Queries for group members when object is a group
+
+    .PARAMETER IncludeAllTypes
+    Allows functions to return all objects types and not only Computers, Groups, Users or ForeignSecurityPrincipal
+
+    .EXAMPLE
+    An example
+
+    .NOTES
+    General notes
+    #>
     [cmdletBinding()]
     param(
         [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)][Array] $Identity,
@@ -6,7 +34,8 @@
         [pscredential] $Credential,
         #[switch] $IncludeDeletedObjects,
         [switch] $IncludeGroupMembership,
-        [switch] $IncludeAllTypes
+        [switch] $IncludeAllTypes,
+        [switch] $AddType
         #[switch] $ResolveType
     )
     Begin {
@@ -53,7 +82,7 @@
     }
     process {
         foreach ($Ident in $Identity) {
-            #$TemporaryName = ''
+            $ResolvedIdentity = $null
             # If it's an object we need to make sure we pass only DN
             if ($Ident.DistinguishedName) {
                 $Ident = $Ident.DistinguishedName
@@ -101,36 +130,87 @@
                 }
             }
             #>
-
-            $ResolvedIdentity = Convert-Identity -Identity $Ident
-            if ($ResolvedIdentity.SID) {
-                $TemporaryDomainName = $ResolvedIdentity.DomainName
-                $Ident = $ResolvedIdentity.SID
-            } else {
-                # It happens that sometimes things like EVOTECPL\Print Operators are not resolved, we try different method
-                if ($Ident -like "*\*") {
-                    $NetbiosConversion = ConvertFrom-NetbiosName -Identity $Ident
-                    if ($NetbiosConversion.DomainName) {
-                        $TemporaryDomainName = $NetbiosConversion.DomainName
-                        $Ident = $NetbiosConversion.Name
+            # if Domain Name is provided we don't check for anything as it's most likely already good Ident value
+            if (-not $TemporrayDomainName) {
+                $MatchRegex = [Regex]::Matches($Ident, "S-\d-\d+-(\d+-|){1,14}\d+")
+                if ($MatchRegex.Success) {
+                    $ResolvedIdentity = ConvertFrom-SID -SID $MatchRegex.Value
+                    $TemporaryDomainName = $ResolvedIdentity.DomainName
+                    $Ident = $MatchRegex.Value
+                } elseif ($Ident -like '*\*') {
+                    $ResolvedIdentity = Convert-Identity -Identity $Ident
+                    if ($ResolvedIdentity.SID) {
+                        $TemporaryDomainName = $ResolvedIdentity.DomainName
+                        $Ident = $ResolvedIdentity.SID
+                    } else {
+                        $NetbiosConversion = ConvertFrom-NetbiosName -Identity $Ident
+                        if ($NetbiosConversion.DomainName) {
+                            $TemporaryDomainName = $NetbiosConversion.DomainName
+                            $Ident = $NetbiosConversion.Name
+                        }
                     }
                 } elseif ($Ident -like '*@*') {
                     $CNConversion = $Ident -split '@', 2
-                    $Ident = $CNConversion[0]
                     $TemporaryDomainName = $CNConversion[1]
+                    $Ident = $CNConversion[0]
+                } elseif ($Ident -like '*DC=*') {
+                    $DNConversion = ConvertFrom-DistinguishedName -DistinguishedName $Ident -ToDomainCN
+                    $TemporaryDomainName = $DNConversion
                 } elseif ($Ident -like '*.*') {
-                    $CNConversion = $Ident -split '\.', 2
-                    $Ident = $CNConversion[0]
-                    $TemporaryDomainName = $CNConversion[1]
-                } else {
-                    # if nothing helpeed we leave it as is
+                    $ResolvedIdentity = Convert-Identity -Identity $Ident
+                    if ($ResolvedIdentity.SID) {
+                        $TemporaryDomainName = $ResolvedIdentity.DomainName
+                        $Ident = $ResolvedIdentity.SID
+                    } else {
+                        $CNConversion = $Ident -split '\.', 2
+                        $Ident = $CNConversion[0]
+                        $TemporaryDomainName = $CNConversion[1]
+                    }
                 }
+
+                <#
+                if ([Regex]::IsMatch($Ident, "S-\d-\d+-(\d+-|){1,14}\d+") -or $Ident -like '*\*' -or $Ident -like "*@*" -or $Ident -like '*.*' -or $Ident -like '*DC=*') {
+                    $ResolvedIdentity = Convert-Identity -Identity $Ident #-Verbose
+                    if ($ResolvedIdentity.SID) {
+                        #if (-not $TemporaryDomainName) {
+                        $TemporaryDomainName = $ResolvedIdentity.DomainName
+                        #}
+                        $Ident = $ResolvedIdentity.SID
+                    } else {
+                        # It happens that sometimes things like EVOTECPL\Print Operators are not resolved, we try different method
+                        if ($Ident -like "*\*") {
+                            $NetbiosConversion = ConvertFrom-NetbiosName -Identity $Ident
+                            if ($NetbiosConversion.DomainName) {
+                                #if (-not $TemporaryDomainName) {
+                                $TemporaryDomainName = $NetbiosConversion.DomainName
+                                # }
+                                $Ident = $NetbiosConversion.Name
+                            }
+                        } elseif ($Ident -like '*@*') {
+                            $CNConversion = $Ident -split '@', 2
+                            $Ident = $CNConversion[0]
+                            #if (-not $TemporaryDomainName) {
+                            $TemporaryDomainName = $CNConversion[1]
+                            #}
+                        } elseif ($Ident -like '*.*') {
+                            $CNConversion = $Ident -split '\.', 2
+                            $Ident = $CNConversion[0]
+                            #if (-not $TemporaryDomainName) {
+                            $TemporaryDomainName = $CNConversion[1]
+                            #}
+                        } else {
+                            # if nothing helpeed we leave it as is
+                        }
+                    }
+                }
+                #>
             }
+
+
+            # Building up ADSI call
+            $Search = [System.DirectoryServices.DirectorySearcher]::new()
+            #$Search.SizeLimit = $SizeLimit
             if ($TemporaryDomainName) {
-                #if ($TemporaryDomainName | Test-IsDistinguishedName) {
-                #    # If Domain Name is DN we need to convert it to CN
-                #    $TemporaryDomainName = ConvertFrom-DistinguishedName -DistinguishedName $TemporaryDomainName -ToDomainCN
-                #}
                 try {
                     $Context = [System.DirectoryServices.AccountManagement.PrincipalContext]::new('Domain', $TemporaryDomainName)
                 } catch {
@@ -143,36 +223,24 @@
                     Write-Warning "Get-WinADObject - Building context failed, error: $($_.Exception.Message)"
                 }
             }
-            # Building the basic search object with some parameters
-            $Search = [System.DirectoryServices.DirectorySearcher]::new()
-            #$Search.SizeLimit = $SizeLimit
-            #$Search.SearchRoot = $DomainName
-
-            #Convert Identity Input String to HEX
+            #Convert Identity Input String to HEX, if possible
             Try {
                 $IdentityGUID = ""
                 ([System.Guid]$Ident).ToByteArray() | ForEach-Object { $IdentityGUID += $("\{0:x2}" -f $_) }
             } Catch {
                 $IdentityGUID = "null"
             }
-
-            #if ($PSBoundParameters['DeletedOnly']) {
-            #    $Search.filter = "(&(isDeleted=True)(|(DistinguishedName=$Ident)(Name=$Ident)(SamAccountName=$Ident)(UserPrincipalName=$Ident)(objectGUID=$IdentityGUID)(objectSid=$Ident)))"
-            #} else {
+            # Building search filter
             $Search.filter = "(|(DistinguishedName=$Ident)(Name=$Ident)(SamAccountName=$Ident)(UserPrincipalName=$Ident)(objectGUID=$IdentityGUID)(objectSid=$Ident))"
-            #}
 
             if ($TemporaryDomainName) {
-                #Write-Verbose -Message "Different Domain specified: $TemporaryDomainName"
                 $Search.SearchRoot = "LDAP://$TemporaryDomainName"
             }
             if ($PSBoundParameters['Credential']) {
                 $Cred = [System.DirectoryServices.DirectoryEntry]::new("LDAP://$TemporaryDomainName", $($Credential.UserName), $($Credential.GetNetworkCredential().password))
                 $Search.SearchRoot = $Cred
             }
-            #if ($PSBoundParameters['IncludeDeletedObjects']) {
-            #    $Search.Tombstone = $true
-            #}
+            Write-Verbose "Get-WinADObject - Requesting $Ident ($TemporaryDomainName)"
             try {
                 $SearchResults = $($Search.FindAll())
             } catch {
@@ -285,8 +353,15 @@
                     GroupScope          = $GroupTypes[$GroupType].Scope
                     GroupType           = $GroupTypes[$GroupType].Type
                     #Administrative      = if ($Object.properties.admincount -eq '1') { $true } else { $false }
-                    Type                = $ResolvedIdentity.Type
+                    #Type                = $ResolvedIdentity.Type
                     Description         = $Object.properties.description -as [string]
+                }
+                if ($AddType) {
+                    if (-not $ResolvedIdentity) {
+                        # This is purely to get special types
+                        $ResolvedIdentity = ConvertFrom-SID -SID $ReturnObject['ObjectSID']
+                    }
+                    $ReturnObject['Type'] = $ResolvedIdentity.Type
                 }
 
                 <#
