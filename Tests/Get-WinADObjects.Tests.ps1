@@ -8,6 +8,13 @@
             'EVOTEC\Administrator'
             'EVOTECPL\Domain Computers'
             'EVOTECPL\Protected Users'
+            'CN=S-1-5-4,CN=ForeignSecurityPrincipals,DC=ad,DC=evotec,DC=xyz'
+            'NT AUTHORITY\INTERACTIVE'
+            'NT AUTHORITY\IUSR'
+            'NT AUTHORITY\ENTERPRISE DOMAIN CONTROLLERS'
+            'S-1-5-4'
+            'S-1-5-11'
+            #'INTERACTIVE' # this will not be resolved
         )
         $Results = Get-WinADObject -Identity $Object
         $Results.Count | Should -Be $Object.Count
@@ -18,6 +25,12 @@
         $Results[4].Distinguishedname | Should -Be 'CN=Administrator,OU=Special,OU=Accounts,OU=Production,DC=ad,DC=evotec,DC=xyz'
         $Results[5].Distinguishedname | Should -Be 'CN=Domain Computers,CN=Users,DC=ad,DC=evotec,DC=pl'
         $Results[6].Distinguishedname | Should -Be 'CN=Protected Users,CN=Users,DC=ad,DC=evotec,DC=pl'
+        $Results[7].Distinguishedname | Should -Be 'CN=S-1-5-4,CN=ForeignSecurityPrincipals,DC=ad,DC=evotec,DC=xyz'
+        $Results[8].Distinguishedname | Should -Be 'CN=S-1-5-4,CN=ForeignSecurityPrincipals,DC=ad,DC=evotec,DC=xyz'
+        $Results[9].Distinguishedname | Should -Be 'CN=S-1-5-17,CN=ForeignSecurityPrincipals,DC=ad,DC=evotec,DC=xyz'
+        $Results[10].Distinguishedname | Should -Be 'CN=S-1-5-9,CN=ForeignSecurityPrincipals,DC=ad,DC=evotec,DC=xyz'
+        $Results[11].Distinguishedname | Should -Be 'CN=S-1-5-4,CN=ForeignSecurityPrincipals,DC=ad,DC=evotec,DC=xyz'
+        $Results[12].Distinguishedname | Should -Be 'CN=S-1-5-11,CN=ForeignSecurityPrincipals,DC=ad,DC=evotec,DC=xyz'
         $Results[0].ObjectClass | Should -Be 'group'
         $Results[1].ObjectClass | Should -Be 'group'
         $Results[2].ObjectClass | Should -Be 'user'
@@ -25,6 +38,12 @@
         $Results[4].ObjectClass | Should -Be 'user'
         $Results[5].ObjectClass | Should -Be 'group'
         $Results[6].ObjectClass | Should -Be 'group'
+        $Results[7].ObjectClass | Should -Be 'foreignSecurityPrincipal'
+        $Results[8].ObjectClass | Should -Be 'foreignSecurityPrincipal'
+        $Results[9].ObjectClass | Should -Be 'foreignSecurityPrincipal'
+        $Results[10].ObjectClass | Should -Be 'foreignSecurityPrincipal'
+        $Results[11].ObjectClass | Should -Be 'foreignSecurityPrincipal'
+        $Results[12].ObjectClass | Should -Be 'foreignSecurityPrincipal'
     }
 }
 Describe 'Get-WinADObject should return proper data' {

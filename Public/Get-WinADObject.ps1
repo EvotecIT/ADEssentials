@@ -244,9 +244,20 @@
             try {
                 $SearchResults = $($Search.FindAll())
             } catch {
-                Write-Warning "Get-WinADObject - Requesting $Ident ($TemporaryDomainName) failed. Error: $($_.Exception.Message.Replace([System.Environment]::NewLine,''))"
-                continue
+                if ($PSBoundParameters.ErrorAction -eq 'Stop') {
+                    throw "Get-WinADObject - Requesting $Ident ($TemporaryDomainName) failed. Error: $($_.Exception.Message.Replace([System.Environment]::NewLine,''))"
+                } else {
+                    Write-Warning "Get-WinADObject - Requesting $Ident ($TemporaryDomainName) failed. Error: $($_.Exception.Message.Replace([System.Environment]::NewLine,''))"
+                    continue
+                }
             }
+
+            if ($SearchResults.Count -lt 1) {
+                if ($PSBoundParameters.ErrorAction -eq 'Stop') {
+                    throw "Requesting $Ident ($TemporaryDomainName) failed with no results."
+                }
+            }
+
             foreach ($Object in $SearchResults) {
                 $UAC = Convert-UserAccountControl -UserAccountControl ($Object.properties.useraccountcontrol -as [string])
                 $ObjectClass = ($Object.properties.objectclass -as [array])[-1]
