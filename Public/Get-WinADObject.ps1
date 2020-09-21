@@ -35,10 +35,14 @@
         #[switch] $IncludeDeletedObjects,
         [switch] $IncludeGroupMembership,
         [switch] $IncludeAllTypes,
-        [switch] $AddType
+        [switch] $AddType,
+        [switch] $Cache
         #[switch] $ResolveType
     )
     Begin {
+        if ($Cache -and -not $Script:CacheObjectsWinADObject) {
+            $Script:CacheObjectsWinADObject = @{}
+        }
         # This is purely for calling group workaround
         Add-Type -AssemblyName System.DirectoryServices.AccountManagement
 
@@ -82,6 +86,11 @@
     }
     process {
         foreach ($Ident in $Identity) {
+            if ($Cache -and $Script:CacheObjectsWinADObject[$Ident]) {
+                Write-Verbose "Get-WinADObject - Requesting $Ident from Cache"
+                $Script:CacheObjectsWinADObject[$Ident]
+                continue
+            }
             $ResolvedIdentity = $null
             # If it's an object we need to make sure we pass only DN
             if ($Ident.DistinguishedName) {
@@ -404,7 +413,12 @@
                 $ReturnObject['BadPasswordTime'] = $BadPasswordDate
                 $ReturnObject['AccountExpiresDate'] = $AccountExpiresDate
                 #>
-                [PSCustomObject] $ReturnObject
+                if ($Cache) {
+                    $Script:CacheObjectsWinADObject[$Ident] = [PSCustomObject] $ReturnObject
+                    $Script:CacheObjectsWinADObject[$Ident]
+                } else {
+                    [PSCustomObject] $ReturnObject
+                }
             }
         }
     }
