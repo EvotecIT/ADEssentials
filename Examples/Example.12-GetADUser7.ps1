@@ -1,5 +1,9 @@
 ﻿Import-Module $PSScriptRoot\..\ADEssentials.psd1 -Force
 
+
+#Get-WinADObject -Identity 'BUILTIN\Administrators' -DomainName 'test.evotec.pl' -Verbose
+
+#return
 $Object = @(
     'Administrators'
     'Domain Admins'

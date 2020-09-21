@@ -142,7 +142,7 @@
             }
             #>
             # if Domain Name is provided we don't check for anything as it's most likely already good Ident value
-            if (-not $TemporrayDomainName) {
+            if (-not $TemporaryDomainName) {
                 $MatchRegex = [Regex]::Matches($Ident, "S-\d-\d+-(\d+-|){1,14}\d+")
                 if ($MatchRegex.Success) {
                     $ResolvedIdentity = ConvertFrom-SID -SID $MatchRegex.Value
@@ -384,6 +384,13 @@
                         $ResolvedIdentity = ConvertFrom-SID -SID $ReturnObject['ObjectSID']
                     }
                     $ReturnObject['Type'] = $ResolvedIdentity.Type
+                }
+                if ($ReturnObject['Type'] -eq 'WellKnownAdministrative') {
+                    if (-not $TemporaryDomainName) {
+                        # This is so BUILTIN\Administrators would not report domain name that's always related to current one, while it could be someone expects it to be from different forest
+                        # this is to mainly address issues with Get-ADACL IdentityReference returning data that's hard to manage otherwise
+                        $ReturnObject['DomainName'] = ''
+                    }
                 }
 
                 <#

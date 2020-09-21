@@ -122,19 +122,22 @@
                 $ReturnObject['AccessControlType'] = $ACL.AccessControlType
                 $ReturnObject['Principal'] = $IdentityReference
                 if ($ResolveTypes) {
-                    #$DomainNameCN = ConvertFrom-DistinguishedName -DistinguishedName $DistinguishedName -ToDomainCN
-                    $IdentityResolve = Get-WinADObject -Identity $IdentityReference -AddType -Cache #-DomainName $DomainNameCN -AddType
+                    $IdentityResolve = Get-WinADObject -Identity $IdentityReference -AddType
                     if (-not $IdentityResolve) {
+                        Write-Verbose "Get-ADACL - Reverting to Convert-Identity for $IdentityReference"
                         $ConvertIdentity = Convert-Identity -Identity $IdentityReference
                         $ReturnObject['PrincipalType'] = $ConvertIdentity.Type
                         $ReturnObject['PrincipalObjectType'] = $ConvertIdentity.Type
-                        $ReturnObject['PrincipalObjectDomain' ] = $ConvertIdentity.DomainName
+                        $ReturnObject['PrincipalObjectDomain'] = $ConvertIdentity.DomainName
                         $ReturnObject['PrincipalObjectSid'] = $ConvertIdentity.SID
                     } else {
                         $ReturnObject['PrincipalType'] = $IdentityResolve.Type
                         $ReturnObject['PrincipalObjectType'] = $IdentityResolve.ObjectClass
                         $ReturnObject['PrincipalObjectDomain' ] = $IdentityResolve.DomainName
                         $ReturnObject['PrincipalObjectSid'] = $IdentityResolve.ObjectSID
+                    }
+                    if (-not $ReturnObject['PrincipalObjectDomain']) {
+                        $ReturnObject['PrincipalObjectDomain'] = ConvertFrom-DistinguishedName -DistinguishedName $DistinguishedName -ToDomainCN
                     }
                 }
                 $ReturnObject['ObjectTypeName'] = $Script:ForestGUIDs["$($ACL.objectType)"]
