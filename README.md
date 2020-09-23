@@ -37,6 +37,15 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 
 **The essential thing** is if something works for you on production, keep using it till you test the new version on a test computer. I do changes that may not be big, but big enough that auto-update may break your code. For example, small rename to a parameter and your code stops working! Be responsible!
 
+## Useful resources
+
+Following links contain description of some of the features possible with this module
+
+- [Visually display Active Directory Nested Group Membership using PowerShell](https://evotec.xyz/visually-display-active-directory-nested-group-membership-using-powershell/)
+- [Visually display Active Directory Trusts using PowerShell](https://evotec.xyz/visually-display-active-directory-trusts-using-powershell/)
+- [Active Directory DFS Health Check with PowerShell](https://evotec.xyz/active-directory-dfs-health-check-with-powershell/)
+- [Four commands to help you track down insecure LDAP Bindings before March 2020](https://evotec.xyz/four-commands-to-help-you-track-down-insecure-ldap-bindings-before-march-2020/)
+
 ## Changelog
 
 - 0.0.93 - 23.09.2020
