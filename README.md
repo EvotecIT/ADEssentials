@@ -39,7 +39,7 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 
 ## Changelog
 
-- 0.0.92 - Unreleased
+- 0.0.92 - 23.09.2020
   - [x] Some visual improvements to `Show-WinADGroupMember`/`Show-WinADGroupMemberOf`
   - [x] Added `IncludeObjectTypeName`,`ExcludeObjectTypeName`,`IncludeInheritedObjectTypeName`,`ExcludeInheritedObjectTypeName` to `Get-ADACL`
   - [x] Added `ADRightsAsArray` to `Get-ADACL`
