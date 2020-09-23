@@ -34,18 +34,28 @@
                     }
                 } elseif ($ADObject.Type -eq 'Group') {
                     if ($ADObject.Nesting -eq -1) {
-                        $BorderColor = 'Red'
+                        $BorderColor = 'LightGreen'
                         $Image = 'https://image.flaticon.com/icons/svg/921/921347.svg'
+                        $IconSolid = 'user-friends'
+                    } elseif ($ADObject.CircularIndirect -eq $true -or $ADObject.CircularDirect -eq $true) {
+                        $Image = 'https://www.flaticon.com/svg/static/icons/svg/3039/3039356.svg'
+                        $BorderColor = 'PaleVioletRed'
+                        $IconSolid = 'circle-notch'
                     } else {
-                        $BorderColor = 'Blue'
+                        $BorderColor = 'VeryLightGrey'
                         $Image = 'https://image.flaticon.com/icons/svg/166/166258.svg'
+                        $IconSolid = 'users'
                     }
                     $SummaryMembers = -join ('Total: ', $ADObject.TotalMembers, ' Direct: ', $ADObject.DirectMembers, ' Groups: ', $ADObject.DirectGroups, ' Indirect: ', $ADObject.IndirectMembers)
-                    $Label = $ADObject.Name + [System.Environment]::NewLine + $ADObject.DomainName + [System.Environment]::NewLine + $SummaryMembers
+                    if ($ADObject.CircularIndirect -eq $true -or $ADObject.CircularDirect -eq $true) {
+                        $Label = $ADObject.Name + [System.Environment]::NewLine + $ADObject.DomainName + [System.Environment]::NewLine + $SummaryMembers + [System.Environment]::NewLine + "Circular: $True"
+                    } else {
+                        $Label = $ADObject.Name + [System.Environment]::NewLine + $ADObject.DomainName + [System.Environment]::NewLine + $SummaryMembers
+                    }
                     if ($Online) {
                         New-DiagramNode -Id $ID -Label $Label -Image $Image -Level $Level -ColorBorder $BorderColor
                     } else {
-                        New-DiagramNode -Id $ID -Label $Label -Level $Level -IconSolid user-friends
+                        New-DiagramNode -Id $ID -Label $Label -Level $Level -IconSolid $IconSolid -IconColor $BorderColor
                     }
                     New-DiagramLink -ColorOpacity 0.5 -From $ID -To $IDParent -Color Orange -ArrowsToEnabled
                 } elseif ($ADObject.Type -eq 'Computer') {
