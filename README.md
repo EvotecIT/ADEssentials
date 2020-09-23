@@ -39,6 +39,10 @@ That's it. Whenever there's a new version, you run the command, and you can enjo
 
 ## Changelog
 
+- 0.0.93 - 23.09.2020
+  - [x] Added detection of indirect circular to `Get-WinADGroupMember` to prevent infinite loops
+  - [x] Renamed Circular to DirectCircular to accomodate IndirectCircular in `Get-WinADGroupMember`
+  - [x] Updated Show-WinADGroupMember to better visualize circular membership
 - 0.0.92 - 23.09.2020
   - [x] Some visual improvements to `Show-WinADGroupMember`/`Show-WinADGroupMemberOf`
   - [x] Added `IncludeObjectTypeName`,`ExcludeObjectTypeName`,`IncludeInheritedObjectTypeName`,`ExcludeInheritedObjectTypeName` to `Get-ADACL`

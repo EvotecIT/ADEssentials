@@ -35,7 +35,7 @@
         [Parameter(DontShow)][switch] $Nested
     )
     Begin {
-        $Properties = 'GroupName', 'Name', 'SamAccountName', 'DisplayName', 'Enabled', 'Type', 'Nesting', 'Circular', 'CrossForest', 'ParentGroup', 'ParentGroupDomain', 'GroupDomainName', 'DistinguishedName', 'Sid'
+        $Properties = 'GroupName', 'Name', 'SamAccountName', 'DisplayName', 'Enabled', 'Type', 'Nesting', 'CrossForest', 'ParentGroup', 'ParentGroupDomain', 'GroupDomainName', 'DistinguishedName', 'Sid'
         if (-not $Script:WinADGroupMemberCache -or $ClearCache -or ($Cache -and -not $Script:WinADGroupMemberCacheGlobal)) {
             #if ($ClearCache) {
             # This is to distinguish globally used cache and standard cache
@@ -72,7 +72,8 @@
                     IndirectMembers   = 0
                     TotalMembers      = 0
                     Nesting           = $Nesting
-                    Circular          = $false
+                    CircularDirect    = $false
+                    CircularIndirect  = $false
                     CrossForest       = $false
                     ParentGroup       = ''
                     ParentGroupDomain = ''
@@ -105,7 +106,7 @@
                 }
                 # Lets cache our object
                 $Script:WinADGroupMemberCache[$ADGroupName.DistinguishedName] = $ADGroupName
-                if ($Circular) {
+                if ($Circular -or $CollectedGroups -contains $ADGroupName.DistinguishedName) {
                     [Array] $NestedMembers = foreach ($MyIdentity in $ADGroupName.Members) {
                         if ($Script:WinADGroupMemberCache[$MyIdentity]) {
                             $Script:WinADGroupMemberCache[$MyIdentity]
@@ -167,7 +168,8 @@
                         IndirectMembers   = 0
                         TotalMembers      = 0
                         Nesting           = $Nesting
-                        Circular          = $false
+                        CircularDirect    = $false
+                        CircularIndirect  = $false
                         CrossForest       = $false
                         ParentGroup       = $ADGroupName.name
                         ParentGroupDomain = $DomainParentGroup
@@ -179,14 +181,27 @@
                         $CreatedObject['CrossForest'] = $true
                     }
                     if ($NestedMember.ObjectClass -eq "group") {
+
+                        #if (-not $CircularGroups[$NestedMember.DistinguishedName]) {
+                        #    $CircularGroups[$NestedMember.DistinguishedName] = $Nesting
+                        #} else {
+                        #    Write-Verbose "Shit... $($CircularGroups[$NestedMember.DistinguishedName])"
+                        #}
+
                         if ($ADGroupName.memberof -contains $NestedMember.DistinguishedName) {
                             $Circular = $ADGroupName.DistinguishedName
-                            $CreatedObject['Circular'] = $true
+                            $CreatedObject['CircularDirect'] = $true
                         }
+
                         $CollectedGroups.Add($ADGroupName.DistinguishedName)
+
+                        if ($CollectedGroups -contains $NestedMember.DistinguishedName) {
+                            $CreatedObject['CircularIndirect'] = $true
+                        }
                         if ($All) {
                             [PSCustomObject] $CreatedObject
                         }
+                        Write-Verbose "Get-WinADGroupMember - Going into $($NestedMember.DistinguishedName) (Nesting: $Nesting) (Circular:$Circular)"
                         $OutputFromGroup = Get-WinADGroupMember -GroupName $NestedMember -Nesting $Nesting -Circular $Circular -InitialGroup $InitialGroup -CollectedGroups $CollectedGroups -Nested -All:$All.IsPresent #-CountMembers:$CountMembers.IsPresent
                         $OutputFromGroup
                         #if ($CountMembers) {
