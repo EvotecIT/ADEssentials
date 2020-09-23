@@ -124,13 +124,17 @@
                 if ($ResolveTypes) {
                     $IdentityResolve = Get-WinADObject -Identity $IdentityReference -AddType
                     if (-not $IdentityResolve) {
-                        Write-Verbose "Get-ADACL - Reverting to Convert-Identity for $IdentityReference"
+                        #Write-Verbose "Get-ADACL - Reverting to Convert-Identity for $IdentityReference"
                         $ConvertIdentity = Convert-Identity -Identity $IdentityReference
                         $ReturnObject['PrincipalType'] = $ConvertIdentity.Type
-                        $ReturnObject['PrincipalObjectType'] = $ConvertIdentity.Type
+                        # it's not really foreignSecurityPrincipal but can't tell what it is...  # https://superuser.com/questions/1067246/is-nt-authority-system-a-user-or-a-group
+                        $ReturnObject['PrincipalObjectType'] = 'foreignSecurityPrincipal'
                         $ReturnObject['PrincipalObjectDomain'] = $ConvertIdentity.DomainName
                         $ReturnObject['PrincipalObjectSid'] = $ConvertIdentity.SID
                     } else {
+                        if ($ReturnObject['Principal']) {
+                            $ReturnObject['Principal'] = $IdentityResolve.Name
+                        }
                         $ReturnObject['PrincipalType'] = $IdentityResolve.Type
                         $ReturnObject['PrincipalObjectType'] = $IdentityResolve.ObjectClass
                         $ReturnObject['PrincipalObjectDomain' ] = $IdentityResolve.DomainName

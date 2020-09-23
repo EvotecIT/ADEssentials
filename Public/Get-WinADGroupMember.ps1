@@ -1,4 +1,26 @@
 ﻿function Get-WinADGroupMember {
+    <#
+    .SYNOPSIS
+    The Get-WinADGroupMember cmdlet gets the members of an Active Directory group. Members can be users, groups, and computers.
+
+    .DESCRIPTION
+    The Get-WinADGroupMember cmdlet gets the members of an Active Directory group. Members can be users, groups, and computers. The Identity parameter specifies the Active Directory group to access. You can identify a group by its distinguished name, GUID, security identifier, or Security Account Manager (SAM) account name. You can also specify the group by passing a group object through the pipeline. For example, you can use the Get-ADGroup cmdlet to get a group object and then pass the object through the pipeline to the Get-WinADGroupMember cmdlet.
+
+    .PARAMETER Identity
+    Specifies an Active Directory group object
+
+    .PARAMETER AddSelf
+    Adds details about initial group name to output
+
+    .PARAMETER All
+    Adds details about groups, and their nesting. Without this parameter only unique users and computers are returned
+
+    .EXAMPLE
+    Get-WinADGroupMember -Identity 'EVOTECPL\Domain Admins' -All
+
+    .NOTES
+    General notes
+    #>
     [cmdletBinding()]
     param(
         [alias('GroupName', 'Group')][Parameter(ValuefromPipeline, Mandatory)][Array] $Identity,
