@@ -1,10 +1,9 @@
 ﻿Import-Module .\ADEssentials.psd1 -Force
 
-$Groups = 'Group1', 'Domain Admins'
-$GroupMemberInput = [ordered]@{}
-foreach ($Group in $Groups) {
+$Groups = 'Group1', 'EVOTECPL\Domain Admins'
+$Inputs = foreach ($Group in $Groups) {
     $GroupOutput = Get-WinADGroupMember -Identity $Group -Verbose -AddSelf -All
-    $GroupMemberInput[$Group] = $GroupOutput
+    $GroupOutput
 }
 
-Show-WinADGroupMember -Identity $GroupMemberInput -Online
+Show-WinADGroupMember -Identity $Inputs -Online -Verbose

@@ -15,6 +15,7 @@
         [Parameter(ParameterSetName = 'Default')][switch] $Summary,
         [Parameter(ParameterSetName = 'SummaryOnly')][switch] $SummaryOnly
     )
+    $VisualizeOnly = $false
     if ($FilePath -eq '') {
         $FilePath = Get-FileName -Extension 'html' -Temporary
     }
@@ -24,18 +25,25 @@
         New-HTMLTableOption -DataStore JavaScript
         New-HTMLTabStyle -BorderRadius 0px -TextTransform capitalize -BackgroundColorActive SlateGrey
 
-        if ($Identity[0] -is [System.Collections.IDictionary]) {
-            [Array] $IdentityList = $Identity[0].Keys
+        if ($Identity[0].GroupName) {
+            $GroupMembersCache = [ordered] @{}
+            $VisualizeOnly = $true
+            foreach ($Entry in $Identity) {
+                $IdentityGroupName = "($($Entry.GroupName) / $($Entry.GroupDomainName))"
+                if (-not $GroupMembersCache[$IdentityGroupName]) {
+                    $GroupMembersCache[$IdentityGroupName] = [System.Collections.Generic.List[PSCustomObject]]::new()
+                }
+                $GroupMembersCache[$IdentityGroupName].Add($Entry)
+            }
+            [Array] $IdentityList = $GroupMembersCache.Keys
         } else {
             [Array] $IdentityList = $Identity
         }
         foreach ($Group in $IdentityList) {
             try {
                 Write-Verbose "Show-WinADGroupMember - requesting $Group group nested membership"
-                if ($Identity[0] -is [System.Collections.IDictionary]) {
-                    $ADGroup = $Identity[0][$Group]
-               # } elseif ($Group.DistinguishedName) {
-                #    $ADGroup = Get-WinADGroupMember -Group $Group.DistinguishedName -All -AddSelf
+                if ($VisualizeOnly) {
+                    $ADGroup = $GroupMembersCache[$Group]
                 } else {
                     $ADGroup = Get-WinADGroupMember -Group $Group -All -AddSelf
                 }
