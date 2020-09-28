@@ -2,73 +2,18 @@
     [alias('Show-ADGroupMember')]
     [cmdletBinding(DefaultParameterSetName = 'Default')]
     param(
-        [Parameter(ParameterSetName = 'Default', Position = 1)]
-        [Parameter(ParameterSetName = 'SummaryOnly', Position = 1)]
-        [Parameter(ParameterSetName = 'MemberInput', Position = 1)]
-        [Parameter(ParameterSetName = 'MemberInputSummaryOnly', Position = 1)]
-        [scriptblock] $Conditions,
-
-        [Parameter(ParameterSetName = 'Default', Position = 0, Mandatory)]
-        [Parameter(ParameterSetName = 'SummaryOnly', Position = 0, Mandatory)]
-        [alias('GroupName', 'Group')][string[]] $Identity,
-
-        [Parameter(ParameterSetName = 'Default')]
-        [Parameter(ParameterSetName = 'SummaryOnly')]
-        [Parameter(ParameterSetName = 'MemberInput')]
-        [Parameter(ParameterSetName = 'MemberInputSummaryOnly')]
+        [Parameter(Position = 0)][alias('GroupName', 'Group')][Array] $Identity,
+        [Parameter(Position = 1)][scriptblock] $Conditions,
         [string] $FilePath,
-
-        [Parameter(ParameterSetName = 'Default')]
-        [Parameter(ParameterSetName = 'SummaryOnly')]
-        [Parameter(ParameterSetName = 'MemberInput')]
-        [Parameter(ParameterSetName = 'MemberInputSummaryOnly')]
         [ValidateSet('Default', 'Hierarchical', 'Both')][string] $HideAppliesTo = 'Both',
-
-        [Parameter(ParameterSetName = 'Default')]
-        [Parameter(ParameterSetName = 'SummaryOnly')]
-        [Parameter(ParameterSetName = 'MemberInput')]
-        [Parameter(ParameterSetName = 'MemberInputSummaryOnly')]
         [switch] $HideComputers,
-
-        [Parameter(ParameterSetName = 'Default')]
-        [Parameter(ParameterSetName = 'SummaryOnly')]
-        [Parameter(ParameterSetName = 'MemberInput')]
-        [Parameter(ParameterSetName = 'MemberInputSummaryOnly')]
         [switch] $HideUsers,
-
-        [Parameter(ParameterSetName = 'Default')]
-        [Parameter(ParameterSetName = 'SummaryOnly')]
-        [Parameter(ParameterSetName = 'MemberInput')]
-        [Parameter(ParameterSetName = 'MemberInputSummaryOnly')]
         [switch] $HideOther,
-
-        [Parameter(ParameterSetName = 'MemberInput')]
-        [Parameter(ParameterSetName = 'Default')][switch] $Summary,
-
-        [Parameter(ParameterSetName = 'MemberInputSummaryOnly')]
-        [Parameter(ParameterSetName = 'SummaryOnly')][switch] $SummaryOnly,
-
-        [Parameter(ParameterSetName = 'Default')]
-        [Parameter(ParameterSetName = 'SummaryOnly')]
-        [Parameter(ParameterSetName = 'MemberInput')]
-        [Parameter(ParameterSetName = 'MemberInputSummaryOnly')]
         [switch] $Online,
-
-        [Parameter(ParameterSetName = 'Default')]
-        [Parameter(ParameterSetName = 'SummaryOnly')]
-        [Parameter(ParameterSetName = 'MemberInput')]
-        [Parameter(ParameterSetName = 'MemberInputSummaryOnly')]
         [switch] $HideHTML,
-
-        [Parameter(ParameterSetName = 'Default')]
-        [Parameter(ParameterSetName = 'SummaryOnly')]
-        [Parameter(ParameterSetName = 'MemberInput')]
-        [Parameter(ParameterSetName = 'MemberInputSummaryOnly')]
         [switch] $DisableBuiltinConditions,
-
-        [Parameter(ParameterSetName = 'MemberInput', Position = 0, Mandatory)]
-        [Parameter(ParameterSetName = 'MemberInputSummaryOnly', Position = 0, Mandatory)]
-        [System.Collections.IDictionary] $GroupMemberInput
+        [Parameter(ParameterSetName = 'Default')][switch] $Summary,
+        [Parameter(ParameterSetName = 'SummaryOnly')][switch] $SummaryOnly
     )
     if ($FilePath -eq '') {
         $FilePath = Get-FileName -Extension 'html' -Temporary
@@ -79,14 +24,18 @@
         New-HTMLTableOption -DataStore JavaScript
         New-HTMLTabStyle -BorderRadius 0px -TextTransform capitalize -BackgroundColorActive SlateGrey
 
-        if ($GroupMemberInput) {
-            [Arrqy] $Identity = $GroupMemberInput.Keys
+        if ($Identity[0] -is [System.Collections.IDictionary]) {
+            [Array] $IdentityList = $Identity[0].Keys
+        } else {
+            [Array] $IdentityList = $Identity
         }
-        foreach ($Group in $Identity) {
+        foreach ($Group in $IdentityList) {
             try {
                 Write-Verbose "Show-WinADGroupMember - requesting $Group group nested membership"
-                if ($GroupMemberInput) {
-                    $ADGroup = $GroupMemberInput[$Group]
+                if ($Identity[0] -is [System.Collections.IDictionary]) {
+                    $ADGroup = $Identity[0][$Group]
+               # } elseif ($Group.DistinguishedName) {
+                #    $ADGroup = Get-WinADGroupMember -Group $Group.DistinguishedName -All -AddSelf
                 } else {
                     $ADGroup = Get-WinADGroupMember -Group $Group -All -AddSelf
                 }
