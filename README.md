@@ -48,6 +48,8 @@ Following links contain description of some of the features possible with this m
 
 ## Changelog
 
+- 0.0.94 - 28.09.2020
+  - [x] `Show-WinADGroupMember` support for input from `Get-WinADGroupMember`
 - 0.0.93 - 23.09.2020
   - [x] Added detection of indirect circular to `Get-WinADGroupMember` to prevent infinite loops
   - [x] Renamed Circular to DirectCircular to accomodate IndirectCircular in `Get-WinADGroupMember`
