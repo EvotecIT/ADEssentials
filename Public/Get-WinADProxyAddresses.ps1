@@ -52,6 +52,7 @@
         x500         = [System.Collections.Generic.List[string]]::new()
         Other        = [System.Collections.Generic.List[string]]::new()
         Broken       = [System.Collections.Generic.List[string]]::new()
+       # MailNickname = $ADUser.mailNickName
     }
     foreach ($Proxy in $ADUser.ProxyAddresses) {
         if ($Proxy -like '*,*') {

@@ -4,7 +4,9 @@
         [Microsoft.ActiveDirectory.Management.ADAccount] $ADUser,
         #[string] $FromEmail,
         [string] $ToEmail,
-        [switch] $Display
+        [switch] $Display,
+        [Array] $AddSecondary #,
+        # [switch] $UpdateMailNickName
     )
     $Summary = [ordered] @{
         SamAccountName       = $ADUser.SamAccountName
@@ -19,16 +21,18 @@
     $RequiredProperties = @(
         'EmailAddress'
         'proxyAddresses'
+        #'mailNickName'
     )
     foreach ($Property in $RequiredProperties) {
         if ($ADUser.PSObject.Properties.Name -notcontains $Property) {
-            Write-Warning "Repair-WinADEmailAddress - Property EmailAddress and ProxyAddresses are required. Try again."
+            Write-Warning "Repair-WinADEmailAddress - User $($ADUser.SamAccountName) is missing properties ($($RequiredProperties -join ',')) which are required. Try again."
             return
         }
     }
     $ProcessUser = Get-WinADProxyAddresses -ADUser $ADUser -RemovePrefix
     $EmailAddresses = [System.Collections.Generic.List[string]]::new()
     $ProxyAddresses = [System.Collections.Generic.List[string]]::new()
+
     $ExpectedUser = [ordered] @{
         EmailAddress = $ToEmail
         Primary      = $ToEmail
@@ -36,10 +40,19 @@
         Sip          = $ProcessUser.Sip
         x500         = $ProcessUser.x500
         Other        = $ProcessUser.Other
+        #MailNickName = $ProcessUser.mailNickName
     }
 
+    if (-not $ToEmail) {
+        $ExpectedUser.EmailAddress = $ProcessUser.EmailAddress
+        $ExpectedUser.Primary = $ProcessUser.Primary
+    }
+    # if ($UpdateMailNickName) {
+
+    #}
+
     # Lets add expected primary to proxy addresses we need
-    $MakePrimary = "SMTP:$ToEmail"
+    $MakePrimary = "SMTP:$($ExpectedUser.EmailAddress)"
     $ProxyAddresses.Add($MakePrimary)
 
     # Lets add expected secondary to proxy addresses we need
@@ -59,16 +72,23 @@
         }
     }
     foreach ($Email in $EmailAddresses) {
-        $ProxyAddresses.Add("smtp:$Email")
+        $ProxyAddresses.Add("smtp:$Email".ToLower())
+    }
+    foreach ($Email in $AddSecondary) {
+        if ($Email -like 'smtp:*') {
+            $ProxyAddresses.Add($Email.ToLower())
+        } else {
+            $ProxyAddresses.Add("smtp:$Email".ToLower())
+        }
     }
 
 
     # Lets fix primary email address
-    $Summary['EmailAddress'] = $ToEmail
+    $Summary['EmailAddress'] = $ExpectedUser.EmailAddress
     if ($ProcessUser.EmailAddress -ne $ExpectedUser.EmailAddress) {
         if ($PSCmdlet.ShouldProcess($ADUser, "Email $ToEmail will be set in EmailAddresss field (1)")) {
             try {
-                Set-ADUser -Identity $ADUser -EmailAddress $ToEmail -ErrorAction Stop
+                Set-ADUser -Identity $ADUser -EmailAddress $ExpectedUser.EmailAddress -ErrorAction Stop
                 $Summary['EmailAddressStatus'] = 'Success'
                 $Summary['EmailAddressError'] = ''
             } catch {

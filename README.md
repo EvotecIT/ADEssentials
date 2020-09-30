@@ -48,6 +48,10 @@ Following links contain description of some of the features possible with this m
 
 ## Changelog
 
+- 0.0.95 - 30.09.2020
+  - [x] Update to `Repair-WinADEmailAddress`
+    - [x] Added ability to add secondary email addresses
+    - [x] Added ability to not change primary email address
 - 0.0.94 - 28.09.2020
   - [x] `Show-WinADGroupMember` support for input from `Get-WinADGroupMember`
 - 0.0.93 - 23.09.2020
