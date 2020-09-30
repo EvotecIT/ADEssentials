@@ -44,8 +44,14 @@
     }
 
     if (-not $ToEmail) {
+        # We didn't wanted to change primary email address so we use whatever is set
         $ExpectedUser.EmailAddress = $ProcessUser.EmailAddress
         $ExpectedUser.Primary = $ProcessUser.Primary
+        # this is case where Proxy Addresses of current user don't have email address set as primary
+        # we want to fix the user right?
+        if (-not $ExpectedUser.Primary -and $ExpectedUser.EmailAddress) {
+            $ExpectedUser.Primary = $ExpectedUser.EmailAddress
+        }
     }
     # if ($UpdateMailNickName) {
 

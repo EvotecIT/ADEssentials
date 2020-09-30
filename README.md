@@ -48,6 +48,9 @@ Following links contain description of some of the features possible with this m
 
 ## Changelog
 
+- 0.0.96 - 30.09.2020
+  - [x] Update to `Repair-WinADEmailAddress`
+    - [x] Fixes Primary Proxy Email if it's missing but not requested by user
 - 0.0.95 - 30.09.2020
   - [x] Update to `Repair-WinADEmailAddress`
     - [x] Added ability to add secondary email addresses
