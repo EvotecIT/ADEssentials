@@ -48,6 +48,9 @@ Following links contain description of some of the features possible with this m
 
 ## Changelog
 
+- 0.0.97 - 30.09.2020
+  - [x] Update to `Repair-WinADEmailAddress` treating proxy addresses case sensitive
+    - [x] Replacement for Sort-Object -Unique which removes primary SMTP: if it's duplicate of smtp:
 - 0.0.96 - 30.09.2020
   - [x] Update to `Repair-WinADEmailAddress`
     - [x] Fixes Primary Proxy Email if it's missing but not requested by user

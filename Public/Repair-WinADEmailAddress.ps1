@@ -110,10 +110,20 @@
     # lets compare Expected Proxy Addresses, against current list
     # lets make sure in new proxy list we have only unique addresses, so if there are duplicates in existing one it will be replaced
     # We need to also convert it to [string[]] as Set-ADUser with -Replace is very picky about it
-    [string[]] $ExpectedProxyAddresses = ($ProxyAddresses | Sort-Object -Unique | ForEach-Object { $_ })
+
+    # Replacement for Sort-Object -Unique which removes primary SMTP: if it's duplicate of smtp:
+    $UniqueProxyList = [System.Collections.Generic.List[string]]::new()
+    foreach ($Proxy in $ProxyAddresses) {
+        if ($UniqueProxyList -notcontains $Proxy) {
+            $UniqueProxyList.Add($Proxy)
+        }
+    }
+
+    [string[]] $ExpectedProxyAddresses = ($UniqueProxyList | Sort-Object | ForEach-Object { $_ })
     [string[]] $CurrentProxyAddresses = ($ADUser.ProxyAddresses | Sort-Object | ForEach-Object { $_ })
     $Summary['ProxyAddresses'] = $ExpectedProxyAddresses -join ';'
-    if (Compare-Object -ReferenceObject $ExpectedProxyAddresses -DifferenceObject $CurrentProxyAddresses) {
+    # we need to compare case sensitive
+    if (Compare-Object -ReferenceObject $ExpectedProxyAddresses -DifferenceObject $CurrentProxyAddresses -CaseSensitive) {
         if ($PSCmdlet.ShouldProcess($ADUser, "Email $ExpectedProxyAddresses will replace proxy addresses (2)")) {
             try {
                 Set-ADUser -Identity $ADUser -Replace @{ proxyAddresses = $ExpectedProxyAddresses } -ErrorAction Stop
