@@ -13,9 +13,8 @@ schema: 2.0.0
 ## SYNTAX
 
 ```
-Get-WinADGroupMember [-Identity] <Array> [-AddSelf] [-All] [-ClearCache] [[-Nesting] <Int32>]
- [[-CollectedGroups] <System.Collections.Generic.List`1[System.Object]>] [[-Circular] <Object>]
- [[-InitialGroup] <IDictionary>] [-Nested] [<CommonParameters>]
+Get-WinADGroupMember [-Identity] <Array> [-AddSelf] [-All] [-ClearCache] [-AdditionalStatistics] [-SelfOnly]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -31,6 +30,21 @@ PS C:\> {{ Add example code here }}
 {{ Add example description here }}
 
 ## PARAMETERS
+
+### -Identity
+{{ Fill Identity Description }}
+
+```yaml
+Type: Array
+Parameter Sets: (All)
+Aliases: GroupName, Group
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: True (ByValue)
+Accept wildcard characters: False
+```
 
 ### -AddSelf
 {{ Fill AddSelf Description }}
@@ -62,21 +76,6 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Circular
-{{ Fill Circular Description }}
-
-```yaml
-Type: Object
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 3
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
 ### -ClearCache
 {{ Fill ClearCache Description }}
 
@@ -92,53 +91,8 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -CollectedGroups
-{{ Fill CollectedGroups Description }}
-
-```yaml
-Type: System.Collections.Generic.List`1[System.Object]
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 2
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Identity
-{{ Fill Identity Description }}
-
-```yaml
-Type: Array
-Parameter Sets: (All)
-Aliases: GroupName, Group
-
-Required: True
-Position: 0
-Default value: None
-Accept pipeline input: True (ByValue)
-Accept wildcard characters: False
-```
-
-### -InitialGroup
-{{ Fill InitialGroup Description }}
-
-```yaml
-Type: IDictionary
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 4
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Nested
-{{ Fill Nested Description }}
+### -AdditionalStatistics
+Adds additional data to Self object (when AddSelf is used). This data is available always if SelfOnly is used. It includes count for NestingMax, NestingGroup, NestingGroupSecurity, NestingGroupDistribution. It allows for easy filtering where we expect security groups only when there are nested distribution groups.
 
 ```yaml
 Type: SwitchParameter
@@ -147,22 +101,22 @@ Aliases:
 
 Required: False
 Position: Named
-Default value: None
+Default value: False
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Nesting
-{{ Fill Nesting Description }}
+### -SelfOnly
+Returns only one object that's summary for the whole group
 
 ```yaml
-Type: Int32
+Type: SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 1
-Default value: None
+Position: Named
+Default value: False
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

@@ -5,7 +5,7 @@ online version:
 schema: 2.0.0
 ---
 
-# Get-WinADDFSHealth
+# Show-WinADTrust
 
 ## SYNOPSIS
 {{ Fill in the Synopsis }}
@@ -13,9 +13,8 @@ schema: 2.0.0
 ## SYNTAX
 
 ```
-Get-WinADDFSHealth [[-Forest] <String>] [[-ExcludeDomains] <String[]>] [[-ExcludeDomainControllers] <String[]>]
- [[-IncludeDomains] <String[]>] [[-IncludeDomainControllers] <String[]>] [-SkipRODC] [[-EventDays] <Int32>]
- [-SkipGPO] [-SkipAutodetection] [[-ExtendedForestInformation] <IDictionary>] [<CommonParameters>]
+Show-WinADTrust [[-Conditions] <ScriptBlock>] [-Recursive] [-FilePath <String>] [-Online] [-HideHTML]
+ [-DisableBuiltinConditions] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -32,73 +31,13 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
-### -EventDays
-{{ Fill EventDays Description }}
+### -Conditions
+{{ Fill Conditions Description }}
 
 ```yaml
-Type: Int32
+Type: ScriptBlock
 Parameter Sets: (All)
 Aliases:
-
-Required: False
-Position: 5
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ExcludeDomainControllers
-{{ Fill ExcludeDomainControllers Description }}
-
-```yaml
-Type: String[]
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 2
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ExcludeDomains
-{{ Fill ExcludeDomains Description }}
-
-```yaml
-Type: String[]
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 1
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ExtendedForestInformation
-{{ Fill ExtendedForestInformation Description }}
-
-```yaml
-Type: IDictionary
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 6
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Forest
-{{ Fill Forest Description }}
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases: ForestName
 
 Required: False
 Position: 0
@@ -107,38 +46,8 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -IncludeDomainControllers
-{{ Fill IncludeDomainControllers Description }}
-
-```yaml
-Type: String[]
-Parameter Sets: (All)
-Aliases: DomainControllers
-
-Required: False
-Position: 4
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -IncludeDomains
-{{ Fill IncludeDomains Description }}
-
-```yaml
-Type: String[]
-Parameter Sets: (All)
-Aliases: Domain, Domains
-
-Required: False
-Position: 3
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -SkipAutodetection
-{{ Fill SkipAutodetection Description }}
+### -DisableBuiltinConditions
+{{ Fill DisableBuiltinConditions Description }}
 
 ```yaml
 Type: SwitchParameter
@@ -152,8 +61,23 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -SkipGPO
-{{ Fill SkipGPO Description }}
+### -FilePath
+{{ Fill FilePath Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -HideHTML
+{{ Fill HideHTML Description }}
 
 ```yaml
 Type: SwitchParameter
@@ -167,8 +91,23 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -SkipRODC
-{{ Fill SkipRODC Description }}
+### -Online
+{{ Fill Online Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Recursive
+{{ Fill Recursive Description }}
 
 ```yaml
 Type: SwitchParameter

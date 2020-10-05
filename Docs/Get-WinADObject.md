@@ -14,7 +14,7 @@ schema: 2.0.0
 
 ```
 Get-WinADObject [-Identity] <Array> [-DomainName <String>] [-Credential <PSCredential>]
- [-IncludeDeletedObjects] [<CommonParameters>]
+ [-IncludeGroupMembership] [-IncludeAllTypes] [-AddType] [-Cache] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -31,6 +31,36 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
+### -Identity
+{{ Fill Identity Description }}
+
+```yaml
+Type: Array
+Parameter Sets: (All)
+Aliases:
+
+Required: True
+Position: 1
+Default value: None
+Accept pipeline input: True (ByPropertyName, ByValue)
+Accept wildcard characters: False
+```
+
+### -DomainName
+{{ Fill DomainName Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -Credential
 {{ Fill Credential Description }}
 
@@ -46,38 +76,8 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -DomainName
-{{ Fill DomainName Description }}
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases: Domain, DomainDistinguishedName
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Identity
-{{ Fill Identity Description }}
-
-```yaml
-Type: Array
-Parameter Sets: (All)
-Aliases:
-
-Required: True
-Position: 0
-Default value: None
-Accept pipeline input: True (ByPropertyName, ByValue)
-Accept wildcard characters: False
-```
-
-### -IncludeDeletedObjects
-{{ Fill IncludeDeletedObjects Description }}
+### -IncludeGroupMembership
+Queries for group members when object is a group
 
 ```yaml
 Type: SwitchParameter
@@ -86,7 +86,52 @@ Aliases:
 
 Required: False
 Position: Named
-Default value: None
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -IncludeAllTypes
+Allows functions to return all objects types and not only Computers, Groups, Users or ForeignSecurityPrincipal
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -AddType
+{{ Fill AddType Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Cache
+{{ Fill Cache Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
