@@ -48,7 +48,7 @@ Following links contain description of some of the features possible with this m
 
 ## Changelog
 
-- 0.0.98 - Unreleased
+- 0.0.98 - 05.10.2020
   - [x] Added parameters `SelfOnly` / `AdditionalStatistics` to `Get-WinADGroupMember`
     - [ ] This shows maximum level of nesting on Self object, nested groups count, nested security groups count, nested distribution groups copunt
 - 0.0.97 - 30.09.2020
