@@ -1,4 +1,65 @@
 ﻿function Show-WinADGroupMember {
+    <#
+    .SYNOPSIS
+    Short description
+
+    .DESCRIPTION
+    Long description
+
+    .PARAMETER Identity
+    Group Name to search for
+
+    .PARAMETER Conditions
+    Provides ability to control look and feel of tables across HTML
+
+    .PARAMETER FilePath
+    Path to HTML file where it's saved. If not given temporary path is used
+
+    .PARAMETER HideAppliesTo
+    Allows to define to which diagram HideComputers,HideUsers,HideOther applies to
+
+    .PARAMETER HideComputers
+    Hide computers from diagrams - useful for performance reasons
+
+    .PARAMETER HideUsers
+    Hide users from diagrams - useful for performance reasons
+
+    .PARAMETER HideOther
+    Hide other objects from diagrams - useful for performance reasons
+
+    .PARAMETER Online
+    Forces use of online CDN for JavaScript/CSS which makes the file smaller. Default - use offline.
+
+    .PARAMETER HideHTML
+    Prevents HTML from opening up after command is done. Useful for automation
+
+    .PARAMETER DisableBuiltinConditions
+    Disables table coloring allowing user to define it's own conditions
+
+    .PARAMETER AdditionalStatistics
+    Adds additional data to Self object. It includes count for NestingMax, NestingGroup, NestingGroupSecurity, NestingGroupDistribution. It allows for easy filtering where we expect security groups only when there are nested distribution groups.
+
+    .PARAMETER Summary
+    Adds additional tab with all groups together on two diagrams
+
+    .PARAMETER SummaryOnly
+    Adds one tab with all groups together on two diagrams
+
+    .EXAMPLE
+   Show-WinADGroupMember -GroupName 'Domain Admins' -FilePath $PSScriptRoot\Reports\GroupMembership1.html -Online -Verbose
+
+   .EXAMPLE
+   Show-WinADGroupMember -GroupName 'Test-Group', 'Domain Admins' -FilePath $PSScriptRoot\Reports\GroupMembership2.html -Online -Verbose
+
+   .EXAMPLE
+   Show-WinADGroupMember -GroupName 'GDS-TestGroup4' -FilePath $PSScriptRoot\Reports\GroupMembership3.html -Summary -Online -Verbose
+
+   .EXAMPLE
+   Show-WinADGroupMember -GroupName 'Group1' -Verbose -Online
+
+    .NOTES
+    General notes
+    #>
     [alias('Show-ADGroupMember')]
     [cmdletBinding(DefaultParameterSetName = 'Default')]
     param(
@@ -12,6 +73,7 @@
         [switch] $Online,
         [switch] $HideHTML,
         [switch] $DisableBuiltinConditions,
+        [switch] $AdditionalStatistics,
         [Parameter(ParameterSetName = 'Default')][switch] $Summary,
         [Parameter(ParameterSetName = 'SummaryOnly')][switch] $SummaryOnly
     )
@@ -45,7 +107,7 @@
                 if ($VisualizeOnly) {
                     $ADGroup = $GroupMembersCache[$Group]
                 } else {
-                    $ADGroup = Get-WinADGroupMember -Group $Group -All -AddSelf
+                    $ADGroup = Get-WinADGroupMember -Group $Group -All -AddSelf -AdditionalStatistics:$AdditionalStatistics
                 }
                 if ($Summary -or $SummaryOnly) {
                     foreach ($Object in $ADGroup) {
