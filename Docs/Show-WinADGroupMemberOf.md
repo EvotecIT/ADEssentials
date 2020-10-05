@@ -5,17 +5,24 @@ online version:
 schema: 2.0.0
 ---
 
-# Get-WinADDFSHealth
+# Show-WinADGroupMemberOf
 
 ## SYNOPSIS
 {{ Fill in the Synopsis }}
 
 ## SYNTAX
 
+### Default (Default)
 ```
-Get-WinADDFSHealth [[-Forest] <String>] [[-ExcludeDomains] <String[]>] [[-ExcludeDomainControllers] <String[]>]
- [[-IncludeDomains] <String[]>] [[-IncludeDomainControllers] <String[]>] [-SkipRODC] [[-EventDays] <Int32>]
- [-SkipGPO] [-SkipAutodetection] [[-ExtendedForestInformation] <IDictionary>] [<CommonParameters>]
+Show-WinADGroupMemberOf [[-Conditions] <ScriptBlock>] [-Identity] <String[]> [-FilePath <String>]
+ [-HideAppliesTo <String>] [-Summary] [-Online] [-HideHTML] [-DisableBuiltinConditions] [<CommonParameters>]
+```
+
+### SummaryOnly
+```
+Show-WinADGroupMemberOf [[-Conditions] <ScriptBlock>] [-Identity] <String[]> [-FilePath <String>]
+ [-HideAppliesTo <String>] [-SummaryOnly] [-Online] [-HideHTML] [-DisableBuiltinConditions]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -32,41 +39,11 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
-### -EventDays
-{{ Fill EventDays Description }}
+### -Conditions
+{{ Fill Conditions Description }}
 
 ```yaml
-Type: Int32
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 5
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ExcludeDomainControllers
-{{ Fill ExcludeDomainControllers Description }}
-
-```yaml
-Type: String[]
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 2
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ExcludeDomains
-{{ Fill ExcludeDomains Description }}
-
-```yaml
-Type: String[]
+Type: ScriptBlock
 Parameter Sets: (All)
 Aliases:
 
@@ -77,68 +54,84 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -ExtendedForestInformation
-{{ Fill ExtendedForestInformation Description }}
+### -DisableBuiltinConditions
+{{ Fill DisableBuiltinConditions Description }}
 
 ```yaml
-Type: IDictionary
+Type: SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 6
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Forest
-{{ Fill Forest Description }}
+### -FilePath
+{{ Fill FilePath Description }}
 
 ```yaml
 Type: String
 Parameter Sets: (All)
-Aliases: ForestName
+Aliases:
 
 Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -HideAppliesTo
+{{ Fill HideAppliesTo Description }}
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
+Accepted values: Default, Hierarchical, Both
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -HideHTML
+{{ Fill HideHTML Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Identity
+{{ Fill Identity Description }}
+
+```yaml
+Type: String[]
+Parameter Sets: (All)
+Aliases:
+
+Required: True
 Position: 0
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -IncludeDomainControllers
-{{ Fill IncludeDomainControllers Description }}
-
-```yaml
-Type: String[]
-Parameter Sets: (All)
-Aliases: DomainControllers
-
-Required: False
-Position: 4
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -IncludeDomains
-{{ Fill IncludeDomains Description }}
-
-```yaml
-Type: String[]
-Parameter Sets: (All)
-Aliases: Domain, Domains
-
-Required: False
-Position: 3
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -SkipAutodetection
-{{ Fill SkipAutodetection Description }}
+### -Online
+{{ Fill Online Description }}
 
 ```yaml
 Type: SwitchParameter
@@ -152,12 +145,12 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -SkipGPO
-{{ Fill SkipGPO Description }}
+### -Summary
+{{ Fill Summary Description }}
 
 ```yaml
 Type: SwitchParameter
-Parameter Sets: (All)
+Parameter Sets: Default
 Aliases:
 
 Required: False
@@ -167,12 +160,12 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -SkipRODC
-{{ Fill SkipRODC Description }}
+### -SummaryOnly
+{{ Fill SummaryOnly Description }}
 
 ```yaml
 Type: SwitchParameter
-Parameter Sets: (All)
+Parameter Sets: SummaryOnly
 Aliases:
 
 Required: False

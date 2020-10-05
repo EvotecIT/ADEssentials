@@ -13,12 +13,14 @@ schema: 2.0.0
 ## SYNTAX
 
 ```
-Get-ADACL [[-ADObject] <Array>] [[-Domain] <String>] [[-Server] <Object>] [[-ForestName] <String>] [-Extended]
- [-ResolveTypes] [-Inherited] [-NotInherited] [-Bundle]
- [[-IncludeActiveDirectoryRights] <ActiveDirectoryRights[]>]
- [[-ExcludeActiveDirectoryRights] <ActiveDirectoryRights[]>]
- [[-IncludeActiveDirectorySecurityInheritance] <ActiveDirectorySecurityInheritance[]>]
- [[-ExcludeActiveDirectorySecurityInheritance] <ActiveDirectorySecurityInheritance[]>] [<CommonParameters>]
+Get-ADACL [-ADObject] <Array> [-ForestName <String>] [-Extended] [-ResolveTypes] [-Inherited] [-NotInherited]
+ [-Bundle] [-AccessControlType <AccessControlType>] [-IncludeObjectTypeName <String[]>]
+ [-IncludeInheritedObjectTypeName <String[]>] [-ExcludeObjectTypeName <String[]>]
+ [-ExcludeInheritedObjectTypeName <String[]>] [-IncludeActiveDirectoryRights <ActiveDirectoryRights[]>]
+ [-ExcludeActiveDirectoryRights <ActiveDirectoryRights[]>]
+ [-IncludeActiveDirectorySecurityInheritance <ActiveDirectorySecurityInheritance[]>]
+ [-ExcludeActiveDirectorySecurityInheritance <ActiveDirectorySecurityInheritance[]>] [-ADRightsAsArray]
+ [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -43,10 +45,41 @@ Type: Array
 Parameter Sets: (All)
 Aliases:
 
-Required: False
+Required: True
 Position: 0
 Default value: None
-Accept pipeline input: True (ByValue)
+Accept pipeline input: True (ByPropertyName, ByValue)
+Accept wildcard characters: False
+```
+
+### -ADRightsAsArray
+{{ Fill ADRightsAsArray Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -AccessControlType
+{{ Fill AccessControlType Description }}
+
+```yaml
+Type: AccessControlType
+Parameter Sets: (All)
+Aliases:
+Accepted values: Allow, Deny
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
@@ -65,21 +98,6 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -Domain
-{{ Fill Domain Description }}
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 1
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
 ### -ExcludeActiveDirectoryRights
 {{ Fill ExcludeActiveDirectoryRights Description }}
 
@@ -90,7 +108,7 @@ Aliases:
 Accepted values: CreateChild, DeleteChild, ListChildren, Self, ReadProperty, WriteProperty, DeleteTree, ListObject, ExtendedRight, Delete, ReadControl, GenericExecute, GenericWrite, GenericRead, WriteDacl, WriteOwner, GenericAll, Synchronize, AccessSystemSecurity
 
 Required: False
-Position: 5
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -106,7 +124,37 @@ Aliases:
 Accepted values: None, All, Descendents, SelfAndChildren, Children
 
 Required: False
-Position: 7
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ExcludeInheritedObjectTypeName
+{{ Fill ExcludeInheritedObjectTypeName Description }}
+
+```yaml
+Type: String[]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -ExcludeObjectTypeName
+{{ Fill ExcludeObjectTypeName Description }}
+
+```yaml
+Type: String[]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -136,7 +184,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 3
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -152,7 +200,7 @@ Aliases:
 Accepted values: CreateChild, DeleteChild, ListChildren, Self, ReadProperty, WriteProperty, DeleteTree, ListObject, ExtendedRight, Delete, ReadControl, GenericExecute, GenericWrite, GenericRead, WriteDacl, WriteOwner, GenericAll, Synchronize, AccessSystemSecurity
 
 Required: False
-Position: 4
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -168,7 +216,37 @@ Aliases:
 Accepted values: None, All, Descendents, SelfAndChildren, Children
 
 Required: False
-Position: 6
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -IncludeInheritedObjectTypeName
+{{ Fill IncludeInheritedObjectTypeName Description }}
+
+```yaml
+Type: String[]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -IncludeObjectTypeName
+{{ Fill IncludeObjectTypeName Description }}
+
+```yaml
+Type: String[]
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -214,21 +292,6 @@ Aliases:
 
 Required: False
 Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Server
-{{ Fill Server Description }}
-
-```yaml
-Type: Object
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 2
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

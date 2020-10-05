@@ -5,7 +5,7 @@ online version:
 schema: 2.0.0
 ---
 
-# Repair-WinADEmailAddress
+# Get-WinADGroupMemberOf
 
 ## SYNOPSIS
 {{ Fill in the Synopsis }}
@@ -13,8 +13,7 @@ schema: 2.0.0
 ## SYNTAX
 
 ```
-Repair-WinADEmailAddress [[-ADUser] <ADAccount>] [[-ToEmail] <String>] [-Display] [[-AddSecondary] <Array>]
- [-WhatIf] [-Confirm] [<CommonParameters>]
+Get-WinADGroupMemberOf [-Identity] <Array> [-AddSelf] [-ClearCache] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -31,92 +30,46 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
-### -ADUser
-{{ Fill ADUser Description }}
+### -AddSelf
+{{ Fill AddSelf Description }}
 
 ```yaml
-Type: ADAccount
+Type: SwitchParameter
 Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 0
+Position: Named
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -AddSecondary
-{{ Fill AddSecondary Description }}
+### -ClearCache
+{{ Fill ClearCache Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Identity
+{{ Fill Identity Description }}
 
 ```yaml
 Type: Array
 Parameter Sets: (All)
 Aliases:
 
-Required: False
-Position: 2
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Confirm
-Prompts you for confirmation before running the cmdlet.
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases: cf
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -Display
-{{ Fill Display Description }}
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -ToEmail
-{{ Fill ToEmail Description }}
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 1
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -WhatIf
-Shows what would happen if the cmdlet runs.
-The cmdlet is not run.
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases: wi
-
-Required: False
-Position: Named
+Required: True
+Position: 0
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False

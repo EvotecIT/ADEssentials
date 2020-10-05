@@ -14,14 +14,16 @@ schema: 2.0.0
 
 ### Default (Default)
 ```
-Show-WinADGroupMember [-GroupName <String[]>] [-FilePath <String>] [-RemoveAppliesTo <String>]
- [-RemoveComputers] [-RemoveUsers] [-RemoveOther] [-Summary] [<CommonParameters>]
+Show-WinADGroupMember [[-Identity] <Array>] [[-Conditions] <ScriptBlock>] [-FilePath <String>]
+ [-HideAppliesTo <String>] [-HideComputers] [-HideUsers] [-HideOther] [-Online] [-HideHTML]
+ [-DisableBuiltinConditions] [-AdditionalStatistics] [-Summary] [<CommonParameters>]
 ```
 
 ### SummaryOnly
 ```
-Show-WinADGroupMember [-GroupName <String[]>] [-FilePath <String>] [-RemoveAppliesTo <String>]
- [-RemoveComputers] [-RemoveUsers] [-RemoveOther] [-SummaryOnly] [<CommonParameters>]
+Show-WinADGroupMember [[-Identity] <Array>] [[-Conditions] <ScriptBlock>] [-FilePath <String>]
+ [-HideAppliesTo <String>] [-HideComputers] [-HideUsers] [-HideOther] [-Online] [-HideHTML]
+ [-DisableBuiltinConditions] [-AdditionalStatistics] [-SummaryOnly] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -38,6 +40,36 @@ PS C:\> {{ Add example code here }}
 
 ## PARAMETERS
 
+### -Identity
+Group Name to search for
+
+```yaml
+Type: Array
+Parameter Sets: (All)
+Aliases: GroupName, Group
+
+Required: False
+Position: 1
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Conditions
+Provides ability to control look and feel of tables across HTML
+
+```yaml
+Type: ScriptBlock
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: 2
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -FilePath
 {{ Fill FilePath Description }}
 
@@ -53,39 +85,23 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -GroupName
-{{ Fill GroupName Description }}
-
-```yaml
-Type: String[]
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -RemoveAppliesTo
-{{ Fill RemoveAppliesTo Description }}
+### -HideAppliesTo
+Allows to define to which diagram HideComputers,HideUsers,HideOther applies to
 
 ```yaml
 Type: String
 Parameter Sets: (All)
 Aliases:
-Accepted values: Default, Hierarchical, Both
 
 Required: False
 Position: Named
-Default value: None
+Default value: Both
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -RemoveComputers
-{{ Fill RemoveComputers Description }}
+### -HideComputers
+Hide computers from diagrams - useful for performance reasons
 
 ```yaml
 Type: SwitchParameter
@@ -94,13 +110,13 @@ Aliases:
 
 Required: False
 Position: Named
-Default value: None
+Default value: False
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -RemoveOther
-{{ Fill RemoveOther Description }}
+### -HideUsers
+Hide users from diagrams - useful for performance reasons
 
 ```yaml
 Type: SwitchParameter
@@ -109,13 +125,13 @@ Aliases:
 
 Required: False
 Position: Named
-Default value: None
+Default value: False
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -RemoveUsers
-{{ Fill RemoveUsers Description }}
+### -HideOther
+Hide other objects from diagrams - useful for performance reasons
 
 ```yaml
 Type: SwitchParameter
@@ -124,7 +140,67 @@ Aliases:
 
 Required: False
 Position: Named
-Default value: None
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Online
+Forces use of online CDN for JavaScript/CSS which makes the file smaller. Default - use offline.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -HideHTML
+Prevents HTML from opening up after command is done. Useful for automation
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -DisableBuiltinConditions
+Disables table coloring allowing user to define it's own conditions
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -AdditionalStatistics
+Adds additional data to Self object. It includes count for NestingMax, NestingGroup, NestingGroupSecurity, NestingGroupDistribution. It allows for easy filtering where we expect security groups only when there are nested distribution groups.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
