@@ -54,11 +54,13 @@
             if (-not $UniqueTrusts[$UniqueID1]) {
                 $UniqueTrusts[$UniqueID1] = $true
             } else {
+                Write-Verbose "Get-WinADTrust - Trust already on the list (From: $($Trust.Details.SourceName) To: $($Trust.Details.TargetName) Nesting: $Nesting)"
                 continue
             }
             if (-not $UniqueTrusts[$UniqueID2]) {
                 $UniqueTrusts[$UniqueID2] = $true
             } else {
+                Write-Verbose "Get-WinADTrust - Trust already on the list (Reverse) (From: $($Trust.Details.TargetName) To: $($Trust.Details.SourceName) Nesting: $Nesting"
                 continue
             }
             $TrustObject = Get-WinADTrustObject -Domain $Trust.ExecuteObject.Name -AsHashTable
@@ -120,7 +122,9 @@
                 }
             }
         }
-        $Output
+        if ($Output -and $Output.Count -gt 0) {
+            $Output
+        }
         if ($Recursive) {
             foreach ($Trust in $Output) {
                 if ($Trust.TrustType -notin 'TreeRoot', 'ParentChild') {

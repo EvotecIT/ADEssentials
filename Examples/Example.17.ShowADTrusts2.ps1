@@ -4,4 +4,4 @@ Show-WinADTrust -Online -FilePath $PSScriptRoot\Reports\TrustsWithColors.html -V
     TableHeader -Names 'TrustBase', 'TrustType', 'TrustTypeAD' -Color Blue -Title 'Types'
     TableCondition -Name 'TrustDirection' -BackgroundColor red -Color white -Value 'Bidirectional' -Operator eq -ComparisonType string
     TableCondition -Name 'Level' -BackgroundColor blue -Color white -Value 0 -Operator eq -ComparisonType number
-} -DisableBuiltinConditions
+} -DisableBuiltinConditions -PassThru | Format-Table

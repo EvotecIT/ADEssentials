@@ -284,9 +284,9 @@
                         # This is weird case but for some reason $Object.properties.member doesn't always return all values
                         # the workaround is to do additional query for group and assing it
                         $GroupMembers = [System.DirectoryServices.AccountManagement.GroupPrincipal]::FindByIdentity($Context, $Ident).Members
-                        if ($GroupMembers.Count -ne $Members.Count) {
+                        #if ($GroupMembers.Count -ne $Members.Count) {
                             #Write-Warning "Get-WinADObject - Weird. Members count different."
-                        }
+                        #}
                         [Array] $Members = foreach ($Member in $GroupMembers) {
                             if ($Member.DistinguishedName) {
                                 $Member.DistinguishedName
