@@ -7,11 +7,13 @@
         [string] $FilePath,
         [switch] $Online,
         [switch] $HideHTML,
-        [switch] $DisableBuiltinConditions
+        [switch] $DisableBuiltinConditions,
+        [switch] $PassThru
     )
     if ($FilePath -eq '') {
         $FilePath = Get-FileName -Extension 'html' -Temporary
     }
+    $Script:ADTrusts = @()
     New-HTML -TitleText "Visual Trusts" {
         New-HTMLSectionStyle -BorderRadius 0px -HeaderBackGroundColor Grey -RemoveShadow
         New-HTMLTableOption -DataStore HTML
@@ -20,7 +22,7 @@
 
         #$Messages = $($ADTrusts = Get-WinADTrust -Recursive:$Recursive) 4>&1 3>&1 2>&1
         #$Messages += Write-Verbose "Show-WinADTrust - Found $($ADTrusts.Count) trusts" 4>&1
-        $ADTrusts = Get-WinADTrust -Recursive:$Recursive
+        $Script:ADTrusts = Get-WinADTrust -Recursive:$Recursive
         Write-Verbose "Show-WinADTrust - Found $($ADTrusts.Count) trusts"
         New-HTMLTab -TabName 'Summary' {
             New-HTMLSection -HeaderText 'Trusts Diagram' {
@@ -150,4 +152,7 @@
         #    New-HTMLTable -DataTable ($Messages.Message)
         #}
     } -Online:$Online -FilePath $FilePath -ShowHTML:(-not $HideHTML)
+    if ($PassThru) {
+        $Script:ADTrusts
+    }
 }

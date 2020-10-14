@@ -56,7 +56,7 @@
     )
     Begin {
         $Properties = 'GroupName', 'Name', 'SamAccountName', 'DisplayName', 'Enabled', 'Type', 'Nesting', 'CrossForest', 'ParentGroup', 'ParentGroupDomain', 'GroupDomainName', 'DistinguishedName', 'Sid'
-        if (-not $Script:WinADGroupMemberCache -or $ClearCache -or ($Cache -and -not $Script:WinADGroupMemberCacheGlobal)) {
+        if (-not $Script:WinADGroupMemberCache -or $ClearCache) {
             #if ($ClearCache) {
             # This is to distinguish globally used cache and standard cache
             # As it's entirely possible user used standard approach without cache and then enabled cache so we need to track whether that is the case
