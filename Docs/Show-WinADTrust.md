@@ -14,7 +14,7 @@ schema: 2.0.0
 
 ```
 Show-WinADTrust [[-Conditions] <ScriptBlock>] [-Recursive] [-FilePath <String>] [-Online] [-HideHTML]
- [-DisableBuiltinConditions] [<CommonParameters>]
+ [-DisableBuiltinConditions] [-PassThru] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -93,6 +93,21 @@ Accept wildcard characters: False
 
 ### -Online
 {{ Fill Online Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -PassThru
+{{ Fill PassThru Description }}
 
 ```yaml
 Type: SwitchParameter
