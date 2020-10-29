@@ -32,7 +32,7 @@
         if ($Path -and (Test-Path -Path $Path)) {
             @(Get-Item -Path $Path -Force) + @(Get-ChildItem -Path $Path -Recurse:$true -Force -ErrorAction SilentlyContinue -ErrorVariable Err) | ForEach-Object -Process {
                 if ($Owner) {
-                    $Output = Get-FileOwner -JustPath -Path $_ -Resolve -AsHashTable
+                    $Output = Get-FileOwner -JustPath -Path $_ -Resolve -AsHashTable -Verbose
                     $Output['Attributes'] = $_.Attributes
                     [PSCustomObject] $Output
                 } else {

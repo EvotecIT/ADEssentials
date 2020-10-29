@@ -48,6 +48,11 @@ Following links contain description of some of the features possible with this m
 
 ## Changelog
 
+- 0.0.100 - 29.10.2020
+  - [x] `Get-WinADForestObjectsConflict` removed
+  - [x] `Get-WinADForestObjectsConflict` added as alias to `Get-WinADDuplicateObject`
+  - [x] Improved `Get-WinADDuplicateObject`
+  - [x] `Get-WinADDuplicateObject` expanded with parameters `NoPostProcessing`, `Extended`, `ExcludeObjectClass`, `IncludeObjectClass`
 - 0.0.99 - 14.10.2020
   - [x] Fix for `Show-WinADTrust`
 - 0.0.98 - 05.10.2020
