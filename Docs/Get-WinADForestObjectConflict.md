@@ -5,7 +5,7 @@ online version:
 schema: 2.0.0
 ---
 
-# Get-WinADDuplicateObject
+# Get-WinADForestObjectConflict
 
 ## SYNOPSIS
 {{ Fill in the Synopsis }}
@@ -13,10 +13,9 @@ schema: 2.0.0
 ## SYNTAX
 
 ```
-Get-WinADDuplicateObject [[-Forest] <String>] [[-ExcludeDomains] <String[]>] [[-IncludeDomains] <String[]>]
- [[-ExtendedForestInformation] <IDictionary>] [[-PartialMatchDistinguishedName] <String>]
- [[-IncludeObjectClass] <String[]>] [[-ExcludeObjectClass] <String[]>] [-Extended] [-NoPostProcessing]
- [<CommonParameters>]
+Get-WinADForestObjectConflict [[-Forest] <String>] [[-ExcludeDomains] <String[]>]
+ [[-IncludeDomains] <String[]>] [[-ExtendedForestInformation] <IDictionary>] [[-IncludeObjectClass] <String[]>]
+ [[-ExcludeObjectClass] <String[]>] [-Extended] [-NoPostProcessing] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -57,7 +56,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 6
+Position: 5
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -132,7 +131,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 5
+Position: 4
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -148,21 +147,6 @@ Aliases:
 
 Required: False
 Position: Named
-Default value: None
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -PartialMatchDistinguishedName
-{{ Fill PartialMatchDistinguishedName Description }}
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: 4
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
