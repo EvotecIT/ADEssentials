@@ -48,6 +48,8 @@ Following links contain description of some of the features possible with this m
 
 ## Changelog
 
+- 0.0.101 - 8.11.2020
+  - [x] Updated libraries
 - 0.0.100 - 29.10.2020
   - [x] `Get-WinADForestObjectsConflict` removed
   - [x] `Get-WinADForestObjectsConflict` added as alias to `Get-WinADDuplicateObject`
