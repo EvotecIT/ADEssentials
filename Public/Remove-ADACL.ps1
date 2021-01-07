@@ -32,13 +32,23 @@
                 foreach ($Rule in $AccessRule) {
                     $AccessRuleToRemove = [System.DirectoryServices.ActiveDirectoryAccessRule]::new($Identity, $Rule, $AccessControlType)
                     Write-Verbose "Remove-ADACL - Removing access for $($AccessRuleToRemove.IdentityReference) / $($AccessRuleToRemove.ActiveDirectoryRights)"
-                    $SubACL.ACL.RemoveAccessRule($AccessRuleToRemove)
+                    try {
+                        $SubACL.ACL.RemoveAccessRule($AccessRuleToRemove)
+                        $true
+                    } catch {
+                        Write-Warning "Remove-ADACL - Removing permissions for $($SubACL.DistinguishedName) failed: $($_.Exception.Message)"
+                        $false
+                    }
                 }
             }
         )
         if ($OutputRequiresCommit -notcontains $false -and $OutputRequiresCommit -contains $true) {
             Write-Verbose "Remove-ADACL - Saving permissions for $($SubACL.DistinguishedName)"
-            Set-Acl -Path $SubACL.Path -AclObject $SubACL.ACL -ErrorAction Stop
+            try {
+                Set-Acl -Path $SubACL.Path -AclObject $SubACL.ACL -ErrorAction Stop
+            } catch {
+                Write-Warning "Remove-ADACL - Saving permissions for $($SubACL.DistinguishedName) failed: $($_.Exception.Message)"
+            }
         } elseif ($OutputRequiresCommit -contains $false) {
             Write-Warning "Remove-ADACL - Skipping saving permissions for $($SubACL.DistinguishedName) due to errors."
         }
