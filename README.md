@@ -48,6 +48,16 @@ Following links contain description of some of the features possible with this m
 
 ## Changelog
 
+- 0.0.104
+  - [x] Compatible with **PowerShell 5.1** and **7.1** and **7.2** (Windows only)
+  - [x] Removed dependency on **GroupPolicy** module
+  - [x] Removed `Get-WinADGPOMissingPermissions` -> Please use [GPOZaurr](https://github.com/EvotecIT/GPOZaurr) to deal with GPOs
+    - [x] `Invoke-GPOZaurr -Type GPOPermissions` provides better solution
+  - [x] Removed `Get-WinADGPOSysvolFolders` -> Please use [GPOZaurr](https://github.com/EvotecIT/GPOZaurr) to deal with GPOs
+    - [x] `Get-GPOZaurrBroken` or `Invoke-GPOZaurr -Type GPOBroken` provides better solution
+  - [x] Improved `Get-WinADFSHealth` to remove GroupPolicy module
+- 0.0.103 - 3.12.2020
+  - [x] Improve error handling `Remove-ADACL`
 - 0.0.102 - 8.11.2020
   - [x] Updated libraries
   - [x] 0.0.100 was removed from PSGallery due to PSGallery issues
