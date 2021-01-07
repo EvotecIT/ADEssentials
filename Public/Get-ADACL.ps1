@@ -122,7 +122,7 @@
                 $ReturnObject['AccessControlType'] = $ACL.AccessControlType
                 $ReturnObject['Principal'] = $IdentityReference
                 if ($ResolveTypes) {
-                    $IdentityResolve = Get-WinADObject -Identity $IdentityReference -AddType
+                    $IdentityResolve = Get-WinADObject -Identity $IdentityReference -AddType -Verbose:$false
                     if (-not $IdentityResolve) {
                         #Write-Verbose "Get-ADACL - Reverting to Convert-Identity for $IdentityReference"
                         $ConvertIdentity = Convert-Identity -Identity $IdentityReference
