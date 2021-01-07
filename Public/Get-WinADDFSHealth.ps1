@@ -16,7 +16,7 @@
     $Yesterday = (Get-Date -Hour 0 -Second 0 -Minute 0 -Millisecond 0).AddDays(-$EventDays)
 
     if (-not $SkipAutodetection) {
-        $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC -ExtendedForestInformation $ExtendedForestInformation
+        $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC -ExtendedForestInformation $ExtendedForestInformation -Extended
     } else {
         if (-not $IncludeDomains) {
             Write-Warning "Get-WinADDFSHealth - You need to specify domain when using SkipAutodetection."
@@ -54,7 +54,12 @@
         }
         if (-not $SkipGPO) {
             try {
-                [Array]$GPOs = @(Get-GPO -All -Domain $Domain -Server $QueryServer)
+                #[Array]$GPOs = @(Get-GPO -All -Domain $Domain -Server $QueryServer)
+                $SystemsContainer = $ForestInformation['DomainsExtended'][$Domain].SystemsContainer
+                if ($SystemsContainer) {
+                    $PoliciesSearchBase = -join ("CN=Policies,", $SystemsContainer)
+                }
+                [Array]$GPOs = Get-ADObject -ErrorAction Stop -SearchBase $PoliciesSearchBase -SearchScope OneLevel -Filter * -Server $QueryServer -Properties Name, gPCFileSysPath, DisplayName, DistinguishedName, Description, Created, Modified, ObjectClass, ObjectGUID
             } catch {
                 $GPOs = $null
             }
@@ -92,7 +97,7 @@
                 "Domain"                        = $Domain
                 "Status"                        = $false
                 "ReplicationState"              = 'Unknown'
-                "IsPDC"                         = $DC.IsPDC
+                "IsPDC"                         = $DC.OperationMasterRoles -contains 'PDCEmulator'
                 'GroupPolicyOutput'             = $null -ne $GPOs # This shows whether output was on Get-GPO
                 "GroupPolicyCount"              = if ($GPOs) { $GPOs.Count } else { 0 };
                 "SYSVOLCount"                   = 0
@@ -108,6 +113,11 @@
                 "SYSVOLSubscription"            = $false
                 "StopReplicationOnAutoRecovery" = $false
                 "DFSReplicatedFolderInfo"       = $null
+            }
+            if ($SkipGPO) {
+                $DomainSummary.Remove('GroupPolicyOutput')
+                $DomainSummary.Remove('GroupPolicyCount')
+                $DomainSummary.Remove('SYSVOLCount')
             }
             <#
             PS C:\Windows\system32> Get-CimData -NameSpace "root\microsoftdfs" -Class 'dfsrreplicatedfolderinfo' -ComputerName ad | Where-Object { $_.ReplicationGroupname -eq 'Domain System Volume' }
