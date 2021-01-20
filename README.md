@@ -48,7 +48,10 @@ Following links contain description of some of the features possible with this m
 
 ## Changelog
 
-- 0.0.104
+- 0.0.105 - 2021.01.20
+  - [x] Added `Get-WinADForestControllerInformation`
+  - [x] Added `Repair-WinADForestControllerInformation`
+- 0.0.104 - 2021.01.19
   - [x] Compatible with **PowerShell 5.1** and **7.1** and **7.2** (Windows only)
   - [x] Removed dependency on **GroupPolicy** module
   - [x] Removed `Get-WinADGPOMissingPermissions` -> Please use [GPOZaurr](https://github.com/EvotecIT/GPOZaurr) to deal with GPOs
