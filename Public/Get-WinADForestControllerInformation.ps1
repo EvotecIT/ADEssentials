@@ -7,7 +7,7 @@ function Get-WinADForestControllerInformation {
         [System.Collections.IDictionary] $ExtendedForestInformation
     )
     $Today = Get-Date
-    $ForestInformation = Get-WinADForestDetails -Extended -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation
+    $ForestInformation = Get-WinADForestDetails -Extended -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation -Verbose:$false
     foreach ($Domain in $ForestInformation.Domains) {
         $QueryServer = $ForestInformation['QueryServers'][$Domain]['HostName'][0]
         $DCs = Get-ADComputer -Server $QueryServer -SearchBase $ForestInformation['DomainsExtended'][$Domain].DomainControllersContainer -Filter * -Properties PrimaryGroupID, PrimaryGroup, Enabled, ManagedBy, OperatingSystem, OperatingSystemVersion, PasswordLastSet, PasswordExpired, PasswordNeverExpires, PasswordNotRequired, TrustedForDelegation, UseDESKeyOnly, TrustedToAuthForDelegation, WhenCreated, WhenChanged, LastLogonDate, IPv4Address, IPv6Address
@@ -15,7 +15,7 @@ function Get-WinADForestControllerInformation {
         foreach ($DC in $DCs) {
             $Count++
             Write-Verbose -Message "Get-WinADForestControllerInformation - Processing [$($Domain)]($Count/$($DCs.Count)) $($DC.DNSHostName)"
-            $Owner = Get-ADACLOwner -ADObject $DC.DistinguishedName -Resolve
+            $Owner = Get-ADACLOwner -ADObject $DC.DistinguishedName -Resolve #-Verbose:$false
 
             if ($null -ne $DC.LastLogonDate) {
                 [int] $LastLogonDays = "$(-$($DC.LastLogonDate - $Today).Days)"
