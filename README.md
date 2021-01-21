@@ -48,6 +48,9 @@ Following links contain description of some of the features possible with this m
 
 ## Changelog
 
+- 0.0.106 - 2021.01.21
+  - [x] Improved `Get-WinADForestControllerInformation`
+  - [x] Improved `Repair-WinADForestControllerInformation`
 - 0.0.105 - 2021.01.20
   - [x] Added `Get-WinADForestControllerInformation`
   - [x] Added `Repair-WinADForestControllerInformation`
