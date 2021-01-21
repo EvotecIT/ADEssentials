@@ -27,7 +27,7 @@
         } else {
             foreach ($Domain in $Forest.Domains) {
                 try {
-                    $Server = Get-ADDomainController -Discover -DomainName $Domain
+                    $Server = Get-ADDomainController -Discover -DomainName $Domain -Writable
                     $DomainInformation = Get-ADDomain -Server $Server.Hostname[0]
                 } catch {
                     Write-Warning "New-ADForestDrives - Can't process domain $Domain - $($_.Exception.Message)"
