@@ -15,7 +15,7 @@ function Get-WinADForestControllerInformation {
         foreach ($DC in $DCs) {
             $Count++
             Write-Verbose -Message "Get-WinADForestControllerInformation - Processing [$($Domain)]($Count/$($DCs.Count)) $($DC.DNSHostName)"
-            $Owner = Get-ADACLOwner -ADObject $DC.DistinguishedName -Resolve #-Verbose:$false
+            $Owner = Get-ADACLOwner -ADObject $DC.DistinguishedName -Resolve
 
             if ($null -ne $DC.LastLogonDate) {
                 [int] $LastLogonDays = "$(-$($DC.LastLogonDate - $Today).Days)"
@@ -28,7 +28,7 @@ function Get-WinADForestControllerInformation {
                 $PasswordLastChangedDays = $null
             }
 
-            $DNS = Resolve-DnsName -DnsOnly -Name $DC.DNSHostName -ErrorAction SilentlyContinue -QuickTimeout
+            $DNS = Resolve-DnsName -DnsOnly -Name $DC.DNSHostName -ErrorAction SilentlyContinue -QuickTimeout -Verbose:$false
             if ($DNS) {
                 $ResolvedIP = $DNS.IPAddress
                 $DNSStatus = $true
