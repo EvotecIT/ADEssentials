@@ -63,7 +63,7 @@
                 if ($null -eq $Hash.Owner) {
                     $Identity = $null
                 } else {
-                    $Identity = Convert-Identity -Identity $Hash.Owner
+                    $Identity = Convert-Identity -Identity $Hash.Owner -Verbose:$false
                 }
                 if ($Identity) {
                     $Hash['OwnerName'] = $Identity.Name
