@@ -28,18 +28,29 @@ function Get-WinADForestControllerInformation {
                 $PasswordLastChangedDays = $null
             }
 
+            $DNS = Resolve-DnsName -DnsOnly -Name $DC.DNSHostName -ErrorAction SilentlyContinue -QuickTimeout
+            if ($DNS) {
+                $ResolvedIP = $DNS.IPAddress
+                $DNSStatus = $true
+            } else {
+                $ResolvedIP = ''
+                $DNSStatus = $false
+            }
+
             [PSCustomObject] @{
                 DNSHostName                = $DC.DNSHostName
                 DomainName                 = $Domain
                 Enabled                    = $DC.Enabled
-                #PrimaryGroup               = $DC.PrimaryGroup
-                #PrimaryGroupID             = $DC.PrimaryGroupID
-                Owner                      = $Owner.OwnerName
-                OwnerSid                   = $Owner.OwnerSid
+                DNSStatus                  = $DNSStatus
+                IPAddressStatus            = $ResolvedIP -eq $DC.IPv4Address
+                ManagerNotSet              = $Null -eq $ManagedBy
                 OwnerType                  = $Owner.OwnerType
-                ManagedBy                  = $DC.ManagedBy
                 PasswordLastChangedDays    = $PasswordLastChangedDays
                 LastLogonDays              = $LastLogonDays
+                Owner                      = $Owner.OwnerName
+                OwnerSid                   = $Owner.OwnerSid
+                ManagedBy                  = $DC.ManagedBy
+                DNSResolvedIP              = $ResolvedIP
                 IPv4Address                = $DC.IPv4Address
                 IPv6Address                = $DC.IPv6Address
                 LastLogonDate              = $DC.LastLogonDate
