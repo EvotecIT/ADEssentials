@@ -12,12 +12,9 @@ function Repair-WinADForestControllerInformation {
     if (-not $ADAdministrativeGroups) {
         $ADAdministrativeGroups = Get-ADADministrativeGroups -Type DomainAdmins, EnterpriseAdmins -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ForestInformation
     }
-    #$Count = 0
     $Fixed = 0
     $DCs = Get-WinADForestControllerInformation -Forest $Forest -ExtendedForestInformation $ForestInformation -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains | ForEach-Object {
         $DC = $_
-        #Write-Verbose -Message "Repair-WinADForestControllerInformation - Processing [$($DC.DomainName)]($Count/$($DCs.Count)) $($DC.DNSHostName)"
-        #$Count++
         $Done = $false
         if ($Type -contains 'Owner') {
             if ($DC.OwnerType -ne 'Administrative') {
