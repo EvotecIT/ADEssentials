@@ -10,7 +10,7 @@ function Get-WinADForestControllerInformation {
     $ForestInformation = Get-WinADForestDetails -Extended -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation -Verbose:$false
     foreach ($Domain in $ForestInformation.Domains) {
         $QueryServer = $ForestInformation['QueryServers'][$Domain]['HostName'][0]
-        $DCs = Get-ADComputer -Server $QueryServer -SearchBase $ForestInformation['DomainsExtended'][$Domain].DomainControllersContainer -Filter * -Properties PrimaryGroupID, PrimaryGroup, Enabled, ManagedBy, OperatingSystem, OperatingSystemVersion, PasswordLastSet, PasswordExpired, PasswordNeverExpires, PasswordNotRequired, TrustedForDelegation, UseDESKeyOnly, TrustedToAuthForDelegation, WhenCreated, WhenChanged, LastLogonDate, IPv4Address, IPv6Address
+        $DCs = Get-ADComputer -Server $QueryServer -SearchBase $ForestInformation['DomainsExtended'][$Domain].DomainControllersContainer -Filter * -Properties * #PrimaryGroupID, PrimaryGroup, Enabled, ManagedBy, OperatingSystem, OperatingSystemVersion, PasswordLastSet, PasswordExpired, PasswordNeverExpires, PasswordNotRequired, TrustedForDelegation, UseDESKeyOnly, TrustedToAuthForDelegation, WhenCreated, WhenChanged, LastLogonDate, IPv4Address, IPv6Address
         $Count = 0
         foreach ($DC in $DCs) {
             $Count++
@@ -30,19 +30,23 @@ function Get-WinADForestControllerInformation {
 
             $DNS = Resolve-DnsName -DnsOnly -Name $DC.DNSHostName -ErrorAction SilentlyContinue -QuickTimeout -Verbose:$false
             if ($DNS) {
-                $ResolvedIP = $DNS.IPAddress
+                $ResolvedIP4 = ($DNS | Where-Object { $_.Type -eq 'A' }).IPAddress
+                $ResolvedIP6 = ($DNS | Where-Object { $_.Type -eq 'AAAA' }).IPAddress
                 $DNSStatus = $true
             } else {
-                $ResolvedIP = ''
+                $ResolvedIP4 = $null
+                $ResolvedIP6 = $null
                 $DNSStatus = $false
             }
-
             [PSCustomObject] @{
                 DNSHostName                = $DC.DNSHostName
                 DomainName                 = $Domain
                 Enabled                    = $DC.Enabled
                 DNSStatus                  = $DNSStatus
-                IPAddressStatus            = $ResolvedIP -eq $DC.IPv4Address
+                IPAddressStatusV4          = if ($ResolvedIP4 -eq $DC.IPv4Address) { $true } else { $false }
+                IPAddressStatusV6          = if ($ResolvedIP6 -eq $DC.IPv6Address) { $true } else { $false }
+                IPAddressSingleV4          = $ResolvedIP4 -isnot [Array]
+                IPAddressSingleV6          = $ResolvedIP6 -isnot [Array]
                 ManagerNotSet              = $Null -eq $ManagedBy
                 OwnerType                  = $Owner.OwnerType
                 PasswordLastChangedDays    = $PasswordLastChangedDays
@@ -50,7 +54,8 @@ function Get-WinADForestControllerInformation {
                 Owner                      = $Owner.OwnerName
                 OwnerSid                   = $Owner.OwnerSid
                 ManagedBy                  = $DC.ManagedBy
-                DNSResolvedIP              = $ResolvedIP
+                DNSResolvedIPv4            = $ResolvedIP4
+                DNSResolvedIPv6            = $ResolvedIP6
                 IPv4Address                = $DC.IPv4Address
                 IPv6Address                = $DC.IPv6Address
                 LastLogonDate              = $DC.LastLogonDate
