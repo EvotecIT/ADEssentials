@@ -45,8 +45,8 @@ function Get-WinADForestControllerInformation {
                 DNSStatus                  = $DNSStatus
                 IPAddressStatusV4          = if ($ResolvedIP4 -eq $DC.IPv4Address) { $true } else { $false }
                 IPAddressStatusV6          = if ($ResolvedIP6 -eq $DC.IPv6Address) { $true } else { $false }
-                IPAddressSingleV4          = $ResolvedIP4 -isnot [Array]
-                IPAddressSingleV6          = $ResolvedIP6 -isnot [Array]
+                IPAddressHasOneIpV4        = $ResolvedIP4 -isnot [Array]
+                IPAddressHasOneipV6        = $ResolvedIP6 -isnot [Array]
                 ManagerNotSet              = $Null -eq $ManagedBy
                 OwnerType                  = $Owner.OwnerType
                 PasswordLastChangedDays    = $PasswordLastChangedDays
