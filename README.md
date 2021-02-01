@@ -48,6 +48,8 @@ Following links contain description of some of the features possible with this m
 
 ## Changelog
 
+- 0.0.109 - 2021.02.01
+  - [x] Improved `Remove-WinADDuplicateObject`
 - 0.0.108 - 2021.01.27
   - [x] Improved `Get-WinADForestControllerInformation`
 - 0.0.107 - 2021.01.21
