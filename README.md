@@ -48,6 +48,8 @@ Following links contain description of some of the features possible with this m
 
 ## Changelog
 
+- 0.0.110 - 2021.02.03
+  - [x] Improved/fixed `Get-WinADPrivilegedObjects`
 - 0.0.109 - 2021.02.01
   - [x] Improved `Remove-WinADDuplicateObject`
 - 0.0.108 - 2021.01.27
