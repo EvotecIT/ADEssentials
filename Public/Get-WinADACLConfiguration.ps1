@@ -1,11 +1,45 @@
-﻿function Get-WinADForestObjectsPermissions {
-    [cmdletBinding()]
+﻿function Get-WinADACLConfiguration {
+    <#
+    .SYNOPSIS
+    Gets permissions or owners from configuration partition
+
+    .DESCRIPTION
+    Gets permissions or owners from configuration partition for one or multiple types
+
+    .PARAMETER ObjectType
+    Gets permissions or owners from one or multiple types (and only that type). Possible choices are sites, subnets, interSiteTransport, siteLink, wellKnownSecurityPrincipals
+
+    .PARAMETER ContainerType
+    Gets permissions or owners from one or multiple types (including containers and anything below it). Possible choices are sites, subnets, interSiteTransport, siteLink, wellKnownSecurityPrincipals, services
+
+    .PARAMETER Owner
+    Queries for Owners, instead of permissions
+
+    .PARAMETER Forest
+    Target different Forest, by default current forest is used
+
+    .PARAMETER ExtendedForestInformation
+    Ability to provide Forest Information from another command to speed up processing
+
+    .EXAMPLE
+    Get-WinADForestObjectsPermissions -ObjectType 'interSiteTransport', 'siteLink', 'wellKnownSecurityPrincipals' | Format-Table
+
+    .EXAMPLE
+    Get-WinADForestObjectsPermissions -ContainerType 'sites' -Owner | Format-Table
+
+    .NOTES
+    General notes
+    #>
+    [cmdletBinding(DefaultParameterSetName = 'ObjectType')]
     param(
-        [parameter(ParameterSetName = 'ObjectType')][ValidateSet('sites', 'subnets', 'interSiteTransport', 'siteLink', 'wellKnownSecurityPrincipals')][string[]] $ObjectType,
-        [parameter(ParameterSetName = 'FolderType')][ValidateSet('sites', 'subnets', 'interSiteTransport', 'siteLink', 'wellKnownSecurityPrincipals', 'services')][string[]] $ContainerType,
-        [switch] $Owner
+        [parameter(ParameterSetName = 'ObjectType', Mandatory)][ValidateSet('sites', 'subnets', 'interSiteTransport', 'siteLink', 'wellKnownSecurityPrincipals')][string[]] $ObjectType,
+        [parameter(ParameterSetName = 'FolderType', Mandatory)][ValidateSet('sites', 'subnets', 'interSiteTransport', 'siteLink', 'wellKnownSecurityPrincipals', 'services')][string[]] $ContainerType,
+        [switch] $Owner,
+
+        [string] $Forest,
+        [System.Collections.IDictionary] $ExtendedForestInformation
     )
-    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC -ExtendedForestInformation $ExtendedForestInformation
+    $ForestInformation = Get-WinADForestDetails -Forest $Forest -ExtendedForestInformation $ExtendedForestInformation
     $QueryServer = $ForestInformation.QueryServers[$($ForestInformation.Forest.Name)]['HostName'][0]
     $ForestDN = ConvertTo-DistinguishedName -ToDomain -CanonicalName $ForestInformation.Forest.Name
 
