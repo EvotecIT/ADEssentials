@@ -1,5 +1,5 @@
 ﻿Import-Module .\ADEssentials.psd1 -Force
 
-#Get-WinADForestObjectsPermissions -ObjectType 'interSiteTransport', 'siteLink', 'wellKnownSecurityPrincipals' | Format-Table
+#Get-WinADACLConfiguration -ObjectType 'interSiteTransport', 'siteLink', 'wellKnownSecurityPrincipals' | Format-Table
 
-Get-WinADForestObjectsPermissions -ContainerType 'sites' -Owner | Format-Table
+Get-WinADACLConfiguration -ContainerType 'sites' -Owner | Format-Table
