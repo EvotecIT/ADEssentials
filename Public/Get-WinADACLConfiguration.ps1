@@ -22,10 +22,10 @@
     Ability to provide Forest Information from another command to speed up processing
 
     .EXAMPLE
-    Get-WinADForestObjectsPermissions -ObjectType 'interSiteTransport', 'siteLink', 'wellKnownSecurityPrincipals' | Format-Table
+    Get-WinADACLConfiguration -ObjectType 'interSiteTransport', 'siteLink', 'wellKnownSecurityPrincipals' | Format-Table
 
     .EXAMPLE
-    Get-WinADForestObjectsPermissions -ContainerType 'sites' -Owner | Format-Table
+    Get-WinADACLConfiguration -ContainerType 'sites' -Owner | Format-Table
 
     .NOTES
     General notes
