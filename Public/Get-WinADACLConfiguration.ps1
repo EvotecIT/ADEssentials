@@ -32,8 +32,8 @@
     #>
     [cmdletBinding(DefaultParameterSetName = 'ObjectType')]
     param(
-        [parameter(ParameterSetName = 'ObjectType', Mandatory)][ValidateSet('sites', 'subnets', 'interSiteTransport', 'siteLink', 'wellKnownSecurityPrincipals')][string[]] $ObjectType,
-        [parameter(ParameterSetName = 'FolderType', Mandatory)][ValidateSet('sites', 'subnets', 'interSiteTransport', 'siteLink', 'wellKnownSecurityPrincipals', 'services')][string[]] $ContainerType,
+        [parameter(ParameterSetName = 'ObjectType', Mandatory)][ValidateSet('site', 'subnet', 'interSiteTransport', 'siteLink', 'wellKnownSecurityPrincipal')][string[]] $ObjectType,
+        [parameter(ParameterSetName = 'FolderType', Mandatory)][ValidateSet('site', 'subnet', 'interSiteTransport', 'siteLink', 'wellKnownSecurityPrincipal', 'service')][string[]] $ContainerType,
         [switch] $Owner,
 
         [string] $Forest,
@@ -44,7 +44,7 @@
     $ForestDN = ConvertTo-DistinguishedName -ToDomain -CanonicalName $ForestInformation.Forest.Name
 
     if ($ObjectType) {
-        if ($ObjectType -contains 'sites') {
+        if ($ObjectType -contains 'site') {
             $getADObjectSplat = @{
                 Server      = $QueryServer
                 LDAPFilter  = '(objectClass=site)'
@@ -54,7 +54,7 @@
             }
             Get-ADConfigurationPermission -ADObjectSplat $getADObjectSplat -ObjectType 'Site' -Owner:$Owner
         }
-        if ($ObjectType -contains 'subnets') {
+        if ($ObjectType -contains 'subnet') {
             $getADObjectSplat = @{
                 Server      = $QueryServer
                 LDAPFilter  = '(objectClass=subnet)'
@@ -84,7 +84,7 @@
             }
             Get-ADConfigurationPermission -ADObjectSplat $getADObjectSplat -ObjectType 'Site' -Owner:$Owner
         }
-        if ($ObjectType -contains 'wellKnownSecurityPrincipals') {
+        if ($ObjectType -contains 'wellKnownSecurityPrincipal') {
             $getADObjectSplat = @{
                 Server      = $QueryServer
                 LDAPFilter  = '(objectClass=foreignSecurityPrincipal)'
@@ -95,7 +95,7 @@
             Get-ADConfigurationPermission -ADObjectSplat $getADObjectSplat -ObjectType 'WellKnownSecurityPrincipals' -Owner:$Owner
         }
     } else {
-        if ($ContainerType -contains 'sites') {
+        if ($ContainerType -contains 'site') {
             $getADObjectSplat = @{
                 Server     = $QueryServer
                 #LDAPFilter  = '(objectClass=site)'
@@ -106,7 +106,7 @@
             }
             Get-ADConfigurationPermission -ADObjectSplat $getADObjectSplat -ObjectType 'Site' -FilterOut -Owner:$Owner
         }
-        if ($ContainerType -contains 'subnets') {
+        if ($ContainerType -contains 'subnet') {
             $getADObjectSplat = @{
                 Server     = $QueryServer
                 #LDAPFilter  = '(objectClass=subnet)'
@@ -139,7 +139,7 @@
             }
             Get-ADConfigurationPermission -ADObjectSplat $getADObjectSplat -ObjectType 'Site' -Owner:$Owner
         }
-        if ($ContainerType -contains 'services') {
+        if ($ContainerType -contains 'service') {
             $getADObjectSplat = @{
                 Server     = $QueryServer
                 #LDAPFilter  = '(objectClass=foreignSecurityPrincipal)'
@@ -150,7 +150,7 @@
             }
             Get-ADConfigurationPermission -ADObjectSplat $getADObjectSplat -ObjectType 'service' -Owner:$Owner
         }
-        if ($ContainerType -contains 'wellKnownSecurityPrincipals') {
+        if ($ContainerType -contains 'wellKnownSecurityPrincipal') {
             $getADObjectSplat = @{
                 Server     = $QueryServer
                 #LDAPFilter  = '(objectClass=foreignSecurityPrincipal)'
