@@ -49,7 +49,7 @@ Following links contain description of some of the features possible with this m
 ## Changelog
 
 - 0.0.111 - 2021.02.05
-  - [x] Added `Get-ADACLConfiguration`
+  - [x] Added `Get-WinADACLConfiguration`
 - 0.0.110 - 2021.02.03
   - [x] Improved/fixed `Get-WinADPrivilegedObjects`
 - 0.0.109 - 2021.02.01
