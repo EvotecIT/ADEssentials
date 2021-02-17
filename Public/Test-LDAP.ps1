@@ -13,111 +13,81 @@
         Add-Type -Assembly System.DirectoryServices.Protocols
     }
     Process {
-        # Checks for ServerName - Makes sure to convert IPAddress to DNS
         foreach ($Computer in $ComputerName) {
             Write-Verbose "Test-LDAP - Processing $Computer"
-            [Array] $ADServerFQDN = (Resolve-DnsName -Name $Computer -ErrorAction SilentlyContinue)
-            if ($ADServerFQDN) {
-                if ($ADServerFQDN.NameHost) {
+            # Checks for ServerName - Makes sure to convert IPAddress to DNS, otherwise SSL won't work
+            $IPAddressCheck = [System.Net.IPAddress]::TryParse($Computer, [ref][ipaddress]::Any)
+            $IPAddressMatch = $Computer -match '^(\d+\.){3}\d+$'
+            if ($IPAddressCheck -and $IPAddressMatch) {
+                [Array] $ADServerFQDN = (Resolve-DnsName -Name $Computer -ErrorAction SilentlyContinue -Type PTR -Verbose:$false)
+                if ($ADServerFQDN.Count -gt 0) {
                     $ServerName = $ADServerFQDN[0].NameHost
                 } else {
-                    [Array] $ADServerFQDN = (Resolve-DnsName -Name $Computer -ErrorAction SilentlyContinue)
-                    $FilterName = $ADServerFQDN | Where-Object { $_.QueryType -eq 'A' }
-                    $ServerName = $FilterName[0].Name
+                    $ServerName = $Computer
                 }
             } else {
-                $ServerName = ''
+                [Array] $ADServerFQDN = (Resolve-DnsName -Name $Computer -ErrorAction SilentlyContinue -Type A -Verbose:$false)
+                if ($ADServerFQDN.Count -gt 0) {
+                    $ServerName = $ADServerFQDN[0].Name
+                } else {
+                    $ServerName = $Computer
+                }
             }
+            if ($ServerName -notlike '*.*') {
+                $FQDN = $false
+                # querying SSL won't work for non-fqdn, we check if after all our checks it's string with dot.
+                $GlobalCatalogSSL = [PSCustomObject] @{ Status = $false; ErrorMessage = 'No FQDN' }
+                $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP
+                $ConnectionLDAPS = [PSCustomObject] @{ Status = $false; ErrorMessage = 'No FQDN' }
+                $ConnectionLDAP = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAP
 
-            $GlobalCatalogSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAPSSL
-            $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP
-            $ConnectionLDAPS = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAPS
-            $ConnectionLDAP = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAP
+                $PortsThatWork = @(
+                    if ($GlobalCatalogNonSSL.Status) { $GCPortLDAP }
+                    if ($GlobalCatalogSSL.Status) { $GCPortLDAPSSL }
+                    if ($ConnectionLDAP.Status) { $PortLDAP }
+                    if ($ConnectionLDAPS.Status) { $PortLDAPS }
+                ) | Sort-Object
+            } else {
+                $FQDN = $true
+                $GlobalCatalogSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAPSSL
+                $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP
+                $ConnectionLDAPS = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAPS
+                $ConnectionLDAP = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAP
 
-            $PortsThatWork = @(
-                if ($GlobalCatalogNonSSL) { $GCPortLDAP }
-                if ($GlobalCatalogSSL) { $GCPortLDAPSSL }
-                if ($ConnectionLDAP) { $PortLDAP }
-                if ($ConnectionLDAPS) { $PortLDAPS }
-            ) | Sort-Object
+                $PortsThatWork = @(
+                    if ($GlobalCatalogNonSSL.Status) { $GCPortLDAP }
+                    if ($GlobalCatalogSSL.Status) { $GCPortLDAPSSL }
+                    if ($ConnectionLDAP.Status) { $PortLDAP }
+                    if ($ConnectionLDAPS.Status) { $PortLDAPS }
+                ) | Sort-Object
+            }
             $Output = [ordered] @{
-                Computer           = $Computer
-                ComputerFQDN       = $ServerName
-                GlobalCatalogLDAP  = $GlobalCatalogNonSSL
-                GlobalCatalogLDAPS = $GlobalCatalogSSL
-                LDAP               = $ConnectionLDAP
-                LDAPS              = $ConnectionLDAPS
-                AvailablePorts     = $PortsThatWork -join ','
+                Computer               = $Computer
+                ComputerFQDN           = $ServerName
+                GlobalCatalogLDAP      = $GlobalCatalogNonSSL.Status
+                GlobalCatalogLDAPS     = $GlobalCatalogSSL.Status
+                GlobalCatalogLDAPSBind = $null
+                LDAP                   = $ConnectionLDAP.Status
+                LDAPS                  = $ConnectionLDAPS.Status
+                LDAPSBind              = $null
+                AvailablePorts         = $PortsThatWork -join ','
+                FQDN                   = $FQDN
             }
             if ($VerifyCertificate) {
-                Write-Verbose "Test-LDAP - Processing $Computer / Verifying Certificate"
-                # code based on ChrisDent
-                $connection = $null
-                $directoryIdentifier = [DirectoryServices.Protocols.LdapDirectoryIdentifier]::new($Computer, $PortLDAPS)
                 if ($psboundparameters.ContainsKey("Credential")) {
-                    $connection = [DirectoryServices.Protocols.LdapConnection]::new($directoryIdentifier, $Credential.GetNetworkCredential())
-                    $connection.AuthType = [DirectoryServices.Protocols.AuthType]::Basic
+                    $Certificate = Test-LDAPCertificate -Computer $ServerName -Port $PortLDAPS -Credential $Credential
+                    $CertificateGC = Test-LDAPCertificate -Computer $ServerName -Port $GCPortLDAPSSL -Credential $Credential
                 } else {
-                    $connection = [DirectoryServices.Protocols.LdapConnection]::new($directoryIdentifier)
-                    $connection.AuthType = [DirectoryServices.Protocols.AuthType]::Kerberos
+                    $Certificate = Test-LDAPCertificate -Computer $ServerName -Port $PortLDAPS
+                    $CertificateGC = Test-LDAPCertificate -Computer $ServerName -Port $GCPortLDAPSSL
                 }
-                $connection.SessionOptions.ProtocolVersion = 3
-                $connection.SessionOptions.SecureSocketLayer = $true
-
-                # Declare a script level variable which can be used to return information from the delegate.
-                New-Variable LdapCertificate -Scope Script -Force
-
-                # Create a callback delegate to retrieve the negotiated certificate.
-                # Note:
-                #   * The certificate is unlikely to return the subject.
-                #   * The delegate is documented as using the X509Certificate type, automatically casting this to X509Certificate2 allows access to more information.
-                $connection.SessionOptions.VerifyServerCertificate = {
-                    param(
-                        [DirectoryServices.Protocols.LdapConnection]$Connection,
-                        [Security.Cryptography.X509Certificates.X509Certificate2]$Certificate
-                    )
-                    $Script:LdapCertificate = $Certificate
-                    return $true
-                }
-
-                $state = "Connected"
-                try {
-                    $connection.Bind()
-                } catch {
-                    $state = "Failed ($($_.Exception.InnerException.Message.Trim()))"
-                }
-                $KeyExchangeAlgorithm = @{
-                    # https://docs.microsoft.com/en-us/dotnet/api/system.security.authentication.exchangealgorithmtype?view=netcore-3.1
-                    '0'     = 'None' # No key exchange algorithm is used.
-                    '43522' = 'DiffieHellman' # The Diffie Hellman ephemeral key exchange algorithm.
-                    '41984' = 'RsaKeyX' # The RSA public-key exchange algorithm.
-                    '9216'  = 'RsaSign' # The RSA public-key signature algorithm.
-                    '44550' = 'ECDH_Ephem'
-                }
-
-                $Certificate = [ordered]@{
-                    State                   = $state
-                    Protocol                = $connection.SessionOptions.SslInformation.Protocol
-                    AlgorithmIdentifier     = $connection.SessionOptions.SslInformation.AlgorithmIdentifier
-                    CipherStrength          = $connection.SessionOptions.SslInformation.CipherStrength
-                    Hash                    = $connection.SessionOptions.SslInformation.Hash
-                    HashStrength            = $connection.SessionOptions.SslInformation.HashStrength
-                    KeyExchangeAlgorithm    = $KeyExchangeAlgorithm["$($Connection.SessionOptions.SslInformation.KeyExchangeAlgorithm)"]
-                    ExchangeStrength        = $connection.SessionOptions.SslInformation.ExchangeStrength
-                    X509FriendlyName        = $Script:LdapCertificate.FriendlyName
-                    X509SendAsTrustedIssuer = $Script:LdapCertificate.SendAsTrustedIssuer
-                    X509NotAfter            = $Script:LdapCertificate.NotAfter
-                    X509NotBefore           = $Script:LdapCertificate.NotBefore
-                    X509SerialNumber        = $Script:LdapCertificate.SerialNumber
-                    X509Thumbprint          = $Script:LdapCertificate.Thumbprint
-                    X509SubjectName         = $Script:LdapCertificate.Subject
-                    X509Issuer              = $Script:LdapCertificate.Issuer
-                    X509HasPrivateKey       = $Script:LdapCertificate.HasPrivateKey
-                    X509Version             = $Script:LdapCertificate.Version
-                    X509Archived            = $Script:LdapCertificate.Archived
-
-                }
+                $Output['LDAPSBind'] = $Certificate.State
+                $Output['GlobalCatalogLDAPSBind'] = $CertificateGC.State
+                $Certificate.Remove('State')
                 $Output = $Output + $Certificate
+            } else {
+                $Output.Remove('LDAPSBind')
+                $Output.Remove('GlobalCatalogLDAPSBind')
             }
             [PSCustomObject] $Output
         }
