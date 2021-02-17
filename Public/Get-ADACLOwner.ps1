@@ -3,6 +3,7 @@
     param(
         [Array] $ADObject,
         [switch] $Resolve,
+        [switch] $AddACL,
         [System.Collections.IDictionary] $ADAdministrativeGroups,
 
         [alias('ForestName')][string] $Forest,
@@ -45,19 +46,24 @@
                 $ACLs = Get-Acl -Path $PathACL -ErrorAction Stop
                 $Hash = [ordered] @{
                     DistinguishedName = $DistinguishedName
+                    CanonicalName     = $CanonicalName
+                    ObjectClass       = $ObjectClass
                     Owner             = $ACLs.Owner
-                    ACLs              = $ACLs
                 }
                 $ErrorMessage = ''
             } catch {
+                $ACLs = $null
                 $Hash = [ordered] @{
                     DistinguishedName = $DistinguishedName
+                    CanonicalName     = $CanonicalName
+                    ObjectClass       = $ObjectClass
                     Owner             = $null
-                    ACLs              = $null
                 }
                 $ErrorMessage = $_.Exception.Message
             }
-
+            if ($AddACL) {
+                $Hash['ACLs'] = $ACLs
+            }
             if ($Resolve) {
                 #$Identity = ConvertTo-Identity -Identity $Hash.Owner -ExtendedForestInformation $ForestInformation -ADAdministrativeGroups $ADAdministrativeGroups
                 if ($null -eq $Hash.Owner) {
@@ -69,18 +75,15 @@
                     $Hash['OwnerName'] = $Identity.Name
                     $Hash['OwnerSid'] = $Identity.SID
                     $Hash['OwnerType'] = $Identity.Type
-                    #$Hash['OwnerClass'] = $Identity.Class
                 } else {
                     $Hash['OwnerName'] = ''
                     $Hash['OwnerSid'] = ''
                     $Hash['OwnerType'] = ''
-                    #$Hash['OwnerClass'] = ''
                 }
             }
             $Hash['Error'] = $ErrorMessage
             [PSCustomObject] $Hash
         }
-
     }
     End { }
 }
