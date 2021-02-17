@@ -6,7 +6,7 @@
         #[Object] $Server,
         [string] $ForestName,
         [switch] $Extended,
-        [switch] $ResolveTypes,
+        [alias('ResolveTypes')][switch] $Resolve,
         [switch] $Inherited,
         [switch] $NotInherited,
         [switch] $Bundle,
@@ -121,7 +121,7 @@
                 }
                 $ReturnObject['AccessControlType'] = $ACL.AccessControlType
                 $ReturnObject['Principal'] = $IdentityReference
-                if ($ResolveTypes) {
+                if ($Resolve) {
                     $IdentityResolve = Get-WinADObject -Identity $IdentityReference -AddType -Verbose:$false
                     if (-not $IdentityResolve) {
                         #Write-Verbose "Get-ADACL - Reverting to Convert-Identity for $IdentityReference"
