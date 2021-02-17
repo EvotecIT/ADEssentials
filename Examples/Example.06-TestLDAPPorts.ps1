@@ -1,3 +1,4 @@
 ﻿Import-Module $PSScriptRoot\..\ADEssentials.psd1 -Force
 
-Test-LDAP -ComputerName 'AD1','AD2','ADPREVIEW2019','DC1','AD4','ADRODC' -WarningAction SilentlyContinue | Format-Table
+#Test-LDAP -ComputerName 'AD1', 'AD2', 'DC1', 'AD3', 'ADRODC', 'ad1.ad.evotec.xyz', 'ad.evotec.xyz', '192.168.240.189' -Verify | Format-Table * #-WarningAction SilentlyContinue | Format-Table *
+Test-LDAP -ComputerName 'AD1', 'DC1' -Verify | Format-List * #-WarningAction SilentlyContinue | Format-Table *
