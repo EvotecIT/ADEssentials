@@ -48,6 +48,9 @@ Following links contain description of some of the features possible with this m
 
 ## Changelog
 
+- 0.0.113 - 2021.02.17
+  - [x] Improved `Get-WinADACLConfiguration`
+  - [x] Added `Repair-WinADACLConfigurationOwner`
 - 0.0.112 - 2021.02.05
   - [x] Improved `Get-WinADACLConfiguration`
 - 0.0.111 - 2021.02.05
