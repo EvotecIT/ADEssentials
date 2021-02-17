@@ -6,7 +6,11 @@
         [switch] $FilterOut,
         [switch] $Owner
     )
-    $Objects = Get-ADObject @ADObjectSplat
+    try {
+        $Objects = Get-ADObject @ADObjectSplat -ErrorAction Stop
+    } catch {
+        Write-Warning "Get-ADConfigurationPermission - LDAP Filter: $($ADObjectSplat.LDAPFilter), SearchBase: $($ADObjectSplat.SearchBase)), Error: $($_.Exception.Message)"
+    }
     foreach ($O in $Objects) {
         if ($FilterOut) {
             if ($ObjectType -eq 'site') {
@@ -19,6 +23,7 @@
             }
         }
         if ($Owner) {
+            Write-Verbose "Get-ADConfigurationPermission - Getting Owner from $($O.DistinguishedName)"
             $OwnerACL = Get-ADACLOwner -ADObject $O.DistinguishedName -Resolve
             [PSCustomObject] @{
                 Name              = $O.Name
