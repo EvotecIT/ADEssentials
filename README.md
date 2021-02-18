@@ -48,6 +48,9 @@ Following links contain description of some of the features possible with this m
 
 ## Changelog
 
+- 0.0.116 - 2021.02.18
+  - [x] Improved `Get-WinADACLForest`
+  - [x] Improved `Test-LDAP`
 - 0.0.115 - 2021.02.17
   - [x] Improved `Test-LDAP`
 - 0.0.114 - 2021.02.17
