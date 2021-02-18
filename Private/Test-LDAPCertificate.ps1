@@ -58,18 +58,13 @@
 
     $Certificate = [ordered]@{
         State                   = $State
-        Protocol                = $Connection.SessionOptions.SslInformation.Protocol
         AlgorithmIdentifier     = $Connection.SessionOptions.SslInformation.AlgorithmIdentifier
         CipherStrength          = $Connection.SessionOptions.SslInformation.CipherStrength
-        Hash                    = $Connection.SessionOptions.SslInformation.Hash
-        HashStrength            = $Connection.SessionOptions.SslInformation.HashStrength
-        KeyExchangeAlgorithm    = $KeyExchangeAlgorithm["$($Connection.SessionOptions.SslInformation.KeyExchangeAlgorithm)"]
-        ExchangeStrength        = $Connection.SessionOptions.SslInformation.ExchangeStrength
-        X509FriendlyName        = $Script:LdapCertificate.FriendlyName
-        X509DnsNameList         = $Script:LdapCertificate.DnsNameList.Unicode
-        X509SendAsTrustedIssuer = $Script:LdapCertificate.SendAsTrustedIssuer
-        X509NotAfter            = $Script:LdapCertificate.NotAfter
         X509NotBefore           = $Script:LdapCertificate.NotBefore
+        X509NotAfter            = $Script:LdapCertificate.NotAfter
+        X509DnsNameList         = $Script:LdapCertificate.DnsNameList.Unicode
+        X509FriendlyName        = $Script:LdapCertificate.FriendlyName
+        X509SendAsTrustedIssuer = $Script:LdapCertificate.SendAsTrustedIssuer
         X509SerialNumber        = $Script:LdapCertificate.SerialNumber
         X509Thumbprint          = $Script:LdapCertificate.Thumbprint
         X509SubjectName         = $Script:LdapCertificate.Subject
@@ -77,6 +72,11 @@
         X509HasPrivateKey       = $Script:LdapCertificate.HasPrivateKey
         X509Version             = $Script:LdapCertificate.Version
         X509Archived            = $Script:LdapCertificate.Archived
+        Protocol                = $Connection.SessionOptions.SslInformation.Protocol
+        Hash                    = $Connection.SessionOptions.SslInformation.Hash
+        HashStrength            = $Connection.SessionOptions.SslInformation.HashStrength
+        KeyExchangeAlgorithm    = $KeyExchangeAlgorithm["$($Connection.SessionOptions.SslInformation.KeyExchangeAlgorithm)"]
+        ExchangeStrength        = $Connection.SessionOptions.SslInformation.ExchangeStrength
         ErrorMessage            = $ErrorMessage
     }
     $Certificate
