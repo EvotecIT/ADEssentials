@@ -69,9 +69,12 @@
         [switch] $Owner,
         [switch] $Separate
     )
+    $ForestTime = Start-TimeLog
     $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation -Extended
     $Output = [ordered]@{}
     foreach ($Domain in $ForestInformation.Domains) {
+        Write-Verbose "Get-WinADACLForest - [Start][Domain $Domain]"
+        $DomainTime = Start-TimeLog
         $Output[$Domain] = [ordered] @{}
         $Server = $ForestInformation.QueryServers[$Domain].HostName[0]
         $DomainStructure = @(
@@ -80,11 +83,19 @@
         )
         $DomainStructure = $DomainStructure | Sort-Object -Property canonicalName
         foreach ($Structure in $DomainStructure) {
-            $ObjectName = "[$Domain][$($Structure.CanonicalName)][$($Structure.ObjectClass)]"
+            $Time = Start-TimeLog
+            $ObjectName = "[$Domain][$($Structure.CanonicalName)][$($Structure.ObjectClass)][$($Structure.DistinguishedName)]"
             $ObjectOutputName = "$($Structure.Name)_$($Structure.ObjectClass)".Replace(' ', '').ToLower()
-            Write-Verbose "Get-WinADACLForest - $ObjectName"
+            Write-Verbose "Get-WinADACLForest - [Start]$ObjectName"
             if ($Structure.ObjectClass -eq 'organizationalUnit') {
-                $Containers = Get-ADOrganizationalUnit -Filter '*' -Server $Server -SearchBase $Structure.DistinguishedName -Properties canonicalName
+                #$Containers = Get-ADOrganizationalUnit -Filter '*' -Server $Server -SearchBase $Structure.DistinguishedName -Properties canonicalName
+                $Containers = Get-ADObject -SearchBase $Structure.DistinguishedName -Filter * -Properties canonicalName -Server $Server -SearchScope Subtree | ForEach-Object {
+                    foreach ($I in $Ignore) {
+                        if ($_.DistinguishedName -notlike $I) {
+                            $_
+                        }
+                    }
+                } | Sort-Object canonicalName
             } elseif ($Structure.ObjectClass -eq 'domainDNS') {
                 $Containers = $Structure
             } elseif ($Structure.ObjectClass -eq 'container') {
@@ -101,6 +112,7 @@
                     }
                 } | Sort-Object canonicalName
             } else {
+                Write-Verbose "Get-WinADACLForest - [Skip  ]$ObjectName[ObjectClass not requested]"
                 continue
             }
             if ($Owner) {
@@ -113,8 +125,14 @@
             } else {
                 $MYACL
             }
+            $EndTime = Stop-TimeLog -Time $Time -Option OneLiner
+            Write-Verbose "Get-WinADACLForest - [End  ]$ObjectName[$EndTime]"
         }
+        $DomainEndTime = Stop-TimeLog -Time $DomainTime -Option OneLiner
+        Write-Verbose "Get-WinADACLForest - [End  ][Domain $Domain][$DomainEndTime]"
     }
+    $ForestEndTime = Stop-TimeLog -Time $ForestTime -Option OneLiner
+    Write-Verbose "Get-WinADACLForest - [End  ][Forest][$ForestEndTime]"
     if ($Separate) {
         $Output
     }
