@@ -57,12 +57,23 @@
         '44550' = 'ECDH_Ephem'
     }
 
+    if ($Script:LdapCertificate.NotBefore -is [DateTime]) {
+        $X509NotBeforeDays = (New-TimeSpan -Start $Date -End $Script:LdapCertificate.NotBefore).Days
+    } else {
+        $X509NotBeforeDays = $null
+    }
+    if ($Script:LdapCertificate.NotAfter -is [DateTime]) {
+        $X509NotAfterDays = (New-TimeSpan -Start $Date -End $Script:LdapCertificate.NotAfter).Days
+    } else {
+        $X509NotAfterDays = $null
+    }
+
     $Certificate = [ordered]@{
         State                   = $State
         AlgorithmIdentifier     = $Connection.SessionOptions.SslInformation.AlgorithmIdentifier
         CipherStrength          = $Connection.SessionOptions.SslInformation.CipherStrength
-        X509NotBeforeDays       = (New-TimeSpan -Start $Date -End $Script:LdapCertificate.NotBefore).Days
-        X509NotAfterDays        = (New-TimeSpan -Start $Date -End $Script:LdapCertificate.NotAfter).Days
+        X509NotBeforeDays       = $X509NotBeforeDays
+        X509NotAfterDays        = $X509NotAfterDays
         X509DnsNameList         = $Script:LdapCertificate.DnsNameList.Unicode
         X509NotBefore           = $Script:LdapCertificate.NotBefore
         X509NotAfter            = $Script:LdapCertificate.NotAfter
