@@ -5,6 +5,7 @@
         [int] $Port,
         [PSCredential] $Credential
     )
+    $Date = Get-Date
     if ($Credential) {
         Write-Verbose "Test-LDAPCertificate - Certificate verification $Computer/$Port/Auth Basic"
     } else {
@@ -60,9 +61,11 @@
         State                   = $State
         AlgorithmIdentifier     = $Connection.SessionOptions.SslInformation.AlgorithmIdentifier
         CipherStrength          = $Connection.SessionOptions.SslInformation.CipherStrength
+        X509NotBeforeDays       = (New-TimeSpan -Start $Date -End $Script:LdapCertificate.NotBefore).Days
+        X509NotAfterDays        = (New-TimeSpan -Start $Date -End $Script:LdapCertificate.NotAfter).Days
+        X509DnsNameList         = $Script:LdapCertificate.DnsNameList.Unicode
         X509NotBefore           = $Script:LdapCertificate.NotBefore
         X509NotAfter            = $Script:LdapCertificate.NotAfter
-        X509DnsNameList         = $Script:LdapCertificate.DnsNameList.Unicode
         X509FriendlyName        = $Script:LdapCertificate.FriendlyName
         X509SendAsTrustedIssuer = $Script:LdapCertificate.SendAsTrustedIssuer
         X509SerialNumber        = $Script:LdapCertificate.SerialNumber
