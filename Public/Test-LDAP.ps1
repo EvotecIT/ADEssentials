@@ -1,95 +1,52 @@
 ﻿Function Test-LDAP {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Forest')]
     param (
-        [alias('Server', 'IpAddress')][Parameter(Mandatory, ValueFromPipelineByPropertyName, ValueFromPipeline)][string[]]$ComputerName,
+        [Parameter(ParameterSetName = 'Forest')][alias('ForestName')][string] $Forest,
+        [Parameter(ParameterSetName = 'Forest')][string[]] $ExcludeDomains,
+        [Parameter(ParameterSetName = 'Forest')][string[]] $ExcludeDomainControllers,
+        [Parameter(ParameterSetName = 'Forest')][alias('Domain', 'Domains')][string[]] $IncludeDomains,
+        [Parameter(ParameterSetName = 'Forest')][alias('DomainControllers')][string[]] $IncludeDomainControllers,
+        [Parameter(ParameterSetName = 'Forest')][switch] $SkipRODC,
+
+        [alias('Server', 'IpAddress')][Parameter(ValueFromPipelineByPropertyName, ValueFromPipeline, Mandatory, ParameterSetName = 'Computer')][string[]]$ComputerName,
+
+        [Parameter(ParameterSetName = 'Forest')]
+        [Parameter(ParameterSetName = 'Computer')]
         [int] $GCPortLDAP = 3268,
+        [Parameter(ParameterSetName = 'Forest')]
+        [Parameter(ParameterSetName = 'Computer')]
         [int] $GCPortLDAPSSL = 3269,
+        [Parameter(ParameterSetName = 'Forest')]
+        [Parameter(ParameterSetName = 'Computer')]
         [int] $PortLDAP = 389,
+        [Parameter(ParameterSetName = 'Forest')]
+        [Parameter(ParameterSetName = 'Computer')]
         [int] $PortLDAPS = 636,
+        [Parameter(ParameterSetName = 'Forest')]
+        [Parameter(ParameterSetName = 'Computer')]
         [switch] $VerifyCertificate,
+        [Parameter(ParameterSetName = 'Forest')]
+        [Parameter(ParameterSetName = 'Computer')]
         [PSCredential] $Credential
     )
     begin {
         Add-Type -Assembly System.DirectoryServices.Protocols
+        if (-not $ComputerName) {
+            $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation -Extended
+        }
     }
     Process {
-        foreach ($Computer in $ComputerName) {
-            Write-Verbose "Test-LDAP - Processing $Computer"
-            # Checks for ServerName - Makes sure to convert IPAddress to DNS, otherwise SSL won't work
-            $IPAddressCheck = [System.Net.IPAddress]::TryParse($Computer, [ref][ipaddress]::Any)
-            $IPAddressMatch = $Computer -match '^(\d+\.){3}\d+$'
-            if ($IPAddressCheck -and $IPAddressMatch) {
-                [Array] $ADServerFQDN = (Resolve-DnsName -Name $Computer -ErrorAction SilentlyContinue -Type PTR -Verbose:$false)
-                if ($ADServerFQDN.Count -gt 0) {
-                    $ServerName = $ADServerFQDN[0].NameHost
-                } else {
-                    $ServerName = $Computer
-                }
-            } else {
-                [Array] $ADServerFQDN = (Resolve-DnsName -Name $Computer -ErrorAction SilentlyContinue -Type A -Verbose:$false)
-                if ($ADServerFQDN.Count -gt 0) {
-                    $ServerName = $ADServerFQDN[0].Name
-                } else {
-                    $ServerName = $Computer
-                }
+        if ($ComputerName) {
+            foreach ($Computer in $ComputerName) {
+                Write-Verbose "Test-LDAP - Processing $Computer"
+                $ServerName = ConvertTo-ComputerFQDN -Computer $Computer
+                Test-LdapServer -ServerName $ServerName -Computer $Computer
             }
-            if ($ServerName -notlike '*.*') {
-                $FQDN = $false
-                # querying SSL won't work for non-fqdn, we check if after all our checks it's string with dot.
-                $GlobalCatalogSSL = [PSCustomObject] @{ Status = $false; ErrorMessage = 'No FQDN' }
-                $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP
-                $ConnectionLDAPS = [PSCustomObject] @{ Status = $false; ErrorMessage = 'No FQDN' }
-                $ConnectionLDAP = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAP
-
-                $PortsThatWork = @(
-                    if ($GlobalCatalogNonSSL.Status) { $GCPortLDAP }
-                    if ($GlobalCatalogSSL.Status) { $GCPortLDAPSSL }
-                    if ($ConnectionLDAP.Status) { $PortLDAP }
-                    if ($ConnectionLDAPS.Status) { $PortLDAPS }
-                ) | Sort-Object
-            } else {
-                $FQDN = $true
-                $GlobalCatalogSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAPSSL
-                $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP
-                $ConnectionLDAPS = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAPS
-                $ConnectionLDAP = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAP
-
-                $PortsThatWork = @(
-                    if ($GlobalCatalogNonSSL.Status) { $GCPortLDAP }
-                    if ($GlobalCatalogSSL.Status) { $GCPortLDAPSSL }
-                    if ($ConnectionLDAP.Status) { $PortLDAP }
-                    if ($ConnectionLDAPS.Status) { $PortLDAPS }
-                ) | Sort-Object
+        } else {
+            foreach ($Computer in $ForestInformation.ForestDomainControllers) {
+                Write-Verbose "Test-LDAP - Processing $($Computer.HostName)"
+                Test-LdapServer -ServerName $($Computer.HostName) -Computer $Computer.HostName
             }
-            $Output = [ordered] @{
-                Computer               = $Computer
-                ComputerFQDN           = $ServerName
-                GlobalCatalogLDAP      = $GlobalCatalogNonSSL.Status
-                GlobalCatalogLDAPS     = $GlobalCatalogSSL.Status
-                GlobalCatalogLDAPSBind = $null
-                LDAP                   = $ConnectionLDAP.Status
-                LDAPS                  = $ConnectionLDAPS.Status
-                LDAPSBind              = $null
-                AvailablePorts         = $PortsThatWork -join ','
-                FQDN                   = $FQDN
-            }
-            if ($VerifyCertificate) {
-                if ($psboundparameters.ContainsKey("Credential")) {
-                    $Certificate = Test-LDAPCertificate -Computer $ServerName -Port $PortLDAPS -Credential $Credential
-                    $CertificateGC = Test-LDAPCertificate -Computer $ServerName -Port $GCPortLDAPSSL -Credential $Credential
-                } else {
-                    $Certificate = Test-LDAPCertificate -Computer $ServerName -Port $PortLDAPS
-                    $CertificateGC = Test-LDAPCertificate -Computer $ServerName -Port $GCPortLDAPSSL
-                }
-                $Output['LDAPSBind'] = $Certificate.State
-                $Output['GlobalCatalogLDAPSBind'] = $CertificateGC.State
-                $Certificate.Remove('State')
-                $Output = $Output + $Certificate
-            } else {
-                $Output.Remove('LDAPSBind')
-                $Output.Remove('GlobalCatalogLDAPSBind')
-            }
-            [PSCustomObject] $Output
         }
     }
 }
