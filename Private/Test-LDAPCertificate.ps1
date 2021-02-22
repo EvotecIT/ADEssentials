@@ -70,13 +70,13 @@
 
     $Certificate = [ordered]@{
         State                   = $State
-        AlgorithmIdentifier     = $Connection.SessionOptions.SslInformation.AlgorithmIdentifier
-        CipherStrength          = $Connection.SessionOptions.SslInformation.CipherStrength
         X509NotBeforeDays       = $X509NotBeforeDays
         X509NotAfterDays        = $X509NotAfterDays
         X509DnsNameList         = $Script:LdapCertificate.DnsNameList.Unicode
         X509NotBefore           = $Script:LdapCertificate.NotBefore
         X509NotAfter            = $Script:LdapCertificate.NotAfter
+        AlgorithmIdentifier     = $Connection.SessionOptions.SslInformation.AlgorithmIdentifier
+        CipherStrength          = $Connection.SessionOptions.SslInformation.CipherStrength
         X509FriendlyName        = $Script:LdapCertificate.FriendlyName
         X509SendAsTrustedIssuer = $Script:LdapCertificate.SendAsTrustedIssuer
         X509SerialNumber        = $Script:LdapCertificate.SerialNumber
