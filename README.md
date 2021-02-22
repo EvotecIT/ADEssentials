@@ -48,6 +48,8 @@ Following links contain description of some of the features possible with this m
 
 ## Changelog
 
+- 0.0.118 - 2021.02.22
+  - [x] Improved `Test-LDAP`
 - 0.0.117 - 2021.02.19
   - [x] Improved `Test-LDAP`
 - 0.0.116 - 2021.02.18
