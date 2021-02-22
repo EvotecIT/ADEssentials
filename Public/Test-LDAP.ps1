@@ -104,7 +104,7 @@
         } else {
             foreach ($Computer in $ForestInformation.ForestDomainControllers) {
                 Write-Verbose "Test-LDAP - Processing $($Computer.HostName)"
-                Test-LdapServer -ServerName $($Computer.HostName) -Computer $Computer.HostName
+                Test-LdapServer -ServerName $($Computer.HostName) -Computer $Computer.HostName -Advanced $Computer
             }
         }
     }
