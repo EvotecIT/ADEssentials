@@ -2,7 +2,8 @@
     [cmdletBinding()]
     param(
         [string] $ServerName,
-        [string] $Computer
+        [string] $Computer,
+        [PSCustomObject] $Advanced
     )
     if ($ServerName -notlike '*.*') {
         $FQDN = $false
@@ -34,6 +35,8 @@
     }
     $Output = [ordered] @{
         Computer               = $ServerName
+        IsReadOnly             = $Advanced.IsReadOnly
+        IsGC                   = $Advanced.IsGlobalCatalog
         GlobalCatalogLDAP      = $GlobalCatalogNonSSL.Status
         GlobalCatalogLDAPS     = $GlobalCatalogSSL.Status
         GlobalCatalogLDAPSBind = $null
@@ -42,6 +45,11 @@
         LDAPSBind              = $null
         AvailablePorts         = $PortsThatWork -join ','
         FQDN                   = $FQDN
+        OperatingSystem        = $Advanced.OperatingSystem
+    }
+    if (-not $Advanced) {
+        $Output.Remove('IsGC')
+        $Output.Remove('IsReadOnly')
     }
     if ($VerifyCertificate) {
         if ($psboundparameters.ContainsKey("Credential")) {
