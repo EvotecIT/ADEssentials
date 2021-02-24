@@ -10,7 +10,27 @@ function Get-WinADForestControllerInformation {
     $ForestInformation = Get-WinADForestDetails -Extended -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation -Verbose:$false
     foreach ($Domain in $ForestInformation.Domains) {
         $QueryServer = $ForestInformation['QueryServers'][$Domain]['HostName'][0]
-        $DCs = Get-ADComputer -Server $QueryServer -SearchBase $ForestInformation['DomainsExtended'][$Domain].DomainControllersContainer -Filter * -Properties * #PrimaryGroupID, PrimaryGroup, Enabled, ManagedBy, OperatingSystem, OperatingSystemVersion, PasswordLastSet, PasswordExpired, PasswordNeverExpires, PasswordNotRequired, TrustedForDelegation, UseDESKeyOnly, TrustedToAuthForDelegation, WhenCreated, WhenChanged, LastLogonDate, IPv4Address, IPv6Address
+        $Properties = @(
+            'PrimaryGroupID'
+            'PrimaryGroup'
+            'Enabled'
+            'ManagedBy'
+            'OperatingSystem'
+            'OperatingSystemVersion'
+            'PasswordLastSet'
+            'PasswordExpired'
+            'PasswordNeverExpires'
+            'PasswordNotRequired'
+            'TrustedForDelegation'
+            'UseDESKeyOnly'
+            'TrustedToAuthForDelegation'
+            'WhenCreated'
+            'WhenChanged'
+            'LastLogonDate'
+            'IPv4Address'
+            'IPv6Address'
+        )
+        $DCs = Get-ADComputer -Server $QueryServer -SearchBase $ForestInformation['DomainsExtended'][$Domain].DomainControllersContainer -Filter * -Properties $Properties
         $Count = 0
         foreach ($DC in $DCs) {
             $Count++
