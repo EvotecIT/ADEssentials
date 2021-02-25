@@ -1,4 +1,5 @@
-﻿function Get-WinADSubnet {
+﻿function Get-WinADForestSubnet {
+    [alias('Get-WinADSubnet')]
     [cmdletBinding()]
     param(
         [string] $Forest,
@@ -33,10 +34,10 @@
             $Cache[$Subnet.Name].Add($Subnet.OverlappingSubnet)
         }
         foreach ($Subnet in $Subnets) {
-            $Subnet['SubnetOverlap'] = $false
+            $Subnet['Overlap'] = $false
             if ($Cache[$Subnet.Name]) {
-                $Subnet['SubnetOverlap'] = $true
-                $Subnet['SubnetOverLapList'] = $Cache[$Subnet.Name]
+                $Subnet['Overlap'] = $true
+                $Subnet['OverLapList'] = $Cache[$Subnet.Name]
             } else {
 
             }
