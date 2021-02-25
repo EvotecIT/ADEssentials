@@ -48,6 +48,8 @@ Following links contain description of some of the features possible with this m
 
 ## Changelog
 
+- 0.0.121 - 2021.02.25
+  - [x] Improved `Get-WinADForestSites`
 - 0.0.120 - 2021.02.24
   - [x] Improved `Get-WinADForestControllerInformation`
 - 0.0.119 - 2021.02.22
