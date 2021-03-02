@@ -36,7 +36,7 @@
         if ($Formatted) {
             [PSCustomObject] @{
                 'Name'                                                    = $Site.Name
-                'Display Name'                                            = $Site.'DisplayName'
+                #'Display Name'                                            = $Site.'DisplayName'
                 'Description'                                             = $Site.'Description'
                 'CanonicalName'                                           = $Site.'CanonicalName'
                 'Subnets Count'                                           = $Subnets.Count
@@ -68,7 +68,7 @@
         } else {
             [PSCustomObject] @{
                 'Name'                                              = $Site.Name
-                'DisplayName'                                       = $Site.'DisplayName'
+                #'DisplayName'                                       = $Site.'DisplayName'
                 'Description'                                       = $Site.'Description'
                 'CanonicalName'                                     = $Site.'CanonicalName'
                 'SubnetsCount'                                      = $Subnets.Count
