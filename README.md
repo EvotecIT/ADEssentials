@@ -48,6 +48,10 @@ Following links contain description of some of the features possible with this m
 
 ## Changelog
 
+- 0.0.124 - 2021.03.22
+  - [x] Added `Get-DNSServerIP` - adds ability to read DNS server on given computer/server for static IP - may change in future
+  - [x] Added `Set-DNSServerIP` - adds ability to replace DNS server on given computer/server for static IP - may change in future
+  - [x] Improved `Get-WinADForestSubnet` to skip IPV6 verification as there is no code behind it
 - 0.0.123 - 2021.03.02
   - [x] Improved `Get-WinADForestSites`
 - 0.0.122 - 2021.02.25
