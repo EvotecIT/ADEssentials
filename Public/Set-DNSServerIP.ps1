@@ -18,38 +18,19 @@
             continue
         }
 
-        try {
-            $Adapters = Get-WmiObject Win32_NetworkAdapterConfiguration -ComputerName $Computer -ErrorAction Stop | Where-Object { $_.DHCPEnabled -ne 'True' -and $null -ne $_.DNSServerSearchOrder }
-        } catch {
-            Write-Warning "Couldn't get adapters that fit what we're searching for on $Computer. Error $($_.Exception.Message.Replace([System.Environment]::NewLine,'')) Skipping"
-            continue
-        }
-        $Text = "Setting DNS to $($DNSIPAddress -join ', ')"
-        if ($PSCmdlet.ShouldProcess($Computer, $Text)) {
-            if ($Adapters) {
-                try {
-                    $Adapters | Set-DnsClientServerAddress -ServerAddresses $DnsIpAddress -CimSession $CimSession
-                } catch {
-                    Write-Warning "Couldn't fix adapters with IP Address for $Computer. Error $($_.Exception.Message)"
-                    continue
-                }
-            }
-            try {
-                $Adapters = Get-WmiObject Win32_NetworkAdapterConfiguration -ComputerName $Computer -ErrorAction Stop | Where-Object { $_.DHCPEnabled -ne 'True' -and $null -ne $_.DNSServerSearchOrder }
-                foreach ($Adapter in $Adapters) {
-                    [PSCustomobject] @{
-                        ComputerName         = $Adapter.PSComputerName
-                        DNSHostName          = $Adapter.DNSHostName
-                        IPAddress            = $Adapter.IPAddress -join ', '
-                        DefaultIPGateway     = $Adapter.DefaultIPGateway -join ', '
-                        DNSServerSearchOrder = $Adapter.DNSServerSearchOrder -join ', '
-                        IPSubnet             = $Adapter.IPSubnet -join ', '
-                        Description          = $Adapter.Description
+        $Adapters = Get-CimData -Class Win32_NetworkAdapterConfiguration -ComputerName $Computer | Where-Object { $_.DHCPEnabled -ne 'True' -and $null -ne $_.DNSServerSearchOrder }
+        if ($Adapters) {
+            $Text = "Setting DNS to $($DNSIPAddress -join ', ')"
+            if ($PSCmdlet.ShouldProcess($Computer, $Text)) {
+                if ($Adapters) {
+                    try {
+                        $Adapters | Set-DnsClientServerAddress -ServerAddresses $DnsIpAddress -CimSession $CimSession
+                    } catch {
+                        Write-Warning "Couldn't fix adapters with IP Address for $Computer. Error $($_.Exception.Message)"
+                        continue
                     }
                 }
-            } catch {
-                Write-Warning "Couldn't get adapters that fit what we're searching for on $Computer. Error $($_.Exception.Message.Replace([System.Environment]::NewLine,'')) Skipping"
-                continue
+                Get-DNSServerIP -ComputerName $Computer
             }
         }
     }

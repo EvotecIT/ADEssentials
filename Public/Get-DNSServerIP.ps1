@@ -6,13 +6,7 @@
         [pscredential] $Credential
     )
     foreach ($Computer in $ComputerName) {
-        try {
-            $Adapters = Get-WmiObject Win32_NetworkAdapterConfiguration -ComputerName $Computer -ErrorAction Stop | Where-Object { $_.DHCPEnabled -ne 'True' -and $null -ne $_.DNSServerSearchOrder }
-        } catch {
-            Write-Warning "Couldn't get adapters that fit what we're searching for on $Computer. Error $($_.Exception.Message.Replace([System.Environment]::NewLine,'')) Skipping"
-            $ErrorMessage = $($_.Exception.Message).Replace([System.Environment]::NewLine, '')
-            $Adapters = $null
-        }
+        $Adapters = Get-CimData -Class Win32_NetworkAdapterConfiguration -ComputerName $Computer -ErrorAction Stop | Where-Object { $_.DHCPEnabled -ne 'True' -and $null -ne $_.DNSServerSearchOrder }
         if ($Adapters) {
             foreach ($Adapter in $Adapters) {
                 $AllApproved = $true
@@ -60,5 +54,4 @@
             [PSCustomObject] $Output
         }
     }
-} }
 }
