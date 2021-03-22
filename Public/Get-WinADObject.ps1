@@ -36,7 +36,8 @@
         [switch] $IncludeGroupMembership,
         [switch] $IncludeAllTypes,
         [switch] $AddType,
-        [switch] $Cache
+        [switch] $Cache,
+        [string[]] $Properties
         #[switch] $ResolveType
     )
     Begin {
@@ -285,7 +286,7 @@
                         # the workaround is to do additional query for group and assing it
                         $GroupMembers = [System.DirectoryServices.AccountManagement.GroupPrincipal]::FindByIdentity($Context, $Ident).Members
                         #if ($GroupMembers.Count -ne $Members.Count) {
-                            #Write-Warning "Get-WinADObject - Weird. Members count different."
+                        #Write-Warning "Get-WinADObject - Weird. Members count different."
                         #}
                         [Array] $Members = foreach ($Member in $GroupMembers) {
                             if ($Member.DistinguishedName) {
@@ -378,6 +379,32 @@
                     #Type                = $ResolvedIdentity.Type
                     Description         = $Object.properties.description -as [string]
                 }
+
+                if ($Properties -contains 'LastLogonDate') {
+                    $LastLogon = [int64] $Object.properties.lastlogontimestamp[0]
+                    if ($LastLogon -ne 9223372036854775807) {
+                        $ReturnObject['LastLogonDate'] = [datetime]::FromFileTimeUtc($LastLogon)
+                    } else {
+                        $ReturnObject['LastLogonDate'] = $null
+                    }
+                }
+                if ($Properties -contains 'PasswordLastSet') {
+                    $PasswordLastSet = [int64] $Object.properties.pwdlastset[0]
+                    if ($PasswordLastSet -ne 9223372036854775807) {
+                        $ReturnObject['PasswordLastSet'] = [datetime]::FromFileTimeUtc($PasswordLastSet)
+                    } else {
+                        $ReturnObject['PasswordLastSet'] = $null
+                    }
+                }
+                if ($Properties -contains 'AccountExpirationDate') {
+                    $ExpirationDate = [int64] $Object.properties.accountexpires[0]
+                    if ($ExpirationDate -ne 9223372036854775807) {
+                        $ReturnObject['AccountExpirationDate'] = [datetime]::FromFileTimeUtc($ExpirationDate)
+                    } else {
+                        $ReturnObject['AccountExpirationDate'] = $null
+                    }
+                }
+
                 if ($AddType) {
                     if (-not $ResolvedIdentity) {
                         # This is purely to get special types
