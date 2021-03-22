@@ -23,6 +23,9 @@
     $o = [ordered] @{}
     $o.IP = [string] $CIDRObject.IP
     $o.BinaryIP = Convert-IPToBinary $o.IP
+    if (-not $o.BinaryIP) {
+        return
+    }
     $o.NetworkLength = [int32] $CIDRObject.NetworkLength
     $o.SubnetMask = Convert-BinaryToIP ('1' * $o.NetworkLength).PadRight(32, '0')
     $o.BinarySubnetMask = ('1' * $o.NetworkLength).PadRight(32, '0')
@@ -32,7 +35,7 @@
             # Passing in IP to test, start binary and end binary.
             return Test-IPIsInNetwork $Contains $o.BinaryNetworkAddress $o.BinaryNetworkAddress.SubString(0, $o.NetworkLength).PadRight(32, '1')
         } else {
-            Write-Error "Invalid IPv4 address specified with -Contains"
+            Write-Error "Get-IPAddressRangeInformation - Invalid IPv4 address specified with -Contains"
             return
         }
     }
