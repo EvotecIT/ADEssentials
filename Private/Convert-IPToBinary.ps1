@@ -9,11 +9,11 @@
         try {
             return ($IP.Split('.') | ForEach-Object { [System.Convert]::ToString([byte] $_, 2).PadLeft(8, '0') }) -join ''
         } catch {
-            Write-Warning -Message "Error converting '$IP' to a binary string: $_"
+            Write-Warning -Message "Convert-IPToBinary - Error converting '$IP' to a binary string: $_"
             return $Null
         }
     } else {
-        Write-Warning -Message "Invalid IP detected: '$IP'."
+        Write-Warning -Message "Convert-IPToBinary - Invalid IP detected: '$IP'. Conversion failed."
         return $Null
     }
 }
