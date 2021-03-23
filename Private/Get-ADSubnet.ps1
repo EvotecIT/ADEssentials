@@ -70,7 +70,7 @@
                     OverLapList = $null
                     Subnet      = ([IPAddress](($Subnet.Name -split "/")[0]))
                     MaskBits    = ([int](($Subnet.Name -split "/")[1]))
-                    SubnetMask  = ([IPAddress]"$([system.convert]::ToInt64(("1"*$MaskBits).PadRight(32,"0"),2))")
+                    SubnetMask  = $null # Ipv6 doesn't have a subnet mask
                     TotalHosts  = $AddressRange.TotalHosts
                     UsableHosts = $AddressRange.UsableHosts
                     HostMin     = $AddressRange.HostMin
@@ -85,7 +85,8 @@
                     SiteStatus  = if ($SiteObject) { $true } else { $false }
                     Subnet      = ([IPAddress](($Subnet.Name -split "/")[0]))
                     MaskBits    = ([int](($Subnet.Name -split "/")[1]))
-                    SubnetMask  = ([IPAddress]"$([system.convert]::ToInt64(("1"*$MaskBits).PadRight(32,"0"),2))")
+
+                    SubnetMask  = $null # Ipv6 doesn't have a subnet mask
                     TotalHosts  = $AddressRange.TotalHosts
                     UsableHosts = $AddressRange.UsableHosts
                     HostMin     = $AddressRange.HostMin

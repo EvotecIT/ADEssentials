@@ -34,7 +34,10 @@
             $Cache[$Subnet.Name].Add($Subnet.OverlappingSubnet)
         }
         foreach ($Subnet in $Subnets) {
-            $Subnet['Overlap'] = $false
+            if ($Subnet.Type -eq 'IPv4') {
+                # We only set it to false to IPV4, for IPV6 it will be null as we don't know
+                $Subnet['Overlap'] = $false
+            }
             if ($Cache[$Subnet.Name]) {
                 $Subnet['Overlap'] = $true
                 $Subnet['OverLapList'] = $Cache[$Subnet.Name]
