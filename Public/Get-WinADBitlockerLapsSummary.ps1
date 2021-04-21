@@ -135,33 +135,32 @@
                     Enabled                 = $_.Enabled
                     Domain                  = $Domain
                     DNSHostName             = $_.DNSHostName
-                    DistinguishedName       = $_.DistinguishedName
+                    Laps                    = $Laps
+                    LapsExpirationDays      = $LapsExpirationDays
+                    LapsExpirationTime      = $LapsExpirationTime
                     System                  = ConvertTo-OperatingSystem -OperatingSystem $_.OperatingSystem -OperatingSystemVersion $_.OperatingSystemVersion
                     LastLogonDate           = $_.LastLogonDate
                     LastLogonDays           = $LastLogonDays
                     PasswordLastSet         = $_.PasswordLastSet
                     PasswordLastChangedDays = $PasswordLastChangedDays
-                    Laps                    = $Laps
-                    LapsExpirationDays      = $LapsExpirationDays
-                    LapsExpirationTime      = $LapsExpirationTime
                     OrganizationalUnit      = ConvertFrom-DistinguishedName -DistinguishedName $_.DistinguishedName -ToOrganizationalUnit
+                    DistinguishedName       = $_.DistinguishedName
                 }
-
             } elseif ($BitlockerOnly) {
                 [PSCustomObject] @{
                     Name                    = $_.Name
                     Enabled                 = $_.Enabled
                     Domain                  = $Domain
                     DNSHostName             = $_.DNSHostName
-                    DistinguishedName       = $_.DistinguishedName
+                    Encrypted               = $Encrypted
+                    EncryptedTime           = $EncryptedTime
                     System                  = ConvertTo-OperatingSystem -OperatingSystem $_.OperatingSystem -OperatingSystemVersion $_.OperatingSystemVersion
                     LastLogonDate           = $_.LastLogonDate
                     LastLogonDays           = $LastLogonDays
                     PasswordLastSet         = $_.PasswordLastSet
                     PasswordLastChangedDays = $PasswordLastChangedDays
-                    Encrypted               = $Encrypted
-                    EncryptedTime           = $EncryptedTime
                     OrganizationalUnit      = ConvertFrom-DistinguishedName -DistinguishedName $_.DistinguishedName -ToOrganizationalUnit
+                    DistinguishedName       = $_.DistinguishedName
                 }
             } else {
                 [PSCustomObject] @{
@@ -169,18 +168,18 @@
                     Enabled                 = $_.Enabled
                     Domain                  = $Domain
                     DNSHostName             = $_.DNSHostName
-                    DistinguishedName       = $_.DistinguishedName
-                    System                  = ConvertTo-OperatingSystem -OperatingSystem $_.OperatingSystem -OperatingSystemVersion $_.OperatingSystemVersion
-                    LastLogonDate           = $_.LastLogonDate
-                    LastLogonDays           = $LastLogonDays
-                    PasswordLastSet         = $_.PasswordLastSet
-                    PasswordLastChangedDays = $PasswordLastChangedDays
                     Encrypted               = $Encrypted
                     EncryptedTime           = $EncryptedTime
                     Laps                    = $Laps
                     LapsExpirationDays      = $LapsExpirationDays
                     LapsExpirationTime      = $LapsExpirationTime
+                    System                  = ConvertTo-OperatingSystem -OperatingSystem $_.OperatingSystem -OperatingSystemVersion $_.OperatingSystemVersion
+                    LastLogonDate           = $_.LastLogonDate
+                    LastLogonDays           = $LastLogonDays
+                    PasswordLastSet         = $_.PasswordLastSet
+                    PasswordLastChangedDays = $PasswordLastChangedDays
                     OrganizationalUnit      = ConvertFrom-DistinguishedName -DistinguishedName $_.DistinguishedName -ToOrganizationalUnit
+                    DistinguishedName       = $_.DistinguishedName
                 }
             }
         }
