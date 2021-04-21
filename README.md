@@ -49,6 +49,8 @@ Following links contain description of some of the features possible with this m
 ## Changelog
 
 - 0.0.125 - 2021.04.21
+  - 🐛 Improved `Get-WinADDelegatedAccounts`
+- 0.0.125 - 2021.04.21
   - ☑ Added `Get-WinADDelegatedAccounts`
 - 0.0.124 - 2021.03.23
   - ☑ Added `Get-DNSServerIP` - adds ability to read DNS server on given computer/server for static IP - may change in future

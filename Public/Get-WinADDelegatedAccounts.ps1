@@ -59,6 +59,7 @@
         }
 
         foreach ($Account in $accounts) {
+            $UAC = Convert-UserAccountControl -UserAccountControl $Account.useraccountcontrol
             $isDC = ($Account.useraccountcontrol -band $SERVER_TRUST_ACCOUNT) -ne 0
             $fullDelegation = ($Account.useraccountcontrol -band $TRUSTED_FOR_DELEGATION) -ne 0
             $constrainedDelegation = ($Account.'msDS-AllowedToDelegateTo').count -gt 0
@@ -70,17 +71,18 @@
             [PSCustomobject] @{
                 DomainName                          = $Domain
                 SamAccountName                      = $Account.samaccountname
-                Enabled                             = $Account.Enabled
+                Enabled                             = $UAC -notcontains 'ACCOUNTDISABLE'
                 ObjectClass                         = $Account.objectclass
                 IsDC                                = $isDC
                 IsRODC                              = $isRODC
                 FullDelegation                      = $fullDelegation
                 ConstrainedDelegation               = $constrainedDelegation
                 ResourceDelegation                  = $resourceDelegation
-                WhenCreated                         = $Account.WhenCreated
-                WhenChanged                         = $Account.WhenChanged
                 LastLogonDate                       = $LastLogonDate
                 PasswordLastSet                     = $PasswordLastSet
+                UserAccountControl                  = $UAC
+                WhenCreated                         = $Account.WhenCreated
+                WhenChanged                         = $Account.WhenChanged
                 IsCriticalSystemObject              = $Account.IsCriticalSystemObject
                 AllowedToDelagateTo                 = $Account.'msDS-AllowedToDelegateTo'
                 AllowedToActOnBehalfOfOtherIdentity = $Account.'msDS-AllowedToActOnBehalfOfOtherIdentity'
