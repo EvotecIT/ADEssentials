@@ -48,140 +48,142 @@ Following links contain description of some of the features possible with this m
 
 ## Changelog
 
+- 0.0.125 - 2021.04.21
+  - ☑ Added `Get-WinADDelegatedAccounts`
 - 0.0.124 - 2021.03.23
-  - [x] Added `Get-DNSServerIP` - adds ability to read DNS server on given computer/server for static IP - may change in future
-  - [x] Added `Set-DNSServerIP` - adds ability to replace DNS server on given computer/server for static IP - may change in future
-  - [x] Improved `Get-WinADForestSubnet` to skip IPV6 verification as there is no code behind it
-  - [x] Improved `Get-WinADobject` - adds properties property where one can specify `LastLogonDate`, `PasswordLastSet`, `AccountExpirationDate`
+  - ☑ Added `Get-DNSServerIP` - adds ability to read DNS server on given computer/server for static IP - may change in future
+  - ☑ Added `Set-DNSServerIP` - adds ability to replace DNS server on given computer/server for static IP - may change in future
+  - ☑ Improved `Get-WinADForestSubnet` to skip IPV6 verification as there is no code behind it
+  - ☑ Improved `Get-WinADobject` - adds properties property where one can specify `LastLogonDate`, `PasswordLastSet`, `AccountExpirationDate`
 - 0.0.123 - 2021.03.02
-  - [x] Improved `Get-WinADForestSites`
+  - ☑ Improved `Get-WinADForestSites`
 - 0.0.122 - 2021.02.25
-  - [x] Improved `Get-WinADForestSites`
-  - [x] Added `Get-WinADForestSubnet`
+  - ☑ Improved `Get-WinADForestSites`
+  - ☑ Added `Get-WinADForestSubnet`
 - 0.0.121 - 2021.02.25
-  - [x] Improved `Get-WinADForestSites`
+  - ☑ Improved `Get-WinADForestSites`
 - 0.0.120 - 2021.02.24
-  - [x] Improved `Get-WinADForestControllerInformation`
+  - ☑ Improved `Get-WinADForestControllerInformation`
 - 0.0.119 - 2021.02.22
-  - [x] Improved `Test-LDAP`
+  - ☑ Improved `Test-LDAP`
 - 0.0.118 - 2021.02.22
-  - [x] Improved `Test-LDAP`
+  - ☑ Improved `Test-LDAP`
 - 0.0.117 - 2021.02.19
-  - [x] Improved `Test-LDAP`
+  - ☑ Improved `Test-LDAP`
 - 0.0.116 - 2021.02.18
-  - [x] Improved `Get-WinADACLForest`
-  - [x] Improved `Test-LDAP`
+  - ☑ Improved `Get-WinADACLForest`
+  - ☑ Improved `Test-LDAP`
 - 0.0.115 - 2021.02.17
-  - [x] Improved `Test-LDAP`
+  - ☑ Improved `Test-LDAP`
 - 0.0.114 - 2021.02.17
-  - [x] Improved `Get-ADACL`
-  - [x] Improved `Get-ADACLOwner`
-  - [x] Added `Get-WinADACLForest`
+  - ☑ Improved `Get-ADACL`
+  - ☑ Improved `Get-ADACLOwner`
+  - ☑ Added `Get-WinADACLForest`
 - 0.0.113 - 2021.02.17
-  - [x] Improved `Get-WinADACLConfiguration`
-  - [x] Added `Repair-WinADACLConfigurationOwner`
+  - ☑ Improved `Get-WinADACLConfiguration`
+  - ☑ Added `Repair-WinADACLConfigurationOwner`
 - 0.0.112 - 2021.02.05
-  - [x] Improved `Get-WinADACLConfiguration`
+  - ☑ Improved `Get-WinADACLConfiguration`
 - 0.0.111 - 2021.02.05
-  - [x] Added `Get-WinADACLConfiguration`
+  - ☑ Added `Get-WinADACLConfiguration`
 - 0.0.110 - 2021.02.03
-  - [x] Improved/fixed `Get-WinADPrivilegedObjects`
+  - ☑ Improved/fixed `Get-WinADPrivilegedObjects`
 - 0.0.109 - 2021.02.01
-  - [x] Improved `Remove-WinADDuplicateObject`
+  - ☑ Improved `Remove-WinADDuplicateObject`
 - 0.0.108 - 2021.01.27
-  - [x] Improved `Get-WinADForestControllerInformation`
+  - ☑ Improved `Get-WinADForestControllerInformation`
 - 0.0.107 - 2021.01.21
-  - [x] Improved `Get-WinADForestControllerInformation`
+  - ☑ Improved `Get-WinADForestControllerInformation`
 - 0.0.106 - 2021.01.21
-  - [x] Improved `Get-WinADForestControllerInformation`
-  - [x] Improved `Repair-WinADForestControllerInformation`
+  - ☑ Improved `Get-WinADForestControllerInformation`
+  - ☑ Improved `Repair-WinADForestControllerInformation`
 - 0.0.105 - 2021.01.20
-  - [x] Added `Get-WinADForestControllerInformation`
-  - [x] Added `Repair-WinADForestControllerInformation`
+  - ☑ Added `Get-WinADForestControllerInformation`
+  - ☑ Added `Repair-WinADForestControllerInformation`
 - 0.0.104 - 2021.01.19
-  - [x] Compatible with **PowerShell 5.1** and **7.1** and **7.2** (Windows only)
-  - [x] Removed dependency on **GroupPolicy** module
-  - [x] Removed `Get-WinADGPOMissingPermissions` -> Please use [GPOZaurr](https://github.com/EvotecIT/GPOZaurr) to deal with GPOs
-    - [x] `Invoke-GPOZaurr -Type GPOPermissions` provides better solution
-  - [x] Removed `Get-WinADGPOSysvolFolders` -> Please use [GPOZaurr](https://github.com/EvotecIT/GPOZaurr) to deal with GPOs
-    - [x] `Get-GPOZaurrBroken` or `Invoke-GPOZaurr -Type GPOBroken` provides better solution
-  - [x] Improved `Get-WinADFSHealth` to remove GroupPolicy module
-  - [x] Improved `Test-ADSiteLinks`
+  - ☑ Compatible with **PowerShell 5.1** and **7.1** and **7.2** (Windows only)
+  - ☑ Removed dependency on **GroupPolicy** module
+  - ☑ Removed `Get-WinADGPOMissingPermissions` -> Please use [GPOZaurr](https://github.com/EvotecIT/GPOZaurr) to deal with GPOs
+    - ☑ `Invoke-GPOZaurr -Type GPOPermissions` provides better solution
+  - ☑ Removed `Get-WinADGPOSysvolFolders` -> Please use [GPOZaurr](https://github.com/EvotecIT/GPOZaurr) to deal with GPOs
+    - ☑ `Get-GPOZaurrBroken` or `Invoke-GPOZaurr -Type GPOBroken` provides better solution
+  - ☑ Improved `Get-WinADFSHealth` to remove GroupPolicy module
+  - ☑ Improved `Test-ADSiteLinks`
 - 0.0.103 - 3.12.2020
-  - [x] Improve error handling `Remove-ADACL`
+  - ☑ Improve error handling `Remove-ADACL`
 - 0.0.102 - 8.11.2020
-  - [x] Updated libraries
-  - [x] 0.0.100 was removed from PSGallery due to PSGallery issues
+  - ☑ Updated libraries
+  - ☑ 0.0.100 was removed from PSGallery due to PSGallery issues
 - 0.0.100 - 29.10.2020
-  - [x] `Get-WinADForestObjectsConflict` removed
-  - [x] `Get-WinADForestObjectsConflict` added as alias to `Get-WinADDuplicateObject`
-  - [x] Improved `Get-WinADDuplicateObject`
-  - [x] `Get-WinADDuplicateObject` expanded with parameters `NoPostProcessing`, `Extended`, `ExcludeObjectClass`, `IncludeObjectClass`
+  - ☑ `Get-WinADForestObjectsConflict` removed
+  - ☑ `Get-WinADForestObjectsConflict` added as alias to `Get-WinADDuplicateObject`
+  - ☑ Improved `Get-WinADDuplicateObject`
+  - ☑ `Get-WinADDuplicateObject` expanded with parameters `NoPostProcessing`, `Extended`, `ExcludeObjectClass`, `IncludeObjectClass`
 - 0.0.99 - 14.10.2020
-  - [x] Fix for `Show-WinADTrust`
+  - ☑ Fix for `Show-WinADTrust`
 - 0.0.98 - 05.10.2020
-  - [x] Added parameters `SelfOnly` / `AdditionalStatistics` to `Get-WinADGroupMember`
+  - ☑ Added parameters `SelfOnly` / `AdditionalStatistics` to `Get-WinADGroupMember`
     - [ ] This shows maximum level of nesting on Self object, nested groups count, nested security groups count, nested distribution groups copunt
 - 0.0.97 - 30.09.2020
-  - [x] Update to `Repair-WinADEmailAddress` treating proxy addresses case sensitive
-    - [x] Replacement for Sort-Object -Unique which removes primary SMTP: if it's duplicate of smtp:
+  - ☑ Update to `Repair-WinADEmailAddress` treating proxy addresses case sensitive
+    - ☑ Replacement for Sort-Object -Unique which removes primary SMTP: if it's duplicate of smtp:
 - 0.0.96 - 30.09.2020
-  - [x] Update to `Repair-WinADEmailAddress`
-    - [x] Fixes Primary Proxy Email if it's missing but not requested by user
+  - ☑ Update to `Repair-WinADEmailAddress`
+    - ☑ Fixes Primary Proxy Email if it's missing but not requested by user
 - 0.0.95 - 30.09.2020
-  - [x] Update to `Repair-WinADEmailAddress`
-    - [x] Added ability to add secondary email addresses
-    - [x] Added ability to not change primary email address
+  - ☑ Update to `Repair-WinADEmailAddress`
+    - ☑ Added ability to add secondary email addresses
+    - ☑ Added ability to not change primary email address
 - 0.0.94 - 28.09.2020
-  - [x] `Show-WinADGroupMember` support for input from `Get-WinADGroupMember`
+  - ☑ `Show-WinADGroupMember` support for input from `Get-WinADGroupMember`
 - 0.0.93 - 23.09.2020
-  - [x] Added detection of indirect circular to `Get-WinADGroupMember` to prevent infinite loops
-  - [x] Renamed Circular to DirectCircular to accomodate IndirectCircular in `Get-WinADGroupMember`
-  - [x] Updated Show-WinADGroupMember to better visualize circular membership
+  - ☑ Added detection of indirect circular to `Get-WinADGroupMember` to prevent infinite loops
+  - ☑ Renamed Circular to DirectCircular to accomodate IndirectCircular in `Get-WinADGroupMember`
+  - ☑ Updated Show-WinADGroupMember to better visualize circular membership
 - 0.0.92 - 23.09.2020
-  - [x] Some visual improvements to `Show-WinADGroupMember`/`Show-WinADGroupMemberOf`
-  - [x] Added `IncludeObjectTypeName`,`ExcludeObjectTypeName`,`IncludeInheritedObjectTypeName`,`ExcludeInheritedObjectTypeName` to `Get-ADACL`
-  - [x] Added `ADRightsAsArray` to `Get-ADACL`
-  - [x] Added `AccessControlType` to `Get-ADACL`
-  - [x] Improvements to `Get-WinADObject` and all cmdlets that rely on it
-  - [x] Improvements to `Get-ADACL`
-  - [x] Improvements to PSD1
+  - ☑ Some visual improvements to `Show-WinADGroupMember`/`Show-WinADGroupMemberOf`
+  - ☑ Added `IncludeObjectTypeName`,`ExcludeObjectTypeName`,`IncludeInheritedObjectTypeName`,`ExcludeInheritedObjectTypeName` to `Get-ADACL`
+  - ☑ Added `ADRightsAsArray` to `Get-ADACL`
+  - ☑ Added `AccessControlType` to `Get-ADACL`
+  - ☑ Improvements to `Get-WinADObject` and all cmdlets that rely on it
+  - ☑ Improvements to `Get-ADACL`
+  - ☑ Improvements to PSD1
 - 0.0.91 - 14.09.2020
-  - [x] Added ability to define own conditions/rules to `Show-WinADGroupMember`,`Show-WinADGroupMemberOf` using `PSWriteHTML` options
+  - ☑ Added ability to define own conditions/rules to `Show-WinADGroupMember`,`Show-WinADGroupMemberOf` using `PSWriteHTML` options
 - 0.0.90 - 13.09.2020
-  - [x] Updates to `Get-WinADTrust` for better verbose
-  - [x] Updates to `Show-WinADTrust` visual parts
-  - [x] Updates to `Get-WinADObject` for better verbose
+  - ☑ Updates to `Get-WinADTrust` for better verbose
+  - ☑ Updates to `Show-WinADTrust` visual parts
+  - ☑ Updates to `Get-WinADObject` for better verbose
 - 0.0.89 - 13.09.2020
-  - [x] Updates to `Get-WinADTrust` (**Work in progress**)
-  - [x] Updates to `Show-WinADTrust` (**Work in progress**)
+  - ☑ Updates to `Get-WinADTrust` (**Work in progress**)
+  - ☑ Updates to `Show-WinADTrust` (**Work in progress**)
 - 0.0.88 - 12.09.2020
-  - [x] Updates to `Get-WinADTrust` (**Work in progress**)
-  - [x] Updates to `Get-ADObject`
-  - [x] Updates to `Show-WinADTrust` (**Work in progress**)
+  - ☑ Updates to `Get-WinADTrust` (**Work in progress**)
+  - ☑ Updates to `Get-ADObject`
+  - ☑ Updates to `Show-WinADTrust` (**Work in progress**)
 - 0.0.87 - 12.09.2020
-  - [x] Rewritten `Get-WinADTrust` to use ADSI instead of ActiveDirectory module (**Work in progress**)
-    - [x] Added objects testing, trust testing, included suffix status
-    - [x] Added recursive switch
-  - [x] Renamed old `Get-WinADTrust` to `Get-WinADTrustLegacy` just in case for now
-  - [x] Added `Show-WinADTrust` (**Work in progress**)
+  - ☑ Rewritten `Get-WinADTrust` to use ADSI instead of ActiveDirectory module (**Work in progress**)
+    - ☑ Added objects testing, trust testing, included suffix status
+    - ☑ Added recursive switch
+  - ☑ Renamed old `Get-WinADTrust` to `Get-WinADTrustLegacy` just in case for now
+  - ☑ Added `Show-WinADTrust` (**Work in progress**)
 - 0.0.86 - 9.09.2020
-  - [x] Some improvements to `Get-WinADDFSHealth`
+  - ☑ Some improvements to `Get-WinADDFSHealth`
 - 0.0.85 - 9.09.2020
-  - [x] Some improvements to `Get-WinADTrust`
-  - [x] Some improvements to `Get-WinADDFSHealth` - added `SkipGPO`, `SkipAutodection`
-  - [x] Added `Get-WinADForest` adsi based
-  - [x] Added `Get-WinADDomain` adsi based
-  - [x] Added HideHTML switch for Get-WinADGroupMember
-  - [x] Added HideHTML switch for Get-WinADGroupMemberOf
+  - ☑ Some improvements to `Get-WinADTrust`
+  - ☑ Some improvements to `Get-WinADDFSHealth` - added `SkipGPO`, `SkipAutodection`
+  - ☑ Added `Get-WinADForest` adsi based
+  - ☑ Added `Get-WinADDomain` adsi based
+  - ☑ Added HideHTML switch for Get-WinADGroupMember
+  - ☑ Added HideHTML switch for Get-WinADGroupMemberOf
 - 0.0.84 - 2.09.2020 - [Visually display Active Directory Nested Group Membership using PowerShell](https://evotec.xyz/visually-display-active-directory-nested-group-membership-using-powershell/)
-  - [x] `ActiveDirectory`/`GroupPolicy` are now optional to not block module from working without RSAT (for commands that work without it)
-  - [x] Made `Show-WinADGroupMember`, `Show-WinADGroupMemberOf` work offline by default
+  - ☑ `ActiveDirectory`/`GroupPolicy` are now optional to not block module from working without RSAT (for commands that work without it)
+  - ☑ Made `Show-WinADGroupMember`, `Show-WinADGroupMemberOf` work offline by default
 - 0.0.83 - 2.09.2020
-  - [x] Updated `Show-WinADGroupMemberOf` removed `Hide` parameters as there is nothing to hide
+  - ☑ Updated `Show-WinADGroupMemberOf` removed `Hide` parameters as there is nothing to hide
 - 0.0.82 - 2.09.2020
-  - [x] Updated `Show-WinADGroupMember` renaming parameters from `Remove` to `Hide` which is original intention to hide them on diagram
-  - [x] Updated `Show-WinADGroupMemberOf` renaming parameters from `Remove` to `Hide` which is original intention to hide them on diagram
+  - ☑ Updated `Show-WinADGroupMember` renaming parameters from `Remove` to `Hide` which is original intention to hide them on diagram
+  - ☑ Updated `Show-WinADGroupMemberOf` renaming parameters from `Remove` to `Hide` which is original intention to hide them on diagram
 - 0.0.81 - 2.09.2020
   - Improvements
 - 0.0.80 - 1.09.2020
@@ -191,179 +193,149 @@ Following links contain description of some of the features possible with this m
 - 0.0.78 - 1.09.2020
   - Improvements
 - 0.0.77 - 1.09.2020
-  - [x] Performance improvements to `Get-WinADObject` - new switch added `IncludeGroupMembership`
-  - [x] Small fixes to `Get-WinADObjectMember`
-  - [x] Small fixes to `Get-WinADGroupMember`
+  - ☑ Performance improvements to `Get-WinADObject` - new switch added `IncludeGroupMembership`
+  - ☑ Small fixes to `Get-WinADObjectMember`
+  - ☑ Small fixes to `Get-WinADGroupMember`
 - 0.0.76 - 1.09.2020
-  - [x] Improvements in verbose for `Get-WinADObjectMember` to track down issues
+  - ☑ Improvements in verbose for `Get-WinADObjectMember` to track down issues
 - 0.0.75 - 1.09.2020
-  - [x] Improvements `Show-WinADGroupMember`
-  - [x] Improvements `Get-WinADObjectMember`
-  - [x] Improvements `Show-WinADObjectMember`
+  - ☑ Improvements `Show-WinADGroupMember`
+  - ☑ Improvements `Get-WinADObjectMember`
+  - ☑ Improvements `Show-WinADObjectMember`
 - 0.0.74 - 31.08.2020
-  - [x] Improvements to `Show-WinADGroupMember` (alias `Show-ADGroupMember`)
-  - [x] Added `Get-WinADObjectMember`
-  - [x] Added `Show-WinADObjectMember`
+  - ☑ Improvements to `Show-WinADGroupMember` (alias `Show-ADGroupMember`)
+  - ☑ Added `Get-WinADObjectMember`
+  - ☑ Added `Show-WinADObjectMember`
 - 0.0.73 - 31.08.2020
-  - [x] Improvements to `Show-WinADGroupMember` (alias `Show-ADGroupMember`)
+  - ☑ Improvements to `Show-WinADGroupMember` (alias `Show-ADGroupMember`)
 - 0.0.72 - 31.08.2020
-  - [x] Improvements to `Show-WinADGroupMember` (alias `Show-ADGroupMember`)
+  - ☑ Improvements to `Show-WinADGroupMember` (alias `Show-ADGroupMember`)
 - 0.0.71 - 30.08.2020
-  - [x] Improvements to `Get-WinADObject`
+  - ☑ Improvements to `Get-WinADObject`
 - 0.0.70 - 29.08.2020
-  - [x] Improvements to `Get-WinADObject`
-  - [x] Improvements to `Get-WinADGroupMember`
+  - ☑ Improvements to `Get-WinADObject`
+  - ☑ Improvements to `Get-WinADGroupMember`
 - 0.0.69 - 28.08.2020
-  - [x] Improvements to `Get-WinADGroupMember`
+  - ☑ Improvements to `Get-WinADGroupMember`
 - 0.0.68 - 28.08.2020
-  - [x] Improvements to `Get-WinADGroupMember`
+  - ☑ Improvements to `Get-WinADGroupMember`
 - 0.0.67 - 26.08.2020
-  - [x] Added experimental `Get-WinADObject`
-  - [x] Replaced experimental `Get-WinADGroupMember`
-
+  - ☑ Added experimental `Get-WinADObject`
+  - ☑ Replaced experimental `Get-WinADGroupMember`
 - 0.0.66 - 14.08.2020
-  - [x] Fixes to `Get-WinADProxyAddresses` - detects broken email address (for example one with ",")
-  - [x] Rewritten to `Repair-WinADEmailAddress` - was getting too complicated
+  - ☑ Fixes to `Get-WinADProxyAddresses` - detects broken email address (for example one with ",")
+  - ☑ Rewritten to `Repair-WinADEmailAddress` - was getting too complicated
 - 0.0.65 - 23.07.2020
-  - [x] Fixed bug `Get-WinADSharePermission`
-
+  - ☑ Fixed bug `Get-WinADSharePermission`
 - 0.0.64 - 23.07.2020
-  - [x] Improvements to `Get-WinADSharePermission`
-
+  - ☑ Improvements to `Get-WinADSharePermission`
 - 0.0.63 - 22.07.2020
-  - [x] Improvements to `Get-WinADGroupMember`
-  - [x] Signed module
+  - ☑ Improvements to `Get-WinADGroupMember`
+  - ☑ Signed module
 - 0.0.62 - 6.07.2020
-  - [x] Improvements to `Get-WinADGroupMember`
-
+  - ☑ Improvements to `Get-WinADGroupMember`
 - 0.0.61 - 6.07.2020
-  - [x] Improvements to `Get-WinADGroupMember`
-
+  - ☑ Improvements to `Get-WinADGroupMember`
 - 0.0.61 - 3.07.2020
-  - [x] Improvements to `Get-WinADGroupMember`
-
+  - ☑ Improvements to `Get-WinADGroupMember`
 - 0.0.60 - 2.07.2020
-  - [x] Fix for `Get-WinADGroupMember`
-
+  - ☑ Fix for `Get-WinADGroupMember`
 - 0.0.59 - 2.07.2020
-  - [x] Added `Get-WinADDuplicateObject`
-  - [x] Added `Remove-WinADDuplicateObject` - doesn't solve some issues, but should help with most. Use with `WhatIf`
-  - [x] Added `Get-WinADGroupMember`
-
+  - ☑ Added `Get-WinADDuplicateObject`
+  - ☑ Added `Remove-WinADDuplicateObject` - doesn't solve some issues, but should help with most. Use with `WhatIf`
+  - ☑ Added `Get-WinADGroupMember`
 - 0.0.58 - 24.06.2020
-  - [x] Added `Get-WinADWellKnownFolders`
-
+  - ☑ Added `Get-WinADWellKnownFolders`
 - 0.0.57 - 17.05.2020
-  - [x] Improved `Remove-WinADSharePermission` (`foreach-object` to `foreach`)
-  - [x] Improved `Get-WinADGPOSysvolFolders` error handling
-
+  - ☑ Improved `Remove-WinADSharePermission` (`foreach-object` to `foreach`)
+  - ☑ Improved `Get-WinADGPOSysvolFolders` error handling
 - 0.0.56 - 15.05.2020
-  - [x] Improved `Get-ADACLOwner` error handling
-
+  - ☑ Improved `Get-ADACLOwner` error handling
 - 0.0.55 - 12.05.2020
-  - [x] Improved/Renamed experimental `Get-WinADShare` to `Get-WinADSharePermission` - work in progress
-  - [x] Improved/Renamed experimantal `Set-WinADShare` to `Get-WinADSharePermission` - work in progress
-
+  - ☑ Improved/Renamed experimental `Get-WinADShare` to `Get-WinADSharePermission` - work in progress
+  - ☑ Improved/Renamed experimantal `Set-WinADShare` to `Get-WinADSharePermission` - work in progress
 - 0.0.54 - 10.05.2020
-  - [x] Small update to `Remove-ADACL`
-
+  - ☑ Small update to `Remove-ADACL`
 - 0.0.53 - 9.05.2020
-  - [x] Fix for `Get-WinADTrusts`
-  - [x] Added experimantal `Get-ADACLOwner` - work in progress
-  - [x] Added experimental `Get-WinADShare` - work in progress
-  - [x] Added experimantal (not ready) `Set-WinADShare`- work in progress
-
+  - ☑ Fix for `Get-WinADTrusts`
+  - ☑ Added experimantal `Get-ADACLOwner` - work in progress
+  - ☑ Added experimental `Get-WinADShare` - work in progress
+  - ☑ Added experimantal (not ready) `Set-WinADShare`- work in progress
 - 0.0.51 - 28.04.2020
-  - [x] Disabled WhatIf for `New-PSDrive` (for use within `New-ADForestDrives`)
-  - [x] Added `Get-ADACLOwner`
-
+  - ☑ Disabled WhatIf for `New-PSDrive` (for use within `New-ADForestDrives`)
+  - ☑ Added `Get-ADACLOwner`
 - 0.0.50 - 23.04.2020
-  - [x] Fix for bug where some functions from other modules were not merged correctly (`Copy-Dictionary`) causing problems if `PSSharedGoods` was not installed
-
+  - ☑ Fix for bug where some functions from other modules were not merged correctly (`Copy-Dictionary`) causing problems if `PSSharedGoods` was not installed
 - 0.0.48 - 12.04.2020
-  - [x] Improvements
-
+  - ☑ Improvements
 - 0.0.47 - 12.04.2020
-  - [x] Added `Set-ADACLOwner` - experimental support
-
+  - ☑ Added `Set-ADACLOwner` - experimental support
 - 0.0.46 - 11.04.2020
-  - [x] Added `Get-WinADForestSites`
-  - [x] Added `Get-WinADForestOptionalFeatures`
-  - [x] Added `Get-WinADForestSchemaProperties`
-  - [x] Renamed `Get-WinADPriviligedObjects` to `Get-WinADPrivilegedObjects` - tnx Subnet192 [#5](https://github.com/EvotecIT/ADEssentials/pull/5)
-  - [x] Fix to `Get-WinADPrivilegedObjects` - tnx Subnet192 [#5](https://github.com/EvotecIT/ADEssentials/pull/5)
-  - [x] Improvement `Get-WinADDFSHealth` for DFS edge cases (may be subject to language issue)
-  - [x] Improvement of all commands for detecting forest/domain/dcs
-  - [x] Added `Remove-ADACL` - experimantal support
-  - [x] Added `Add-ADACL` - experimantal support
-
+  - ☑ Added `Get-WinADForestSites`
+  - ☑ Added `Get-WinADForestOptionalFeatures`
+  - ☑ Added `Get-WinADForestSchemaProperties`
+  - ☑ Renamed `Get-WinADPriviligedObjects` to `Get-WinADPrivilegedObjects` - tnx Subnet192 [#5](https://github.com/EvotecIT/ADEssentials/pull/5)
+  - ☑ Fix to `Get-WinADPrivilegedObjects` - tnx Subnet192 [#5](https://github.com/EvotecIT/ADEssentials/pull/5)
+  - ☑ Improvement `Get-WinADDFSHealth` for DFS edge cases (may be subject to language issue)
+  - ☑ Improvement of all commands for detecting forest/domain/dcs
+  - ☑ Added `Remove-ADACL` - experimantal support
+  - ☑ Added `Add-ADACL` - experimantal support
 - 0.0.45 - 13.03.2020
-  - [x] Improvement to commands to support different Forests
-
+  - ☑ Improvement to commands to support different Forests
 - 0.0.44 - 3.03.2020
-  - [x] Improvement to Get-ADACL
-
+  - ☑ Improvement to Get-ADACL
 - 0.0.43 - 3.03.2020
-  - [x] Improvement to Get-ADACL
-
+  - ☑ Improvement to Get-ADACL
 - 0.0.42 - 27.02.2020
-  - [x] Fixes for Get-ADACL
-  - [x] Fixes for Get-WinADProxyAddresses
+  - ☑ Fixes for Get-ADACL
+  - ☑ Fixes for Get-WinADProxyAddresses
   - Not really useful yet
-    - [x] Added Get-WinADUserPrincipalName
-    - [x] Added Rename-WinADUserPrincipalName
-
+    - ☑ Added Get-WinADUserPrincipalName
+    - ☑ Added Rename-WinADUserPrincipalName
 - 0.0.41 - 20.02.2020
-  - [x] Get-WinADGPOMissingPermissions updates to support SID instead (should work multi-language)
-
+  - ☑ Get-WinADGPOMissingPermissions updates to support SID instead (should work multi-language)
 - 0.0.40 - 19.02.2020
-  - [x] Updates to Get-WinADGPOMissingPermissions
+  - ☑ Updates to Get-WinADGPOMissingPermissions
 - 0.0.39 - 19.02.2020
-  - [x] Fix for Get-WinADGPOMissingPermissions for multiple domains
+  - ☑ Fix for Get-WinADGPOMissingPermissions for multiple domains
 - 0.0.38 - 16.02.2020
   - Updates to PSSharedGoods code/PSEventViewer
-
 - 0.0.37 - 12.02.2020
   - Added ExtendedForestInformation input to provide a way for Testimo to use
   - Enhancements to Get-ADACL
-
 - 0.0.36 - 26.01.2020
   - Fixes for Get-ADACL (via PSSharedGoods integrated)
-
 - 0.0.35 - 23.01.2020
   - Fixes for Get-ADACL
-
 - 0.0.34 - 19.01.2020
   - Small fixes
 - 0.0.33 - 19.01.2020
-  - [x] Added Get-WinADLdapBindingsSummary
+  - ☑ Added Get-WinADLdapBindingsSummary
 - 0.0.32 - 19.01.2020
   - Small fixes
-
 - 0.0.30 - 19.01.2020
-  - [x] Reworked most of the code to support forest/including/excluding domains and including/excluding DC's - needs testing
-  - [x] Added Get-ADACL
-  - [x] Added Get-WinADTrusts
-  - [x] Added Set-WinADDiagnostics
-
+  - ☑ Reworked most of the code to support forest/including/excluding domains and including/excluding DC's - needs testing
+  - ☑ Added Get-ADACL
+  - ☑ Added Get-WinADTrusts
+  - ☑ Added Set-WinADDiagnostics
 - 0.0.29 - 04.01.2020
-  - [x] Added Get-WinADTombstoneLifetime / Set-WinADTombstoneLifetime
+  - ☑ Added Get-WinADTombstoneLifetime / Set-WinADTombstoneLifetime
 - 0.0.28 - 26.12.2019
-  - [x] Added Get-WinADForestRoles (copied from PSWinDocumentation.AD)
+  - ☑ Added Get-WinADForestRoles (copied from PSWinDocumentation.AD)
 - 0.0.27 - 16.12.2019
-  - [x] Fixes for Get-WINADFSHealth
+  - ☑ Fixes for Get-WINADFSHealth
 - 0.0.26 - 18.11.2019
-  - [x] Added Get-WinADForestObjectsConflict to find conflicting objects
+  - ☑ Added Get-WinADForestObjectsConflict to find conflicting objects
 - 0.0.25 - 15.11.2019
-  - [x] Added two new commands for fixing and reading Proxy Addresses
+  - ☑ Added two new commands for fixing and reading Proxy Addresses
 - 0.0.23 - 11.11.2019
-  - [x] Removed PSSharedGoods as a dependency for modules published to releases and PowerShellGallery
+  - ☑ Removed PSSharedGoods as a dependency for modules published to releases and PowerShellGallery
     - [ ] It's still part of development build. Releases are now merged with PSPublishModule functionality
-  - [x] Added PSEventViewer as a dependency as it was missing
-  - [x] Fix for Get-WinADDFSHealth.ps1 SYSVol Count (tnx brianmccarty)
+  - ☑ Added PSEventViewer as a dependency as it was missing
+  - ☑ Fix for Get-WinADDFSHealth.ps1 SYSVol Count (tnx brianmccarty)
 - 0.0.22 - 28.10.2019
-  - [x] Added some functions
+  - ☑ Added some functions
 - 0.0.21 - 10.10.2019
-  - [x] Fix for Get-WinADLastBackup
+  - ☑ Fix for Get-WinADLastBackup
 - 0.0.7 - 3.08.2019
-  - [x] Added Get-WinADLastBackup
+  - ☑ Added Get-WinADLastBackup
