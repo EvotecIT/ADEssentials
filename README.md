@@ -48,7 +48,7 @@ Following links contain description of some of the features possible with this m
 
 ## Changelog
 
-- 0.0.126 - 2021.04.21
+- 0.0.127 - 2021.04.21
   - ℹ Improved `Get-WinADBitlockerLapsSummary` moved some fields around
 - 0.0.125 - 2021.04.21
   - 🐛 Improved `Get-WinADDelegatedAccounts`
