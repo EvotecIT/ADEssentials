@@ -54,6 +54,7 @@
             'PasswordLastSet'
             'ms-Mcs-AdmPwd'
             'ms-Mcs-AdmPwdExpirationTime'
+            'PrimaryGroupID'
         )
     } else {
         $LapsAvailable = $false
@@ -64,6 +65,7 @@
             'DistinguishedName'
             'LastLogonDate'
             'PasswordLastSet'
+            'PrimaryGroupID'
         )
     }
     $CurrentDate = Get-Date
@@ -135,6 +137,7 @@
                     Enabled                 = $_.Enabled
                     Domain                  = $Domain
                     DNSHostName             = $_.DNSHostName
+                    IsDC                    = if ($_.PrimaryGroupID -in 516, 521) { $true } else { $false }
                     Laps                    = $Laps
                     LapsExpirationDays      = $LapsExpirationDays
                     LapsExpirationTime      = $LapsExpirationTime
@@ -152,6 +155,7 @@
                     Enabled                 = $_.Enabled
                     Domain                  = $Domain
                     DNSHostName             = $_.DNSHostName
+                    IsDC                    = if ($Computer.PrimaryGroupID -in 516, 521) { $true } else { $false }
                     Encrypted               = $Encrypted
                     EncryptedTime           = $EncryptedTime
                     System                  = ConvertTo-OperatingSystem -OperatingSystem $_.OperatingSystem -OperatingSystemVersion $_.OperatingSystemVersion
@@ -168,6 +172,7 @@
                     Enabled                 = $_.Enabled
                     Domain                  = $Domain
                     DNSHostName             = $_.DNSHostName
+                    IsDC                    = if ($Computer.PrimaryGroupID -in 516, 521) { $true } else { $false }
                     Encrypted               = $Encrypted
                     EncryptedTime           = $EncryptedTime
                     Laps                    = $Laps
