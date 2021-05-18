@@ -52,19 +52,19 @@
         )
 
         try {
-            $accounts = Get-ADObject -LDAPFilter $filter -SearchBase $ForestInformation.DomainsExtended[$Domain].DistinguishedName -SearchScope Subtree -Properties $propertylist -Server $ForestInformation.QueryServers[$Domain].HostName[0]
+            $Accounts = Get-ADObject -LDAPFilter $filter -SearchBase $ForestInformation.DomainsExtended[$Domain].DistinguishedName -SearchScope Subtree -Properties $propertylist -Server $ForestInformation.QueryServers[$Domain].HostName[0]
         } catch {
-            $accounts = $null
-            Write-Warning "Failed to query $Server. Consider investigating seperately. $($_.Exception.Message)"
+            $Accounts = $null
+            Write-Warning -Message "Get-WinADDelegatedAccounts - Failed to get information: $($_.Exception.Message)"
         }
 
-        foreach ($Account in $accounts) {
+        foreach ($Account in $Accounts) {
             $UAC = Convert-UserAccountControl -UserAccountControl $Account.useraccountcontrol
-            $isDC = ($Account.useraccountcontrol -band $SERVER_TRUST_ACCOUNT) -ne 0
-            $fullDelegation = ($Account.useraccountcontrol -band $TRUSTED_FOR_DELEGATION) -ne 0
-            $constrainedDelegation = ($Account.'msDS-AllowedToDelegateTo').count -gt 0
-            $isRODC = ($Account.useraccountcontrol -band $PARTIAL_SECRETS_ACCOUNT) -ne 0
-            $resourceDelegation = $null -ne $Account.'msDS-AllowedToActOnBehalfOfOtherIdentity'
+            $IsDC = ($Account.useraccountcontrol -band $SERVER_TRUST_ACCOUNT) -ne 0
+            $FullDelegation = ($Account.useraccountcontrol -band $TRUSTED_FOR_DELEGATION) -ne 0
+            $ConstrainedDelegation = ($Account.'msDS-AllowedToDelegateTo').count -gt 0
+            $IsRODC = ($Account.useraccountcontrol -band $PARTIAL_SECRETS_ACCOUNT) -ne 0
+            $ResourceDelegation = $null -ne $Account.'msDS-AllowedToActOnBehalfOfOtherIdentity'
             $PasswordLastSet = [datetime]::FromFileTimeUtc($Account.pwdLastSet)
             $LastLogonDate = [datetime]::FromFileTimeUtc($Account.LastLogon)
 
@@ -73,11 +73,11 @@
                 SamAccountName                      = $Account.samaccountname
                 Enabled                             = $UAC -notcontains 'ACCOUNTDISABLE'
                 ObjectClass                         = $Account.objectclass
-                IsDC                                = $isDC
-                IsRODC                              = $isRODC
-                FullDelegation                      = $fullDelegation
-                ConstrainedDelegation               = $constrainedDelegation
-                ResourceDelegation                  = $resourceDelegation
+                IsDC                                = $IsDC
+                IsRODC                              = $IsRODC
+                FullDelegation                      = $FullDelegation
+                ConstrainedDelegation               = $ConstrainedDelegation
+                ResourceDelegation                  = $ResourceDelegation
                 LastLogonDate                       = $LastLogonDate
                 PasswordLastSet                     = $PasswordLastSet
                 UserAccountControl                  = $UAC
