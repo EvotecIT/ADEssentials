@@ -120,9 +120,11 @@
             }
             if ($ADGroup -and -not $SummaryOnly) {
                 $GroupName = $ADGroup[0].GroupName
+                $NetBIOSName = Convert-DomainFqdnToNetBIOS -DomainName $ADGroup[0].DomainName
+                $FullName = "$NetBIOSName\$GroupName"
                 $DataStoreID = -join ('table', (Get-RandomStringName -Size 10 -ToLower))
                 $DataTableID = -join ('table', (Get-RandomStringName -Size 10 -ToLower))
-                New-HTMLTab -TabName $GroupName {
+                New-HTMLTab -TabName $FullName {
                     New-HTMLTab -TabName 'Information' {
                         New-HTMLSection -Title "Information for $GroupName" {
                             New-HTMLTable -DataTable $ADGroup -Filtering -DataStoreID $DataStoreID {

@@ -2,4 +2,4 @@
 
 Show-WinADGroupMember -GroupName 'GDS-TestGroup2'
 Show-WinADGroupMember -GroupName 'Test-Group', 'Domain Admins','Enterprise Admins', 'Administrators' -FilePath $PSScriptRoot\Reports\GroupMembership.html -Summary -HideUsers
-Show-WinADGroupMember -GroupName 'Test-Group', 'Domain Admins','Enterprise Admins', 'Administrators' -FilePath $PSScriptRoot\Reports\GroupMembership.html -SummaryOnly
+Show-WinADGroupMember -GroupName 'Test-Group', 'Domain Admins','Enterprise Admins', 'Administrators' -FilePath $PSScriptRoot\Reports\GroupMembership.html #-SummaryOnly
