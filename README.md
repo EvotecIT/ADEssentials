@@ -48,9 +48,11 @@ Following links contain description of some of the features possible with this m
 
 ## Changelog
 
-- 0.0.128 - 2021.05.19
+- 0.0.128 (prerelease Alpha01) - 2021.05.19
   - 📦 Added `Get-WinADUsers`
   - 📦 Added `Get-WinADComputers`
+  - 📦 Added `Get-WinADServiceAccount`
+  - 📦 Added `Invoke-ADEssentials`
   - ℹ Improved `Show-WinADGroupMember` to show NETBIOS name in the tabs to distinguish between two domains
 - 0.0.127 - 2021.04.21
   - ℹ Improved `Get-WinADBitlockerLapsSummary` moved some fields around
