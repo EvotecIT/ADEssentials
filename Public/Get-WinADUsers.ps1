@@ -126,9 +126,6 @@
                 $DaysToExpire = $null
             }
 
-
-            # 'msExchMailboxGuid', 'msExchRemoteRecipientType', 'msExchRecipientTypeDetails', 'msExchRecipientDisplayType'
-
             if ($User.'msExchMailboxGuid') {
                 $HasMailbox = $true
             } else {
