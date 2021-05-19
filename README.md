@@ -48,7 +48,7 @@ Following links contain description of some of the features possible with this m
 
 ## Changelog
 
-- 0.0.128 (prerelease Alpha01) - 2021.05.19
+- 0.0.128 (prerelease Alpha01) - 2021.05.20
   - 📦 Added `Get-WinADUsers`
   - 📦 Added `Get-WinADComputers`
   - 📦 Added `Get-WinADServiceAccount`
