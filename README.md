@@ -48,6 +48,11 @@ Following links contain description of some of the features possible with this m
 
 ## Changelog
 
+- 0.0.128 (prerelease Alpha02) - 2021.05.27
+  - ℹ Improved `Get-WinADUsers`
+  - ℹ Improved `Get-WinADComputers`
+  - ℹ Added `Get-WinADDHCP`
+  - 📦 Improved `Invoke-ADEssentials`
 - 0.0.128 (prerelease Alpha01) - 2021.05.20
   - 📦 Added `Get-WinADUsers`
   - 📦 Added `Get-WinADComputers`

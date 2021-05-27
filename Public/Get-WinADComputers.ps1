@@ -22,13 +22,13 @@
             $ComputerLocation = ($Computer.DistinguishedName -split ',').Replace('OU=', '').Replace('CN=', '').Replace('DC=', '')
             $Region = $ComputerLocation[-4]
             $Country = $ComputerLocation[-5]
-            if ($null -ne $Account.LastLogonDate) {
-                [int] $LastLogonDays = "$(-$($Account.LastLogonDate - $Today).Days)"
+            if ($null -ne $Computer.LastLogonDate) {
+                $LastLogonDays = "$(-$($Computer.LastLogonDate - $Today).Days)"
             } else {
                 $LastLogonDays = $null
             }
-            if ($null -ne $Account.PasswordLastSet) {
-                [int] $PasswordLastChangedDays = "$(-$($Account.PasswordLastSet - $Today).Days)"
+            if ($null -ne $Computer.PasswordLastSet) {
+                $PasswordLastChangedDays = "$(-$($Computer.PasswordLastSet - $Today).Days)"
             } else {
                 $PasswordLastChangedDays = $null
             }
@@ -36,14 +36,10 @@
                 Name                 = $Computer.Name
                 SamAccountName       = $Computer.SamAccountName
                 IsDC                 = if ($Computer.PrimaryGroupID -in 516, 521) { $true } else { $false }
-                #UserPrincipalName    = $Computer.UserPrincipalName
+                WhenChanged          = $Computer.WhenChanged
                 Enabled              = $Computer.Enabled
                 LastLogonDays        = $LastLogonDays
-                PasswordLastDays     = $PasswordLastDays
-                #Manager              = $Manager
-                #ManagerEmail         = $ManagerEmail
-                #ManagerStatus        = $ManagerStatus
-                #ManagerLastLogonDays = $ManagerLastLogonDays
+                PasswordLastDays     = $PasswordLastChangedDays
                 Level0               = $Region
                 Level1               = $Country
                 OperatingSystem      = $Computer.OperatingSystem

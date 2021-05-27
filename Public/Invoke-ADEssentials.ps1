@@ -71,18 +71,10 @@
             'DistinguishedName', 'mail', 'LastLogonDate', 'PasswordLastSet', 'DisplayName', 'Manager', 'Description',
             'PasswordNeverExpires', 'PasswordNotRequired', 'PasswordExpired', 'UserPrincipalName', 'SamAccountName', 'CannotChangePassword',
             'TrustedForDelegation', 'TrustedToAuthForDelegation', 'msExchMailboxGuid', 'msExchRemoteRecipientType', 'msExchRecipientTypeDetails',
-            'msExchRecipientDisplayType', 'pwdLastSet', "msDS-UserPasswordExpiryTimeComputed"
+            'msExchRecipientDisplayType', 'pwdLastSet', "msDS-UserPasswordExpiryTimeComputed",
+            'WhenCreated', 'WhenChanged'
         )
         $AllUsers[$Domain] = Get-ADUser -Filter * -Server $QueryServer -Properties $Properties
-        foreach ($Domain In $ForestInformation.Domains) {
-            $Properties = @(
-                'DistinguishedName', 'mail', 'LastLogonDate', 'PasswordLastSet', 'DisplayName', 'Manager', 'Description',
-                'PasswordNeverExpires', 'PasswordNotRequired', 'PasswordExpired', 'UserPrincipalName', 'SamAccountName', 'CannotChangePassword',
-                'TrustedForDelegation', 'TrustedToAuthForDelegation', 'msExchMailboxGuid', 'msExchRemoteRecipientType', 'msExchRecipientTypeDetails',
-                'msExchRecipientDisplayType', 'pwdLastSet', "msDS-UserPasswordExpiryTimeComputed"
-            )
-            $AllUsers[$Domain] = Get-ADUser -Filter * -Properties $Properties -Server $ForestInformation['QueryServers'][$Domain].HostName[0]
-        }
     }
     if (-not $Script:Cache) {
         $Script:Cache = @{}
