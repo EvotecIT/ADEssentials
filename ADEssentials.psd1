@@ -14,7 +14,6 @@
         PSData = @{
             Tags       = @('Windows', 'ActiveDirectory')
             ProjectUri = 'https://github.com/EvotecIT/ADEssentials'
-            Prerelease = 'Alpha02'
         }
     }
     RequiredModules      = @(@{
