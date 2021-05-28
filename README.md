@@ -48,6 +48,8 @@ Following links contain description of some of the features possible with this m
 
 ## Changelog
 
+- 0.0.129 - 2021.05.28
+  - Improved `Get-ADACL` with Principal parameter
 - 0.0.128 - 2021.05.27
   - ℹ Improved `Get-WinADUsers`
   - ℹ Improved `Get-WinADComputers`
