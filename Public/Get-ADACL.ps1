@@ -7,6 +7,7 @@
         [string] $ForestName,
         [switch] $Extended,
         [alias('ResolveTypes')][switch] $Resolve,
+        [string] $Principal,
         [switch] $Inherited,
         [switch] $NotInherited,
         [switch] $Bundle,
@@ -110,6 +111,9 @@
                     }
                 }
                 $IdentityReference = $ACL.IdentityReference.Value
+                if ($Principal -and $Principal -ne $IdentityReference) {
+                    continue
+                }
 
                 $ReturnObject = [ordered] @{ }
                 $ReturnObject['DistinguishedName' ] = $DistinguishedName
