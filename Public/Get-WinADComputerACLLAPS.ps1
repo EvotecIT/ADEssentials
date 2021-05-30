@@ -20,49 +20,58 @@
     #>
     [cmdletBinding()]
     param(
-        [switch] $ACLMissingOnly
+        [alias('ForestName')][string] $Forest,
+        [string[]] $ExcludeDomains,
+        [alias('Domain', 'Domains')][string[]] $IncludeDomains,
+        [switch] $ACLMissingOnly,
+        [System.Collections.IDictionary] $ExtendedForestInformation
     )
-    $Computers = Get-ADComputer -Filter * -Properties LastLogonDate, PasswordLastSet, WhenChanged, OperatingSystem, servicePrincipalName
-    foreach ($Computer in $Computers) {
-        $ComputerLocation = ($Computer.DistinguishedName -split ',').Replace('OU=', '').Replace('CN=', '').Replace('DC=', '')
-        $Region = $ComputerLocation[-4]
-        $Country = $ComputerLocation[-5]
-        $ACLs = Get-ADACL -ADObject $Computer.DistinguishedName -Principal 'NT AUTHORITY\SELF'
+    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation
 
-        $LAPS = $false
-        $LAPSExpirationTime = $false
+    foreach ($Domain in $ForestInformation.Domains) {
+        $Computers = Get-ADComputer -Filter * -Properties LastLogonDate, PasswordLastSet, WhenChanged, OperatingSystem, servicePrincipalName -Server $ForestInformation.QueryServers[$Domain].HostName[0]
+        foreach ($Computer in $Computers) {
+            $ComputerLocation = ($Computer.DistinguishedName -split ',').Replace('OU=', '').Replace('CN=', '').Replace('DC=', '')
+            $Region = $ComputerLocation[-4]
+            $Country = $ComputerLocation[-5]
+            $ACLs = Get-ADACL -ADObject $Computer.DistinguishedName -Principal 'NT AUTHORITY\SELF'
 
-        foreach ($ACL in $ACLs) {
-            if ($ACL.ObjectTypeName -eq 'ms-Mcs-AdmPwd') {
-                if ($ACL.AccessControlType -eq 'Allow' -and $ACL.ActiveDirectoryRights -like '*WriteProperty*') {
-                    $LAPS = $true
-                }
-            } elseif ($ACL.ObjectTypeName -eq 'ms-Mcs-AdmPwdExpirationTime') {
-                if ($ACL.AccessControlType -eq 'Allow' -and $ACL.ActiveDirectoryRights -like '*WriteProperty*') {
-                    $LAPSExpirationTime = $true
+            $LAPS = $false
+            $LAPSExpirationTime = $false
+
+            foreach ($ACL in $ACLs) {
+                if ($ACL.ObjectTypeName -eq 'ms-Mcs-AdmPwd') {
+                    if ($ACL.AccessControlType -eq 'Allow' -and $ACL.ActiveDirectoryRights -like '*WriteProperty*') {
+                        $LAPS = $true
+                    }
+                } elseif ($ACL.ObjectTypeName -eq 'ms-Mcs-AdmPwdExpirationTime') {
+                    if ($ACL.AccessControlType -eq 'Allow' -and $ACL.ActiveDirectoryRights -like '*WriteProperty*') {
+                        $LAPSExpirationTime = $true
+                    }
                 }
             }
-        }
-        if ($ACLMissingOnly -and $LAPS -eq $true) {
-            continue
-        }
+            if ($ACLMissingOnly -and $LAPS -eq $true) {
+                continue
+            }
 
-        [PSCustomObject] @{
-            Name                 = $Computer.Name
-            SamAccountName       = $Computer.SamAccountName
-            Enabled              = $Computer.Enabled
-            IsDC                 = if ($Computer.PrimaryGroupID -in 516, 521) { $true } else { $false }
-            WhenChanged          = $Computer.WhenChanged
-            LapsACL              = $LAPS
-            LapsExpirationACL    = $LAPSExpirationTime
-            OperatingSystem      = $Computer.OperatingSystem
-            DistinguishedName    = $Computer.DistinguishedName
-            LastLogonDate        = $Computer.LastLogonDate
-            PasswordLastSet      = $Computer.PasswordLastSet
-            Level0               = $Region
-            Level1               = $Country
-            ServicePrincipalName = $Computer.servicePrincipalName
-        }
+            [PSCustomObject] @{
+                Name                 = $Computer.Name
+                SamAccountName       = $Computer.SamAccountName
+                DomainName           = $Domain
+                Enabled              = $Computer.Enabled
+                IsDC                 = if ($Computer.PrimaryGroupID -in 516, 521) { $true } else { $false }
+                WhenChanged          = $Computer.WhenChanged
+                LapsACL              = $LAPS
+                LapsExpirationACL    = $LAPSExpirationTime
+                OperatingSystem      = $Computer.OperatingSystem
+                DistinguishedName    = $Computer.DistinguishedName
+                LastLogonDate        = $Computer.LastLogonDate
+                PasswordLastSet      = $Computer.PasswordLastSet
+                Level0               = $Region
+                Level1               = $Country
+                ServicePrincipalName = $Computer.servicePrincipalName
+            }
 
+        }
     }
 }
