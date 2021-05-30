@@ -48,6 +48,8 @@ Following links contain description of some of the features possible with this m
 
 ## Changelog
 
+- 0.0.131 - 2021.05.30
+  - ℹ Improved `Invoke-ADEssentials`
 - 0.0.130 - 2021.05.30
   - 📦 Added `Get-WinADComputerACLLAPS`
 - 0.0.129 - 2021.05.28
