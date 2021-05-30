@@ -29,7 +29,7 @@
     $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation
 
     foreach ($Domain in $ForestInformation.Domains) {
-        $Computers = Get-ADComputer -Filter * -Properties LastLogonDate, PasswordLastSet, WhenChanged, OperatingSystem, servicePrincipalName -Server $ForestInformation.QueryServers[$Domain].HostName[0]
+        $Computers = Get-ADComputer -Filter * -Properties PrimaryGroupID, LastLogonDate, PasswordLastSet, WhenChanged, OperatingSystem, servicePrincipalName -Server $ForestInformation.QueryServers[$Domain].HostName[0]
         foreach ($Computer in $Computers) {
             $ComputerLocation = ($Computer.DistinguishedName -split ',').Replace('OU=', '').Replace('CN=', '').Replace('DC=', '')
             $Region = $ComputerLocation[-4]
@@ -64,11 +64,11 @@
                 LapsACL              = $LAPS
                 LapsExpirationACL    = $LAPSExpirationTime
                 OperatingSystem      = $Computer.OperatingSystem
+                Level0               = $Region
+                Level1               = $Country
                 DistinguishedName    = $Computer.DistinguishedName
                 LastLogonDate        = $Computer.LastLogonDate
                 PasswordLastSet      = $Computer.PasswordLastSet
-                Level0               = $Region
-                Level1               = $Country
                 ServicePrincipalName = $Computer.servicePrincipalName
             }
 

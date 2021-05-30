@@ -25,7 +25,7 @@
                 #New-ChartEvent -DataTableID 'NewIDtoSearchInChart' -ColumnID 0
             }
 
-            New-HTMLTable -DataTable $Script:Reporting['LapsAndBitLocker']['Data'] -Filtering -SearchBuilder {
+            New-HTMLTable -DataTable $Script:Reporting['LapsAndBitLocker']['Data'] -Filtering {
                 New-HTMLTableCondition -Name 'Enabled' -ComparisonType string -Operator eq -Value $true -BackgroundColor LimeGreen -FailBackgroundColor BlizzardBlue
                 New-HTMLTableCondition -Name 'LapsExpirationDays' -ComparisonType number -Operator lt -Value 0 -BackgroundColor BurntOrange -HighlightHeaders LapsExpirationDays, LapsExpirationTime -FailBackgroundColor LimeGreen
                 New-HTMLTableCondition -Name 'Laps' -ComparisonType string -Operator eq -Value $true -BackgroundColor LimeGreen -FailBackgroundColor Alizarin
