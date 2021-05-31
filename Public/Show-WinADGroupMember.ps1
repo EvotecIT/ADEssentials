@@ -1,13 +1,13 @@
 ﻿function Show-WinADGroupMember {
     <#
     .SYNOPSIS
-    Short description
+    Command to gather nested group membership from one or more groups and display in table with two diagrams
 
     .DESCRIPTION
-    Long description
+    Command to gather nested group membership from one or more groups and display in table with two diagrams
 
     .PARAMETER Identity
-    Group Name to search for
+    Group Name or Names to search for
 
     .PARAMETER Conditions
     Provides ability to control look and feel of tables across HTML
@@ -77,99 +77,120 @@
         [Parameter(ParameterSetName = 'Default')][switch] $Summary,
         [Parameter(ParameterSetName = 'SummaryOnly')][switch] $SummaryOnly
     )
+    $Script:Reporting = [ordered] @{}
+    $Script:Reporting['Version'] = Get-GitHubVersion -Cmdlet 'Show-WinADGroupMember' -RepositoryOwner 'evotecit' -RepositoryName 'ADEssentials'
+
     $VisualizeOnly = $false
     if ($FilePath -eq '') {
         $FilePath = Get-FileName -Extension 'html' -Temporary
     }
     $GroupsList = [System.Collections.Generic.List[object]]::new()
-    New-HTML -TitleText "Visual Group Membership" {
-        New-HTMLSectionStyle -BorderRadius 0px -HeaderBackGroundColor Grey -RemoveShadow
-        New-HTMLTableOption -DataStore JavaScript
-        New-HTMLTabStyle -BorderRadius 0px -TextTransform capitalize -BackgroundColorActive SlateGrey
+    if ($Identity.Count -gt 0) {
+        New-HTML -TitleText "Visual Group Membership" {
+            New-HTMLHeader {
+                New-HTMLSection -Invisible {
+                    New-HTMLSection {
+                        New-HTMLText -Text "Report generated on $(Get-Date)" -Color Blue
+                    } -JustifyContent flex-start -Invisible
+                    New-HTMLSection {
+                        New-HTMLText -Text "ADEssentials - $($Script:Reporting['Version'])" -Color Blue
+                    } -JustifyContent flex-end -Invisible
+                }
+            }
+            New-HTMLSectionStyle -BorderRadius 0px -HeaderBackGroundColor Grey -RemoveShadow
+            New-HTMLTableOption -DataStore JavaScript
+            New-HTMLTabStyle -BorderRadius 0px -TextTransform capitalize -BackgroundColorActive SlateGrey
 
-        if ($Identity[0].GroupName) {
-            $GroupMembersCache = [ordered] @{}
-            $VisualizeOnly = $true
-            foreach ($Entry in $Identity) {
-                $IdentityGroupName = "($($Entry.GroupName) / $($Entry.GroupDomainName))"
-                if (-not $GroupMembersCache[$IdentityGroupName]) {
-                    $GroupMembersCache[$IdentityGroupName] = [System.Collections.Generic.List[PSCustomObject]]::new()
-                }
-                $GroupMembersCache[$IdentityGroupName].Add($Entry)
-            }
-            [Array] $IdentityList = $GroupMembersCache.Keys
-        } else {
-            [Array] $IdentityList = $Identity
-        }
-        foreach ($Group in $IdentityList) {
-            try {
-                Write-Verbose "Show-WinADGroupMember - requesting $Group group nested membership"
-                if ($VisualizeOnly) {
-                    $ADGroup = $GroupMembersCache[$Group]
-                } else {
-                    $ADGroup = Get-WinADGroupMember -Group $Group -All -AddSelf -AdditionalStatistics:$AdditionalStatistics
-                }
-                if ($Summary -or $SummaryOnly) {
-                    foreach ($Object in $ADGroup) {
-                        $GroupsList.Add($Object)
+            if ($Identity[0].GroupName) {
+                $GroupMembersCache = [ordered] @{}
+                $VisualizeOnly = $true
+                foreach ($Entry in $Identity) {
+                    $IdentityGroupName = "($($Entry.GroupName) / $($Entry.GroupDomainName))"
+                    if (-not $GroupMembersCache[$IdentityGroupName]) {
+                        $GroupMembersCache[$IdentityGroupName] = [System.Collections.Generic.List[PSCustomObject]]::new()
                     }
+                    $GroupMembersCache[$IdentityGroupName].Add($Entry)
                 }
-            } catch {
-                Write-Warning "Show-WinADGroupMember - Error processing group $Group. Skipping. Needs investigation why it failed. Error: $($_.Exception.Message)"
-                continue
+                [Array] $IdentityList = $GroupMembersCache.Keys
+            } else {
+                [Array] $IdentityList = $Identity
             }
-            if ($ADGroup -and -not $SummaryOnly) {
-                $GroupName = $ADGroup[0].GroupName
-                $NetBIOSName = Convert-DomainFqdnToNetBIOS -DomainName $ADGroup[0].DomainName
-                $FullName = "$NetBIOSName\$GroupName"
-                $DataStoreID = -join ('table', (Get-RandomStringName -Size 10 -ToLower))
-                $DataTableID = -join ('table', (Get-RandomStringName -Size 10 -ToLower))
-                New-HTMLTab -TabName $FullName {
-                    New-HTMLTab -TabName 'Information' {
-                        New-HTMLSection -Title "Information for $GroupName" {
-                            New-HTMLTable -DataTable $ADGroup -Filtering -DataStoreID $DataStoreID {
-                                if (-not $DisableBuiltinConditions) {
-                                    New-TableHeader -Names Name, SamAccountName, DomainName, DisplayName -Title 'Member'
-                                    New-TableHeader -Names DirectMembers, DirectGroups, IndirectMembers, TotalMembers -Title 'Statistics'
-                                    New-TableHeader -Names GroupType, GroupScope -Title 'Group Details'
-                                    New-TableCondition -BackgroundColor CoralRed -Color White -ComparisonType bool -Value $false -Name Enabled -Operator eq
-                                    New-TableCondition -BackgroundColor LightBlue -ComparisonType string -Value '' -Name ParentGroup -Operator eq -Row
-                                    New-TableCondition -BackgroundColor CoralRed -Color White -ComparisonType bool -Value $true -Name CrossForest -Operator eq
-                                    New-TableCondition -BackgroundColor CoralRed -Color White -ComparisonType bool -Value $true -Name CircularIndirect -Operator eq -Row
-                                    New-TableCondition -BackgroundColor CoralRed -Color White -ComparisonType bool -Value $true -Name CircularDirect -Operator eq -Row
-                                }
-                                if ($Conditions) {
-                                    & $Conditions
+            foreach ($Group in $IdentityList) {
+                if ($null -eq $Group) {
+                    continue
+                }
+                try {
+                    Write-Verbose "Show-WinADGroupMember - requesting $Group group nested membership"
+                    if ($VisualizeOnly) {
+                        $ADGroup = $GroupMembersCache[$Group]
+                    } else {
+                        $ADGroup = Get-WinADGroupMember -Group $Group -All -AddSelf -AdditionalStatistics:$AdditionalStatistics
+                    }
+                    if ($Summary -or $SummaryOnly) {
+                        foreach ($Object in $ADGroup) {
+                            $GroupsList.Add($Object)
+                        }
+                    }
+                } catch {
+                    Write-Warning "Show-WinADGroupMember - Error processing group $Group. Skipping. Needs investigation why it failed. Error: $($_.Exception.Message)"
+                    continue
+                }
+                if ($ADGroup -and -not $SummaryOnly) {
+                    $GroupName = $ADGroup[0].GroupName
+                    $NetBIOSName = Convert-DomainFqdnToNetBIOS -DomainName $ADGroup[0].DomainName
+                    $FullName = "$NetBIOSName\$GroupName"
+                    $DataStoreID = -join ('table', (Get-RandomStringName -Size 10 -ToLower))
+                    $DataTableID = -join ('table', (Get-RandomStringName -Size 10 -ToLower))
+                    New-HTMLTab -TabName $FullName {
+                        New-HTMLTab -TabName 'Information' {
+                            New-HTMLSection -Title "Information for $GroupName" {
+                                New-HTMLTable -DataTable $ADGroup -Filtering -DataStoreID $DataStoreID {
+                                    if (-not $DisableBuiltinConditions) {
+                                        New-TableHeader -Names Name, SamAccountName, DomainName, DisplayName -Title 'Member'
+                                        New-TableHeader -Names DirectMembers, DirectGroups, IndirectMembers, TotalMembers -Title 'Statistics'
+                                        New-TableHeader -Names GroupType, GroupScope -Title 'Group Details'
+                                        New-TableCondition -BackgroundColor CoralRed -Color White -ComparisonType bool -Value $false -Name Enabled -Operator eq
+                                        New-TableCondition -BackgroundColor LightBlue -ComparisonType string -Value '' -Name ParentGroup -Operator eq -Row
+                                        New-TableCondition -BackgroundColor CoralRed -Color White -ComparisonType bool -Value $true -Name CrossForest -Operator eq
+                                        New-TableCondition -BackgroundColor CoralRed -Color White -ComparisonType bool -Value $true -Name CircularIndirect -Operator eq -Row
+                                        New-TableCondition -BackgroundColor CoralRed -Color White -ComparisonType bool -Value $true -Name CircularDirect -Operator eq -Row
+                                    }
+                                    if ($Conditions) {
+                                        & $Conditions
+                                    }
                                 }
                             }
                         }
+                        New-HTMLTab -TabName 'Diagram Basic' {
+                            New-HTMLSection -Title "Diagram for $GroupName" {
+                                New-HTMLGroupDiagramDefault -ADGroup $ADGroup -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -DataTableID $DataTableID -ColumnID 1 -Online:$Online
+                            }
+                        }
+                        New-HTMLTab -TabName 'Diagram Hierarchy' {
+                            New-HTMLSection -Title "Diagram for $GroupName" {
+                                New-HTMLGroupDiagramHierachical -ADGroup $ADGroup -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -Online:$Online
+                            }
+                        }
                     }
+                }
+            }
+            if ($Summary -or $SummaryOnly) {
+                New-HTMLTab -Name 'Summary' {
                     New-HTMLTab -TabName 'Diagram Basic' {
-                        New-HTMLSection -Title "Diagram for $GroupName" {
-                            New-HTMLGroupDiagramDefault -ADGroup $ADGroup -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -DataTableID $DataTableID -ColumnID 1 -Online:$Online
+                        New-HTMLSection -Title "Diagram for Summary" {
+                            New-HTMLGroupDiagramSummary -ADGroup $GroupsList -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -DataTableID $DataTableID -ColumnID 1 -Online:$Online
                         }
                     }
                     New-HTMLTab -TabName 'Diagram Hierarchy' {
-                        New-HTMLSection -Title "Diagram for $GroupName" {
-                            New-HTMLGroupDiagramHierachical -ADGroup $ADGroup -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -Online:$Online
+                        New-HTMLSection -Title "Diagram for Summary" {
+                            New-HTMLGroupDiagramSummaryHierarchical -ADGroup $GroupsList -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -Online:$Online
                         }
                     }
                 }
             }
-        }
-        if ($Summary -or $SummaryOnly) {
-            New-HTMLTab -Name 'Summary' {
-                New-HTMLTab -TabName 'Diagram Basic' {
-                    New-HTMLSection -Title "Diagram for Summary" {
-                        New-HTMLGroupDiagramSummary -ADGroup $GroupsList -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -DataTableID $DataTableID -ColumnID 1 -Online:$Online
-                    }
-                }
-                New-HTMLTab -TabName 'Diagram Hierarchy' {
-                    New-HTMLSection -Title "Diagram for Summary" {
-                        New-HTMLGroupDiagramSummaryHierarchical -ADGroup $GroupsList -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -Online:$Online
-                    }
-                }
-            }
-        }
-    } -Online:$Online -FilePath $FilePath -ShowHTML:(-not $HideHTML)
+
+        } -Online:$Online -FilePath $FilePath -ShowHTML:(-not $HideHTML)
+    } else {
+        Write-Warning -Message "Show-WinADGroupMember - Error processing Identity, as it's empty."
+    }
 }

@@ -15,15 +15,31 @@
         [switch] $HideHTML,
         [switch] $DisableBuiltinConditions
     )
+    $Script:Reporting = [ordered] @{}
+    $Script:Reporting['Version'] = Get-GitHubVersion -Cmdlet 'Show-WinADGroupMemberOf' -RepositoryOwner 'evotecit' -RepositoryName 'ADEssentials'
+
     if ($FilePath -eq '') {
         $FilePath = Get-FileName -Extension 'html' -Temporary
     }
     $GroupsList = [System.Collections.Generic.List[object]]::new()
     New-HTML -TitleText "Visual Object MemberOf" {
+        New-HTMLHeader {
+            New-HTMLSection -Invisible {
+                New-HTMLSection {
+                    New-HTMLText -Text "Report generated on $(Get-Date)" -Color Blue
+                } -JustifyContent flex-start -Invisible
+                New-HTMLSection {
+                    New-HTMLText -Text "ADEssentials - $($Script:Reporting['Version'])" -Color Blue
+                } -JustifyContent flex-end -Invisible
+            }
+        }
         New-HTMLSectionStyle -BorderRadius 0px -HeaderBackGroundColor Grey -RemoveShadow
         New-HTMLTableOption -DataStore JavaScript
         New-HTMLTabStyle -BorderRadius 0px -TextTransform capitalize -BackgroundColorActive SlateGrey
         foreach ($ADObject in $Identity) {
+            if ($null -eq $ADObject) {
+                continue
+            }
             try {
                 Write-Verbose "Show-WinADObjectMember - requesting $Identity member of property"
                 $MyObject = Get-WinADGroupMemberOf -Identity $ADObject -AddSelf
