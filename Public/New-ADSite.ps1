@@ -1,9 +1,10 @@
-function New-CISADSite {
+function New-ADSite {
     [CmdletBinding(SupportsShouldProcess = $true)]
     param(
         [Parameter(Mandatory = $true)][string]$Site,
         [Parameter(Mandatory = $true)][string]$Description,
         [Parameter(Mandatory = $true)][ValidateScript( { Get-ADReplicationSite -Identity $_ })][string]$SitePartner,
+        [Parameter(Mandatory = $true)][array]$DefaultSite,
         [Parameter(Mandatory = $false)][array]$Subnets,
         [Parameter(Mandatory = $false)][System.Management.Automation.PSCredential]$Credential
     )
@@ -97,7 +98,7 @@ function New-CISADSite {
         #region Attach site to default sitelink
         try {
             $hParams = @{
-                Identity      = "SWALL"
+                Identity      = $DefaultSite
                 SitesIncluded = @{ Add = $Site }
                 Server        = $sServer
             }
