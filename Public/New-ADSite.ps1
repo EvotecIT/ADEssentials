@@ -105,7 +105,7 @@ function New-ADSite {
             if ($Credential) { $hParams.Credential = $Credential }
 
             Set-ADReplicationSiteLink @hParams
-            Write-Output -InputObject "[Set] : $($Site) added to SWALL"
+            Write-Output -InputObject "[Set] : $($Site) added to $($DefaultSite)"
         } catch {
             $ErrorMessage = $PSItem.Exception.Message
             Write-Warning -Message $ErrorMessage
