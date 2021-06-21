@@ -30,9 +30,9 @@ function Copy-ADOUSecurity {
         [Parameter(Mandatory)][string]$TargetOU,
         [Parameter(Mandatory)][string]$SourceGroup,
         [Parameter(Mandatory)][string]$TargetGroup,
+        [Parameter][System.Management.Automation.PSCredential]$Credential, # TODO: Work on credentials, must be tested
         [Parameter][switch]$Execute
     )
-    begin { }
 
     process {
 
@@ -46,6 +46,14 @@ function Copy-ADOUSecurity {
 
         [ADSI]$oSourceOU = "LDAP://{0}/{1}" -f $sServer, $sSourceOU
         [ADSI]$oTargetOU = "LDAP://{0}/{1}" -f $sServer, $sDestOU
+
+        # TODO: Not sure if this is working, must be tested in AD lab first
+        if ($Credential) {
+            $oSourceOU.PSBase.Username = $Credential.Username
+            $oSourceOU.PSBase.Password = $Credential.GetNetworkCredential().Password
+            $oTargetOU.PSBase.Username = $Credential.Username
+            $oTargetOU.PSBase.Password = $Credential.GetNetworkCredential().Password
+        }
 
         $oDestAccountNT = New-Object -TypeName System.Security.Principal.NTAccount -ArgumentList $sDomain, $sDestAccount
 
@@ -76,5 +84,4 @@ function Copy-ADOUSecurity {
         }
     }
 
-    end { }
 }
