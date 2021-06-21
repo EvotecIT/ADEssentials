@@ -30,8 +30,8 @@ function Copy-ADOUSecurity {
         [Parameter(Mandatory)][string]$TargetOU,
         [Parameter(Mandatory)][string]$SourceGroup,
         [Parameter(Mandatory)][string]$TargetGroup,
-        [Parameter][System.Management.Automation.PSCredential]$Credential, # TODO: Work on credentials, must be tested
-        [Parameter][switch]$Execute
+        [Parameter()][System.Management.Automation.PSCredential]$Credential, # TODO: Work on credentials, must be tested
+        [Parameter()][switch]$Execute
     )
 
     process {
