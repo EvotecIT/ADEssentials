@@ -1,41 +1,39 @@
-function Copy-ADOUSecurity {
-    <#
-    .SYNOPSIS
+<#
+.SYNOPSIS
     Copy AD security from one OU to another.
 
-    .DESCRIPTION
+.DESCRIPTION
     Copies the security for one OU to another with the ability to use a different target group with source group as reference.
 
-    .PARAMETER SourceOU
+.PARAMETER SourceOU
     The reference OU.
 
-    .PARAMETER TargetOU
+.PARAMETER TargetOU
     Target OU to apply security.
 
-    .PARAMETER SourceGroup
+.PARAMETER SourceGroup
     The reference group.
 
-    .PARAMETER TargetGroup
+.PARAMETER TargetGroup
     Target group to apply security
 
-    .PARAMETER Execute
+.PARAMETER Execute
     Switch to execute - leaving this out will result in a dry run (whatif).
 
-    .EXAMPLE
+.EXAMPLE
     Copy-ADOUSecurity -SourceOU "OU=Finance,DC=contoso,DC=com" -TargetOU "OU=Sales,DC=contoso,DC=com" -SourceGroup "FinanceAdmins" -TargetGroup "SalesAdmins"
-
-    .NOTES
-    General notes
-    #>
+#>
+function Copy-ADOUSecurity {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)][string]$SourceOU,
-        [Parameter(Mandatory = $true)][string]$TargetOU,
-        [Parameter(Mandatory = $true)][string]$SourceGroup,
-        [Parameter(Mandatory = $true)][string]$TargetGroup,
-        [Parameter(Mandatory = $false)][switch]$Execute
+        [Parameter(Mandatory)][string]$SourceOU,
+        [Parameter(Mandatory)][string]$TargetOU,
+        [Parameter(Mandatory)][string]$SourceGroup,
+        [Parameter(Mandatory)][string]$TargetGroup,
+        [Parameter][switch]$Execute
     )
     begin { }
+
     process {
 
         [string]$sDomain = (Get-ADDomain).NetBIOSName
@@ -77,5 +75,6 @@ function Copy-ADOUSecurity {
             Write-Output -InputObject "[Info] : Use the switch -Execute to apply..."
         }
     }
+
     end { }
 }
