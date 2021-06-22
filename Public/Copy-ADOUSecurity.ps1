@@ -73,13 +73,13 @@ function Copy-ADOUSecurity {
         if ($Execute) {
             try {
                 $oTargetOU.CommitChanges()
-                Write-Output -InputObject "[Info] : Permissions commited"
+                Write-Verbose -Message "Permissions commited"
             } catch {
                 $ErrorMessage = $_.Exception.Message
                 Write-Warning -Message $ErrorMessage
             }
         } else {
-            Write-Output -InputObject "[Info] : Use the switch -Execute to apply..."
+            Write-Warning -Message "Use the switch -Execute to commit changes"
         }
     }
 
