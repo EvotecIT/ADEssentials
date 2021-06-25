@@ -30,10 +30,10 @@ function New-ADSite {
             if ($Credential) { $hParams.Credential = $Credential }
 
             New-ADReplicationSite @hParams
-            Write-Output -InputObject "[New] : $($Site) created"
+            Write-Verbose -Message "New-ADSite - Site $($Site) created"
         } catch {
             $ErrorMessage = $PSItem.Exception.Message
-            Write-Warning -Message $ErrorMessage
+            Write-Warning -Message "New-ADSite - Error: $ErrorMessage"
         }
         #endregion
 
@@ -54,7 +54,7 @@ function New-ADSite {
                         if ($Credential) { $hParams.Credential = $Credential }
 
                         Set-ADReplicationSubnet @hParams
-                        Write-Output -InputObject "[Set] : $($subnet) reconnected"
+                        Write-Verbose -Message "New-ADSite - Subnet $($subnet) reconnected"
                     } else {
                         $hParams = @{
                             Name        = $subnet
@@ -65,13 +65,13 @@ function New-ADSite {
                         if ($Credential) { $hParams.Credential = $Credential }
 
                         New-ADReplicationSubnet @hParams
-                        Write-Output -InputObject "[New] : $($subnet) created"
+                        Write-Verbose -Message "New-ADSite - Subnet $($subnet) created"
                     }
                 }
             }
         } catch {
             $ErrorMessage = $PSItem.Exception.Message
-            Write-Warning -Message $ErrorMessage
+            Write-Warning -Message "New-ADSite - Error: $ErrorMessage"
         }
         #endregion
 
@@ -88,10 +88,10 @@ function New-ADSite {
             if ($Credential) { $hParams.Credential = $Credential }
 
             New-ADReplicationSiteLink @hParams
-            Write-Output -InputObject "[New] : $($sSiteLink) site link created"
+            Write-Verbose -Message "New-ADSite - $($sSiteLink) site link created"
         } catch {
             $ErrorMessage = $PSItem.Exception.Message
-            Write-Warning -Message $ErrorMessage
+            Write-Warning -Message "New-ADSite - Error: $ErrorMessage"
         }
         #endregion
 
@@ -105,10 +105,10 @@ function New-ADSite {
             if ($Credential) { $hParams.Credential = $Credential }
 
             Set-ADReplicationSiteLink @hParams
-            Write-Output -InputObject "[Set] : $($Site) added to $($DefaultSite)"
+            Write-Verbose -Message "New-ADSite - $($Site) added to $($DefaultSite)"
         } catch {
             $ErrorMessage = $PSItem.Exception.Message
-            Write-Warning -Message $ErrorMessage
+            Write-Warning -Message "New-ADSite - Error: $ErrorMessage"
         }
         #endregion
 
