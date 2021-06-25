@@ -161,13 +161,13 @@
                             $Ident = $NetbiosConversion.Name
                         }
                     }
+                } elseif ($Ident -like '*DC=*') {
+                    $DNConversion = ConvertFrom-DistinguishedName -DistinguishedName $Ident -ToDomainCN
+                    $TemporaryDomainName = $DNConversion
                 } elseif ($Ident -like '*@*') {
                     $CNConversion = $Ident -split '@', 2
                     $TemporaryDomainName = $CNConversion[1]
                     $Ident = $CNConversion[0]
-                } elseif ($Ident -like '*DC=*') {
-                    $DNConversion = ConvertFrom-DistinguishedName -DistinguishedName $Ident -ToDomainCN
-                    $TemporaryDomainName = $DNConversion
                 } elseif ($Ident -like '*.*') {
                     $ResolvedIdentity = Convert-Identity -Identity $Ident
                     if ($ResolvedIdentity.SID) {
