@@ -50,8 +50,8 @@ function Get-WinADForestControllerInformation {
 
             $DNS = Resolve-DnsName -DnsOnly -Name $DC.DNSHostName -ErrorAction SilentlyContinue -QuickTimeout -Verbose:$false
             if ($DNS) {
-                $ResolvedIP4 = ($DNS | Where-Object { $_.Type -eq 'A' }).IPAddress
-                $ResolvedIP6 = ($DNS | Where-Object { $_.Type -eq 'AAAA' }).IPAddress
+                $ResolvedIP4 = ($DNS | Where-Object { $_.Section -eq 'Answer' -and $_.Type -eq 'A' }).IPAddress
+                $ResolvedIP6 = ($DNS | Where-Object { $_.Section -eq 'Answer' -and $_.Type -eq 'AAAA' }).IPAddress
                 $DNSStatus = $true
             } else {
                 $ResolvedIP4 = $null
