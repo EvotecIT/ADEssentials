@@ -48,6 +48,8 @@ Following links contain description of some of the features possible with this m
 
 ## Changelog
 
+- 0.0.131
+  - Improved `Get-WinADForestControllerInformation` - fixes [Limit Resolve-DnsName results to Answer section #18](https://github.com/EvotecIT/ADEssentials/pull/18/files) - tnx rmbolger
 - 0.0.130 - 2021.05.30
   - 📦 Added `Get-WinADComputerACLLAPS`
   - ℹ Improved `Invoke-ADEssentials`
