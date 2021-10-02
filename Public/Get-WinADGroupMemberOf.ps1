@@ -37,7 +37,8 @@
                     GroupType            = $Object.GroupType
                     GroupScope           = $Object.GroupScope
                     Nesting              = $Nesting
-                    Circular             = $false
+                    CircularDirect       = $false
+                    CircularIndirect     = $false
                     #CrossForest          = $false
                     ParentGroup          = ''
                     ParentGroupDomain    = ''
@@ -54,7 +55,7 @@
             if ($Object) {
                 # Lets cache our object
                 $Script:WinADGroupObjectCache[$Object.DistinguishedName] = $Object
-                if ($Circular) {
+                if ($Circular -or $CollectedGroups -contains $Object.DistinguishedName) {
                     [Array] $NestedMembers = foreach ($MyIdentity in $Object.MemberOf) {
                         if ($Script:WinADGroupObjectCache[$MyIdentity]) {
                             $Script:WinADGroupObjectCache[$MyIdentity]
@@ -98,7 +99,8 @@
                         GroupType            = $NestedMember.GroupType
                         GroupScope           = $NestedMember.GroupScope
                         Nesting              = $Nesting
-                        Circular             = $false
+                        CircularDirect       = $false
+                        CircularIndirect     = $false
                         #CrossForest          = $false
                         ParentGroup          = $Object.name
                         ParentGroupDomain    = $Object.DomainName
@@ -112,12 +114,20 @@
                     if ($NestedMember.ObjectClass -eq "group") {
                         if ($Object.members -contains $NestedMember.DistinguishedName) {
                             $Circular = $Object.DistinguishedName
-                            $CreatedObject['Circular'] = $true
+                            $CreatedObject['CircularDirect'] = $true
                         }
                         $CollectedGroups.Add($Object.DistinguishedName)
+                        if ($CollectedGroups -contains $NestedMember.DistinguishedName) {
+                            $CreatedObject['CircularIndirect'] = $true
+                        }
+
                         [PSCustomObject] $CreatedObject
                         Write-Verbose "Get-WinADGroupMemberOf - Going deeper with $($NestedMember.name)"
-                        $OutputFromGroup = Get-WinADGroupMemberOf -Identity $NestedMember -Nesting $Nesting -Circular $Circular -InitialObject $InitialObject -CollectedGroups $CollectedGroups -Nested
+                        try {
+                            $OutputFromGroup = Get-WinADGroupMemberOf -Identity $NestedMember -Nesting $Nesting -Circular $Circular -InitialObject $InitialObject -CollectedGroups $CollectedGroups -Nested
+                        } catch {
+                            Write-Warning "shit"
+                        }
                         $OutputFromGroup
                     } else {
                         [PSCustomObject] $CreatedObject
