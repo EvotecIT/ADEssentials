@@ -115,5 +115,3 @@ function New-ADSite {
     }
     end {}
 }
-
-# SIG # Begin signature bloc
