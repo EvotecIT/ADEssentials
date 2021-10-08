@@ -67,7 +67,8 @@
         [System.Collections.IDictionary] $ExtendedForestInformation,
 
         [switch] $Owner,
-        [switch] $Separate
+        [switch] $Separate,
+        [switch] $IncludeInherited
     )
     $ForestTime = Start-TimeLog
     $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation -Extended
@@ -78,47 +79,72 @@
         $Output[$Domain] = [ordered] @{}
         $Server = $ForestInformation.QueryServers[$Domain].HostName[0]
         $DomainStructure = @(
-            Get-ADObject -Filter * -Properties canonicalName -SearchScope Base -Server $Server
-            Get-ADObject -Filter * -Properties canonicalName -SearchScope OneLevel -Server $Server
+            Get-ADObject -Filter * -Properties canonicalName, ntSecurityDescriptor -SearchScope Base -Server $Server
+            Get-ADObject -Filter * -Properties canonicalName, ntSecurityDescriptor -SearchScope OneLevel -Server $Server
         )
+        $LdapFilter = "(|(ObjectClass=user)(ObjectClass=contact)(ObjectClass=computer)(ObjectClass=group)(objectClass=inetOrgPerson)(objectClass=foreignSecurityPrincipal)(objectClass=container)(objectClass=organizationalUnit)(objectclass=msDS-ManagedServiceAccount)(objectclass=msDS-GroupManagedServiceAccount))"
         $DomainStructure = $DomainStructure | Sort-Object -Property canonicalName
         foreach ($Structure in $DomainStructure) {
             $Time = Start-TimeLog
             $ObjectName = "[$Domain][$($Structure.CanonicalName)][$($Structure.ObjectClass)][$($Structure.DistinguishedName)]"
-            $ObjectOutputName = "$($Structure.Name)_$($Structure.ObjectClass)".Replace(' ', '').ToLower()
+            #$ObjectOutputName = "$($Structure.Name)_$($Structure.ObjectClass)".Replace(' ', '').ToLower()
+            $ObjectOutputName = "$($Structure.Name)".Replace(' ', '').ToLower()
             Write-Verbose "Get-WinADACLForest - [Start]$ObjectName"
             if ($Structure.ObjectClass -eq 'organizationalUnit') {
                 #$Containers = Get-ADOrganizationalUnit -Filter '*' -Server $Server -SearchBase $Structure.DistinguishedName -Properties canonicalName
-                $Containers = Get-ADObject -SearchBase $Structure.DistinguishedName -Filter * -Properties canonicalName -Server $Server -SearchScope Subtree | ForEach-Object {
-                    foreach ($I in $Ignore) {
-                        if ($_.DistinguishedName -notlike $I) {
+                $Ignore = @()
+                $Containers = @(
+                    Get-ADObject -LDAPFilter $LdapFilter -SearchBase $Structure.DistinguishedName -Properties canonicalName, ntSecurityDescriptor -Server $Server -SearchScope Subtree | ForEach-Object {
+                        $Found = $false
+                        foreach ($I in $Ignore) {
+                            if ($_.DistinguishedName -like $I) {
+                                $Found = $true
+                            }
+                        }
+                        if (-not $Found) {
                             $_
                         }
                     }
-                } | Sort-Object canonicalName
+                ) | Sort-Object canonicalName
             } elseif ($Structure.ObjectClass -eq 'domainDNS') {
                 $Containers = $Structure
             } elseif ($Structure.ObjectClass -eq 'container') {
                 $Ignore = @(
                     # lets ignore GPO, we deal with it in GPOZaurr
                     -join ('*CN=Policies,CN=System,', $ForestInformation['DomainsExtended'][$DOmain].DistinguishedName)
+
+                    -join ('*,CN=System,', $ForestInformation['DomainsExtended'][$DOmain].DistinguishedName)
                 )
                 #$Containers = Get-ADObject -SearchBase $Structure.DistinguishedName -Filter { ObjectClass -eq 'container' } -Properties canonicalName -Server $Server -SearchScope Subtree
-                $Containers = Get-ADObject -SearchBase $Structure.DistinguishedName -Filter * -Properties canonicalName -Server $Server -SearchScope Subtree | ForEach-Object {
+                $Containers = Get-ADObject -LDAPFilter $LdapFilter -SearchBase $Structure.DistinguishedName -Properties canonicalName, ntSecurityDescriptor -Server $Server -SearchScope Subtree | ForEach-Object {
+                    $Found = $false
                     foreach ($I in $Ignore) {
-                        if ($_.DistinguishedName -notlike $I) {
-                            $_
+                        if ($_.DistinguishedName -like $I) {
+                            $Found = $true
                         }
+                    }
+                    if (-not $Found) {
+                        $_
                     }
                 } | Sort-Object canonicalName
             } else {
+                $EndTime = Stop-TimeLog -Time $Time -Option OneLiner
                 Write-Verbose "Get-WinADACLForest - [Skip  ]$ObjectName[ObjectClass not requested]"
+                continue
+            }
+            if (-not $Containers) {
+                $EndTime = Stop-TimeLog -Time $Time -Option OneLiner
+                Write-Verbose "Get-WinADACLForest - [End  ]$ObjectName[$EndTime]"
                 continue
             }
             if ($Owner) {
                 $MYACL = Get-ADACLOwner -ADObject $Containers -Resolve
             } else {
-                $MYACL = Get-ADACL -ADObject $Containers -NotInherited -ResolveTypes
+                if ($IncludeInherited) {
+                    $MYACL = Get-ADACL -ADObject $Containers -ResolveTypes
+                } else {
+                    $MYACL = Get-ADACL -ADObject $Containers -ResolveTypes -NotInherited
+                }
             }
             if ($Separate) {
                 $Output[$Domain][$ObjectOutputName] = $MYACL
