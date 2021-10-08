@@ -1,10 +1,11 @@
 ﻿function Get-ADACL {
     [cmdletbinding()]
     param(
-        [Parameter(Mandatory, Position = 0, ValueFromPipeline, ValueFromPipelineByPropertyName)][Array] $ADObject,
+        [Parameter(Mandatory, Position = 0, ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [alias('Identity')][Array] $ADObject,
         #[string] $Domain = $Env:USERDNSDOMAIN,
         #[Object] $Server,
-        [string] $ForestName,
+        #[string] $ForestName,
         [switch] $Extended,
         [alias('ResolveTypes')][switch] $Resolve,
         [string] $Principal,
@@ -27,10 +28,19 @@
             Write-Verbose "Get-ADACL - Gathering Forest GUIDS"
             $Script:ForestGUIDs = Get-WinADForestGUIDs
         }
+        if (-not $Script:ForestDetails) {
+            Write-Verbose "Get-ADACL - Gathering Forest Details"
+            $Script:ForestDetails = Get-WinADForestDetails
+        }
     }
     Process {
         foreach ($Object in $ADObject) {
+            $ADObjectData = $null
             if ($Object -is [Microsoft.ActiveDirectory.Management.ADOrganizationalUnit] -or $Object -is [Microsoft.ActiveDirectory.Management.ADEntity]) {
+                # if object already has proper security descriptor we don't need to do additional querying
+                if ($Object.ntSecurityDescriptor) {
+                    $ADObjectData = $Object
+                }
                 [string] $DistinguishedName = $Object.DistinguishedName
                 [string] $CanonicalName = $Object.CanonicalName.TrimEnd('/')
                 [string] $ObjectClass = $Object.ObjectClass
@@ -42,6 +52,7 @@
                 Write-Warning "Get-ADACL - Object not recognized. Skipping..."
                 continue
             }
+            <#
             $DNConverted = (ConvertFrom-DistinguishedName -DistinguishedName $DistinguishedName -ToDC) -replace '=' -replace ','
             if (-not (Get-PSDrive -Name $DNConverted -ErrorAction SilentlyContinue)) {
                 Write-Verbose "Get-ADACL - Enabling PSDrives for $DistinguishedName to $DNConverted"
@@ -57,6 +68,25 @@
                 $ACLs = Get-Acl -Path $PathACL -ErrorAction Stop
             } catch {
                 Write-Warning "Get-ADACL - Path $PathACL - Error: $($_.Exception.Message)"
+            }
+            #>
+            if (-not $ADObjectData) {
+                $DomainName = ConvertFrom-DistinguishedName -ToDomainCN -DistinguishedName $DistinguishedName
+                $QueryServer = $Script:ForestDetails['QueryServers'][$DomainName].HostName[0]
+                try {
+                    $ADObjectData = Get-ADObject -Identity $DistinguishedName -Properties ntSecurityDescriptor -ErrorAction Stop -Server $QueryServer
+                    # Since we already request an object we might as well use the data and overwrite it if people use the string
+                    $ObjectClass = $ADObjectData.ObjectClass
+                    $CanonicalName = $ADObjectData.CanonicalName
+                    # Real ACL
+                    $ACLs = $ADObjectData.ntSecurityDescriptor
+                } catch {
+                    Write-Warning "Get-ADACL - Path $PathACL - Error: $($_.Exception.Message)"
+                    continue
+                }
+            } else {
+                # Real ACL
+                $ACLs = $ADObjectData.ntSecurityDescriptor
             }
             $AccessObjects = foreach ($ACL in $ACLs.Access) {
                 [Array] $ADRights = $ACL.ActiveDirectoryRights -split ', '
