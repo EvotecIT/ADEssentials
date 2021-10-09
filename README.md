@@ -52,6 +52,9 @@ Following links contain description of some of the features possible with this m
   - Improved `Get-WinADForestControllerInformation` - fixes [Limit Resolve-DnsName results to Answer section #18](https://github.com/EvotecIT/ADEssentials/pull/18/files) - tnx rmbolger
   - Improved `Show-WinADGroupMember/Show-WinADGroupMemberOf` - in some where Name would be identical wrong connections would be made
   - Improved `Get-WinADGroupMember/Get-WinADGroupMemberOf` - added GroupParentDN to better graph the tree
+  - Improved `Get-ADACL/Add-ADACL/Remove-ADACL/Get-ADACLOwner/Get-WinADACLForest` - worked out different method - still work to do
+  - Added `New-ADSite` - tnx guzzd - [Added the ability to copy ACL from one OU to another with one command](https://github.com/EvotecIT/ADEssentials/pull/15/files)
+  - Added `Copy-ADOUSecurity` - tnx guzzd - [Added the ability to copy ACL from one OU to another with one command](https://github.com/EvotecIT/ADEssentials/pull/15/files)
 - 0.0.130 - 2021.05.30
   - 📦 Added `Get-WinADComputerACLLAPS`
   - ℹ Improved `Invoke-ADEssentials`
