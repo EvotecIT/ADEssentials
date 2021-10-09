@@ -42,7 +42,10 @@
                     $ADObjectData = $Object
                 }
                 [string] $DistinguishedName = $Object.DistinguishedName
-                [string] $CanonicalName = $Object.CanonicalName.TrimEnd('/')
+                [string] $CanonicalName = $Object.CanonicalName
+                if ($CanonicalName) {
+                    $CanonicalName = $CanonicalName.TrimEnd('/')
+                }
                 [string] $ObjectClass = $Object.ObjectClass
             } elseif ($Object -is [string]) {
                 [string] $DistinguishedName = $Object
@@ -74,7 +77,7 @@
                 $DomainName = ConvertFrom-DistinguishedName -ToDomainCN -DistinguishedName $DistinguishedName
                 $QueryServer = $Script:ForestDetails['QueryServers'][$DomainName].HostName[0]
                 try {
-                    $ADObjectData = Get-ADObject -Identity $DistinguishedName -Properties ntSecurityDescriptor -ErrorAction Stop -Server $QueryServer
+                    $ADObjectData = Get-ADObject -Identity $DistinguishedName -Properties ntSecurityDescriptor, CanonicalName -ErrorAction Stop -Server $QueryServer
                     # Since we already request an object we might as well use the data and overwrite it if people use the string
                     $ObjectClass = $ADObjectData.ObjectClass
                     $CanonicalName = $ADObjectData.CanonicalName
