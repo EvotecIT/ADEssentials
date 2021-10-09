@@ -97,6 +97,7 @@
                     CrossForest       = $false
                     ParentGroup       = ''
                     ParentGroupDomain = ''
+                    ParentGroupDN     = ''
                     GroupDomainName   = $null
                     DistinguishedName = $null
                     Sid               = $null
@@ -170,9 +171,10 @@
                     }
                 }
                 #}
+                $DomainParentGroup = ConvertFrom-DistinguishedName -DistinguishedName $ADGroupName.DistinguishedName -ToDomainCN
                 foreach ($NestedMember in $NestedMembers) {
                     # for each member we either create new user or group, if group we will dive into nesting
-                    $DomainParentGroup = ConvertFrom-DistinguishedName -DistinguishedName $ADGroupName.DistinguishedName -ToDomainCN
+
                     $CreatedObject = [ordered] @{
                         GroupName         = $InitialGroup.GroupName
                         Name              = $NestedMember.name
@@ -193,6 +195,7 @@
                         CrossForest       = $false
                         ParentGroup       = $ADGroupName.name
                         ParentGroupDomain = $DomainParentGroup
+                        ParentGroupDN     = $ADGroupName.DistinguishedName
                         GroupDomainName   = $InitialGroup.DomainName
                         DistinguishedName = $NestedMember.DistinguishedName
                         Sid               = $NestedMember.ObjectSID

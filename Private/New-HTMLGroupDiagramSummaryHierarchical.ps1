@@ -16,10 +16,12 @@
             # Add it's members to diagram
             foreach ($ADObject in $ADGroup) {
                 # Lets build our diagram
+                # This diagram of Summary doesn't use level checking because it's a summary of a groups, and the level will be different per group
+                # This means that it will look a bit different than what is there when comparing 1 to 1 with the other diagrams
                 #[int] $Level = $($ADObject.Nesting) + 1
-                $ID = "$($ADObject.DomainName)$($ADObject.Name)"
+                $ID = "$($ADObject.DomainName)$($ADObject.DistinguishedName)"
                 #[int] $LevelParent = $($ADObject.Nesting)
-                $IDParent = "$($ADObject.ParentGroupDomain)$($ADObject.ParentGroup)"
+                $IDParent = "$($ADObject.ParentGroupDomain)$($ADObject.ParentGroupDN)"
 
                 [int] $Level = $($ADObject.Nesting) + 1
                 if ($ADObject.Type -eq 'User') {

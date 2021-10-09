@@ -22,9 +22,9 @@
             foreach ($ADObject in $Identity) {
                 # Lets build our diagram
                 #[int] $Level = $($ADObject.Nesting) + 1
-                $ID = "$($ADObject.DomainName)$($ADObject.Name)"
+                $ID = "$($ADObject.DomainName)$($ADObject.DistinguishedName)"
                 #[int] $LevelParent = $($ADObject.Nesting)
-                $IDParent = "$($ADObject.ParentGroupDomain)$($ADObject.ParentGroup)"
+                $IDParent = "$($ADObject.ParentGroupDomain)$($ADObject.ParentGroupDN)"
 
                 if ($ADObject.Type -eq 'User') {
                     if (-not $HideUsers -or $HideAppliesTo -notin 'Both', 'Default') {

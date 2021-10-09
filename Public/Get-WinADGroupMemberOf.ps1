@@ -42,6 +42,7 @@
                     #CrossForest          = $false
                     ParentGroup          = ''
                     ParentGroupDomain    = ''
+                    ParentGroupDN        = ''
                     ObjectDomainName     = $Object.DomainName
                     DistinguishedName    = $Object.Distinguishedname
                     Sid                  = $Object.ObjectSID
@@ -85,7 +86,7 @@
                     }
                 }
                 foreach ($NestedMember in $NestedMembers) {
-                    Write-Verbose "Get-WinADGroupMemberOf - processing $($InitialObject.ObjectName) nested member $($NestedMember.name)"
+                    Write-Verbose "Get-WinADGroupMemberOf - processing $($InitialObject.ObjectName) nested member $($NestedMember.SamAccountName)"
                     #$DomainParentGroup = ConvertFrom-DistinguishedName -DistinguishedName $Object.DistinguishedName -ToDomainCN
                     $CreatedObject = [ordered] @{
                         ObjectName           = $InitialObject.ObjectName
@@ -104,6 +105,7 @@
                         #CrossForest          = $false
                         ParentGroup          = $Object.name
                         ParentGroupDomain    = $Object.DomainName
+                        ParentGroupDN        = $Object.DistinguishedName
                         ObjectDomainName     = $InitialObject.DomainName
                         DistinguishedName    = $NestedMember.DistinguishedName
                         Sid                  = $NestedMember.ObjectSID
@@ -122,11 +124,11 @@
                         }
 
                         [PSCustomObject] $CreatedObject
-                        Write-Verbose "Get-WinADGroupMemberOf - Going deeper with $($NestedMember.name)"
+                        Write-Verbose "Get-WinADGroupMemberOf - Going deeper with $($NestedMember.SamAccountName)"
                         try {
                             $OutputFromGroup = Get-WinADGroupMemberOf -Identity $NestedMember -Nesting $Nesting -Circular $Circular -InitialObject $InitialObject -CollectedGroups $CollectedGroups -Nested
                         } catch {
-                            Write-Warning "shit"
+                            Write-Warning "Get-WinADGroupMemberOf - Going deeper with $($NestedMember.SamAccountName) failed $($_.Exception.Message)"
                         }
                         $OutputFromGroup
                     } else {
