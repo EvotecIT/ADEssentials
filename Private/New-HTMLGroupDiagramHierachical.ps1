@@ -17,9 +17,9 @@
             foreach ($ADObject in $ADGroup) {
                 # Lets build our diagram
                 [int] $Level = $($ADObject.Nesting) + 1
-                $ID = "$($ADObject.DomainName)$($ADObject.Name)$Level"
+                $ID = "$($ADObject.DomainName)$($ADObject.DistinguishedName)$Level"
                 [int] $LevelParent = $($ADObject.Nesting)
-                $IDParent = "$($ADObject.ParentGroupDomain)$($ADObject.ParentGroup)$LevelParent"
+                $IDParent = "$($ADObject.ParentGroupDomain)$($ADObject.ParentGroupDN)$LevelParent"
 
                 [int] $Level = $($ADObject.Nesting) + 1
                 if ($ADObject.Type -eq 'User') {

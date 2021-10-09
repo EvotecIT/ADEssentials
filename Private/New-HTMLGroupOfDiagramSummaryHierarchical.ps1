@@ -15,11 +15,13 @@
         if ($ADGroup) {
             # Add it's members to diagram
             foreach ($ADObject in $ADGroup) {
+                # This diagram of Summary doesn't use level checking because it's a summary of a groups, and the level will be different per group
+                # This means that it will look a bit different than what is there when comparing 1 to 1 with the other diagrams
                 # Lets build our diagram
                 #[int] $Level = $($ADObject.Nesting) + 1
-                $ID = "$($ADObject.DomainName)$($ADObject.Name)"
+                $ID = "$($ADObject.DomainName)$($ADObject.DistinguishedName)"
                 #[int] $LevelParent = $($ADObject.Nesting)
-                $IDParent = "$($ADObject.ParentGroupDomain)$($ADObject.ParentGroup)"
+                $IDParent = "$($ADObject.ParentGroupDomain)$($ADObject.ParentGroupDN)"
 
                 [int] $Level = $($ADObject.Nesting) + 1
                 if ($ADObject.Type -eq 'User') {
@@ -40,8 +42,8 @@
                         $BorderColor = 'Blue'
                         $Image = 'https://image.flaticon.com/icons/svg/166/166258.svg'
                     }
-                    $SummaryMembers = -join ('Total: ', $ADObject.TotalMembers, ' Direct: ', $ADObject.DirectMembers, ' Groups: ', $ADObject.DirectGroups, ' Indirect: ', $ADObject.IndirectMembers)
-                    $Label = $ADObject.Name + [System.Environment]::NewLine + $ADObject.DomainName + [System.Environment]::NewLine + $SummaryMembers
+                    #$SummaryMembers = -join ('Total: ', $ADObject.TotalMembers, ' Direct: ', $ADObject.DirectMembers, ' Groups: ', $ADObject.DirectGroups, ' Indirect: ', $ADObject.IndirectMembers)
+                    $Label = $ADObject.Name + [System.Environment]::NewLine + $ADObject.DomainName + [System.Environment]::NewLine #+ $SummaryMembers
                     if ($Online) {
                         New-DiagramNode -Id $ID -Label $Label -Image $Image -Level $Level -ColorBorder $BorderColor
                     } else {
