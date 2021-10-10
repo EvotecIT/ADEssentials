@@ -51,45 +51,59 @@ $Configuration = @{
             CommandModuleDependencies  = @{
                 ActiveDirectory = @(
                     'Add-ADACL'
+                    'Copy-ADOUSecurity'
                     'Get-ADACL'
                     'Get-ADACLOwner'
+                    'Get-WinADACLConfiguration'
+                    'Get-WinADACLForest'
                     'Get-WinADBitlockerLapsSummary'
+                    'Get-WinADComputerACLLAPS'
+                    'Get-WinADComputers'
+                    'Get-WinADDelegatedAccounts'
                     'Get-WinADDFSHealth'
+                    'Get-WinADDHCP'
                     'Get-WinADDiagnostics'
-                    'Get-WinADDomain'
                     'Get-WinADDuplicateObject'
+                    'Get-WinADForestControllerInformation'
                     'Get-WinADForestOptionalFeatures'
                     'Get-WinADForestReplication'
                     'Get-WinADForestRoles'
                     'Get-WinADForestSchemaProperties'
                     'Get-WinADForestSites'
-                    'Get-WinADGPOMissingPermissions'
-                    'Get-WinADGPOSysvolFolders'
+                    'Get-WinADForestSubnet'
                     'Get-WinADLastBackup'
                     'Get-WinADLDAPBindingsSummary'
                     'Get-WinADLMSettings'
-                    'Get-WinADObject'
                     'Get-WinADPrivilegedObjects'
                     'Get-WinADProxyAddresses'
+                    'Get-WinADServiceAccount'
                     'Get-WinADSharePermission'
                     'Get-WinADSiteConnections'
                     'Get-WinADSiteLinks'
                     'Get-WinADTomebstoneLifetime'
                     'Get-WinADTrustLegacy'
                     'Get-WinADUserPrincipalName'
+                    'Get-WinADUsers'
                     'Get-WinADUsersForeignSecurityPrincipalList'
                     'Get-WinADWellKnownFolders'
+                    'Invoke-ADEssentials'
                     'Remove-ADACL'
                     'Remove-WinADDuplicateObject'
                     'Remove-WinADSharePermission'
                     'Rename-WinADUserPrincipalName'
+                    'Repair-WinADACLConfigurationOwner'
                     'Repair-WinADEmailAddress'
+                    'Repair-WinADForestControllerInformation'
                     'Set-ADACLOwner'
+                    'Set-DnsServerIP'
                     'Set-WinADDiagnostics'
                     'Set-WinADReplication'
                     'Set-WinADReplicationConnections'
                     'Set-WinADShare'
                     'Set-WinADTombstoneLifetime'
+                    'Show-WinADGroupMember'
+                    'Show-WinADGroupMemberOf'
+                    'Show-WinADTrust'
                     'Sync-DomainController'
                     'Test-ADDomainController'
                     'Test-ADRolesAvailability'
@@ -99,9 +113,8 @@ $Configuration = @{
                     'Test-LDAP'
                 )
                 DHCPServer      = @(
-                    'Get-WinDHCP'
+                    'Get-WinADDHCP'
                 )
-                #GroupPolicy     = 'Get-WinADGPOMissingPermissions'
             }
         }
     }
@@ -212,17 +225,21 @@ $Configuration = @{
             ReleasesUnpacked = $false
             RefreshPSD1Only  = $false
         }
-        BuildDocumentation = $false
+        BuildDocumentation = @{
+            Enable        = $false # enables documentation processing
+            StartClean    = $true # always starts clean
+            UpdateWhenNew = $true # always updates right after new
+        }
         ImportModules      = @{
             Self            = $true
             RequiredModules = $false
             Verbose         = $false
         }
         PublishModule      = @{  # requires Enable to be on to process all of that
-            Enabled      = $false
+            Enabled      = $true
             Prerelease   = ''
             RequireForce = $false
-            GitHub       = $false
+            GitHub       = $true
         }
     }
 }
