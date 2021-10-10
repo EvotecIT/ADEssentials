@@ -48,6 +48,8 @@ Following links contain description of some of the features possible with this m
 
 ## Changelog
 
+- 0.0.133 - 2021.10.10
+  - Improved `Get-WinADACLForest` by adding SearchBase parameter
 - 0.0.132 - 2021.10.09
   - Improved `Get-ADACL`
 - 0.0.131 - 2021.10.09

@@ -65,7 +65,7 @@
         [alias('Domain')][string[]] $IncludeDomains,
         [string[]] $ExcludeDomains,
         [System.Collections.IDictionary] $ExtendedForestInformation,
-
+        [string[]] $SearchBase,
         [switch] $Owner,
         [switch] $Separate,
         [switch] $IncludeInherited
@@ -74,13 +74,33 @@
     $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation -Extended
     $Output = [ordered]@{}
     foreach ($Domain in $ForestInformation.Domains) {
+        if ($SearchBase) {
+            # Lets do quick removal when domain doesn't match so we don't use search base by accident
+            $Found = $false
+            foreach ($S in $SearchBase) {
+                $DN = $ForestInformation['DomainsExtended'][$Domain].DistinguishedName
+                if ($S -like "*$DN") {
+                    $Found = $true
+                    break
+                }
+            }
+            if ($Found -eq $false) {
+                continue
+            }
+        }
         Write-Verbose "Get-WinADACLForest - [Start][Domain $Domain]"
         $DomainTime = Start-TimeLog
         $Output[$Domain] = [ordered] @{}
         $Server = $ForestInformation.QueryServers[$Domain].HostName[0]
         $DomainStructure = @(
-            Get-ADObject -Filter * -Properties canonicalName, ntSecurityDescriptor -SearchScope Base -Server $Server
-            Get-ADObject -Filter * -Properties canonicalName, ntSecurityDescriptor -SearchScope OneLevel -Server $Server
+            if ($SearchBase) {
+                foreach ($S in $SearchBase) {
+                    Get-ADObject -Filter * -Properties canonicalName, ntSecurityDescriptor -SearchScope Base -SearchBase $S -Server $Server
+                }
+            } else {
+                Get-ADObject -Filter * -Properties canonicalName, ntSecurityDescriptor -SearchScope Base -Server $Server
+                Get-ADObject -Filter * -Properties canonicalName, ntSecurityDescriptor -SearchScope OneLevel -Server $Server
+            }
         )
         $LdapFilter = "(|(ObjectClass=user)(ObjectClass=contact)(ObjectClass=computer)(ObjectClass=group)(objectClass=inetOrgPerson)(objectClass=foreignSecurityPrincipal)(objectClass=container)(objectClass=organizationalUnit)(objectclass=msDS-ManagedServiceAccount)(objectclass=msDS-GroupManagedServiceAccount))"
         $DomainStructure = $DomainStructure | Sort-Object -Property canonicalName
@@ -137,6 +157,7 @@
                 Write-Verbose "Get-WinADACLForest - [End  ]$ObjectName[$EndTime]"
                 continue
             }
+            Write-Verbose "Get-WinADACLForest - [Read ]$ObjectName[Objects to process: $($Containers.Count)]"
             if ($Owner) {
                 $MYACL = Get-ADACLOwner -ADObject $Containers -Resolve
             } else {
