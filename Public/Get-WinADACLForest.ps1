@@ -79,7 +79,8 @@
             $Found = $false
             foreach ($S in $SearchBase) {
                 $DN = $ForestInformation['DomainsExtended'][$Domain].DistinguishedName
-                if ($S -like "*$DN") {
+                $CurrentObjectDC = ConvertFrom-DistinguishedName -DistinguishedName $S -ToDC
+                if ($CurrentObjectDC -eq $DN) {
                     $Found = $true
                     break
                 }
