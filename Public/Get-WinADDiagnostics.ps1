@@ -1,4 +1,38 @@
 ﻿function Get-WinADDiagnostics {
+    <#
+    .SYNOPSIS
+    Short description
+
+    .DESCRIPTION
+    Long description
+
+    .PARAMETER Forest
+    Target different Forest, by default current forest is used
+
+    .PARAMETER ExcludeDomains
+    Exclude domain from search, by default whole forest is scanned
+
+    .PARAMETER IncludeDomains
+    Include only specific domains, by default whole forest is scanned
+
+    .PARAMETER ExcludeDomainControllers
+    Exclude specific domain controllers, by default there are no exclusions, as long as VerifyDomainControllers switch is enabled. Otherwise this parameter is ignored.
+
+    .PARAMETER IncludeDomainControllers
+    Include only specific domain controllers, by default all domain controllers are included, as long as VerifyDomainControllers switch is enabled. Otherwise this parameter is ignored.
+
+    .PARAMETER SkipRODC
+    Skip Read-Only Domain Controllers. By default all domain controllers are included.
+
+    .PARAMETER ExtendedForestInformation
+    Ability to provide Forest Information from another command to speed up processing
+
+    .EXAMPLE
+    An example
+
+    .NOTES
+    General notes
+    #>
     [CmdletBinding()]
     param(
         [alias('ForestName')][string] $Forest,
