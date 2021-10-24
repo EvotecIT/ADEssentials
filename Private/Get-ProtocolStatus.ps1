@@ -20,10 +20,19 @@
     [CmdletBinding()]
     param(
         [PSCustomObject] $RegistryEntry,
-        [string] $WindowsVersion
+        [string] $WindowsVersion,
+        [System.Collections.IDictionary] $ProtocolDefaults,
+        [string] $Protocol
     )
 
-
+    if ($Protocol) {
+        $Default = $ProtocolDefaults[$Protocol]
+        if ($Default -eq 'Not supported') {
+            return $Default
+        }
+    } else {
+        Write-Warning -Message "Get-ProtocolStatus - protocol not specified."
+    }
 
     if ($RegistryEntry.PSConnection -eq $true) {
         if ($RegistryEntry.PSError -eq $true) {
