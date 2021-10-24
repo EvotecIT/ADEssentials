@@ -78,7 +78,7 @@
 
             $WindowsVersion = ConvertTo-OperatingSystem -OperatingSystem $Version.ProductName -OperatingSystemVersion $Version.CurrentBuildNumber
             # According to this https://github.com/MicrosoftDocs/windowsserverdocs/issues/2783 SCHANNEL service requires direct enablement
-            #$ProtocolDefaults = Get-ProtocolDefaults -WindowsVersion $WindowsVersion
+            $ProtocolDefaults = Get-ProtocolDefaults -WindowsVersion $WindowsVersion
 
             $Client = Get-PSRegistry -ComputerName $DC.HostName -RegistryPath 'HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 2.0\Client'
             $Server = Get-PSRegistry -ComputerName $DC.HostName -RegistryPath 'HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\SSL 2.0\Server'
@@ -97,18 +97,18 @@
                 ComputerName  = $DC.HostName
                 DomainName    = $DC.Domain
                 Version       = $WindowsVersion
-                SSL_2_Client  = Get-ProtocolStatus -RegistryEntry $Client -WindowsVersion $WindowsVersion
-                SSL_2_Server  = Get-ProtocolStatus -RegistryEntry $Server -WindowsVersion $WindowsVersion
-                SSL_3_Client  = Get-ProtocolStatus -RegistryEntry $Client30 -WindowsVersion $WindowsVersion
-                SSL_3_Server  = Get-ProtocolStatus -RegistryEntry $Server30 -WindowsVersion $WindowsVersion
-                TLS_10_Client = Get-ProtocolStatus -RegistryEntry $ClientTLS10 -WindowsVersion $WindowsVersion
-                TLS_10_Server = Get-ProtocolStatus -RegistryEntry $ServerTLS10 -WindowsVersion $WindowsVersion
-                TLS_11_Client = Get-ProtocolStatus -RegistryEntry $ClientTLS11 -WindowsVersion $WindowsVersion
-                TLS_11_Server = Get-ProtocolStatus -RegistryEntry $ServerTLS11 -WindowsVersion $WindowsVersion
-                TLS_12_Client = Get-ProtocolStatus -RegistryEntry $ClientTLS12 -WindowsVersion $WindowsVersion
-                TLS_12_Server = Get-ProtocolStatus -RegistryEntry $ServerTLS12 -WindowsVersion $WindowsVersion
-                #TLS_13_Client = Get-ProtocolStatus -RegistryEntry $ClientTLS13 -WindowsVersion $WindowsVersion
-                #TLS_13_Server = Get-ProtocolStatus -RegistryEntry $ServerTLS13 -WindowsVersion $WindowsVersion
+                SSL_2_Client  = Get-ProtocolStatus -RegistryEntry $Client -WindowsVersion $WindowsVersion -ProtocolDefaults $ProtocolDefaults -Protocol 'SSL2Client'
+                SSL_2_Server  = Get-ProtocolStatus -RegistryEntry $Server -WindowsVersion $WindowsVersion -ProtocolDefaults $ProtocolDefaults -Protocol 'SSL2Server'
+                SSL_3_Client  = Get-ProtocolStatus -RegistryEntry $Client30 -WindowsVersion $WindowsVersion -ProtocolDefaults $ProtocolDefaults -Protocol 'SSL3Client'
+                SSL_3_Server  = Get-ProtocolStatus -RegistryEntry $Server30 -WindowsVersion $WindowsVersion -ProtocolDefaults $ProtocolDefaults -Protocol 'SSL3Server'
+                TLS_10_Client = Get-ProtocolStatus -RegistryEntry $ClientTLS10 -WindowsVersion $WindowsVersion -ProtocolDefaults $ProtocolDefaults -Protocol 'TLS10Client'
+                TLS_10_Server = Get-ProtocolStatus -RegistryEntry $ServerTLS10 -WindowsVersion $WindowsVersion -ProtocolDefaults $ProtocolDefaults -Protocol 'TLS10Server'
+                TLS_11_Client = Get-ProtocolStatus -RegistryEntry $ClientTLS11 -WindowsVersion $WindowsVersion -ProtocolDefaults $ProtocolDefaults -Protocol 'TLS11Client'
+                TLS_11_Server = Get-ProtocolStatus -RegistryEntry $ServerTLS11 -WindowsVersion $WindowsVersion -ProtocolDefaults $ProtocolDefaults -Protocol 'TLS11Server'
+                TLS_12_Client = Get-ProtocolStatus -RegistryEntry $ClientTLS12 -WindowsVersion $WindowsVersion -ProtocolDefaults $ProtocolDefaults -Protocol 'TLS12Client'
+                TLS_12_Server = Get-ProtocolStatus -RegistryEntry $ServerTLS12 -WindowsVersion $WindowsVersion -ProtocolDefaults $ProtocolDefaults -Protocol 'TLS12Server'
+                TLS_13_Client = Get-ProtocolStatus -RegistryEntry $ClientTLS13 -WindowsVersion $WindowsVersion -ProtocolDefaults $ProtocolDefaults -Protocol 'TLS13Client'
+                TLS_13_Server = Get-ProtocolStatus -RegistryEntry $ServerTLS13 -WindowsVersion $WindowsVersion -ProtocolDefaults $ProtocolDefaults -Protocol 'TLS13Server'
             }
         } else {
             [PSCustomObject] @{
@@ -131,4 +131,3 @@
         }
     }
 }
-
