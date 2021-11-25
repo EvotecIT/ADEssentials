@@ -6,4 +6,5 @@
     LapsAndBitLocker = $Script:ConfigurationLAPSAndBitlocker
     BitLocker        = $Script:ConfigurationBitLocker
     ServiceAccounts  = $Script:ConfigurationServiceAccounts
+    ForestACLOwners  = $Script:ConfigurationACLOwners
 }
