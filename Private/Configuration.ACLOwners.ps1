@@ -40,7 +40,7 @@
 
         New-HTMLList -Type Unordered {
             New-HTMLListItem -Text 'Forest ACL Owners in Total: ', $Script:Reporting['ForestACLOwners']['Variables']['Total'] -FontWeight normal, bold
-            New-HTMLListItem -Text 'Forest ACL Owners ', 'Domain Admins\Enterprise Admins' , ' as Owner: ', $Script:Reporting['ForestACLOwners']['Variables']['OwnersAdministrative'] -FontWeight normal, bold, normal, bold
+            New-HTMLListItem -Text 'Forest ACL Owners ', 'Domain Admins / Enterprise Admins' , ' as Owner: ', $Script:Reporting['ForestACLOwners']['Variables']['OwnersAdministrative'] -FontWeight normal, bold, normal, bold
             New-HTMLListItem -Text 'Forest ACL Owners ', 'BUILTIN\Administrators / SYSTEM', ' as Owner: ', $Script:Reporting['ForestACLOwners']['Variables']['OwnersWellKnownAdministrative'] -FontWeight normal, bold, normal, bold
             New-HTMLListItem -Text "Forest ACL Owners requiring change: ", $Script:Reporting['ForestACLOwners']['Variables']['RequiringFix'] -FontWeight normal, bold {
                 New-HTMLList -Type Unordered {
