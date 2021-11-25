@@ -21,6 +21,12 @@
     .PARAMETER Owner
     Queries for Owners, instead of permissions
 
+    .PARAMETER IncludeOwnerType
+    Include only specific Owner Type, by default all Owner Types are included
+
+    .PARAMETER ExcludeOwnerType
+    Exclude specific Owner Type, by default all Owner Types are included
+
     .PARAMETER Separate
     Returns OrderedDictionary with each top level container being in separate key
 
@@ -166,7 +172,7 @@
                     ADObject         = $Containers
                     Resolve          = $true
                     ExcludeOwnerType = $ExcludeOwnerType
-                    IncludeOwnerType  = $IncludeOwnerType
+                    IncludeOwnerType = $IncludeOwnerType
                 }
                 Remove-EmptyValue -IDictionary $getADACLOwnerSplat
 
