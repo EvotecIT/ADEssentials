@@ -1,4 +1,32 @@
 ﻿function Get-ADACLOwner {
+    <#
+    .SYNOPSIS
+    Gets owner from given Active Directory object
+
+    .DESCRIPTION
+    Gets owner from given Active Directory object
+
+    .PARAMETER ADObject
+    Active Directory object to get owner from
+
+    .PARAMETER Resolve
+    Resolves owner to provide more details about said owner
+
+    .PARAMETER IncludeACL
+    Include additional ACL information along with owner
+
+    .PARAMETER IncludeOwnerType
+    Include only specific Owner Type, by default all Owner Types are included
+
+    .PARAMETER ExcludeOwnerType
+    Exclude specific Owner Type, by default all Owner Types are included
+
+    .EXAMPLE
+    Get-ADACLOwner -ADObject 'CN=Policies,CN=System,DC=ad,DC=evotec,DC=xyz' -Resolve | Format-Table
+
+    .NOTES
+    General notes
+    #>
     [cmdletBinding()]
     param(
         [Parameter(Mandatory, Position = 0, ValueFromPipeline, ValueFromPipelineByPropertyName)]
