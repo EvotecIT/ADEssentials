@@ -1,5 +1,10 @@
 ﻿# ADEssentials Release History
 
+## 0.0.136 - 2021.11.25
+  - Added `ForestACLOwners` report to Invoke-ADEssentials
+  - Added `Set-WinADForestACLOwner` to auto-fix ownership of ADForest ACLs
+  - Improvements `Get-ADACLOwner` to better filtering
+  - Improvements `Get-WinADACLForest` to better filtering
 ## 0.0.135 - 2021.10.24
   - Added `Get-WinADProtocol`
 ## 0.0.134 - 2021.10.17
