@@ -68,7 +68,9 @@
         [string[]] $SearchBase,
         [switch] $Owner,
         [switch] $Separate,
-        [switch] $IncludeInherited
+        [switch] $IncludeInherited,
+        [validateSet('WellKnownAdministrative', 'Administrative', 'NotAdministrative', 'Unknown')][string[]] $IncludeOwnerType,
+        [validateSet('WellKnownAdministrative', 'Administrative', 'NotAdministrative', 'Unknown')][string[]] $ExcludeOwnerType
     )
     $ForestTime = Start-TimeLog
     $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation -Extended
@@ -160,7 +162,15 @@
             }
             Write-Verbose "Get-WinADACLForest - [Read ]$ObjectName[Objects to process: $($Containers.Count)]"
             if ($Owner) {
-                $MYACL = Get-ADACLOwner -ADObject $Containers -Resolve
+                $getADACLOwnerSplat = @{
+                    ADObject         = $Containers
+                    Resolve          = $true
+                    ExcludeOwnerType = $ExcludeOwnerType
+                    IncludeOwnerType  = $IncludeOwnerType
+                }
+                Remove-EmptyValue -IDictionary $getADACLOwnerSplat
+
+                $MYACL = Get-ADACLOwner @getADACLOwnerSplat
             } else {
                 if ($IncludeInherited) {
                     $MYACL = Get-ADACL -ADObject $Containers -ResolveTypes

@@ -4,7 +4,10 @@
         [Parameter(Mandatory, Position = 0, ValueFromPipeline, ValueFromPipelineByPropertyName)]
         [alias('Identity')][Array] $ADObject,
         [switch] $Resolve,
-        [alias('AddACL')][switch] $IncludeACL #,
+        [alias('AddACL')][switch] $IncludeACL,
+        [validateSet('WellKnownAdministrative', 'Administrative', 'NotAdministrative', 'Unknown')][string[]] $IncludeOwnerType,
+        [validateSet('WellKnownAdministrative', 'Administrative', 'NotAdministrative', 'Unknown')][string[]] $ExcludeOwnerType
+        #,
         # [System.Collections.IDictionary] $ADAdministrativeGroups,
 
         # [alias('ForestName')][string] $Forest,
@@ -110,6 +113,19 @@
                     $Hash['OwnerName'] = ''
                     $Hash['OwnerSid'] = ''
                     $Hash['OwnerType'] = ''
+                }
+
+                if ($PSBoundParameters.ContainsKey('IncludeOwnerType')) {
+                    if ($Hash['OwnerType'] -in $IncludeOwnerType) {
+
+                    } else {
+                        continue
+                    }
+                }
+                if ($PSBoundParameters.ContainsKey('ExcludeOwnerType')) {
+                    if ($Hash['OwnerType'] -in $ExcludeOwnerType) {
+                        continue
+                    }
                 }
             }
             $Hash['Error'] = $ErrorMessage
