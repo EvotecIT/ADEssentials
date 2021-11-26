@@ -4,7 +4,7 @@
 #Show-WinADGroupMember -GroupName 'Test-Group', 'Domain Admins','Enterprise Admins', 'Administrators' -FilePath $PSScriptRoot\Reports\GroupMembership.html -Summary -HideUsers
 #Show-WinADGroupMember -GroupName 'Test-Group', 'Domain Admins','Enterprise Admins', 'Administrators' -FilePath $PSScriptRoot\Reports\GroupMembership.html #-SummaryOnly
 
-$ForestInformation = Get-WinADForestDetails -Extended -IncludeDomains 'ad.evotec.xyz'
+$ForestInformation = Get-WinADForestDetails -Extended #-IncludeDomains 'ad.evotec.xyz'
 $ListGroups = foreach ($Domain in $ForestInformation.Domains) {
     $DomainSidValue = $ForestInformation.DomainsExtended[$Domain].DomainSID
     $PriviligedGroups = @{
