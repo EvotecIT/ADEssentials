@@ -75,6 +75,7 @@ $Configuration = @{
                     'Get-WinADLDAPBindingsSummary'
                     'Get-WinADLMSettings'
                     'Get-WinADPrivilegedObjects'
+                    'Get-WinADProtocol'
                     'Get-WinADProxyAddresses'
                     'Get-WinADServiceAccount'
                     'Get-WinADSharePermission'
