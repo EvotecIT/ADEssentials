@@ -64,6 +64,7 @@ $Configuration = @{
                     'Get-WinADDHCP'
                     'Get-WinADDiagnostics'
                     'Get-WinADDuplicateObject'
+                    'Get-WinADDuplicateSPN'
                     'Get-WinADForestControllerInformation'
                     'Get-WinADForestOptionalFeatures'
                     'Get-WinADForestReplication'
