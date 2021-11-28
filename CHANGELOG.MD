@@ -1,5 +1,7 @@
 ﻿# ADEssentials Release History
 
+## 0.0.137
+  - Added `Get-WinADDuplicateSPN` which Detects and lists duplicate Service Principal Names (SPNs) in the Active Directory Domain.
 ## 0.0.136 - 2021.11.26
   - Added `ForestACLOwners` report to Invoke-ADEssentials
   - Added `Set-WinADForestACLOwner` to auto-fix ownership of ADForest ACLs
