@@ -1,5 +1,8 @@
 ﻿# ADEssentials Release History
 
+## 0.0.138 - 2021.11.30
+  - Improved `Get-WinADDuplicateSPN`
+  - Fixes to PSD1
 ## 0.0.137 - 2021.11.28
   - Added `Get-WinADDuplicateSPN` which Detects and lists duplicate Service Principal Names (SPNs) in the Active Directory Domain.
 ## 0.0.136 - 2021.11.26
