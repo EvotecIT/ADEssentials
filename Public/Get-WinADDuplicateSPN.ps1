@@ -52,7 +52,9 @@
     $SPNCache = [ordered] @{}
     $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation
     foreach ($Domain in $ForestInformation.Domains) {
+        Write-Verbose -Message "Get-WinADDuplicateSPN - Processing $Domain"
         $Objects = (Get-ADObject -LDAPFilter "ServicePrincipalName=*" -Properties ServicePrincipalName -Server $ForestInformation['QueryServers'][$domain]['HostName'][0])
+        Write-Verbose -Message "Get-WinADDuplicateSPN - Found $($Objects.Count) objects. Processing..."
         foreach ($Object in $Objects) {
             foreach ($SPN in $Object.ServicePrincipalName) {
                 if (-not $SPNCache[$SPN]) {
@@ -72,6 +74,7 @@
             }
         }
     }
+    Write-Verbose -Message "Get-WinADDuplicateSPN - Finalizing output. Processing..."
     foreach ($SPN in $SPNCache.Values) {
         if ($SPN.Count -gt 1 -and $SPN.Excluded -ne $true) {
             $SPN.Duplicate = $true
