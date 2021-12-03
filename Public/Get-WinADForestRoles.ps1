@@ -1,10 +1,10 @@
 ﻿function Get-WinADForestRoles {
     <#
     .SYNOPSIS
-    Short description
+    Lists all the forest roles for the chosen forest. By default uses current forest.
 
     .DESCRIPTION
-    Long description
+    Lists all the forest roles for the chosen forest. By default uses current forest.
 
     .PARAMETER Forest
     Target different Forest, by default current forest is used
@@ -28,13 +28,14 @@
     Ability to provide Forest Information from another command to speed up processing
 
     .PARAMETER Formatted
-    Parameter description
+    Returns objects in formatted way
 
     .PARAMETER Splitter
-    Parameter description
+    Character to use as splitter/joiner in formatted output
 
     .EXAMPLE
-    An example
+    $Roles = Get-WinADForestRoles
+    $Roles | ft *
 
     .NOTES
     General notes
