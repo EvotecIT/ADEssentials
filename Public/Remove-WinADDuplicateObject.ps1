@@ -24,6 +24,9 @@
     $Count = 0
     $DuplicateObjects = Get-WinADDuplicateObject @getWinADDuplicateObjectSplat
     foreach ($Duplicate in $DuplicateObjects | Select-Object -First $LimitProcessing) {
+        If($Duplicate.ProtectedFromAccidentalDeletion -eq "True"){
+            Get-ADObject -Filter {ObjectGUID -eq "$($Duplicate.ObjectGUID)"} -ErrorAction Stop | Set-ADObject -ProtectedFromAccidentalDeletion $false
+            }
         $Count++
         try {
             Write-Verbose "Remove-WinADDuplicateObject - [$Count/$($DuplicateObjects.Count)] Deleting $($Duplicate.ConflictDN) / $($Duplicate.DomainName) via GUID: $($Duplicate.ObjectGUID)"
