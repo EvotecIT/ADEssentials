@@ -24,8 +24,14 @@
     $Count = 0
     $DuplicateObjects = Get-WinADDuplicateObject @getWinADDuplicateObjectSplat
     foreach ($Duplicate in $DuplicateObjects | Select-Object -First $LimitProcessing) {
-        If($Duplicate.ProtectedFromAccidentalDeletion -eq "True"){
-            Get-ADObject -Filter {ObjectGUID -eq "$($Duplicate.ObjectGUID)"} -ErrorAction Stop | Set-ADObject -ProtectedFromAccidentalDeletion $false
+        If($Duplicate.ProtectedFromAccidentalDeletion -eq $true){
+            Try{
+                 Get-ADObject -Filter {ObjectGUID -eq "$($Duplicate.ObjectGUID)"} -ErrorAction Stop | Set-ADObject -ProtectedFromAccidentalDeletion $false -ErrorAction Stop
+               }Catch{
+                Write-Warning "Skipped object GUID: $($Duplicate.ObjectGUID) from deletion, failed to remove ProtectedFromAccidentalDeletion"
+                Write-Verbose "Error message $($_.Exception.Message)"
+                Continue
+                }                
             }
         $Count++
         try {
