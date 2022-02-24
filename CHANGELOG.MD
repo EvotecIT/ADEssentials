@@ -1,8 +1,11 @@
 ﻿# ADEssentials Release History
 
+## 0.0.140 - 2022.02.24
+  - Added `Show-WinADUserSecurity` - WIP (not usable)
+
 ## 0.0.139 - 2022.01.25
-  - Added `Show-WinADSites` - WIP
-  - Added `Show-WinADOrganization` - WIP
+  - Added `Show-WinADSites` - WIP (not usable)
+  - Added `Show-WinADOrganization` - WIP (not usable)
 ## 0.0.138 - 2021.11.30
   - Improved `Get-WinADDuplicateSPN`
   - Fixes to PSD1
