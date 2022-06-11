@@ -20,7 +20,7 @@ $Configuration = @{
             # Copyright statement for this module
             Copyright                  = "(c) 2011 - $((Get-Date).Year) Przemyslaw Klys @ Evotec. All rights reserved."
             # Description of the functionality provided by this module
-            Description                = 'Helper module for Active Directory'
+            Description                = 'Helper module for Active Directory with lots of useful functions that simplify supporting Active Directory.'
             # Minimum version of the Windows PowerShell engine required by this module
             PowerShellVersion          = '5.1'
             # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
@@ -103,9 +103,9 @@ $Configuration = @{
                     'Set-WinADReplicationConnections'
                     'Set-WinADShare'
                     'Set-WinADTombstoneLifetime'
-                    'Show-WinADGroupMember'
-                    'Show-WinADGroupMemberOf'
-                    'Show-WinADTrust'
+                    'Show-WinADOrganization'
+                    'Show-WinADSites'
+                    'Show-WinADUserSecurity'
                     'Sync-DomainController'
                     'Test-ADDomainController'
                     'Test-ADRolesAvailability'
@@ -238,10 +238,10 @@ $Configuration = @{
             Verbose         = $false
         }
         PublishModule      = @{  # requires Enable to be on to process all of that
-            Enabled      = $true
+            Enabled      = $false
             Prerelease   = ''
             RequireForce = $false
-            GitHub       = $true
+            GitHub       = $false
         }
     }
 }
