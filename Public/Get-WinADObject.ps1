@@ -285,8 +285,8 @@
             foreach ($Object in $SearchResults) {
                 $UAC = Convert-UserAccountControl -UserAccountControl ($Object.properties.useraccountcontrol -as [string])
                 $ObjectClass = ($Object.properties.objectclass -as [array])[-1]
-                if ($ObjectClass -notin 'group', 'computer', 'user', 'foreignSecurityPrincipal' -and (-not $IncludeAllTypes)) {
-                    Write-Warning "Get-WinADObject - Unsupported object ($Ident) of type $ObjectClass. Only user,computer,group and foreignSecurityPrincipal is supported."
+                if ($ObjectClass -notin 'group', 'computer', 'user', 'foreignSecurityPrincipal', 'msDS-ManagedServiceAccount', 'msDS-GroupManagedServiceAccount' -and (-not $IncludeAllTypes)) {
+                    Write-Warning "Get-WinADObject - Unsupported object ($Ident) of type $ObjectClass. Only user,computer,group, foreignSecurityPrincipal,msDS-ManagedServiceAccount, msDS-GroupManagedServiceAccount are displayed by default. Use IncludeAllTypes switch to display all if nessecary."
                     continue
                 }
                 $Members = $Object.properties.member -as [array]
