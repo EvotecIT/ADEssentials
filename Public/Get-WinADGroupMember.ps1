@@ -128,13 +128,18 @@
                 # Lets cache our object
                 $Script:WinADGroupMemberCache[$ADGroupName.DistinguishedName] = $ADGroupName
                 if ($Circular -or $CollectedGroups -contains $ADGroupName.DistinguishedName) {
+                    Write-Verbose -Message "Get-WinADGroupMember - Group '$($ADGroupName.DistinguishedName)' has $($ADGroupName.Members.Count) members"
                     [Array] $NestedMembers = foreach ($MyIdentity in $ADGroupName.Members) {
-                        if ($Script:WinADGroupMemberCache[$MyIdentity]) {
-                            $Script:WinADGroupMemberCache[$MyIdentity]
+                        if ($MyIdentity) {
+                            if ($Script:WinADGroupMemberCache[$MyIdentity]) {
+                                $Script:WinADGroupMemberCache[$MyIdentity]
+                            } else {
+                                $ADObject = Get-WinADObject -Identity $MyIdentity -IncludeGroupMembership # -Properties SamAccountName, DisplayName, Enabled, userAccountControl, ObjectSID
+                                $Script:WinADGroupMemberCache[$MyIdentity] = $ADObject
+                                $Script:WinADGroupMemberCache[$MyIdentity]
+                            }
                         } else {
-                            $ADObject = Get-WinADObject -Identity $MyIdentity -IncludeGroupMembership # -Properties SamAccountName, DisplayName, Enabled, userAccountControl, ObjectSID
-                            $Script:WinADGroupMemberCache[$MyIdentity] = $ADObject
-                            $Script:WinADGroupMemberCache[$MyIdentity]
+                            Write-Verbose "Get-WinADGroupMember - Group '$($ADGroupName.DistinguishedName)' user skipped because it's null"
                         }
                     }
                     [Array] $NestedMembers = foreach ($Member in $NestedMembers) {
@@ -144,13 +149,18 @@
                     }
                     $Circular = $null
                 } else {
+                    Write-Verbose -Message "Get-WinADGroupMember - Group '$($ADGroupName.DistinguishedName)' has $($ADGroupName.Members.Count) members"
                     [Array] $NestedMembers = foreach ($MyIdentity in $ADGroupName.Members) {
-                        if ($Script:WinADGroupMemberCache[$MyIdentity]) {
-                            $Script:WinADGroupMemberCache[$MyIdentity]
+                        if ($MyIdentity) {
+                            if ($Script:WinADGroupMemberCache[$MyIdentity]) {
+                                $Script:WinADGroupMemberCache[$MyIdentity]
+                            } else {
+                                $ADObject = Get-WinADObject -Identity $MyIdentity -IncludeGroupMembership
+                                $Script:WinADGroupMemberCache[$MyIdentity] = $ADObject
+                                $Script:WinADGroupMemberCache[$MyIdentity]
+                            }
                         } else {
-                            $ADObject = Get-WinADObject -Identity $MyIdentity -IncludeGroupMembership
-                            $Script:WinADGroupMemberCache[$MyIdentity] = $ADObject
-                            $Script:WinADGroupMemberCache[$MyIdentity]
+                            Write-Verbose "Get-WinADGroupMember - Group '$($ADGroupName.DistinguishedName)' user skipped because it's null"
                         }
                     }
                 }
