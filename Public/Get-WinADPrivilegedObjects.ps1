@@ -45,7 +45,7 @@
 
     $CacheCritical = @{}
     foreach ($Group in $CriticalGroups) {
-        $Members = Get-WinADGroupMember -Identity $Group.distinguishedname -Verbose:$false
+        $Members = Get-WinADGroupMember -Identity $Group.distinguishedname -Verbose:$false -All
         foreach ($Member in $Members) {
             if (-not $CacheCritical[$Member.DistinguishedName]) {
                 $CacheCritical[$Member.DistinguishedName] = [System.Collections.Generic.List[string]]::new()
