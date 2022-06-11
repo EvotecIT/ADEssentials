@@ -178,6 +178,18 @@
                         $Ident = $CNConversion[0]
                         $TemporaryDomainName = $CNConversion[1]
                     }
+                } else {
+                    $ResolvedIdentity = Convert-Identity -Identity $Ident
+                    if ($ResolvedIdentity.SID) {
+                        $TemporaryDomainName = $ResolvedIdentity.DomainName
+                        $Ident = $ResolvedIdentity.SID
+                    } else {
+                        $NetbiosConversion = ConvertFrom-NetbiosName -Identity $Ident
+                        if ($NetbiosConversion.DomainName) {
+                            $TemporaryDomainName = $NetbiosConversion.DomainName
+                            $Ident = $NetbiosConversion.Name
+                        }
+                    }
                 }
 
                 <#
