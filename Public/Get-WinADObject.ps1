@@ -284,17 +284,24 @@
                     if ($IncludeGroupMembership) {
                         # This is weird case but for some reason $Object.properties.member doesn't always return all values
                         # the workaround is to do additional query for group and assing it
+
                         $GroupMembers = [System.DirectoryServices.AccountManagement.GroupPrincipal]::FindByIdentity($Context, $Ident).Members
-                        #if ($GroupMembers.Count -ne $Members.Count) {
-                        #Write-Warning "Get-WinADObject - Weird. Members count different."
-                        #}
-                        [Array] $Members = foreach ($Member in $GroupMembers) {
-                            if ($Member.DistinguishedName) {
-                                $Member.DistinguishedName
-                            } elseif ($Member.DisplayName) {
-                                $Member.DisplayName
+                        try {
+                            [Array] $Members = foreach ($Member in $GroupMembers) {
+                                if ($Member.DistinguishedName) {
+                                    $Member.DistinguishedName
+                                } elseif ($Member.DisplayName) {
+                                    $Member.DisplayName
+                                } else {
+                                    $Member.Sid
+                                }
+                            }
+                        } catch {
+                            if ($PSBoundParameters.ErrorAction -eq 'Stop') {
+                                throw
+                                return
                             } else {
-                                $Member.Sid
+                                Write-Warning -Message "Error while parsing group members for $($Ident): $($_.Exception.Message)"
                             }
                         }
                     }
