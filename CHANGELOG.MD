@@ -1,4 +1,7 @@
-﻿#### 0.0.141 - 2022.06.11
+﻿#### 0.0.142 - 2022.07.20
+- Added `Test-WinADVulnerableSchemaClass` mostly for Testimo usage
+
+#### 0.0.141 - 2022.06.11
 - Fixes Cannot index into a null array [#11](https://github.com/EvotecIT/ADEssentials/issues/11)
 - Fixes `Get-WinADGroupMember` function doesn't handle special characters in group name [#26](https://github.com/EvotecIT/ADEssentials/issues/26)
 - Add support for `GroupManagedServiceAccount` and `ManagedServiceAccount` in `Get-WinADObject` [#27](https://github.com/EvotecIT/ADEssentials/issues/27)
