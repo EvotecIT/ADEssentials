@@ -1,4 +1,7 @@
-﻿#### 0.0.142 - 2022.07.20
+﻿#### 0.0.143
+- Added `Get-WinDNSRecords`
+
+#### 0.0.142 - 2022.07.20
 - Added `Test-WinADVulnerableSchemaClass` mostly for Testimo usage
 
 #### 0.0.141 - 2022.06.11
