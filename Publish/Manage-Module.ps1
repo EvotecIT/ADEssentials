@@ -117,6 +117,9 @@ $Configuration = @{
                 DHCPServer      = @(
                     'Get-WinADDHCP'
                 )
+                DNSServer = @(
+                    'Get-WinDNSRecords'
+                )
             }
         }
     }
@@ -238,10 +241,10 @@ $Configuration = @{
             Verbose         = $false
         }
         PublishModule      = @{  # requires Enable to be on to process all of that
-            Enabled      = $false
+            Enabled      = $true
             Prerelease   = ''
             RequireForce = $false
-            GitHub       = $false
+            GitHub       = $true
         }
     }
 }
