@@ -39,7 +39,7 @@
         [switch] $AsHashtable
     )
     $DNSRecordsCached = [ordered] @{}
-    $ADObjectsCached = [ordered] @{}
+    #$ADObjectsCached = [ordered] @{}
     $DNSRecordsPerZone = [ordered] @{}
     $ADRecordsPerZone = [ordered] @{}
 
@@ -101,9 +101,9 @@
                     ListRecordTypes = [System.Collections.Generic.List[Object]]::new()
                     Count           = 0
                 }
-                if ($ADObjectsCached.Keys.Count -gt 0) {
-                    $DNSRecordsCached["$($Record.HostName).$($Zone)"].WhenCreated = $ADObjectsCached["$($Record.HostName).$($Zone)"].whenCreated
-                    $DNSRecordsCached["$($Record.HostName).$($Zone)"].WhenChanged = $ADObjectsCached["$($Record.HostName).$($Zone)"].whenChanged
+                if ($ADRecordsPerZone.Keys.Count -gt 0) {
+                    $DNSRecordsCached["$($Record.HostName).$($Zone)"].WhenCreated = $ADRecordsPerZone[$Zone][$Record.HostName].whenCreated
+                    $DNSRecordsCached["$($Record.HostName).$($Zone)"].WhenChanged = $ADRecordsPerZone[$Zone][$Record.HostName].whenChanged
                 }
                 if ($IncludeDNSRecords) {
                     $DNSRecordsCached["$($Record.HostName).$($Zone)"].List = [System.Collections.Generic.List[Object]]::new()
