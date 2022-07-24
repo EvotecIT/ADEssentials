@@ -1,4 +1,6 @@
-﻿#### 0.0.143 - 2022.07.22
+﻿#### 0.0.144 - 2022.07.24
+- Improved error handling `Get-WinDNSRecords`
+#### 0.0.143 - 2022.07.22
 - Added `Get-WinDNSRecords`
 
 #### 0.0.142 - 2022.07.20
