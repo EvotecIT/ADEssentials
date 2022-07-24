@@ -43,7 +43,12 @@
     $DNSRecordsPerZone = [ordered] @{}
     $ADRecordsPerZone = [ordered] @{}
 
-    $oRootDSE = Get-ADRootDSE
+    try {
+        $oRootDSE = Get-ADRootDSE -ErrorAction Stop
+    } catch {
+        Write-Warning -Message "Get-WinDNSRecords - Could not get the root DSE. Make sure you're logged in to machine with Active Directory RSAT tools installed, and there's connecitivity to the domain. Error: $($_.Exception.Message)"
+        return
+    }
     $ADServer = ($oRootDSE.dnsHostName)
     $Exclusions = 'DomainDnsZones', 'ForestDnsZones', '@'
     $DNS = Get-DnsServerZone -ComputerName $ADServer
