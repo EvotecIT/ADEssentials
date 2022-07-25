@@ -1,5 +1,9 @@
-﻿#### 0.0.144 - 2022.07.24
+﻿#### 0.0.145 - 2022.07.25
+- Improved `Get-WinDNSRecords` by adding `ListTimestamps`
+
+#### 0.0.144 - 2022.07.24
 - Improved error handling `Get-WinDNSRecords`
+
 #### 0.0.143 - 2022.07.22
 - Added `Get-WinDNSRecords`
 
