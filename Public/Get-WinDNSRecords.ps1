@@ -104,6 +104,7 @@
                     'RecordType'    = $Record.RecordType
                     ListRecordIP    = [System.Collections.Generic.List[Object]]::new()
                     ListRecordTypes = [System.Collections.Generic.List[Object]]::new()
+                    ListTimestamps  = [System.Collections.Generic.List[Object]]::new()
                     Count           = 0
                 }
                 if ($ADRecordsPerZone.Keys.Count -gt 0) {
@@ -116,6 +117,11 @@
             }
             if ($IncludeDNSRecords) {
                 $DNSRecordsCached["$($Record.HostName).$($Zone)"].List.Add($Record)
+            }
+            if ($null -ne $Record.TimeStamp) {
+                $DNSRecordsCached["$($Record.HostName).$($Zone)"].ListTimestamps.Add($Record.TimeStamp)
+            } else {
+                $DNSRecordsCached["$($Record.HostName).$($Zone)"].ListTimestamps.Add("Not available")
             }
             $DNSRecordsCached["$($Record.HostName).$($Zone)"].ListRecordIP.Add($Record.RecordData.IPv4Address)
             if ($Null -ne $Record.Timestamp) {
