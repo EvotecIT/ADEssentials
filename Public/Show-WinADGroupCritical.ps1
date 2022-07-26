@@ -7,7 +7,7 @@
             "Cert Publishers",
             "Schema Admins",
             "Enterprise Admins",
-            "DnsAdmins1",
+            "DnsAdmins",
             "DnsAdmins2",
             "DnsUpdateProxy",
             "Group Policy Creator Owners",
@@ -51,7 +51,7 @@
             "Cert Publishers"                  = "$DomainSidValue-517"
             "Schema Admins"                    = "$DomainSidValue-518"
             "Enterprise Admins"                = "$DomainSidValue-519"
-            "DnsAdmins1"                       = "$DomainSidValue-1101"
+            "DnsAdmins"                        = "$DomainSidValue-1101"
             "DnsAdmins2"                       = "$DomainSidValue-1105"
             "DnsUpdateProxy"                   = "$DomainSidValue-1106"
             "Group Policy Creator Owners"      = "$DomainSidValue-520"
@@ -74,11 +74,15 @@
             'Hyper-V Administrators'           = "S-1-5-32-578"
             'Remote Management Users'          = "S-1-5-32-580"
         }
-        foreach ($Group in $PriviligedGroups.Values) {
+        foreach ($Group in $PriviligedGroups.Keys) {
+            $SearchName = $PriviligedGroups[$Group]
             if ($GroupName -and $Group -notin $GroupName) {
                 continue
             }
-            (Get-ADGroup -Filter "SID -eq '$Group'" -Server $ForestInformation['QueryServers'][$Domain].HostName[0] -ErrorAction SilentlyContinue).DistinguishedName
+            $GroupInformation = (Get-ADGroup -Filter "SID -eq '$SearchName'" -Server $ForestInformation['QueryServers'][$Domain].HostName[0] -ErrorAction SilentlyContinue).DistinguishedName
+            if ($GroupInformation) {
+                $GroupInformation
+            }
         }
     }
     Show-WinADGroupMember -Identity $ListGroups -HideHTML:$HideHTML.IsPresent -FilePath $ReportPath -DisableBuiltinConditions:$DisableBuiltinConditions.IsPresent -Online:$Online.IsPresent -HideUsers:$HideUsers.IsPresent -HideComputers:$HideComputers.IsPresent -AdditionalStatistics:$AdditionalStatistics.IsPresent -Summary:$Summary.IsPresent
