@@ -26,6 +26,7 @@
             'Replicators',
             'Network Configuration Operations',
             'Incoming Forest Trust Builders',
+            'Internet Information Services',
             'Event Log Readers',
             'Hyper-V Administrators',
             'Remote Management Users'
@@ -44,7 +45,7 @@
     )
 
     $ForestInformation = Get-WinADForestDetails -Extended
-    $ListGroups = foreach ($Domain in $ForestInformation.Domains) {
+    [Array] $ListGroups = foreach ($Domain in $ForestInformation.Domains) {
         $DomainSidValue = $ForestInformation.DomainsExtended[$Domain].DomainSID
         $PriviligedGroups = [ordered] @{
             "Domain Admins"                    = "$DomainSidValue-512"
@@ -70,6 +71,7 @@
             'Replicators'                      = "S-1-5-32-552"
             'Network Configuration Operations' = "S-1-5-32-556"
             'Incoming Forest Trust Builders'   = "S-1-5-32-557"
+            'Internet Information Services'    = "S-1-5-32-568"
             'Event Log Readers'                = "S-1-5-32-573"
             'Hyper-V Administrators'           = "S-1-5-32-578"
             'Remote Management Users'          = "S-1-5-32-580"
@@ -85,5 +87,9 @@
             }
         }
     }
-    Show-WinADGroupMember -Identity $ListGroups -HideHTML:$HideHTML.IsPresent -FilePath $ReportPath -DisableBuiltinConditions:$DisableBuiltinConditions.IsPresent -Online:$Online.IsPresent -HideUsers:$HideUsers.IsPresent -HideComputers:$HideComputers.IsPresent -AdditionalStatistics:$AdditionalStatistics.IsPresent -Summary:$Summary.IsPresent
+    if ($ListGroups.Count -gt 0) {
+        Show-WinADGroupMember -Identity $ListGroups -HideHTML:$HideHTML.IsPresent -FilePath $ReportPath -DisableBuiltinConditions:$DisableBuiltinConditions.IsPresent -Online:$Online.IsPresent -HideUsers:$HideUsers.IsPresent -HideComputers:$HideComputers.IsPresent -AdditionalStatistics:$AdditionalStatistics.IsPresent -Summary:$Summary.IsPresent
+    } else {
+        Write-Warning -Message "Show-WinADGroupCritical - Requested group(s) not found."
+    }
 }
