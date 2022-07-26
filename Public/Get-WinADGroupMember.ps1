@@ -264,26 +264,29 @@
                 # User requested ALL
                 if ($AddSelf -or $SelfOnly) {
                     # User also wants summary object added
-                    $InitialGroup.DirectMembers = $MembersCache[$InitialGroup.DistinguishedName].DirectMembersCount
-                    $InitialGroup.DirectGroups = $MembersCache[$InitialGroup.DistinguishedName].DirectGroupsCount
-                    foreach ($Group in $MembersCache[$InitialGroup.DistinguishedName].DirectGroups) {
-                        $InitialGroup.IndirectMembers = $MembersCache[$Group.DistinguishedName].DirectMembersCount + $InitialGroup.IndirectMembers
-                    }
-                    # To get total memebers for given group we need to add all members from all groups + direct members of a group
-                    $AllMembersForGivenGroup = @(
-                        # Scan all groups for members
-                        foreach ($DirectGroup in $MembersCache[$InitialGroup.DistinguishedName].DirectGroups) {
-                            $MembersCache[$DirectGroup.DistinguishedName].DirectMembers
+                    if ($InitialGroup.DistinguishedName) {
+                        $InitialGroup.DirectMembers = $MembersCache[$InitialGroup.DistinguishedName].DirectMembersCount
+                        $InitialGroup.DirectGroups = $MembersCache[$InitialGroup.DistinguishedName].DirectGroupsCount
+                        foreach ($Group in $MembersCache[$InitialGroup.DistinguishedName].DirectGroups) {
+                            $InitialGroup.IndirectMembers = $MembersCache[$Group.DistinguishedName].DirectMembersCount + $InitialGroup.IndirectMembers
                         }
-                        # Scan all direct members of this group
-                        $MembersCache[$InitialGroup.DistinguishedName].DirectMembers
-                        # Scan all indirect members of this group
-                        $MembersCache[$InitialGroup.DistinguishedName].IndirectMembers
-                    )
+                        # To get total memebers for given group we need to add all members from all groups + direct members of a group
+                        $AllMembersForGivenGroup = @(
+                            # Scan all groups for members
+                            foreach ($DirectGroup in $MembersCache[$InitialGroup.DistinguishedName].DirectGroups) {
+                                $MembersCache[$DirectGroup.DistinguishedName].DirectMembers
+                            }
+                            # Scan all direct members of this group
+                            $MembersCache[$InitialGroup.DistinguishedName].DirectMembers
+                            # Scan all indirect members of this group
+                            $MembersCache[$InitialGroup.DistinguishedName].IndirectMembers
+                        )
+                    }
                     $InitialGroup['TotalMembers'] = @($AllMembersForGivenGroup | Sort-Object -Unique -Property DistinguishedName).Count
 
                     if ($AdditionalStatistics -or $SelfOnly) {
-                        $InitialGroup['NestingMax'] = ($Output.Nesting | Sort-Object -Unique -Descending)[0]
+                        $NestingMax = @($Output.Nesting | Sort-Object -Unique -Descending)[0]
+                        $InitialGroup['NestingMax'] = if ($null -eq $NestingMax) { 0 } else { $NestingMax }
                         $NestingObjectTypes = $Output.Where( { $_.Type -eq 'group' }, 'split')
                         $NestingGroupTypes = $NestingObjectTypes[0].Where( { $_.GroupType -eq 'Security' }, 'split')
                         #$InitialGroup['NestingOther'] = ($NestingObjectTypes[1]).Count
@@ -291,6 +294,7 @@
                         $InitialGroup['NestingGroupSecurity'] = ($NestingGroupTypes[0]).Count
                         $InitialGroup['NestingGroupDistribution'] = ($NestingGroupTypes[1]).Count
                     }
+
                     # Finally returning object we just built
                     [PSCustomObject] $InitialGroup
                 }
