@@ -6,6 +6,12 @@
     .DESCRIPTION
     Gets all the DNS records from all the zones within a forest
 
+    .PARAMETER IncludeZone
+    Limit the output of DNS records to specific zones
+
+    .PARAMETER ExcludeZone
+    Limit the output of dNS records to only zones not in the exclude list
+
     .PARAMETER IncludeDetails
     Adds additional information such as creation time, changed time
 
@@ -39,7 +45,6 @@
         [switch] $AsHashtable
     )
     $DNSRecordsCached = [ordered] @{}
-    #$ADObjectsCached = [ordered] @{}
     $DNSRecordsPerZone = [ordered] @{}
     $ADRecordsPerZone = [ordered] @{}
 
