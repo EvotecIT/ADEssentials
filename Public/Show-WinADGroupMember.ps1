@@ -135,10 +135,17 @@
                     Write-Warning "Show-WinADGroupMember - Error processing group $Group. Skipping. Needs investigation why it failed. Error: $($_.Exception.Message)"
                     continue
                 }
-                if ($ADGroup -and -not $SummaryOnly) {
-                    $GroupName = $ADGroup[0].GroupName
-                    $NetBIOSName = Convert-DomainFqdnToNetBIOS -DomainName $ADGroup[0].DomainName
-                    $FullName = "$NetBIOSName\$GroupName"
+                if (-not $SummaryOnly) {
+                    if ($ADGroup) {
+                        # Means group returned something
+                        $GroupName = $ADGroup[0].GroupName
+                        $NetBIOSName = Convert-DomainFqdnToNetBIOS -DomainName $ADGroup[0].DomainName
+                        $FullName = "$NetBIOSName\$GroupName"
+                    } else {
+                        # Means group returned nothing, probably wrong request, but we still need to show something
+                        $GroupName = $Group
+                        $FullName = $Group
+                    }
                     $DataStoreID = -join ('table', (Get-RandomStringName -Size 10 -ToLower))
                     $DataTableID = -join ('table', (Get-RandomStringName -Size 10 -ToLower))
                     New-HTMLTab -TabName $FullName {
