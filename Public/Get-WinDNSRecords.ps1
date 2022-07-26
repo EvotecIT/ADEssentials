@@ -104,13 +104,13 @@
             }
             if (-not $DNSRecordsCached["$($Record.HostName).$($Zone)"]) {
                 $DNSRecordsCached["$($Record.HostName).$($Zone)"] = [ordered] @{
-                    'HostName'      = $Record.HostName
-                    'Zone'          = $Zone
-                    'RecordType'    = $Record.RecordType
-                    ListRecordIP    = [System.Collections.Generic.List[Object]]::new()
-                    ListRecordTypes = [System.Collections.Generic.List[Object]]::new()
-                    ListTimestamps  = [System.Collections.Generic.List[Object]]::new()
-                    Count           = 0
+                    'HostName' = $Record.HostName
+                    'Zone'     = $Zone
+                    #'RecordType' = $Record.RecordType
+                    RecordIP   = [System.Collections.Generic.List[Object]]::new()
+                    Types      = [System.Collections.Generic.List[Object]]::new()
+                    Timestamps = [System.Collections.Generic.List[Object]]::new()
+                    Count      = 0
                 }
                 if ($ADRecordsPerZone.Keys.Count -gt 0) {
                     $DNSRecordsCached["$($Record.HostName).$($Zone)"].WhenCreated = $ADRecordsPerZone[$Zone][$Record.HostName].whenCreated
@@ -124,25 +124,26 @@
                 $DNSRecordsCached["$($Record.HostName).$($Zone)"].List.Add($Record)
             }
             if ($null -ne $Record.TimeStamp) {
-                $DNSRecordsCached["$($Record.HostName).$($Zone)"].ListTimestamps.Add($Record.TimeStamp)
+                $DNSRecordsCached["$($Record.HostName).$($Zone)"].Timestamps.Add($Record.TimeStamp)
             } else {
-                $DNSRecordsCached["$($Record.HostName).$($Zone)"].ListTimestamps.Add("Not available")
+                $DNSRecordsCached["$($Record.HostName).$($Zone)"].Timestamps.Add("Not available")
             }
-            $DNSRecordsCached["$($Record.HostName).$($Zone)"].ListRecordIP.Add($Record.RecordData.IPv4Address)
+            $DNSRecordsCached["$($Record.HostName).$($Zone)"].RecordIP.Add($Record.RecordData.IPv4Address)
             if ($Null -ne $Record.Timestamp) {
-                $DNSRecordsCached["$($Record.HostName).$($Zone)"].ListRecordTypes.Add('Dynamic')
+                $DNSRecordsCached["$($Record.HostName).$($Zone)"].Types.Add('Dynamic')
             } else {
-                $DNSRecordsCached["$($Record.HostName).$($Zone)"].ListRecordTypes.Add('Static')
+                $DNSRecordsCached["$($Record.HostName).$($Zone)"].Types.Add('Static')
             }
             $DNSRecordsCached["$($Record.HostName).$($Zone)"] = [PSCustomObject] $DNSRecordsCached["$($Record.HostName).$($Zone)"]
 
         }
     }
     foreach ($DNS in $DNSRecordsCached.PSBase.Keys) {
-        $DNSRecordsCached[$DNS].Count = $DNSRecordsCached[$DNS].ListRecordIP.Count
+        $DNSRecordsCached[$DNS].Count = $DNSRecordsCached[$DNS].RecordIP.Count
         if ($Prettify) {
-            $DNSRecordsCached[$DNS].ListRecordTypes = $DNSRecordsCached[$DNS].ListRecordTypes -join ", "
-            $DNSRecordsCached[$DNS].ListRecordIP = $DNSRecordsCached[$DNS].ListRecordIP -join ", "
+            $DNSRecordsCached[$DNS].Types = $DNSRecordsCached[$DNS].Types -join ", "
+            $DNSRecordsCached[$DNS].RecordIP = $DNSRecordsCached[$DNS].RecordIP -join ", "
+            $DNSRecordsCached[$DNS].Timestamps = $DNSRecordsCached[$DNS].Timestamps -join ", "
         }
     }
     if ($AsHashtable) {
