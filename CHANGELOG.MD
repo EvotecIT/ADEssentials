@@ -2,6 +2,8 @@
 - Improved `Get-WinADGroupMember` to
 - Improved `Show-WinADGroupMember` to show tab even if the group is empty
 - Added `Show-WinADGroupCritical` to show critical group members in an easy way
+- Improved `Get-WinDNSRecords` - renamed some properties to take less space in the reports, renamed RecordType
+- Added `Get-WinDNSIPAddresses`
 
 #### 0.0.145 - 2022.07.25
 - Improved `Get-WinDNSRecords` by adding `ListTimestamps`
