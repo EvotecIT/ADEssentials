@@ -103,6 +103,7 @@ $Configuration = @{
                     'Set-WinADReplicationConnections'
                     'Set-WinADShare'
                     'Set-WinADTombstoneLifetime'
+                    'Show-WinADGroupCritical'
                     'Show-WinADOrganization'
                     'Show-WinADSites'
                     'Show-WinADUserSecurity'
@@ -241,10 +242,10 @@ $Configuration = @{
             Verbose         = $false
         }
         PublishModule      = @{  # requires Enable to be on to process all of that
-            Enabled      = $true
+            Enabled      = $false
             Prerelease   = ''
             RequireForce = $false
-            GitHub       = $true
+            GitHub       = $false
         }
     }
 }
