@@ -10,10 +10,10 @@
     Specifies an Active Directory group object
 
     .PARAMETER AddSelf
-    Adds details about initial group name to output
+    Adds details about initial group name to output. Works only with All switch
 
     .PARAMETER SelfOnly
-    Returns only one object that's summary for the whole group
+    Returns only one object that's summary for the whole group. Works only with All switch
 
     .PARAMETER AdditionalStatistics
     Adds additional data to Self object (when AddSelf is used). This data is available always if SelfOnly is used. It includes count for NestingMax, NestingGroup, NestingGroupSecurity, NestingGroupDistribution. It allows for easy filtering where we expect security groups only when there are nested distribution groups.
@@ -254,80 +254,80 @@
         }
     }
     End {
-        if ($Output.Count -gt 0) {
-            if ($Nesting -eq 0) {
-                # If nesting is 0 this means we are ending our run
-                if (-not $All) {
-                    # If not ALL it means User wants to receive only users. Basically Get-ADGroupMember -Recursive
-                    $Output | Sort-Object -Unique -Property DistinguishedName | Select-Object -Property $Properties
-                } else {
-                    # User requested ALL
-                    if ($AddSelf -or $SelfOnly) {
-                        # User also wants summary object added
-                        $InitialGroup.DirectMembers = $MembersCache[$InitialGroup.DistinguishedName].DirectMembersCount
-                        $InitialGroup.DirectGroups = $MembersCache[$InitialGroup.DistinguishedName].DirectGroupsCount
-                        foreach ($Group in $MembersCache[$InitialGroup.DistinguishedName].DirectGroups) {
-                            $InitialGroup.IndirectMembers = $MembersCache[$Group.DistinguishedName].DirectMembersCount + $InitialGroup.IndirectMembers
-                        }
-                        # To get total memebers for given group we need to add all members from all groups + direct members of a group
-                        $AllMembersForGivenGroup = @(
-                            # Scan all groups for members
-                            foreach ($DirectGroup in $MembersCache[$InitialGroup.DistinguishedName].DirectGroups) {
-                                $MembersCache[$DirectGroup.DistinguishedName].DirectMembers
-                            }
-                            # Scan all direct members of this group
-                            $MembersCache[$InitialGroup.DistinguishedName].DirectMembers
-                            # Scan all indirect members of this group
-                            $MembersCache[$InitialGroup.DistinguishedName].IndirectMembers
-                        )
-                        $InitialGroup['TotalMembers'] = @($AllMembersForGivenGroup | Sort-Object -Unique -Property DistinguishedName).Count
-
-                        if ($AdditionalStatistics -or $SelfOnly) {
-                            $InitialGroup['NestingMax'] = ($Output.Nesting | Sort-Object -Unique -Descending)[0]
-                            $NestingObjectTypes = $Output.Where( { $_.Type -eq 'group' }, 'split')
-                            $NestingGroupTypes = $NestingObjectTypes[0].Where( { $_.GroupType -eq 'Security' }, 'split')
-                            #$InitialGroup['NestingOther'] = ($NestingObjectTypes[1]).Count
-                            $InitialGroup['NestingGroup'] = ($NestingObjectTypes[0]).Count
-                            $InitialGroup['NestingGroupSecurity'] = ($NestingGroupTypes[0]).Count
-                            $InitialGroup['NestingGroupDistribution'] = ($NestingGroupTypes[1]).Count
-                        }
-                        # Finally returning object we just built
-                        [PSCustomObject] $InitialGroup
+        #if ($Output.Count -gt 0) {
+        if ($Nesting -eq 0) {
+            # If nesting is 0 this means we are ending our run
+            if (-not $All) {
+                # If not ALL it means User wants to receive only users. Basically Get-ADGroupMember -Recursive
+                $Output | Sort-Object -Unique -Property DistinguishedName | Select-Object -Property $Properties
+            } else {
+                # User requested ALL
+                if ($AddSelf -or $SelfOnly) {
+                    # User also wants summary object added
+                    $InitialGroup.DirectMembers = $MembersCache[$InitialGroup.DistinguishedName].DirectMembersCount
+                    $InitialGroup.DirectGroups = $MembersCache[$InitialGroup.DistinguishedName].DirectGroupsCount
+                    foreach ($Group in $MembersCache[$InitialGroup.DistinguishedName].DirectGroups) {
+                        $InitialGroup.IndirectMembers = $MembersCache[$Group.DistinguishedName].DirectMembersCount + $InitialGroup.IndirectMembers
                     }
-                    if (-not $SelfOnly) {
-                        foreach ($Object in $Output) {
-                            if ($Object.Type -eq 'group') {
-                                # Object is a group, we  add direct members, direct groups and other stuff
-                                $Object.DirectMembers = $MembersCache[$Object.DistinguishedName].DirectMembersCount
-                                $Object.DirectGroups = $MembersCache[$Object.DistinguishedName].DirectGroupsCount
-                                foreach ($DirectGroup in $MembersCache[$Object.DistinguishedName].DirectGroups) {
-                                    $Object.IndirectMembers = $MembersCache[$DirectGroup.DistinguishedName].DirectMembersCount + $Object.IndirectMembers
-                                }
-                                # To get total memebers for given group we need to add all members from all groups + direct members of a group
-                                $AllMembersForGivenGroup = @(
-                                    # Scan all groups for members
-                                    foreach ($DirectGroup in $MembersCache[$Object.DistinguishedName].DirectGroups) {
-                                        $MembersCache[$DirectGroup.DistinguishedName].DirectMembers
-                                    }
-                                    # Scan all direct members of this group
-                                    $MembersCache[$Object.DistinguishedName].DirectMembers
-                                    # Scan all indirect members of this group
-                                    $MembersCache[$Object.DistinguishedName].IndirectMembers
-                                )
-                                $Object.TotalMembers = @($AllMembersForGivenGroup | Sort-Object -Unique -Property DistinguishedName).Count
-                                # Finally returning object we just built
-                                $Object
-                            } else {
-                                # Object is not a group we push it as is
-                                $Object
+                    # To get total memebers for given group we need to add all members from all groups + direct members of a group
+                    $AllMembersForGivenGroup = @(
+                        # Scan all groups for members
+                        foreach ($DirectGroup in $MembersCache[$InitialGroup.DistinguishedName].DirectGroups) {
+                            $MembersCache[$DirectGroup.DistinguishedName].DirectMembers
+                        }
+                        # Scan all direct members of this group
+                        $MembersCache[$InitialGroup.DistinguishedName].DirectMembers
+                        # Scan all indirect members of this group
+                        $MembersCache[$InitialGroup.DistinguishedName].IndirectMembers
+                    )
+                    $InitialGroup['TotalMembers'] = @($AllMembersForGivenGroup | Sort-Object -Unique -Property DistinguishedName).Count
+
+                    if ($AdditionalStatistics -or $SelfOnly) {
+                        $InitialGroup['NestingMax'] = ($Output.Nesting | Sort-Object -Unique -Descending)[0]
+                        $NestingObjectTypes = $Output.Where( { $_.Type -eq 'group' }, 'split')
+                        $NestingGroupTypes = $NestingObjectTypes[0].Where( { $_.GroupType -eq 'Security' }, 'split')
+                        #$InitialGroup['NestingOther'] = ($NestingObjectTypes[1]).Count
+                        $InitialGroup['NestingGroup'] = ($NestingObjectTypes[0]).Count
+                        $InitialGroup['NestingGroupSecurity'] = ($NestingGroupTypes[0]).Count
+                        $InitialGroup['NestingGroupDistribution'] = ($NestingGroupTypes[1]).Count
+                    }
+                    # Finally returning object we just built
+                    [PSCustomObject] $InitialGroup
+                }
+                if (-not $SelfOnly) {
+                    foreach ($Object in $Output) {
+                        if ($Object.Type -eq 'group') {
+                            # Object is a group, we  add direct members, direct groups and other stuff
+                            $Object.DirectMembers = $MembersCache[$Object.DistinguishedName].DirectMembersCount
+                            $Object.DirectGroups = $MembersCache[$Object.DistinguishedName].DirectGroupsCount
+                            foreach ($DirectGroup in $MembersCache[$Object.DistinguishedName].DirectGroups) {
+                                $Object.IndirectMembers = $MembersCache[$DirectGroup.DistinguishedName].DirectMembersCount + $Object.IndirectMembers
                             }
+                            # To get total memebers for given group we need to add all members from all groups + direct members of a group
+                            $AllMembersForGivenGroup = @(
+                                # Scan all groups for members
+                                foreach ($DirectGroup in $MembersCache[$Object.DistinguishedName].DirectGroups) {
+                                    $MembersCache[$DirectGroup.DistinguishedName].DirectMembers
+                                }
+                                # Scan all direct members of this group
+                                $MembersCache[$Object.DistinguishedName].DirectMembers
+                                # Scan all indirect members of this group
+                                $MembersCache[$Object.DistinguishedName].IndirectMembers
+                            )
+                            $Object.TotalMembers = @($AllMembersForGivenGroup | Sort-Object -Unique -Property DistinguishedName).Count
+                            # Finally returning object we just built
+                            $Object
+                        } else {
+                            # Object is not a group we push it as is
+                            $Object
                         }
                     }
                 }
-            } else {
-                # this is nested call so we want to get whatever it gives us
-                $Output
             }
+        } else {
+            # this is nested call so we want to get whatever it gives us
+            $Output
         }
+        # }
     }
 }
