@@ -1,4 +1,9 @@
-﻿#### 0.0.145 - 2022.07.25
+﻿#### 0.0.146 - 2022.07.26
+- Improved `Get-WinADGroupMember` to
+- Improved `Show-WinADGroupMember` to show tab even if the group is empty
+- Added `Show-WinADGroupCritical` to show critical group members in an easy way
+
+#### 0.0.145 - 2022.07.25
 - Improved `Get-WinDNSRecords` by adding `ListTimestamps`
 
 #### 0.0.144 - 2022.07.24
