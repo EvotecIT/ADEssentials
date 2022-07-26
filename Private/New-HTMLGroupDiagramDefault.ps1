@@ -30,7 +30,7 @@
                     if (-not $HideUsers -or $HideAppliesTo -notin 'Both', 'Default') {
                         $Label = $ADObject.Name + [System.Environment]::NewLine + $ADObject.DomainName
                         if ($Online) {
-                            New-DiagramNode -Id $ID -Label $Label -Image 'https://image.flaticon.com/icons/svg/3135/3135715.svg'
+                            New-DiagramNode -Id $ID -Label $Label -Image $Script:ConfigurationIcons.ImageUser
                         } else {
                             New-DiagramNode -Id $ID -Label $Label -IconSolid user -IconColor LightSteelBlue
                         }
@@ -39,10 +39,10 @@
                 } elseif ($ADObject.Type -eq 'Group') {
                     if ($ADObject.Nesting -eq -1) {
                         $BorderColor = 'Red'
-                        $Image = 'https://image.flaticon.com/icons/svg/921/921347.svg'
+                        $Image = $Script:ConfigurationIcons.ImageGroup
                     } else {
                         $BorderColor = 'Blue'
-                        $Image = 'https://image.flaticon.com/icons/svg/166/166258.svg'
+                        $Image = $Script:ConfigurationIcons.ImageGroupNested
                     }
                     $SummaryMembers = -join ('Total: ', $ADObject.TotalMembers, ' Direct: ', $ADObject.DirectMembers, ' Groups: ', $ADObject.DirectGroups, ' Indirect: ', $ADObject.IndirectMembers)
                     $Label = $ADObject.Name + [System.Environment]::NewLine + $ADObject.DomainName + [System.Environment]::NewLine + $SummaryMembers
@@ -56,7 +56,7 @@
                     if (-not $HideComputers -or $HideAppliesTo -notin 'Both', 'Default') {
                         $Label = $ADObject.Name + [System.Environment]::NewLine + $ADObject.DomainName
                         if ($Online) {
-                            New-DiagramNode -Id $ID -Label $Label -Image 'https://image.flaticon.com/icons/svg/3003/3003040.svg'
+                            New-DiagramNode -Id $ID -Label $Label -Image $Script:ConfigurationIcons.ImageComputer
                         } else {
                             New-DiagramNode -Id $ID -Label $Label -IconSolid desktop -IconColor LightGray
                         }
@@ -66,7 +66,7 @@
                     if (-not $HideOther -or $HideAppliesTo -notin 'Both', 'Default') {
                         $Label = $ADObject.Name + [System.Environment]::NewLine + $ADObject.DomainName
                         if ($Online) {
-                            New-DiagramNode -Id $ID -Label $Label -Image 'https://image.flaticon.com/icons/svg/3347/3347551.svg'
+                            New-DiagramNode -Id $ID -Label $Label -Image $Script:ConfigurationIcons.ImageOther
                         } else {
                             New-DiagramNode -Id $ID -Label $Label -IconSolid robot -IconColor LightSalmon
                         }
