@@ -1,4 +1,54 @@
 ﻿function Show-WinADGroupCritical {
+    <#
+    .SYNOPSIS
+    Command to gather nested group membership from default critical groups in the Active Directory.
+
+    .DESCRIPTION
+    Command to gather nested group membership from default critical groups in the Active Directory.
+    This command will show data in table and diagrams in HTML format.
+
+    .PARAMETER GroupName
+    Group Name or Names to search for from provided list. If skipped all groups will be checked.
+
+    .PARAMETER FilePath
+    Path to HTML file where it's saved. If not given temporary path is used
+
+    .PARAMETER HideAppliesTo
+    Allows to define to which diagram HideComputers,HideUsers,HideOther applies to
+
+    .PARAMETER HideComputers
+    Hide computers from diagrams - useful for performance reasons
+
+    .PARAMETER HideUsers
+    Hide users from diagrams - useful for performance reasons
+
+    .PARAMETER HideOther
+    Hide other objects from diagrams - useful for performance reasons
+
+    .PARAMETER Online
+    Forces use of online CDN for JavaScript/CSS which makes the file smaller. Default - use offline.
+
+    .PARAMETER HideHTML
+    Prevents HTML output from being displayed in browser after generation is done
+
+    .PARAMETER DisableBuiltinConditions
+    Disables table coloring allowing user to define it's own conditions
+
+    .PARAMETER AdditionalStatistics
+    Adds additional data to Self object. It includes count for NestingMax, NestingGroup, NestingGroupSecurity, NestingGroupDistribution. It allows for easy filtering where we expect security groups only when there are nested distribution groups.
+
+    .PARAMETER SkipDiagram
+    Skips diagram generation and only displays table. Useful if the diagram can't handle amount of data or if the diagrams are not nessecary.
+
+    .PARAMETER Summary
+    Adds additional tab with all groups together on two diagrams
+
+    .EXAMPLE
+    Show-WinADGroupCritical
+
+    .NOTES
+    General notes
+    #>
     [alias('Show-WinADCriticalGroups')]
     [cmdletBinding()]
     param(
@@ -32,7 +82,7 @@
             'Remote Management Users'
         )]
         [string[]] $GroupName,
-        [parameter(Mandatory)][string] $ReportPath,
+        [parameter(Mandatory)][alias('ReportPath')][string] $FilePath,
         [ValidateSet('Default', 'Hierarchical', 'Both')][string] $HideAppliesTo = 'Both',
         [switch] $HideComputers,
         [switch] $HideUsers,
@@ -41,6 +91,7 @@
         [switch] $HideHTML,
         [switch] $DisableBuiltinConditions,
         [switch] $AdditionalStatistics,
+        [switch] $SkipDiagram,
         [switch] $Summary
     )
 
@@ -88,7 +139,7 @@
         }
     }
     if ($ListGroups.Count -gt 0) {
-        Show-WinADGroupMember -Identity $ListGroups -HideHTML:$HideHTML.IsPresent -FilePath $ReportPath -DisableBuiltinConditions:$DisableBuiltinConditions.IsPresent -Online:$Online.IsPresent -HideUsers:$HideUsers.IsPresent -HideComputers:$HideComputers.IsPresent -AdditionalStatistics:$AdditionalStatistics.IsPresent -Summary:$Summary.IsPresent
+        Show-WinADGroupMember -Identity $ListGroups -HideHTML:$HideHTML.IsPresent -FilePath $FilePath -DisableBuiltinConditions:$DisableBuiltinConditions.IsPresent -Online:$Online.IsPresent -HideUsers:$HideUsers.IsPresent -HideComputers:$HideComputers.IsPresent -AdditionalStatistics:$AdditionalStatistics.IsPresent -Summary:$Summary.IsPresent -SkipDiagram:$SkipDiagram.IsPresent
     } else {
         Write-Warning -Message "Show-WinADGroupCritical - Requested group(s) not found."
     }
