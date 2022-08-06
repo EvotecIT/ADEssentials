@@ -1,5 +1,12 @@
-﻿#### 0.0.146 - 2022.07.26
-- Improved `Get-WinADGroupMember` to
+﻿#### 0.0.147 - 2022.08.06
+- Added `Show-WinADDNSRecords` command.
+- Improved `Show-WinADGroupMember` by adding SkipDiagram option if all you care about is the data
+- Improved `Show-WinADGroupMemberOf` by adding SkipDiagram option if all you care about is the data
+- Improved `Show-WinADGroupCritical` by adding SkipDiagram option if all you care about is the data
+- Improved some documentation for commands above
+
+#### 0.0.146 - 2022.07.26
+- Improved `Get-WinADGroupMember`
 - Improved `Show-WinADGroupMember` to show tab even if the group is empty
 - Added `Show-WinADGroupCritical` to show critical group members in an easy way
 - Improved `Get-WinDNSRecords` - renamed some properties to take less space in the reports, renamed RecordType

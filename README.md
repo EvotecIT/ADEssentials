@@ -20,10 +20,13 @@
 # ADEssentials
 
 **ADEssentials** PowerShell module contains a set of commands that are useful for day to day activities when working with Active Directory.
-It's also essential part of [GPOZaurr](https://github.com/EvotecIT/GPOZaurr) and [Testimo](https://github.com/EvotecIT/Testimo).
+It's also an essential part of [GPOZaurr](https://github.com/EvotecIT/GPOZaurr) and [Testimo](https://github.com/EvotecIT/Testimo).
 
 Following links contain description of some of the features possible with this module
 
+- [Finding duplicate DNS entries using PowerShell](https://evotec.xyz/finding-duplicate-dns-entries-using-powershell/)
+- [Finding duplicate DNS records by IP Address using PowerShell](https://evotec.xyz/finding-duplicate-dns-records-by-ip-adress-using-powershell/)
+- [Finding duplicate SPN with PowerShell](https://evotec.xyz/finding-duplicate-spn-with-powershell/)
 - [Monitoring LDAPS connectivity/certificate with PowerShell](https://evotec.xyz/monitoring-ldaps-connectivity-certificate-with-powershell/)
 - [Visually display Active Directory Nested Group Membership using PowerShell](https://evotec.xyz/visually-display-active-directory-nested-group-membership-using-powershell/)
 - [Visually display Active Directory Trusts using PowerShell](https://evotec.xyz/visually-display-active-directory-trusts-using-powershell/)
