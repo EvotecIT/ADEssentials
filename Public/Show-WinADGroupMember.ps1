@@ -5,6 +5,7 @@
 
     .DESCRIPTION
     Command to gather nested group membership from one or more groups and display in table with two diagrams
+    This command will show data in table and diagrams in HTML format.
 
     .PARAMETER Identity
     Group Name or Names to search for
@@ -31,13 +32,16 @@
     Forces use of online CDN for JavaScript/CSS which makes the file smaller. Default - use offline.
 
     .PARAMETER HideHTML
-    Prevents HTML from opening up after command is done. Useful for automation
+    Prevents HTML output from being displayed in browser after generation is done
 
     .PARAMETER DisableBuiltinConditions
     Disables table coloring allowing user to define it's own conditions
 
     .PARAMETER AdditionalStatistics
     Adds additional data to Self object. It includes count for NestingMax, NestingGroup, NestingGroupSecurity, NestingGroupDistribution. It allows for easy filtering where we expect security groups only when there are nested distribution groups.
+
+    .PARAMETER SkipDiagram
+    Skips diagram generation and only displays table. Useful if the diagram can't handle amount of data or if the diagrams are not nessecary.
 
     .PARAMETER Summary
     Adds additional tab with all groups together on two diagrams
@@ -74,6 +78,7 @@
         [switch] $HideHTML,
         [switch] $DisableBuiltinConditions,
         [switch] $AdditionalStatistics,
+        [switch] $SkipDiagram,
         [Parameter(ParameterSetName = 'Default')][switch] $Summary,
         [Parameter(ParameterSetName = 'SummaryOnly')][switch] $SummaryOnly
     )
@@ -149,39 +154,46 @@
                     $DataStoreID = -join ('table', (Get-RandomStringName -Size 10 -ToLower))
                     $DataTableID = -join ('table', (Get-RandomStringName -Size 10 -ToLower))
                     New-HTMLTab -TabName $FullName {
-                        New-HTMLTab -TabName 'Information' {
-                            New-HTMLSection -Title "Information for $GroupName" {
-                                New-HTMLTable -DataTable $ADGroup -Filtering -DataStoreID $DataStoreID {
-                                    if (-not $DisableBuiltinConditions) {
-                                        New-TableHeader -Names Name, SamAccountName, DomainName, DisplayName -Title 'Member'
-                                        New-TableHeader -Names DirectMembers, DirectGroups, IndirectMembers, TotalMembers -Title 'Statistics'
-                                        New-TableHeader -Names GroupType, GroupScope -Title 'Group Details'
-                                        New-TableCondition -BackgroundColor CoralRed -Color White -ComparisonType bool -Value $false -Name Enabled -Operator eq
-                                        New-TableCondition -BackgroundColor LightBlue -ComparisonType string -Value '' -Name ParentGroup -Operator eq -Row
-                                        New-TableCondition -BackgroundColor CoralRed -Color White -ComparisonType bool -Value $true -Name CrossForest -Operator eq
-                                        New-TableCondition -BackgroundColor CoralRed -Color White -ComparisonType bool -Value $true -Name CircularIndirect -Operator eq -Row
-                                        New-TableCondition -BackgroundColor CoralRed -Color White -ComparisonType bool -Value $true -Name CircularDirect -Operator eq -Row
-                                    }
-                                    if ($Conditions) {
-                                        & $Conditions
-                                    }
+                        $SectionInformation = New-HTMLSection -Title "Information for $GroupName" {
+                            New-HTMLTable -DataTable $ADGroup -Filtering -DataStoreID $DataStoreID {
+                                if (-not $DisableBuiltinConditions) {
+                                    New-TableHeader -Names Name, SamAccountName, DomainName, DisplayName -Title 'Member'
+                                    New-TableHeader -Names DirectMembers, DirectGroups, IndirectMembers, TotalMembers -Title 'Statistics'
+                                    New-TableHeader -Names GroupType, GroupScope -Title 'Group Details'
+                                    New-TableCondition -BackgroundColor CoralRed -Color White -ComparisonType bool -Value $false -Name Enabled -Operator eq
+                                    New-TableCondition -BackgroundColor LightBlue -ComparisonType string -Value '' -Name ParentGroup -Operator eq -Row
+                                    New-TableCondition -BackgroundColor CoralRed -Color White -ComparisonType bool -Value $true -Name CrossForest -Operator eq
+                                    New-TableCondition -BackgroundColor CoralRed -Color White -ComparisonType bool -Value $true -Name CircularIndirect -Operator eq -Row
+                                    New-TableCondition -BackgroundColor CoralRed -Color White -ComparisonType bool -Value $true -Name CircularDirect -Operator eq -Row
+                                }
+                                if ($Conditions) {
+                                    & $Conditions
                                 }
                             }
                         }
-                        New-HTMLTab -TabName 'Diagram Basic' {
-                            New-HTMLSection -Title "Diagram for $GroupName" {
-                                New-HTMLGroupDiagramDefault -ADGroup $ADGroup -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -DataTableID $DataTableID -ColumnID 1 -Online:$Online
+                        if (-not $SkipDiagram.IsPresent) {
+                            New-HTMLTab -TabName 'Information' {
+                                $SectionInformation
                             }
+                        } else {
+                            $SectionInformation
                         }
-                        New-HTMLTab -TabName 'Diagram Hierarchy' {
-                            New-HTMLSection -Title "Diagram for $GroupName" {
-                                New-HTMLGroupDiagramHierachical -ADGroup $ADGroup -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -Online:$Online
+                        if (-not $SkipDiagram.IsPresent) {
+                            New-HTMLTab -TabName 'Diagram Basic' {
+                                New-HTMLSection -Title "Diagram for $GroupName" {
+                                    New-HTMLGroupDiagramDefault -ADGroup $ADGroup -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -DataTableID $DataTableID -ColumnID 1 -Online:$Online
+                                }
+                            }
+                            New-HTMLTab -TabName 'Diagram Hierarchy' {
+                                New-HTMLSection -Title "Diagram for $GroupName" {
+                                    New-HTMLGroupDiagramHierachical -ADGroup $ADGroup -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -Online:$Online
+                                }
                             }
                         }
                     }
                 }
             }
-            if ($Summary -or $SummaryOnly) {
+            if (-not $SkipDiagram.IsPresent -and ($Summary -or $SummaryOnly)) {
                 New-HTMLTab -Name 'Summary' {
                     New-HTMLTab -TabName 'Diagram Basic' {
                         New-HTMLSection -Title "Diagram for Summary" {
