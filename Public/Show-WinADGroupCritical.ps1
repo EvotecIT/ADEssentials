@@ -82,7 +82,7 @@
             'Remote Management Users'
         )]
         [string[]] $GroupName,
-        [parameter(Mandatory)][alias('ReportPath')][string] $FilePath,
+        [alias('ReportPath')][string] $FilePath,
         [ValidateSet('Default', 'Hierarchical', 'Both')][string] $HideAppliesTo = 'Both',
         [switch] $HideComputers,
         [switch] $HideUsers,
