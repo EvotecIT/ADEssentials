@@ -1,4 +1,7 @@
-﻿#### 0.0.147 - 2022.08.06
+﻿#### 0.0.148
+- Fixes `Get-WinADDFSHealth` IsPDC
+
+#### 0.0.147 - 2022.08.06
 - Added `Show-WinADDNSRecords` command.
 - Improved `Show-WinADGroupMember` by adding SkipDiagram option if all you care about is the data
 - Improved `Show-WinADGroupMemberOf` by adding SkipDiagram option if all you care about is the data
