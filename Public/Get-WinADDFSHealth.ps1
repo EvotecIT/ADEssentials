@@ -97,7 +97,7 @@
                 "Domain"                        = $Domain
                 "Status"                        = $false
                 "ReplicationState"              = 'Unknown'
-                "IsPDC"                         = $DC.OperationMasterRoles -contains 'PDCEmulator'
+                "IsPDC"                         = $DC.IsPDC
                 'GroupPolicyOutput'             = $null -ne $GPOs # This shows whether output was on Get-GPO
                 "GroupPolicyCount"              = if ($GPOs) { $GPOs.Count } else { 0 };
                 "SYSVOLCount"                   = 0
@@ -255,7 +255,7 @@
 }
 
 
-#Get-WinADDFSHealth -Domains 'ad.evotec.xyz' #-DomainControllers 'ad3.ad.evotec.xyz' -EventDays 1
+Get-WinADDFSHealth | Format-Table * #-DomainControllers 'ad3.ad.evotec.xyz' -EventDays 1
 
 
 #$T.DFSEvents
