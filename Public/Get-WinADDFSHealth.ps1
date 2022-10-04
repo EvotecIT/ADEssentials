@@ -253,21 +253,3 @@
     }
     $Table
 }
-
-
-Get-WinADDFSHealth | Format-Table * #-DomainControllers 'ad3.ad.evotec.xyz' -EventDays 1
-
-
-#$T.DFSEvents
-<#
-$EventDays = 2
-$Today = (Get-Date)
-$Yesterday = (Get-Date).AddDays(-$EventDays)
-
-$Yesterday
-$Today
-
-
-Get-Events -LogName "DFS Replication" -Level Error -ComputerName 'ad1.ad.evotec.xyz' -DateFrom $Yesterday -DateTo $Today
-
-#>
