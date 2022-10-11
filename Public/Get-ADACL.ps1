@@ -13,14 +13,14 @@
         [switch] $NotInherited,
         [switch] $Bundle,
         [System.Security.AccessControl.AccessControlType] $AccessControlType,
-        [string[]] $IncludeObjectTypeName,
-        [string[]] $IncludeInheritedObjectTypeName,
+        [Alias('ObjectTypeName')][string[]] $IncludeObjectTypeName,
+        [Alias('InheritedObjectTypeName')][string[]] $IncludeInheritedObjectTypeName,
         [string[]] $ExcludeObjectTypeName,
         [string[]] $ExcludeInheritedObjectTypeName,
-        [System.DirectoryServices.ActiveDirectoryRights[]] $IncludeActiveDirectoryRights,
+        [Alias('ActiveDirectoryRights')][System.DirectoryServices.ActiveDirectoryRights[]] $IncludeActiveDirectoryRights,
         [System.DirectoryServices.ActiveDirectoryRights[]] $ExcludeActiveDirectoryRights,
-        [System.DirectoryServices.ActiveDirectorySecurityInheritance[]] $IncludeActiveDirectorySecurityInheritance,
-        [System.DirectoryServices.ActiveDirectorySecurityInheritance[]] $ExcludeActiveDirectorySecurityInheritance,
+        [Alias('InheritanceType', 'IncludeInheritanceType')][System.DirectoryServices.ActiveDirectorySecurityInheritance[]] $IncludeActiveDirectorySecurityInheritance,
+        [Alias('ExcludeInheritanceType')][System.DirectoryServices.ActiveDirectorySecurityInheritance[]] $ExcludeActiveDirectorySecurityInheritance,
         [switch] $ADRightsAsArray
     )
     Begin {
@@ -144,9 +144,7 @@
                     }
                 }
                 $IdentityReference = $ACL.IdentityReference.Value
-                if ($Principal -and $Principal -ne $IdentityReference) {
-                    continue
-                }
+
 
                 $ReturnObject = [ordered] @{ }
                 $ReturnObject['DistinguishedName' ] = $DistinguishedName
@@ -180,7 +178,18 @@
                     if (-not $ReturnObject['PrincipalObjectDomain']) {
                         $ReturnObject['PrincipalObjectDomain'] = ConvertFrom-DistinguishedName -DistinguishedName $DistinguishedName -ToDomainCN
                     }
+
+                    # We compare principal to real principal based on Resolve, we compare both PrincipalName and SID to cover our ground
+                    if ($Principal -and $Principal -ne $ReturnObject['Principal'] -and $Principal -ne $ReturnObject['PrincipalObjectSid']) {
+                        continue
+                    }
+                } else {
+                    # We compare principal to principal as returned without resolve
+                    if ($Principal -and $Principal -ne $IdentityReference) {
+                        continue
+                    }
                 }
+
                 $ReturnObject['ObjectTypeName'] = $Script:ForestGUIDs["$($ACL.objectType)"]
                 $ReturnObject['InheritedObjectTypeName'] = $Script:ForestGUIDs["$($ACL.inheritedObjectType)"]
                 if ($IncludeObjectTypeName) {
