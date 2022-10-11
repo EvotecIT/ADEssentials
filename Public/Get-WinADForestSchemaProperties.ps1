@@ -43,5 +43,3 @@
         $CurrentSchema.FindClass("user").optionalproperties | Select-Object -Property name, commonname, description, syntax, SchemaGuid
     }
 }
-
-#Get-WinADForestSchemaProperties | Where-Object { $_.Name -eq 'ms-Mcs-Admpwd' }
