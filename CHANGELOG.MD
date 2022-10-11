@@ -1,4 +1,12 @@
-﻿#### 0.0.148
+﻿#### 0.0.149
+- Improves Invoke-ADEssentials with `SplitReports` switch
+- Improves Invoke-ADEssentials Users and Computers report by adding conditional formatting
+- Add `Set-ADACLInheritance` function
+- Add `Enable-ADACLInheritance` and `Disable-ADACLInheritance` functions which use `Set-ADACLInheritance`
+- Improve `Add-ADACL` function by allowing more control
+- Improve `Remove-ADACL` function by allowing more control
+
+#### 0.0.148 - 2022.08.07
 - Fixes `Get-WinADDFSHealth` IsPDC
 
 #### 0.0.147 - 2022.08.06
