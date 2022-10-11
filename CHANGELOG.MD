@@ -4,7 +4,11 @@
 - Add `Set-ADACLInheritance` function
 - Add `Enable-ADACLInheritance` and `Disable-ADACLInheritance` functions which use `Set-ADACLInheritance`
 - Improve `Add-ADACL` function by allowing more control
+- Improve `Get-ADACL` function to act properly in edge cases
+
+TO DO:
 - Improve `Remove-ADACL` function by allowing more control
+- Add `Set-ADACL` function which uses `Remove-ADACL` and `Add-ADACL` to allow more control
 
 #### 0.0.148 - 2022.08.07
 - Fixes `Get-WinADDFSHealth` IsPDC
