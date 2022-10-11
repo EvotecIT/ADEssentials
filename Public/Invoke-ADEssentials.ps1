@@ -11,7 +11,8 @@
         [alias('ForestName')][string] $Forest,
         [string[]] $ExcludeDomains,
         [alias('Domain', 'Domains')][string[]] $IncludeDomains,
-        [switch] $Online
+        [switch] $Online,
+        [switch] $SplitReports
     )
     Reset-ADEssentialsStatus
 
@@ -149,51 +150,26 @@
             $TimeEndADEssentials = Stop-TimeLog -Time $TimeLogADEssentials -Option OneLiner
             $Script:Reporting[$T]['Time'] = $TimeEndADEssentials
             Write-Color -Text '[i]', '[End  ] ', $($Script:ADEssentialsConfiguration[$T]['Name']), " [Time to execute: $TimeEndADEssentials]" -Color Yellow, DarkGray, Yellow, DarkGray
+
+            if ($SplitReports) {
+                Write-Color -Text '[i]', '[HTML ] ', 'Generating HTML report for ', $T -Color Yellow, DarkGray, Yellow
+                $TimeLogHTML = Start-TimeLog
+                New-HTMLReportADEssentialsWithSplit -FilePath $FilePath -Online:$Online -HideHTML:$HideHTML -CurrentReport $T
+                $TimeLogEndHTML = Stop-TimeLog -Time $TimeLogHTML -Option OneLiner
+                Write-Color -Text '[i]', '[HTML ] ', 'Generating HTML report for', $T, " [Time to execute: $TimeLogEndHTML]" -Color Yellow, DarkGray, Yellow, DarkGray
+            }
         }
     }
-
-
-    New-HTML -Author 'Przemysław Kłys' -TitleText 'ADEssentials Report' {
-        New-HTMLTabStyle -BorderRadius 0px -TextTransform capitalize -BackgroundColorActive SlateGrey
-        New-HTMLSectionStyle -BorderRadius 0px -HeaderBackGroundColor Grey -RemoveShadow
-        New-HTMLPanelStyle -BorderRadius 0px
-        New-HTMLTableOption -DataStore JavaScript -BoolAsString -ArrayJoinString ', ' -ArrayJoin
-
-        New-HTMLHeader {
-            New-HTMLSection -Invisible {
-                New-HTMLSection {
-                    New-HTMLText -Text "Report generated on $(Get-Date)" -Color Blue
-                } -JustifyContent flex-start -Invisible
-                New-HTMLSection {
-                    New-HTMLText -Text "ADEssentials - $($Script:Reporting['Version'])" -Color Blue
-                } -JustifyContent flex-end -Invisible
-            }
+    if ( -not $SplitReports) {
+        Write-Color -Text '[i]', '[HTML ] ', 'Generating HTML report' -Color Yellow, DarkGray, Yellow
+        $TimeLogHTML = Start-TimeLog
+        if (-not $FilePath) {
+            $FilePath = Get-FileName -Extension 'html' -Temporary
         }
-
-        if ($Type.Count -eq 1) {
-            foreach ($T in $Script:ADEssentialsConfiguration.Keys) {
-                if ($Script:ADEssentialsConfiguration[$T].Enabled -eq $true) {
-                    if ($Script:ADEssentialsConfiguration[$T]['Summary']) {
-                        $Script:Reporting[$T]['Summary'] = Invoke-Command -ScriptBlock $Script:ADEssentialsConfiguration[$T]['Summary']
-                    }
-                    & $Script:ADEssentialsConfiguration[$T]['Solution']
-                }
-            }
-        } else {
-            foreach ($T in $Script:ADEssentialsConfiguration.Keys) {
-                if ($Script:ADEssentialsConfiguration[$T].Enabled -eq $true) {
-                    if ($Script:ADEssentialsConfiguration[$T]['Summary']) {
-                        $Script:Reporting[$T]['Summary'] = Invoke-Command -ScriptBlock $Script:ADEssentialsConfiguration[$T]['Summary']
-                    }
-                    New-HTMLTab -Name $Script:ADEssentialsConfiguration[$T]['Name'] {
-                        & $Script:ADEssentialsConfiguration[$T]['Solution']
-                    }
-                }
-            }
-        }
-    } -Online:$Online.IsPresent -ShowHTML:(-not $HideHTML) -FilePath $FilePath
-
-
+        New-HTMLReportADEssentials -Type $Type -Online:$Online.IsPresent -HideHTML:$HideHTML.IsPresent -FilePath $FilePath
+        $TimeLogEndHTML = Stop-TimeLog -Time $TimeLogHTML -Option OneLiner
+        Write-Color -Text '[i]', '[HTML ] ', 'Generating HTML report', " [Time to execute: $TimeLogEndHTML]" -Color Yellow, DarkGray, Yellow, DarkGray
+    }
     Reset-ADEssentialsStatus
 }
 
