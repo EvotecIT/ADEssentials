@@ -1,6 +1,7 @@
 ﻿#### 0.0.149
 - Improves Invoke-ADEssentials with `SplitReports` switch
 - Improves Invoke-ADEssentials Users and Computers report by adding conditional formatting
+- Improves Invoke-ADEssentials Users report - it was running unnsecary queries
 - Add `Set-ADACLInheritance` function
 - Add `Enable-ADACLInheritance` and `Disable-ADACLInheritance` functions which use `Set-ADACLInheritance`
 - Improve `Add-ADACL` function by allowing more control
