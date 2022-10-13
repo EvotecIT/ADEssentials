@@ -6,12 +6,14 @@
         [alias('Domain', 'Domains')][string[]] $IncludeDomains,
         [switch] $PerDomain
     )
-    if (-not $Script:Cache) {
-        $Script:Cache = [ordered] @{}
-        $Script:AllUsers = [ordered] @{}
-    }
+    # if (-not $CacheUsersReport -or -not $Script:Allusers) {
+    #     $CacheUsersReport = [ordered] @{}
+    #     $Script:AllUsers = [ordered] @{}
+    # }
     #if (-not $Script:AllContacts) {
-    $Script:AllContacts = [ordered] @{}
+    $AllUsers = [ordered] @{}
+    $AllContacts = [ordered] @{}
+    $CacheUsersReport = [ordered] @{}
     #}
     $Today = Get-Date
     $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation
@@ -25,43 +27,42 @@
             'msExchRecipientDisplayType', 'pwdLastSet', "msDS-UserPasswordExpiryTimeComputed",
             'WhenCreated', 'WhenChanged'
         )
-        $AllUsers[$Domain] = Get-ADUser -Filter * -Server $QueryServer -Properties $Properties
+        # $AllUsers[$Domain] = Get-ADUser -Filter * -Server $QueryServer -Properties $Properties
         foreach ($Domain In $ForestInformation.Domains) {
             #$Properties = 'DistinguishedName', 'mail', 'LastLogonDate', 'PasswordLastSet', 'DisplayName', 'Manager', 'Description', 'PasswordNeverExpires', 'PasswordNotRequired', 'PasswordExpired', 'UserPrincipalName', 'SamAccountName', 'CannotChangePassword', 'TrustedForDelegation', 'TrustedToAuthForDelegation', 'msExchMailboxGuid', 'msExchRemoteRecipientType', 'msExchRecipientTypeDetails', 'msExchRecipientDisplayType', 'pwdLastSet', "msDS-UserPasswordExpiryTimeComputed"
-            $AllUsers[$Domain] = Get-ADUser -Filter * -Properties $Properties -Server $ForestInformation['QueryServers'][$Domain].HostName[0]
+            $AllUsers[$Domain] = Get-ADUser -Filter * -Properties $Properties -Server $QueryServer #$ForestInformation['QueryServers'][$Domain].HostName[0]
         }
         foreach ($Domain In $ForestInformation.Domains) {
-            $AllContacts[$Domain] = Get-ADObject -Filter 'objectClass -eq "contact"' -Properties SamAccountName, Mail, Name, DistinguishedName, WhenChanged, Whencreated, DisplayName
+            $AllContacts[$Domain] = Get-ADObject -Filter 'objectClass -eq "contact"' -Properties SamAccountName, Mail, Name, DistinguishedName, WhenChanged, Whencreated, DisplayName -Server $QueryServer
         }
     }
-    if (-not $Script:Cache -or $Script:Cache.Count -eq 0) {
-        $Script:Cache = @{}
-        foreach ($Domain in $AllUsers.Keys) {
-            foreach ($U in $AllUsers[$Domain]) {
-                $Script:Cache[$U.DistinguishedName] = $U
-            }
-        }
-        foreach ($Domain in $AllContacts.Keys) {
-            foreach ($C in $AllContacts[$Domain]) {
-                $Script:Cache[$C.DistinguishedName] = $C
-            }
+
+    foreach ($Domain in $AllUsers.Keys) {
+        foreach ($U in $AllUsers[$Domain]) {
+            $CacheUsersReport[$U.DistinguishedName] = $U
         }
     }
+    foreach ($Domain in $AllContacts.Keys) {
+        foreach ($C in $AllContacts[$Domain]) {
+            $CacheUsersReport[$C.DistinguishedName] = $C
+        }
+    }
+
     $Output = [ordered] @{}
     foreach ($Domain in $ForestInformation.Domains) {
-        if (-not $Script:Cache) {
-            $Script:Cache = @{}
-            foreach ($Domain in $AllUsers.Keys) {
-                foreach ($U in $AllUsers[$Domain]) {
-                    $Script:Cache[$U.DistinguishedName] = $U
-                }
-            }
-            foreach ($Domain in $AllComputers.Keys) {
-                foreach ($C in $AllComputers[$Domain]) {
-                    $Script:Cache[$C.DistinguishedName] = $C
-                }
-            }
-        }
+        # if (-not $CacheUsersReport) {
+        #     $CacheUsersReport = @{}
+        #     foreach ($Domain in $AllUsers.Keys) {
+        #         foreach ($U in $AllUsers[$Domain]) {
+        #             $CacheUsersReport[$U.DistinguishedName] = $U
+        #         }
+        #     }
+        #     foreach ($Domain in $AllComputers.Keys) {
+        #         foreach ($C in $AllComputers[$Domain]) {
+        #             $CacheUsersReport[$C.DistinguishedName] = $C
+        #         }
+        #     }
+        # }
 
         $Output[$Domain] = foreach ($User in $AllUsers[$Domain]) {
             $UserLocation = ($User.DistinguishedName -split ',').Replace('OU=', '').Replace('CN=', '').Replace('DC=', '')
@@ -79,11 +80,11 @@
                 $PasswordLastDays = $null
             }
             if ($User.Manager) {
-                $Manager = $Cache[$User.Manager].DisplayName
-                $ManagerSamAccountName = $Cache[$User.Manager].SamAccountName
-                $ManagerEmail = $Cache[$User.Manager].Mail
-                $ManagerEnabled = $Cache[$User.Manager].Enabled
-                $ManagerLastLogon = $Cache[$User.Manager].LastLogonDate
+                $Manager = $CacheUsersReport[$User.Manager].DisplayName
+                $ManagerSamAccountName = $CacheUsersReport[$User.Manager].SamAccountName
+                $ManagerEmail = $CacheUsersReport[$User.Manager].Mail
+                $ManagerEnabled = $CacheUsersReport[$User.Manager].Enabled
+                $ManagerLastLogon = $CacheUsersReport[$User.Manager].LastLogonDate
                 if ($ManagerLastLogon) {
                     $ManagerLastLogonDays = $( - $($ManagerLastLogon - $Today).Days)
                 } else {
