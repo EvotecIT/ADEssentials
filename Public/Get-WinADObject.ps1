@@ -90,6 +90,10 @@
     }
     process {
         foreach ($Ident in $Identity) {
+            if (-not $Ident) {
+                Write-Warning -Message "Get-WinADObject - Identity is empty. Skipping"
+                continue
+            }
             $ResolvedIdentity = $null
             # If it's an object we need to make sure we pass only DN
             if ($Ident.DistinguishedName) {
