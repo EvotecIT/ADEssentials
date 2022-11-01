@@ -6,6 +6,7 @@
 - Add `Enable-ADACLInheritance` and `Disable-ADACLInheritance` functions which use `Set-ADACLInheritance`
 - Improve `Add-ADACL` function by allowing more control
 - Improve `Get-ADACL` function to act properly in edge cases
+- Small improvement for `Get-WinADObject` with check for empty Identity
 
 TO DO:
 - Improve `Remove-ADACL` function by allowing more control
