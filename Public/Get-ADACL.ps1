@@ -32,6 +32,9 @@
             Write-Verbose "Get-ADACL - Gathering Forest Details"
             $Script:ForestDetails = Get-WinADForestDetails
         }
+        if ($Principal -and $Resolve) {
+            $PrincipalRequested = Convert-Identity -Identity $Principal
+        }
     }
     Process {
         foreach ($Object in $ADObject) {
@@ -157,7 +160,7 @@
                 $ReturnObject['AccessControlType'] = $ACL.AccessControlType
                 $ReturnObject['Principal'] = $IdentityReference
                 if ($Resolve) {
-                    $IdentityResolve = Get-WinADObject -Identity $IdentityReference -AddType -Verbose:$false
+                    $IdentityResolve = Get-WinADObject -Identity $IdentityReference -AddType -Verbose:$false -Cache
                     if (-not $IdentityResolve) {
                         #Write-Verbose "Get-ADACL - Reverting to Convert-Identity for $IdentityReference"
                         $ConvertIdentity = Convert-Identity -Identity $IdentityReference -Verbose:$false
@@ -180,7 +183,7 @@
                     }
 
                     # We compare principal to real principal based on Resolve, we compare both PrincipalName and SID to cover our ground
-                    if ($Principal -and $Principal -ne $ReturnObject['Principal'] -and $Principal -ne $ReturnObject['PrincipalObjectSid']) {
+                    if ($PrincipalRequested -and $PrincipalRequested.SID -ne $ReturnObject['PrincipalObjectSid']) {
                         continue
                     }
                 } else {
@@ -233,9 +236,14 @@
                 [PSCustomObject] $ReturnObject
             }
             if ($Bundle) {
+                if ($Object.CanonicalName) {
+                    $CanonicalName = $Object.CanonicalName
+                } else {
+                    $CanonicalName = ConvertFrom-DistinguishedName -DistinguishedName $DistinguishedName -ToCanonicalName
+                }
                 [PSCustomObject] @{
                     DistinguishedName = $DistinguishedName
-                    CanonicalName     = $Object.CanonicalName
+                    CanonicalName     = $CanonicalName
                     ACL               = $ACLs
                     ACLAccessRules    = $AccessObjects
                     Path              = $PathACL
