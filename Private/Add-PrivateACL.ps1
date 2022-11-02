@@ -2,13 +2,29 @@
     [cmdletBinding(SupportsShouldProcess)]
     param(
         [PSCustomObject] $ACL,
+        [string] $ADObject,
         [string] $Principal,
         [System.DirectoryServices.ActiveDirectoryRights] $AccessRule,
         [System.Security.AccessControl.AccessControlType] $AccessControlType,
         [string] $ObjectType,
-        [nullable[System.DirectoryServices.ActiveDirectorySecurityInheritance]] $InheritanceType
+        [string] $InheritedObjectType,
+        [nullable[System.DirectoryServices.ActiveDirectorySecurityInheritance]] $InheritanceType,
+        [System.DirectoryServices.ActiveDirectorySecurity] $ntSecurityDescriptor
     )
-    $DomainName = ConvertFrom-DistinguishedName -ToDomainCN -DistinguishedName $ACL.DistinguishedName
+    if ($ACL) {
+        $ADObject = $ACL.DistinguishedName
+    } else {
+        if (-not $ADObject) {
+            Write-Warning "Add-PrivateACL - No ACL or ADObject specified"
+            return
+        }
+    }
+
+    $DomainName = ConvertFrom-DistinguishedName -ToDomainCN -DistinguishedName $ADObject
+    if (-not $DomainName) {
+        Write-Warning -Message "Add-PrivateACL - Unable to determine domain name for $($ADObject)"
+        return
+    }
     $QueryServer = $Script:ForestDetails['QueryServers'][$DomainName].HostName[0]
 
     if ($Principal -like '*/*') {
@@ -19,12 +35,21 @@
     }
 
     $OutputRequiresCommit = foreach ($Rule in $AccessRule) {
-        if ($ObjectType -and $InheritanceType) {
+        if ($ObjectType -and $InheritanceType -and $InheritedObjectType) {
+            $ObjectTypeGuid = Convert-ADSchemaToGuid -SchemaName $ObjectType
+            $InheritedObjectTypeGuid = Convert-ADSchemaToGuid -SchemaName $InheritedObjectType
+            if ($ObjectTypeGuid -and $InheritedObjectTypeGuid) {
+                $AccessRuleToAdd = [System.DirectoryServices.ActiveDirectoryAccessRule]::new($Identity, $Rule, $AccessControlType, $ObjectTypeGuid, $InheritanceType, $InheritedObjectTypeGuid)
+            } else {
+                Write-Warning "Add-PrivateACL - Object type '$ObjectType' not found in schema"
+                return
+            }
+        } elseif ($ObjectType -and $InheritanceType) {
             $ObjectTypeGuid = Convert-ADSchemaToGuid -SchemaName $ObjectType
             if ($ObjectTypeGuid) {
                 $AccessRuleToAdd = [System.DirectoryServices.ActiveDirectoryAccessRule]::new($Identity, $Rule, $AccessControlType, $ObjectTypeGuid, $InheritanceType)
             } else {
-                Write-Warning "Object type '$ObjectType' not found in schema"
+                Write-Warning "Add-PrivateACL - Object type '$ObjectType' not found in schema"
                 return
             }
         } elseif ($ObjectType) {
@@ -32,7 +57,7 @@
             if ($ObjectTypeGuid) {
                 $AccessRuleToAdd = [System.DirectoryServices.ActiveDirectoryAccessRule]::new($Identity, $Rule, $AccessControlType, $ObjectTypeGuid)
             } else {
-                Write-Warning "Object type '$ObjectType' not found in schema"
+                Write-Warning "Add-PrivateACL - Object type '$ObjectType' not found in schema"
                 return
             }
         } else {
@@ -40,7 +65,15 @@
         }
         try {
             Write-Verbose "Add-ADACL - Adding access for $($AccessRuleToAdd.IdentityReference) / $($AccessRuleToAdd.ActiveDirectoryRights) / $($AccessRuleToAdd.AccessControlType) / $($AccessRuleToAdd.ObjectType) / $($AccessRuleToAdd.InheritanceType) to $($ACL.DistinguishedName)"
-            $ACL.ACL.AddAccessRule($AccessRuleToAdd)
+            if ($ACL.ACL) {
+                $ntSecurityDescriptor = $ACL.ACL
+            } elseif ($ntSecurityDescriptor) {
+
+            } else {
+                Write-Warning "Add-PrivateACL - No ACL or ntSecurityDescriptor specified"
+                return
+            }
+            $ntSecurityDescriptor.AddAccessRule($AccessRuleToAdd)
             $true
         } catch {
             Write-Warning "Add-ADACL - Error adding permissions for $($AccessRuleToAdd.IdentityReference) / $($AccessRuleToAdd.ActiveDirectoryRights) due to error: $($_.Exception.Message)"
@@ -48,10 +81,11 @@
         }
     }
     if ($OutputRequiresCommit -notcontains $false -and $OutputRequiresCommit -contains $true) {
-        Write-Verbose "Add-ADACL - Saving permissions for $($ACL.DistinguishedName)"
+        Write-Verbose "Add-ADACL - Saving permissions for $($ADObject)"
         #Set-Acl -Path $ACL.Path -AclObject $ACL.ACL -ErrorAction Stop
-        Set-ADObject -Identity $ACL.DistinguishedName -Replace @{ ntSecurityDescriptor = $ACL.ACL } -ErrorAction Stop -Server $QueryServer
+
+        Set-ADObject -Identity $ADObject -Replace @{ ntSecurityDescriptor = $ntSecurityDescriptor } -ErrorAction Stop -Server $QueryServer
     } elseif ($OutputRequiresCommit -contains $false) {
-        Write-Warning "Add-ADACL - Skipping saving permissions for $($ACL.DistinguishedName) due to errors."
+        Write-Warning "Add-ADACL - Skipping saving permissions for $($ADObject) due to errors."
     }
 }
