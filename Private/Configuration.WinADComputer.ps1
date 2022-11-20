@@ -17,7 +17,6 @@
         if ($Script:Reporting['Computers']['Data'] -is [System.Collections.IDictionary]) {
             New-HTMLTabPanel {
                 foreach ($Domain in $Script:Reporting['Computers']['Data'].Keys) {
-
                     New-HTMLTab -Name $Domain {
                         New-HTMLTable -DataTable $Script:Reporting['Computers']['Data'][$Domain] -Filtering {
                             # highlight whole row as blue if the computer is disabled
@@ -63,7 +62,7 @@
                                 New-HTMLTableCondition -Name 'Enabled' -ComparisonType string -Operator eq -Value $True
                                 New-HTMLTableCondition -Name 'PasswordNotRequired' -ComparisonType string -Operator eq -Value $True
                             } -BackgroundColor Red -HighlightHeaders Name, SamAccountName, Enabled, PasswordNotRequired
-                        }
+                        } -ScrollX
                     }
                 }
             }

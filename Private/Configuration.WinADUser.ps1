@@ -59,7 +59,7 @@
                                 New-HTMLTableCondition -Name 'Enabled' -ComparisonType string -Operator eq -Value $True
                                 New-HTMLTableCondition -Name 'PasswordNotRequired' -ComparisonType string -Operator eq -Value $True
                             } -BackgroundColor Red -HighlightHeaders Name, SamAccountName, Enabled, PasswordNotRequired
-                        }
+                        } -ScrollX
                     }
                 }
             }
