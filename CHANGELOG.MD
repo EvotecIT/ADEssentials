@@ -7,6 +7,7 @@
 - Improve `Add-ADACL` function by allowing more control
 - Improve `Get-ADACL` function to act properly in edge cases
 - Small improvement for `Get-WinADObject` with check for empty Identity
+- Improve performance of `Get-WinADUsers`
 
 TO DO:
 - Improve `Remove-ADACL` function by allowing more control
