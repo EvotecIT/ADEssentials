@@ -6,11 +6,6 @@
         [alias('Domain', 'Domains')][string[]] $IncludeDomains,
         [switch] $PerDomain
     )
-    # if (-not $CacheUsersReport -or -not $Script:Allusers) {
-    #     $CacheUsersReport = [ordered] @{}
-    #     $Script:AllUsers = [ordered] @{}
-    # }
-    #if (-not $Script:AllContacts) {
     $AllUsers = [ordered] @{}
     $AllContacts = [ordered] @{}
     $CacheUsersReport = [ordered] @{}
@@ -27,14 +22,8 @@
             'msExchRecipientDisplayType', 'pwdLastSet', "msDS-UserPasswordExpiryTimeComputed",
             'WhenCreated', 'WhenChanged'
         )
-        # $AllUsers[$Domain] = Get-ADUser -Filter * -Server $QueryServer -Properties $Properties
-        # foreach ($Domain In $ForestInformation.Domains) {
-        #$Properties = 'DistinguishedName', 'mail', 'LastLogonDate', 'PasswordLastSet', 'DisplayName', 'Manager', 'Description', 'PasswordNeverExpires', 'PasswordNotRequired', 'PasswordExpired', 'UserPrincipalName', 'SamAccountName', 'CannotChangePassword', 'TrustedForDelegation', 'TrustedToAuthForDelegation', 'msExchMailboxGuid', 'msExchRemoteRecipientType', 'msExchRecipientTypeDetails', 'msExchRecipientDisplayType', 'pwdLastSet', "msDS-UserPasswordExpiryTimeComputed"
         $AllUsers[$Domain] = Get-ADUser -Filter * -Properties $Properties -Server $QueryServer #$ForestInformation['QueryServers'][$Domain].HostName[0]
-        #}
-        #foreach ($Domain In $ForestInformation.Domains) {
         $AllContacts[$Domain] = Get-ADObject -Filter 'objectClass -eq "contact"' -Properties SamAccountName, Mail, Name, DistinguishedName, WhenChanged, Whencreated, DisplayName -Server $QueryServer
-        #}
     }
 
     foreach ($Domain in $AllUsers.Keys) {
@@ -50,20 +39,6 @@
 
     $Output = [ordered] @{}
     foreach ($Domain in $ForestInformation.Domains) {
-        # if (-not $CacheUsersReport) {
-        #     $CacheUsersReport = @{}
-        #     foreach ($Domain in $AllUsers.Keys) {
-        #         foreach ($U in $AllUsers[$Domain]) {
-        #             $CacheUsersReport[$U.DistinguishedName] = $U
-        #         }
-        #     }
-        #     foreach ($Domain in $AllComputers.Keys) {
-        #         foreach ($C in $AllComputers[$Domain]) {
-        #             $CacheUsersReport[$C.DistinguishedName] = $C
-        #         }
-        #     }
-        # }
-
         $Output[$Domain] = foreach ($User in $AllUsers[$Domain]) {
             $UserLocation = ($User.DistinguishedName -split ',').Replace('OU=', '').Replace('CN=', '').Replace('DC=', '')
             $Region = $UserLocation[-4]
