@@ -2,16 +2,18 @@
 - Improves Invoke-ADEssentials with `SplitReports` switch
 - Improves Invoke-ADEssentials Users and Computers report by adding conditional formatting
 - Improves Invoke-ADEssentials Users report - it was running unnsecary queries
-- Add `Set-ADACLInheritance` function
-- Add `Enable-ADACLInheritance` and `Disable-ADACLInheritance` functions which use `Set-ADACLInheritance`
-- Improve `Add-ADACL` function by allowing more control
-- Improve `Get-ADACL` function to act properly in edge cases
+- Add `Get-WinADGroups` function
+- Add `Groups` report to Invoke-ADEssentials
 - Small improvement for `Get-WinADObject` with check for empty Identity
 - Improve performance of `Get-WinADUsers`
-
-TO DO:
-- Improve `Remove-ADACL` function by allowing more control
-- Add `Set-ADACL` function which uses `Remove-ADACL` and `Add-ADACL` to allow more control
+- General ACL Improvements *Work in progress*
+  - Improve `Add-ADACL` function by allowing more control
+  - Improve `Get-ADACL` function to act properly in edge cases
+  - Add `Set-ADACLInheritance` function
+  - Add `Enable-ADACLInheritance` and `Disable-ADACLInheritance` functions which use `Set-ADACLInheritance`
+  - Added `New-ADACLObject` and `Copy-ADACLObject`, for use within `Set-ADACL` *Work in progress*
+  - Added `Set-ADACL` function which uses `Remove-ADACL` and `Add-ADACL` to allow more control *Work in progress*
+  - Improve `Remove-ADACL` function by allowing more control *Work in progress*
 
 #### 0.0.148 - 2022.08.07
 - Fixes `Get-WinADDFSHealth` IsPDC
