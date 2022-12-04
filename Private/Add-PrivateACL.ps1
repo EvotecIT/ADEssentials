@@ -4,12 +4,13 @@
         [PSCustomObject] $ACL,
         [string] $ADObject,
         [string] $Principal,
-        [System.DirectoryServices.ActiveDirectoryRights] $AccessRule,
+        [alias('ActiveDirectoryRights')][System.DirectoryServices.ActiveDirectoryRights] $AccessRule,
         [System.Security.AccessControl.AccessControlType] $AccessControlType,
-        [string] $ObjectType,
-        [string] $InheritedObjectType,
-        [nullable[System.DirectoryServices.ActiveDirectorySecurityInheritance]] $InheritanceType,
-        [System.DirectoryServices.ActiveDirectorySecurity] $ntSecurityDescriptor
+        [alias('ObjectTypeName')][string] $ObjectType,
+        [alias('InheritedObjectTypeName')][string] $InheritedObjectType,
+        [alias('ActiveDirectorySecurityInheritance')][nullable[System.DirectoryServices.ActiveDirectorySecurityInheritance]] $InheritanceType,
+        [alias('ActiveDirectorySecurity')][System.DirectoryServices.ActiveDirectorySecurity] $NTSecurityDescriptor,
+        [System.DirectoryServices.ActiveDirectoryAccessRule] $ActiveDirectoryAccessRule
     )
     if ($ACL) {
         $ADObject = $ACL.DistinguishedName
@@ -27,19 +28,23 @@
     }
     $QueryServer = $Script:ForestDetails['QueryServers'][$DomainName].HostName[0]
 
-    if ($Principal -like '*/*') {
-        $SplittedName = $Principal -split '/'
-        [System.Security.Principal.IdentityReference] $Identity = [System.Security.Principal.NTAccount]::new($SplittedName[0], $SplittedName[1])
-    } else {
-        [System.Security.Principal.IdentityReference] $Identity = [System.Security.Principal.NTAccount]::new($Principal)
+    if (-not $ActiveDirectoryAccessRule) {
+        if ($Principal -like '*/*') {
+            $SplittedName = $Principal -split '/'
+            [System.Security.Principal.IdentityReference] $Identity = [System.Security.Principal.NTAccount]::new($SplittedName[0], $SplittedName[1])
+        } else {
+            [System.Security.Principal.IdentityReference] $Identity = [System.Security.Principal.NTAccount]::new($Principal)
+        }
     }
 
-    $OutputRequiresCommit = foreach ($Rule in $AccessRule) {
-        if ($ObjectType -and $InheritanceType -and $InheritedObjectType) {
+    $OutputRequiresCommit = @(
+        if ($ActiveDirectoryAccessRule) {
+            $AccessRuleToAdd = $ActiveDirectoryAccessRule
+        } elseif ($ObjectType -and $InheritanceType -and $InheritedObjectType) {
             $ObjectTypeGuid = Convert-ADSchemaToGuid -SchemaName $ObjectType
             $InheritedObjectTypeGuid = Convert-ADSchemaToGuid -SchemaName $InheritedObjectType
             if ($ObjectTypeGuid -and $InheritedObjectTypeGuid) {
-                $AccessRuleToAdd = [System.DirectoryServices.ActiveDirectoryAccessRule]::new($Identity, $Rule, $AccessControlType, $ObjectTypeGuid, $InheritanceType, $InheritedObjectTypeGuid)
+                $AccessRuleToAdd = [System.DirectoryServices.ActiveDirectoryAccessRule]::new($Identity, $AccessRule, $AccessControlType, $ObjectTypeGuid, $InheritanceType, $InheritedObjectTypeGuid)
             } else {
                 Write-Warning "Add-PrivateACL - Object type '$ObjectType' not found in schema"
                 return
@@ -47,7 +52,7 @@
         } elseif ($ObjectType -and $InheritanceType) {
             $ObjectTypeGuid = Convert-ADSchemaToGuid -SchemaName $ObjectType
             if ($ObjectTypeGuid) {
-                $AccessRuleToAdd = [System.DirectoryServices.ActiveDirectoryAccessRule]::new($Identity, $Rule, $AccessControlType, $ObjectTypeGuid, $InheritanceType)
+                $AccessRuleToAdd = [System.DirectoryServices.ActiveDirectoryAccessRule]::new($Identity, $AccessRule, $AccessControlType, $ObjectTypeGuid, $InheritanceType)
             } else {
                 Write-Warning "Add-PrivateACL - Object type '$ObjectType' not found in schema"
                 return
@@ -55,13 +60,13 @@
         } elseif ($ObjectType) {
             $ObjectTypeGuid = Convert-ADSchemaToGuid -SchemaName $ObjectType
             if ($ObjectTypeGuid) {
-                $AccessRuleToAdd = [System.DirectoryServices.ActiveDirectoryAccessRule]::new($Identity, $Rule, $AccessControlType, $ObjectTypeGuid)
+                $AccessRuleToAdd = [System.DirectoryServices.ActiveDirectoryAccessRule]::new($Identity, $AccessRule, $AccessControlType, $ObjectTypeGuid)
             } else {
                 Write-Warning "Add-PrivateACL - Object type '$ObjectType' not found in schema"
                 return
             }
         } else {
-            $AccessRuleToAdd = [System.DirectoryServices.ActiveDirectoryAccessRule]::new($Identity, $Rule, $AccessControlType)
+            $AccessRuleToAdd = [System.DirectoryServices.ActiveDirectoryAccessRule]::new($Identity, $AccessRule, $AccessControlType)
         }
         try {
             Write-Verbose "Add-ADACL - Adding access for $($AccessRuleToAdd.IdentityReference) / $($AccessRuleToAdd.ActiveDirectoryRights) / $($AccessRuleToAdd.AccessControlType) / $($AccessRuleToAdd.ObjectType) / $($AccessRuleToAdd.InheritanceType) to $($ACL.DistinguishedName)"
@@ -79,7 +84,7 @@
             Write-Warning "Add-ADACL - Error adding permissions for $($AccessRuleToAdd.IdentityReference) / $($AccessRuleToAdd.ActiveDirectoryRights) due to error: $($_.Exception.Message)"
             $false
         }
-    }
+    )
     if ($OutputRequiresCommit -notcontains $false -and $OutputRequiresCommit -contains $true) {
         Write-Verbose "Add-ADACL - Saving permissions for $($ADObject)"
         #Set-Acl -Path $ACL.Path -AclObject $ACL.ACL -ErrorAction Stop

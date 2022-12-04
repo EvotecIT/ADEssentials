@@ -3,21 +3,18 @@
     param(
         [PSCustomObject] $ACL,
         [string] $Principal,
-        [System.DirectoryServices.ActiveDirectoryRights] $AccessRule,
+        [alias('ActiveDirectoryRights')][System.DirectoryServices.ActiveDirectoryRights] $AccessRule,
         [System.Security.AccessControl.AccessControlType] $AccessControlType,
         [Alias('ObjectTypeName')][string[]] $IncludeObjectTypeName,
         [Alias('InheritedObjectTypeName')][string[]] $IncludeInheritedObjectTypeName,
-        [System.DirectoryServices.ActiveDirectorySecurityInheritance] $InheritanceType,
+        [alias('ActiveDirectorySecurityInheritance')][nullable[System.DirectoryServices.ActiveDirectorySecurityInheritance]] $InheritanceType,
         [switch] $Force,
-        [System.DirectoryServices.ActiveDirectorySecurity] $ntSecurityDescriptor
+        [alias('ActiveDirectorySecurity')][System.DirectoryServices.ActiveDirectorySecurity] $NTSecurityDescriptor
     )
     $DomainName = ConvertFrom-DistinguishedName -ToDomainCN -DistinguishedName $ACL.DistinguishedName
     $QueryServer = $Script:ForestDetails['QueryServers'][$DomainName].HostName[0]
 
     $OutputRequiresCommit = @(
-
-
-
         # if access rule is defined with just remove access rule we want to remove
         if ($ntSecurityDescriptor -and $ACL.PSObject.Properties.Name -notcontains 'ACLAccessRules') {
             try {

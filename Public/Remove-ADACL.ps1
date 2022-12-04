@@ -61,22 +61,23 @@
 
         [parameter(ParameterSetName = 'ACL')]
         [parameter(ParameterSetName = 'ADObject')]
-        [Alias('ObjectTypeName')][string[]] $IncludeObjectTypeName,
+        [Alias('ObjectTypeName', 'ObjectType')][string[]] $IncludeObjectTypeName,
 
         [parameter(ParameterSetName = 'ACL')]
         [parameter(ParameterSetName = 'ADObject')]
-        [Alias('InheritedObjectTypeName')][string[]] $IncludeInheritedObjectTypeName,
+        [Alias('InheritedObjectTypeName', 'InheritedObjectType')][string[]] $IncludeInheritedObjectTypeName,
 
         [parameter(ParameterSetName = 'ACL')]
         [parameter(ParameterSetName = 'ADObject')]
-        [System.DirectoryServices.ActiveDirectorySecurityInheritance] $InheritanceType,
+        [alias('ActiveDirectorySecurityInheritance')][nullable[System.DirectoryServices.ActiveDirectorySecurityInheritance]] $InheritanceType,
 
         [parameter(ParameterSetName = 'NTSecurityDescriptor')]
         [parameter(ParameterSetName = 'ACL')]
         [parameter(ParameterSetName = 'ADObject')]
         [switch] $Force,
 
-        [alias('ActiveDirectorySecurity')][parameter(ParameterSetName = 'NTSecurityDescriptor', Mandatory)][System.DirectoryServices.ActiveDirectorySecurity] $NTSecurityDescriptor
+        [parameter(ParameterSetName = 'NTSecurityDescriptor', Mandatory)]
+        [alias('ActiveDirectorySecurity')][System.DirectoryServices.ActiveDirectorySecurity] $NTSecurityDescriptor
     )
     if (-not $Script:ForestDetails) {
         Write-Verbose "Remove-ADACL - Gathering Forest Details"

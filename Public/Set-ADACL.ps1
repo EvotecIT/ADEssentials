@@ -94,7 +94,7 @@
             }
         } else {
             # we don't have this principal defined for set, needs to be removed
-            Write-Verbose "Set-ADACL - Removing $($CurrentACL.Principal)"
+            Write-Verbose "Set-ADACL -Preparing for removal of $($CurrentACL.Principal)"
             $Results.Remove.Add(
                 [PSCustomObject] @{
                     Principal         = $CurrentACL.Principal
@@ -150,24 +150,27 @@
             }
         }
     }
-
-    if ($Results.Remove.Permissions) {
-        Remove-ADACL -ActiveDirectorySecurity $MainAccessRights.ACL -ACL $Results.Remove.Permissions
-    }
-    foreach ($Add in $Results.Add) {
-        $addADACLSplat = @{
-            NTSecurityDescriptor = $MainAccessRights.ACL
-            ADObject             = $ADObject
-            Principal            = $Add.Principal
-            AccessControlType    = $Add.Permissions.AccessControlType
-            AccessRule           = $Add.Permissions.ActiveDirectoryRights
-            ObjectType           = $Add.Permissions.ObjectTypeName
-            InheritanceType      = $Add.Permissions.InheritanceType
-            InheritedObjectType  = $Add.Permissions.InheritedObjectTypeName
+    if (-not $WhatIfPreference) {
+        Write-Verbose -Message "Set-ADACL - Applying changes to ACL"
+        if ($Results.Remove.Permissions) {
+            Write-Verbose -Message "Set-ADACL - Removing ACL"
+            Remove-ADACL -ActiveDirectorySecurity $MainAccessRights.ACL -ACL $Results.Remove.Permissions
         }
-        Add-ADACL @addADACLSplat
+        Write-Verbose -Message "Set-ADACL - Adding ACL"
+        foreach ($Add in $Results.Add) {
+            $addADACLSplat = @{
+                NTSecurityDescriptor = $MainAccessRights.ACL
+                ADObject             = $ADObject
+                Principal            = $Add.Principal
+                AccessControlType    = $Add.Permissions.AccessControlType
+                AccessRule           = $Add.Permissions.ActiveDirectoryRights
+                ObjectType           = $Add.Permissions.ObjectTypeName
+                InheritanceType      = $Add.Permissions.InheritanceType
+                InheritedObjectType  = $Add.Permissions.InheritedObjectTypeName
+            }
+            Add-ADACL @addADACLSplat
+        }
     }
-
     if (-not $Suppress) {
         $Results
     }
