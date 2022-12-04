@@ -16,7 +16,7 @@
         $QueryServer = $ForestInformation['QueryServers']["$Domain"].HostName[0]
 
         $Properties = @(
-            'DistinguishedName', 'mail', 'LastLogonDate', 'PasswordLastSet', 'DisplayName', 'Manager', 'SamAccountName'
+            'DistinguishedName', 'mail', 'LastLogonDate', 'PasswordLastSet', 'DisplayName', 'Manager', 'SamAccountName', 'ObjectSID'
             #'Description',
             #'PasswordNeverExpires', 'PasswordNotRequired', 'PasswordExpired', 'UserPrincipalName', 'SamAccountName', 'CannotChangePassword',
             #'TrustedForDelegation', 'TrustedToAuthForDelegation', 'msExchMailboxGuid', 'msExchRemoteRecipientType', 'msExchRecipientTypeDetails',
@@ -25,13 +25,13 @@
         )
 
         $AllUsers[$Domain] = Get-ADUser -Filter * -Properties $Properties -Server $QueryServer #$ForestInformation['QueryServers'][$Domain].HostName[0]
-        $AllContacts[$Domain] = Get-ADObject -Filter 'objectClass -eq "contact"' -Properties SamAccountName, Mail, Name, DistinguishedName, WhenChanged, Whencreated, DisplayName -Server $QueryServer
+        $AllContacts[$Domain] = Get-ADObject -Filter 'objectClass -eq "contact"' -Properties SamAccountName, Mail, Name, DistinguishedName, WhenChanged, Whencreated, DisplayName, ObjectSID -Server $QueryServer
 
         $Properties = @(
             'SamAccountName', 'msExchRecipientDisplayType', 'msExchRecipientTypeDetails', 'CanonicalName', 'Mail', 'Description', 'Name',
             'GroupScope', 'GroupCategory', 'DistinguishedName', 'isCriticalSystemObject', 'adminCount', 'WhenChanged', 'Whencreated', 'DisplayName',
             'ManagedBy', 'member', 'memberof', 'ProtectedFromAccidentalDeletion', 'nTSecurityDescriptor', 'groupType'
-            'SID', 'SIDHistory', 'proxyaddresses'
+            'SID', 'SIDHistory', 'proxyaddresses', 'ObjectSID'
         )
         $AllGroups[$Domain] = Get-ADGroup -Filter * -Properties $Properties -Server $QueryServer
     }
@@ -55,23 +55,12 @@
     $Output = [ordered] @{}
     foreach ($Domain in $ForestInformation.Domains) {
         $Output[$Domain] = foreach ($Group in $AllGroups[$Domain]) {
-            # $UserLocation = ($User.DistinguishedName -split ',').Replace('OU=', '').Replace('CN=', '').Replace('DC=', '')
-            # $Region = $UserLocation[-4]
-            # $Country = $UserLocation[-5]
-
-            # if ($User.LastLogonDate) {
-            #     $LastLogonDays = $( - $($User.LastLogonDate - $Today).Days)
-            # } else {
-            #     $LastLogonDays = $null
-            # }
-            # if ($User.PasswordLastSet) {
-            #     $PasswordLastDays = $( - $($User.PasswordLastSet - $Today).Days)
-            # } else {
-            #     $PasswordLastDays = $null
-            # }
+            $UserLocation = ($Group.DistinguishedName -split ',').Replace('OU=', '').Replace('CN=', '').Replace('DC=', '')
+            $Region = $UserLocation[-4]
+            $Country = $UserLocation[-5]
             if ($Group.ManagedBy) {
                 $ManagerAll = $CacheUsersReport[$Group.ManagedBy]
-                $Manager = $CacheUsersReport[$Group.ManagedBy].DisplayName
+                $Manager = $CacheUsersReport[$Group.ManagedBy].Name
                 $ManagerSamAccountName = $CacheUsersReport[$Group.ManagedBy].SamAccountName
                 $ManagerEmail = $CacheUsersReport[$Group.ManagedBy].Mail
                 $ManagerEnabled = $CacheUsersReport[$Group.ManagedBy].Enabled
@@ -96,56 +85,27 @@
                 $ManagerLastLogon = $null
                 $ManagerLastLogonDays = $null
             }
-
-            # if ($User."msDS-UserPasswordExpiryTimeComputed" -ne 9223372036854775807) {
-            #     # This is standard situation where users password is expiring as needed
-            #     try {
-            #         $DateExpiry = ([datetime]::FromFileTime($User."msDS-UserPasswordExpiryTimeComputed"))
-            #     } catch {
-            #         $DateExpiry = $User."msDS-UserPasswordExpiryTimeComputed"
-            #     }
-            #     try {
-            #         $DaysToExpire = (New-TimeSpan -Start (Get-Date) -End ([datetime]::FromFileTime($User."msDS-UserPasswordExpiryTimeComputed"))).Days
-            #     } catch {
-            #         $DaysToExpire = $null
-            #     }
-            #     $PasswordNeverExpires = $User.PasswordNeverExpires
-            # } else {
-            #     # This is non-standard situation. This basically means most likely Fine Grained Group Policy is in action where it makes PasswordNeverExpires $true
-            #     # Since FGP policies are a bit special they do not tick the PasswordNeverExpires box, but at the same time value for "msDS-UserPasswordExpiryTimeComputed" is set to 9223372036854775807
-            #     $PasswordNeverExpires = $true
-            # }
-            # if ($PasswordNeverExpires -or $null -eq $User.PasswordLastSet) {
-            #     $DateExpiry = $null
-            #     $DaysToExpire = $null
-            # }
-
-            # if ($User.'msExchMailboxGuid') {
-            #     $HasMailbox = $true
-            # } else {
-            #     $HasMailbox = $false
-            # }
             $msExchRecipientTypeDetails = Convert-ExchangeRecipient -msExchRecipientTypeDetails $Group.msExchRecipientTypeDetails
             $msExchRecipientDisplayType = Convert-ExchangeRecipient -msExchRecipientDisplayType $Group.msExchRecipientDisplayType
-            # $msExchRemoteRecipientType = Convert-ExchangeRecipient -msExchRemoteRecipientType $User.msExchRemoteRecipientType
+            #$msExchRemoteRecipientType = Convert-ExchangeRecipient -msExchRemoteRecipientType $Group.msExchRemoteRecipientType
             if ($ManagerAll.ObjectSID) {
-                $ACL = Get-ADACL -ADObject $Group -Resolve -Principal $ManagerAll.ObjectSID -IncludeObjectTypeName 'Self-Membership'
+                $ACL = Get-ADACL -ADObject $Group -Resolve -Principal $ManagerAll.ObjectSID -IncludeObjectTypeName 'Self-Membership' -IncludeActiveDirectoryRights WriteProperty
             } else {
                 $ACL = $null
             }
 
-            $GroupWriteback = $false
-            # https://practical365.com/azure-ad-connect-group-writeback-deep-dive/
-            if ($Group.msExchRecipientDisplayType -eq 17) {
-                # M365 Security Group and M365 Mail-Enabled security Group
-                $GroupWriteback = $true
-            } else {
-                # if ($Group.GroupType -eq -2147483640 -and $Group.GroupCategory -eq 'Security' -and $Group.GroupScope -eq 'Universal') {
-                #     $GroupWriteback = $true
-                # } else {
-                #     $GroupWriteback = $false
-                #  }
-            }
+            # $GroupWriteback = $false
+            # # https://practical365.com/azure-ad-connect-group-writeback-deep-dive/
+            # if ($Group.msExchRecipientDisplayType -eq 17) {
+            #     # M365 Security Group and M365 Mail-Enabled security Group
+            #     $GroupWriteback = $true
+            # } else {
+            #     # if ($Group.GroupType -eq -2147483640 -and $Group.GroupCategory -eq 'Security' -and $Group.GroupScope -eq 'Universal') {
+            #     #     $GroupWriteback = $true
+            #     # } else {
+            #     #     $GroupWriteback = $false
+            #     #  }
+            # }
 
             [PSCustomObject] @{
                 Name                            = $Group.Name
@@ -153,14 +113,14 @@
                 CanonicalName                   = $Group.CanonicalName
                 Domain                          = $Domain
                 SamAccountName                  = $Group.SamAccountName
-
+                MemberCount                     = if ($Group.member) { $Group.member.Count } else { 0 }
                 GroupScope                      = $Group.GroupScope
                 GroupCategory                   = $Group.GroupCategory
                 #GroupWriteBack                  = $GroupWriteBack
                 #ManagedBy                       = $Group.ManagedBy
                 msExchRecipientTypeDetails      = $msExchRecipientTypeDetails
                 msExchRecipientDisplayType      = $msExchRecipientDisplayType
-
+                #msExchRemoteRecipientType       = $msExchRemoteRecipientType
                 Manager                         = $Manager
                 ManagerCanUpdateGroupMembership = if ($ACL) { $true } else { $false }
                 ManagerSamAccountName           = $ManagerSamAccountName
@@ -175,47 +135,11 @@
                 ProxyAddresses                  = Convert-ExchangeEmail -Emails $Group.ProxyAddresses -RemoveDuplicates -RemovePrefix
                 Description                     = $Group.Description
                 DistinguishedName               = $Group.DistinguishedName
-                # ObjectClass           = $Group.ObjectClass
-                # Name                        = $Group.Name
-                # SamAccountName              = $Group.SamAccountName
-                # Domain                      = $Domain
-                # WhenChanged                 = $Group.WhenChanged
-                # Enabled                     = $Group.Enabled
-                #ObjectClass                 = $Group.ObjectClass
-                #IsMissing                   = if ($Group) { $false } else { $true }
-                # HasMailbox                  = $HasMailbox
-                # MustChangePasswordAtLogon   = if ($User.pwdLastSet -eq 0 -and $User.PasswordExpired -eq $true) { $true } else { $false }
-                # PasswordNeverExpires        = $PasswordNeverExpires
-                # PasswordNotRequired         = $User.PasswordNotRequired
-                # LastLogonDays               = $LastLogonDays
-                # PasswordLastDays            = $PasswordLastDays
-                # DaysToExpire                = $DaysToExpire
-                # ManagerStatus               = $ManagerStatus
-                # Manager                     = $Manager
-                # ManagerSamAccountName       = $ManagerSamAccountName
-                # ManagerEmail                = $ManagerEmail
-                # ManagerLastLogonDays        = $ManagerLastLogonDays
-                # Level0                      = $Region
-                # Level1                      = $Country
-                # DistinguishedName           = $User.DistinguishedName
-                # LastLogonDate               = $User.LastLogonDate
-                # PasswordLastSet             = $User.PasswordLastSet
-                # PasswordExpiresOn           = $DateExpiry
-                # PasswordExpired             = $User.PasswordExpired
-                # CannotChangePassword        = $User.CannotChangePassword
-                # AccountTrustedForDelegation = $User.AccountTrustedForDelegation
-                # ManagerDN                   = $User.Manager
-                # ManagerLastLogon            = $ManagerLastLogon
-                # Group                       = $Group
-                # Description                 = $User.Description
-                # UserPrincipalName           = $User.UserPrincipalName
-                # RecipientTypeDetails        = $msExchRecipientTypeDetails
-                # RecipientDisplayType        = $msExchRecipientDisplayType
-                # RemoteRecipientType         = $msExchRemoteRecipientType
-                # WhenCreated                 = $User.WhenCreated
+                Level0                          = $Region
+                Level1                          = $Country
+                ManagerDN                       = $Group.ManagedBy
             }
         }
-
     }
     if ($PerDomain) {
         $Output

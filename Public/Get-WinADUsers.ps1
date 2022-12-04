@@ -8,6 +8,7 @@
     )
     $AllUsers = [ordered] @{}
     $AllContacts = [ordered] @{}
+    $AllGroups = [ordered] @{}
     $CacheUsersReport = [ordered] @{}
     #}
     $Today = Get-Date
@@ -24,6 +25,10 @@
         )
         $AllUsers[$Domain] = Get-ADUser -Filter * -Properties $Properties -Server $QueryServer #$ForestInformation['QueryServers'][$Domain].HostName[0]
         $AllContacts[$Domain] = Get-ADObject -Filter 'objectClass -eq "contact"' -Properties SamAccountName, Mail, Name, DistinguishedName, WhenChanged, Whencreated, DisplayName -Server $QueryServer
+        $Properties = @(
+            'SamAccountName', 'CanonicalName', 'Mail', 'Name', 'DistinguishedName', 'isCriticalSystemObject', 'ObjectSID'
+        )
+        $AllGroups[$Domain] = Get-ADGroup -Filter * -Properties $Properties -Server $QueryServer
     }
 
     foreach ($Domain in $AllUsers.Keys) {
@@ -34,6 +39,11 @@
     foreach ($Domain in $AllContacts.Keys) {
         foreach ($C in $AllContacts[$Domain]) {
             $CacheUsersReport[$C.DistinguishedName] = $C
+        }
+    }
+    foreach ($Domain in $AllGroups.Keys) {
+        foreach ($G in $AllGroups[$Domain]) {
+            $CacheUsersReport[$G.DistinguishedName] = $G
         }
     }
 
@@ -55,7 +65,7 @@
                 $PasswordLastDays = $null
             }
             if ($User.Manager) {
-                $Manager = $CacheUsersReport[$User.Manager].DisplayName
+                $Manager = $CacheUsersReport[$User.Manager].Name
                 $ManagerSamAccountName = $CacheUsersReport[$User.Manager].SamAccountName
                 $ManagerEmail = $CacheUsersReport[$User.Manager].Mail
                 $ManagerEnabled = $CacheUsersReport[$User.Manager].Enabled
