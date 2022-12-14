@@ -5,6 +5,10 @@
 #Get-WinADGroupMember -Group 'GDS-TestGroup9' -All -AddSelf | Format-Table *
 Get-WinADGroupMember -Group 'GDS-TestGroup9' -All -SelfOnly | Format-List *
 
+Get-WinADGroupMember -Group 'Group 2 (OK)' -All -AddSelf | Format-Table *
+Get-WinADGroupMember -Group 'GroupTest1' -All -AddSelf -Verbose| Format-Table *
+Get-WinADObject -Identity "GroupTest1" -IncludeGroupMembership
+
 <#
 # Another groups
 Get-WinADGroupMember -Group 'Test Local Group' | Format-Table *
@@ -17,5 +21,4 @@ Get-WinADGroupMember -Group 'GDS-TestGroup3' -All | Format-Table *
 # Another one
 Get-WinADGroupMember -Group 'Domain Admins' | Format-Table
 Get-WinADGroupMember -Group 'Domain Admins' -All -AddSelf | Format-Table *
-
 #>
