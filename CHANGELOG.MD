@@ -11,7 +11,7 @@
   - Improve `Get-ADACL` function to act properly in edge cases
   - Add `Set-ADACLInheritance` function
   - Add `Enable-ADACLInheritance` and `Disable-ADACLInheritance` functions which use `Set-ADACLInheritance`
-  - Added `New-ADACLObject` and `Copy-ADACLObject`, for use within `Set-ADACL` *Work in progress*
+  - Added `New-ADACLObject` and `Export-ADACLObject`, for use within `Set-ADACL` *Work in progress*
   - Added `Set-ADACL` function which uses `Remove-ADACL` and `Add-ADACL` to allow more control *Work in progress*
   - Improve `Remove-ADACL` function by allowing more control *Work in progress*
 
