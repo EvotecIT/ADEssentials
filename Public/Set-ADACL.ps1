@@ -18,15 +18,37 @@
     $FoundDisprepancy = $false
     $Count = 1
     foreach ($ACL in $ACLSettings) {
+        if ($ACL.Action -eq 'Skip') {
+            continue
+        } elseif ($ACL.Action -eq 'Copy') {
+            continue
+        }
+        # Check if all properties are present
         if ($ACL.Principal -and $ACL.Permissions) {
-            Compare-Object -ReferenceObject $ExpectedProperties -DifferenceObject @($ACL.Permissions.Keys) | Where-Object { $_.SideIndicator -in '<=' } | ForEach-Object {
-                Write-Warning -Message "Set-ADACL - Entry $Count - $($ACL.Principal) is missing property $($_.InputObject)"
-                $FoundDisprepancy = $true
+            foreach ($Permission in $ACL.Permissions) {
+                if ($Permission -is [System.Collections.IDictionary]) {
+                    Compare-Object -ReferenceObject $ExpectedProperties -DifferenceObject @($Permission.Keys) | Where-Object { $_.SideIndicator -in '<=' } | ForEach-Object {
+                        Write-Warning -Message "Set-ADACL - Entry $Count - $($ACL.Principal) is missing property $($_.InputObject) - provided only $($Permission.Keys)"
+                        $FoundDisprepancy = $true
+                    }
+                } else {
+                    Compare-Object -ReferenceObject $ExpectedProperties -DifferenceObject @($Permission.PSObject.Properties.Name) | Where-Object { $_.SideIndicator -in '<=' } | ForEach-Object {
+                        Write-Warning -Message "Set-ADACL - Entry $Count - $($ACL.Principal) is missing property $($_.InputObject) - provided only $($Permission.PSObject.Properties.Name)"
+                        $FoundDisprepancy = $true
+                    }
+                }
             }
         } elseif ($ACL.Principal) {
-            Compare-Object -ReferenceObject $ExpectedProperties -DifferenceObject @($ACL.Keys) | Where-Object { $_.SideIndicator -in '<=' } | ForEach-Object {
-                Write-Warning -Message "Set-ADACL - Entry $Count - $($ACL.Principal) is missing property $($_.InputObject)"
-                $FoundDisprepancy = $true
+            if ($ACL -is [System.Collections.IDictionary]) {
+                Compare-Object -ReferenceObject $ExpectedProperties -DifferenceObject @($ACL.Keys) | Where-Object { $_.SideIndicator -in '<=' } | ForEach-Object {
+                    Write-Warning -Message "Set-ADACL - Entry $Count - $($ACL.Principal) is missing property $($_.InputObject) - provided only $($ACL.Keys)"
+                    $FoundDisprepancy = $true
+                }
+            } else {
+                Compare-Object -ReferenceObject $ExpectedProperties -DifferenceObject @($ACL.PSObject.Properties.Name) | Where-Object { $_.SideIndicator -in '<=' } | ForEach-Object {
+                    Write-Warning -Message "Set-ADACL - Entry $Count - $($ACL.Principal) is missing property $($_.InputObject) - provided only $($ACL.PSObject.Properties.Name)"
+                    $FoundDisprepancy = $true
+                }
             }
         }
         $Count++
@@ -48,7 +70,7 @@
                 }
                 # user may not provided any action, so we assume 'Set' as default
                 $Action = if ($ExpectedACL.Action) { $ExpectedACL.Action } else { 'Add' }
-                $ExpectedACL.Action = $Action
+                #$ExpectedACL.Action = $Action
 
                 $CachedACL[$ConvertedPrincipal]['Action'] = $Action
 
@@ -76,7 +98,7 @@
 
                 # user may not provided any action, so we assume 'Set' as default
                 $Action = if ($ExpectedACL.Action) { $ExpectedACL.Action } else { 'Add' }
-                $ExpectedACL.Action = $Action
+                #$ExpectedACL.Action = $Action
 
                 $CachedACL[$ConvertedPrincipal]['Action'] = $Action
 
@@ -85,9 +107,17 @@
                 }
 
                 $NewPermission = [ordered] @{}
-                foreach ($Key in $ExpectedACL.Keys) {
-                    if ($Key -notin @('Principal')) {
-                        $NewPermission.$Key = $ExpectedACL.$Key
+                if ($ExpectedACL -is [System.Collections.IDictionary]) {
+                    foreach ($Key in $ExpectedACL.Keys) {
+                        if ($Key -notin @('Principal')) {
+                            $NewPermission.$Key = $ExpectedACL.$Key
+                        }
+                    }
+                } else {
+                    foreach ($Property in $ExpectedACL.PSObject.Properties) {
+                        if ($Property.Name -notin @('Principal')) {
+                            $NewPermission.$($Property.Name) = $Property.Value
+                        }
                     }
                 }
                 $CachedACL[$ConvertedPrincipal]['Permissions'].Add([PSCustomObject] $NewPermission)
@@ -97,12 +127,18 @@
     }
     $MainAccessRights = Get-ADACL -ADObject $ADObject -Bundle
     foreach ($CurrentACL in $MainAccessRights.ACLAccessRules) {
-        if ($CachedACL[$CurrentACL.Principal]) {
-            if ($CachedACL[$CurrentACL.Principal]['Action'] -eq 'Skip') {
+        $ConvertedIdentity = Convert-Identity -Identity $CurrentACL.Principal -Verbose:$false
+        if ($ConvertedIdentity.Error) {
+            Write-Warning -Message "Set-ADACL - Converting identity $($Principal) failed with $($ConvertedIdentity.Error). Be warned."
+        }
+        $ConvertedPrincipal = ($ConvertedIdentity).Name
+
+        if ($CachedACL[$ConvertedPrincipal]) {
+            if ($CachedACL[$ConvertedPrincipal]['Action'] -eq 'Skip') {
                 #Write-Verbose "Set-ADACL - Skipping $($CurrentACL.Principal)"
                 $Results.Skip.Add(
                     [PSCustomObject] @{
-                        Principal         = $CurrentACL.Principal
+                        Principal         = $ConvertedPrincipal
                         AccessControlType = $CurrentACL.AccessControlType
                         Action            = 'Skip'
                         Permissions       = $CurrentACL
@@ -110,9 +146,9 @@
                 )
                 continue
             } else {
-                Write-Verbose "Set-ADACL - Processing $($CurrentACL.Principal)"
+                Write-Verbose "Set-ADACL - Processing $($ConvertedPrincipal)"
                 $DirectMatch = $false
-                foreach ($SetPermission in $CachedACL[$CurrentACL.Principal].Permissions) {
+                foreach ($SetPermission in $CachedACL[$ConvertedPrincipal].Permissions) {
                     if ($CurrentACL.AccessControlType -eq $SetPermission.AccessControlType) {
                         # since it's possible people will differently name their object type name, we are going to convert it to GUID
                         $TypeObjectLeft = Convert-ADSchemaToGuid -SchemaName $CurrentACL.ObjectTypeName -AsString
@@ -134,7 +170,7 @@
                 if ($DirectMatch) {
                     $Results.Skip.Add(
                         [PSCustomObject] @{
-                            Principal         = $CurrentACL.Principal
+                            Principal         = $ConvertedPrincipal
                             AccessControlType = $CurrentACL.AccessControlType
                             Action            = 'Skip'
                             Permissions       = $CurrentACL
@@ -143,7 +179,7 @@
                 } else {
                     $Results.Remove.Add(
                         [PSCustomObject] @{
-                            Principal         = $CurrentACL.Principal
+                            Principal         = $ConvertedPrincipal
                             AccessControlType = $CurrentACL.AccessControlType
                             Action            = 'Remove'
                             Permissions       = $CurrentACL
@@ -153,10 +189,10 @@
             }
         } else {
             # we don't have this principal defined for set, needs to be removed
-            Write-Verbose "Set-ADACL - Preparing for removal of $($CurrentACL.Principal)"
+            Write-Verbose "Set-ADACL - Preparing for removal of $($ConvertedPrincipal)"
             $Results.Remove.Add(
                 [PSCustomObject] @{
-                    Principal         = $CurrentACL.Principal
+                    Principal         = $ConvertedPrincipal
                     AccessControlType = $CurrentACL.AccessControlType
                     Action            = 'Remove'
                     Permissions       = $CurrentACL
@@ -176,8 +212,8 @@
                         continue
                     }
                     $RequestedPrincipal = Convert-Identity -Identity $Principal -Verbose:$false
-
-                    if ($CurrentACL.Principal -ne $RequestedPrincipal.Name) {
+                    $RequestedPrincipalFromACL = Convert-Identity -Identity $CurrentACL.Principal -Verbose:$false
+                    if ($RequestedPrincipalFromACL.Name -ne $RequestedPrincipal.Name) {
                         continue
                     }
                     if ($CurrentACL.AccessControlType -eq $SetPermission.AccessControlType) {
@@ -234,7 +270,11 @@
                 InheritanceType      = $Add.Permissions.InheritanceType
                 InheritedObjectType  = $Add.Permissions.InheritedObjectTypeName
             }
-            Add-ADACL @addADACLSplat
+            try {
+                Add-ADACL @addADACLSplat
+            } catch {
+                Write-Warning -Message "Set-ADACL - Failed to add ACL for $($Add.Principal)"
+            }
         }
     }
     if (-not $Suppress) {
