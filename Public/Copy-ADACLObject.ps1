@@ -2,14 +2,20 @@
     [cmdletBinding()]
     param(
         [parameter(Mandatory)][alias('Identity')][string] $ADObject,
-        [string[]] $Principal,
+        [alias('Principal')][string[]] $IncludePrincipal,
+        [string[]] $ExcludePrincipal,
         [switch] $Exportable
     )
 
     $ACLOutput = Get-ADACL -ADObject $ADObject -Bundle
     foreach ($ACL in $ACLOutput.ACLAccessRules) {
-        if ($Principal) {
-            if ($ACL.Principal -notin $Principal) {
+        if ($IncludePrincipal) {
+            if ($ACL.Principal -notin $IncludePrincipal) {
+                continue
+            }
+        }
+        if ($ExcludePrincipal) {
+            if ($ACL.Principal -in $ExcludePrincipal) {
                 continue
             }
         }
