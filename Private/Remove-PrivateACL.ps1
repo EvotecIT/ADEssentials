@@ -7,7 +7,7 @@
         [System.Security.AccessControl.AccessControlType] $AccessControlType,
         [Alias('ObjectTypeName')][string[]] $IncludeObjectTypeName,
         [Alias('InheritedObjectTypeName')][string[]] $IncludeInheritedObjectTypeName,
-        [alias('ActiveDirectorySecurityInheritance')][nullable[System.DirectoryServices.ActiveDirectorySecurityInheritance]] $InheritanceType,
+        [alias('ActiveDirectorySecurityInheritance', 'IncludeActiveDirectorySecurityInheritance')][nullable[System.DirectoryServices.ActiveDirectorySecurityInheritance]] $InheritanceType,
         [switch] $Force,
         [alias('ActiveDirectorySecurity')][System.DirectoryServices.ActiveDirectorySecurity] $NTSecurityDescriptor
     )
@@ -18,6 +18,35 @@
         # if access rule is defined with just remove access rule we want to remove
         if ($ntSecurityDescriptor -and $ACL.PSObject.Properties.Name -notcontains 'ACLAccessRules') {
             try {
+                # We do last minute filtering here to ensure we don't remove the wrong ACL
+                if ($Principal) {
+                    $PrincipalRequested = Convert-Identity -Identity $Principal -Verbose:$false
+                }
+                $SplatFilteredACL = @{
+                    # I am not sure on this $ACL, needs testing
+                    ACL                                       = $ACL.Bundle
+                    Resolve                                   = $true
+                    Principal                                 = $Principal
+                    #Inherited                                 = $Inherited
+                    #NotInherited                              = $NotInherited
+                    AccessControlType                         = $AccessControlType
+                    IncludeObjectTypeName                     = $IncludeObjectTypeName
+                    IncludeInheritedObjectTypeName            = $IncludeInheritedObjectTypeName
+                    #ExcludeObjectTypeName                     = $ExcludeObjectTypeName
+                    #ExcludeInheritedObjectTypeName            = $ExcludeInheritedObjectTypeName
+                    #IncludeActiveDirectoryRights              = $IncludeActiveDirectoryRights
+                    #ExcludeActiveDirectoryRights              = $ExcludeActiveDirectoryRights
+                    IncludeActiveDirectorySecurityInheritance = $InheritanceType
+                    ExcludeActiveDirectorySecurityInheritance = $ExcludeActiveDirectorySecurityInheritance
+                    PrincipalRequested                        = $PrincipalRequested
+                    Bundle                                    = $Bundle
+                }
+                Remove-EmptyValue -Hashtable $SplatFilteredACL
+                $CheckAgainstFilters = Get-FilteredACL @SplatFilteredACL
+                if (-not $CheckAgainstFilters) {
+                    continue
+                }
+                # Now we do remove the ACL
                 Write-Verbose -Message "Remove-ADACL - Removing access from $($ACL.CanonicalName) (type: $($ACL.ObjectClass), IsInherited: $($ACL.IsInherited)) for $($ACL.Principal) / $($ACL.ActiveDirectoryRights) / $($ACL.AccessControlType) / $($ACL.ObjectTypeName) / $($ACL.InheritanceType) / $($ACL.InheritedObjectTypeName)"
                 #Write-Verbose -Message "Remove-ADACL - Removing access from $($Rule.CanonicalName) (type: $($Rule.ObjectClass), IsInherited: $($Rule.IsInherited)) for $($Rule.Principal) / $($Rule.ActiveDirectoryRights) / $($Rule.AccessControlType) / $($Rule.ObjectTypeName) / $($Rule.InheritanceType) / $($Rule.InheritedObjectTypeName)"
                 if ($ACL.IsInherited) {
@@ -38,6 +67,34 @@
             }
         } elseif ($ACL.PSObject.Properties.Name -contains 'ACLAccessRules') {
             foreach ($Rule in $ACL.ACLAccessRules) {
+                # We do last minute filtering here to ensure we don't remove the wrong ACL
+                if ($Principal) {
+                    $PrincipalRequested = Convert-Identity -Identity $Principal -Verbose:$false
+                }
+                $SplatFilteredACL = @{
+                    ACL                                       = $Rule.Bundle
+                    Resolve                                   = $true
+                    Principal                                 = $Principal
+                    #Inherited                                 = $Inherited
+                    #NotInherited                              = $NotInherited
+                    AccessControlType                         = $AccessControlType
+                    IncludeObjectTypeName                     = $IncludeObjectTypeName
+                    IncludeInheritedObjectTypeName            = $IncludeInheritedObjectTypeName
+                    #ExcludeObjectTypeName                     = $ExcludeObjectTypeName
+                    #ExcludeInheritedObjectTypeName            = $ExcludeInheritedObjectTypeName
+                    #IncludeActiveDirectoryRights              = $IncludeActiveDirectoryRights
+                    #ExcludeActiveDirectoryRights              = $ExcludeActiveDirectoryRights
+                    IncludeActiveDirectorySecurityInheritance = $InheritanceType
+                    ExcludeActiveDirectorySecurityInheritance = $ExcludeActiveDirectorySecurityInheritance
+                    PrincipalRequested                        = $PrincipalRequested
+                    Bundle                                    = $Bundle
+                }
+                Remove-EmptyValue -Hashtable $SplatFilteredACL
+                $CheckAgainstFilters = Get-FilteredACL @SplatFilteredACL
+                if (-not $CheckAgainstFilters) {
+                    continue
+                }
+                # Now we do remove the ACL
                 $ntSecurityDescriptor = $ACL.ACL
                 try {
                     Write-Verbose -Message "Remove-ADACL - Removing access from $($Rule.CanonicalName) (type: $($Rule.ObjectClass), IsInherited: $($Rule.IsInherited)) for $($Rule.Principal) / $($Rule.ActiveDirectoryRights) / $($Rule.AccessControlType) / $($Rule.ObjectTypeName) / $($Rule.InheritanceType) / $($Rule.InheritedObjectTypeName)"
