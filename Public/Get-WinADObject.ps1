@@ -117,7 +117,7 @@
                     $TemporaryDomainName = $ResolvedIdentity.DomainName
                     $Ident = $MatchRegex.Value
                 } elseif ($Ident -like '*\*') {
-                    $ResolvedIdentity = Convert-Identity -Identity $Ident
+                    $ResolvedIdentity = Convert-Identity -Identity $Ident -Verbose:$false
                     if ($ResolvedIdentity.SID) {
                         $TemporaryDomainName = $ResolvedIdentity.DomainName
                         $Ident = $ResolvedIdentity.SID
@@ -136,7 +136,7 @@
                     $TemporaryDomainName = $CNConversion[1]
                     $Ident = $CNConversion[0]
                 } elseif ($Ident -like '*.*') {
-                    $ResolvedIdentity = Convert-Identity -Identity $Ident
+                    $ResolvedIdentity = Convert-Identity -Identity $Ident -Verbose:$false
                     if ($ResolvedIdentity.SID) {
                         $TemporaryDomainName = $ResolvedIdentity.DomainName
                         $Ident = $ResolvedIdentity.SID
@@ -146,7 +146,7 @@
                         $TemporaryDomainName = $CNConversion[1]
                     }
                 } else {
-                    $ResolvedIdentity = Convert-Identity -Identity $Ident
+                    $ResolvedIdentity = Convert-Identity -Identity $Ident -Verbose:$false
                     if ($ResolvedIdentity.SID) {
                         $TemporaryDomainName = $ResolvedIdentity.DomainName
                         $Ident = $ResolvedIdentity.SID
