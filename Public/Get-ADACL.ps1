@@ -3,9 +3,6 @@
     param(
         [Parameter(Mandatory, Position = 0, ValueFromPipeline, ValueFromPipelineByPropertyName)]
         [alias('Identity')][Array] $ADObject,
-        #[string] $Domain = $Env:USERDNSDOMAIN,
-        #[Object] $Server,
-        #[string] $ForestName,
         [switch] $Extended,
         [alias('ResolveTypes')][switch] $Resolve,
         [string] $Principal,
@@ -33,7 +30,7 @@
             $Script:ForestDetails = Get-WinADForestDetails
         }
         if ($Principal -and $Resolve) {
-            $PrincipalRequested = Convert-Identity -Identity $Principal
+            $PrincipalRequested = Convert-Identity -Identity $Principal -Verbose:$false
         }
     }
     Process {
@@ -58,24 +55,6 @@
                 Write-Warning "Get-ADACL - Object not recognized. Skipping..."
                 continue
             }
-            <#
-            $DNConverted = (ConvertFrom-DistinguishedName -DistinguishedName $DistinguishedName -ToDC) -replace '=' -replace ','
-            if (-not (Get-PSDrive -Name $DNConverted -ErrorAction SilentlyContinue)) {
-                Write-Verbose "Get-ADACL - Enabling PSDrives for $DistinguishedName to $DNConverted"
-                New-ADForestDrives -ForestName $ForestName #-ObjectDN $Object
-                if (-not (Get-PSDrive -Name $DNConverted -ErrorAction SilentlyContinue)) {
-                    Write-Warning "Get-ADACL - Drive $DNConverted not mapped. Terminating..."
-                    return
-                }
-            }
-            Write-Verbose "Get-ADACL - Getting ACL from $DistinguishedName"
-            try {
-                $PathACL = "$DNConverted`:\$($DistinguishedName)"
-                $ACLs = Get-Acl -Path $PathACL -ErrorAction Stop
-            } catch {
-                Write-Warning "Get-ADACL - Path $PathACL - Error: $($_.Exception.Message)"
-            }
-            #>
             if (-not $ADObjectData) {
                 $DomainName = ConvertFrom-DistinguishedName -ToDomainCN -DistinguishedName $DistinguishedName
                 $QueryServer = $Script:ForestDetails['QueryServers'][$DomainName].HostName[0]
@@ -95,145 +74,26 @@
                 $ACLs = $ADObjectData.ntSecurityDescriptor
             }
             $AccessObjects = foreach ($ACL in $ACLs.Access) {
-                [Array] $ADRights = $ACL.ActiveDirectoryRights -split ', '
-                if ($AccessControlType) {
-                    if ($ACL.AccessControlType -ne $AccessControlType) {
-                        continue
-                    }
+                $SplatFilteredACL = @{
+                    ACL                                       = $ACL
+                    Resolve                                   = $Resolve
+                    Principal                                 = $Principal
+                    Inherited                                 = $Inherited
+                    NotInherited                              = $NotInherited
+                    AccessControlType                         = $AccessControlType
+                    IncludeObjectTypeName                     = $IncludeObjectTypeName
+                    IncludeInheritedObjectTypeName            = $IncludeInheritedObjectTypeName
+                    ExcludeObjectTypeName                     = $ExcludeObjectTypeName
+                    ExcludeInheritedObjectTypeName            = $ExcludeInheritedObjectTypeName
+                    IncludeActiveDirectoryRights              = $IncludeActiveDirectoryRights
+                    ExcludeActiveDirectoryRights              = $ExcludeActiveDirectoryRights
+                    IncludeActiveDirectorySecurityInheritance = $IncludeActiveDirectorySecurityInheritance
+                    ExcludeActiveDirectorySecurityInheritance = $ExcludeActiveDirectorySecurityInheritance
+                    PrincipalRequested                        = $PrincipalRequested
+                    Bundle                                    = $Bundle
                 }
-                if ($Inherited) {
-                    if ($ACL.IsInherited -eq $false) {
-                        # if it's not inherited and we require inherited lets continue
-                        continue
-                    }
-                }
-                if ($NotInherited) {
-                    if ($ACL.IsInherited -eq $true) {
-                        continue
-                    }
-                }
-                if ($IncludeActiveDirectoryRights) {
-                    $FoundInclude = $false
-                    foreach ($Right in $ADRights) {
-                        if ($IncludeActiveDirectoryRights -contains $Right) {
-                            $FoundInclude = $true
-                            break
-                        }
-                    }
-                    if (-not $FoundInclude) {
-                        continue
-                    }
-                }
-                if ($ExcludeActiveDirectoryRights) {
-                    foreach ($Right in $ADRights) {
-                        $FoundExclusion = $false
-                        if ($ExcludeActiveDirectoryRights -contains $Right) {
-                            $FoundExclusion = $true
-                            break
-                        }
-                        if ($FoundExclusion) {
-                            continue
-                        }
-                    }
-                }
-                if ($IncludeActiveDirectorySecurityInheritance) {
-                    if ($IncludeActiveDirectorySecurityInheritance -notcontains $ACL.InheritanceType) {
-                        continue
-                    }
-                }
-                if ($ExcludeActiveDirectorySecurityInheritance) {
-                    if ($ExcludeActiveDirectorySecurityInheritance -contains $ACL.InheritanceType) {
-                        continue
-                    }
-                }
-                $IdentityReference = $ACL.IdentityReference.Value
-
-
-                $ReturnObject = [ordered] @{ }
-                $ReturnObject['DistinguishedName' ] = $DistinguishedName
-                if ($CanonicalName) {
-                    $ReturnObject['CanonicalName'] = $CanonicalName
-                }
-                if ($ObjectClass) {
-                    $ReturnObject['ObjectClass'] = $ObjectClass
-                }
-                $ReturnObject['AccessControlType'] = $ACL.AccessControlType
-                $ReturnObject['Principal'] = $IdentityReference
-                if ($Resolve) {
-                    $IdentityResolve = Get-WinADObject -Identity $IdentityReference -AddType -Verbose:$false -Cache
-                    if (-not $IdentityResolve) {
-                        #Write-Verbose "Get-ADACL - Reverting to Convert-Identity for $IdentityReference"
-                        $ConvertIdentity = Convert-Identity -Identity $IdentityReference -Verbose:$false
-                        $ReturnObject['PrincipalType'] = $ConvertIdentity.Type
-                        # it's not really foreignSecurityPrincipal but can't tell what it is...  # https://superuser.com/questions/1067246/is-nt-authority-system-a-user-or-a-group
-                        $ReturnObject['PrincipalObjectType'] = 'foreignSecurityPrincipal'
-                        $ReturnObject['PrincipalObjectDomain'] = $ConvertIdentity.DomainName
-                        $ReturnObject['PrincipalObjectSid'] = $ConvertIdentity.SID
-                    } else {
-                        if ($ReturnObject['Principal']) {
-                            $ReturnObject['Principal'] = $IdentityResolve.Name
-                        }
-                        $ReturnObject['PrincipalType'] = $IdentityResolve.Type
-                        $ReturnObject['PrincipalObjectType'] = $IdentityResolve.ObjectClass
-                        $ReturnObject['PrincipalObjectDomain' ] = $IdentityResolve.DomainName
-                        $ReturnObject['PrincipalObjectSid'] = $IdentityResolve.ObjectSID
-                    }
-                    if (-not $ReturnObject['PrincipalObjectDomain']) {
-                        $ReturnObject['PrincipalObjectDomain'] = ConvertFrom-DistinguishedName -DistinguishedName $DistinguishedName -ToDomainCN
-                    }
-
-                    # We compare principal to real principal based on Resolve, we compare both PrincipalName and SID to cover our ground
-                    if ($PrincipalRequested -and $PrincipalRequested.SID -ne $ReturnObject['PrincipalObjectSid']) {
-                        continue
-                    }
-                } else {
-                    # We compare principal to principal as returned without resolve
-                    if ($Principal -and $Principal -ne $IdentityReference) {
-                        continue
-                    }
-                }
-
-                $ReturnObject['ObjectTypeName'] = $Script:ForestGUIDs["$($ACL.objectType)"]
-                $ReturnObject['InheritedObjectTypeName'] = $Script:ForestGUIDs["$($ACL.inheritedObjectType)"]
-                if ($IncludeObjectTypeName) {
-                    if ($IncludeObjectTypeName -notcontains $ReturnObject['ObjectTypeName']) {
-                        continue
-                    }
-                }
-                if ($IncludeInheritedObjectTypeName) {
-                    if ($IncludeInheritedObjectTypeName -notcontains $ReturnObject['InheritedObjectTypeName']) {
-                        continue
-                    }
-                }
-                if ($ExcludeObjectTypeName) {
-                    if ($ExcludeObjectTypeName -contains $ReturnObject['ObjectTypeName']) {
-                        continue
-                    }
-                }
-                if ($ExcludeInheritedObjectTypeName) {
-                    if ($ExcludeInheritedObjectTypeName -contains $ReturnObject['InheritedObjectTypeName']) {
-                        continue
-                    }
-                }
-                if ($ADRightsAsArray) {
-                    $ReturnObject['ActiveDirectoryRights'] = $ADRights
-                } else {
-                    $ReturnObject['ActiveDirectoryRights'] = $ACL.ActiveDirectoryRights
-                }
-                $ReturnObject['InheritanceType'] = $ACL.InheritanceType
-                $ReturnObject['IsInherited'] = $ACL.IsInherited
-
-                if ($Extended) {
-                    $ReturnObject['ObjectType'] = $ACL.ObjectType
-                    $ReturnObject['InheritedObjectType'] = $ACL.InheritedObjectType
-                    $ReturnObject['ObjectFlags'] = $ACL.ObjectFlags
-                    $ReturnObject['InheritanceFlags'] = $ACL.InheritanceFlags
-                    $ReturnObject['PropagationFlags'] = $ACL.PropagationFlags
-                }
-                if ($Bundle) {
-                    $ReturnObject['Bundle'] = $ACL
-                }
-                [PSCustomObject] $ReturnObject
+                Remove-EmptyValue -Hashtable $SplatFilteredACL
+                Get-FilteredACL @SplatFilteredACL
             }
             if ($Bundle) {
                 if ($Object.CanonicalName) {
