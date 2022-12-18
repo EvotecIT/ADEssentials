@@ -49,26 +49,31 @@
         }
         Remove-EmptyValue -Hashtable $newActiveDirectoryAccessRuleSplat
         $AccessRuleToAdd = New-ActiveDirectoryAccessRule @newActiveDirectoryAccessRuleSplat
-        $RuleAdded = Add-ACLRule -AccessRuleToAdd $AccessRuleToAdd -ntSecurityDescriptor $NTSecurityDescriptor -ACL $ACL
-        if (-not $RuleAdded.Success -and $RuleAdded.Reason -eq 'Identity') {
-            # rule failed to add, so we need to convert the identity and try with SID
-            $AlternativeSID = (Convert-Identity -Identity $Identity).SID
-            [System.Security.Principal.IdentityReference] $Identity = [System.Security.Principal.SecurityIdentifier]::new($AlternativeSID)
-            $newActiveDirectoryAccessRuleSplat = @{
-                Identity                  = $Identity
-                ActiveDirectoryAccessRule = $ActiveDirectoryAccessRule
-                ObjectType                = $ObjectType
-                InheritanceType           = $InheritanceType
-                InheritedObjectType       = $InheritedObjectType
-                AccessControlType         = $AccessControlType
-                AccessRule                = $AccessRule
-            }
-            Remove-EmptyValue -Hashtable $newActiveDirectoryAccessRuleSplat
-            $AccessRuleToAdd = New-ActiveDirectoryAccessRule @newActiveDirectoryAccessRuleSplat
+        if ($AccessRuleToAdd) {
             $RuleAdded = Add-ACLRule -AccessRuleToAdd $AccessRuleToAdd -ntSecurityDescriptor $NTSecurityDescriptor -ACL $ACL
+            if (-not $RuleAdded.Success -and $RuleAdded.Reason -eq 'Identity') {
+                # rule failed to add, so we need to convert the identity and try with SID
+                $AlternativeSID = (Convert-Identity -Identity $Identity).SID
+                [System.Security.Principal.IdentityReference] $Identity = [System.Security.Principal.SecurityIdentifier]::new($AlternativeSID)
+                $newActiveDirectoryAccessRuleSplat = @{
+                    Identity                  = $Identity
+                    ActiveDirectoryAccessRule = $ActiveDirectoryAccessRule
+                    ObjectType                = $ObjectType
+                    InheritanceType           = $InheritanceType
+                    InheritedObjectType       = $InheritedObjectType
+                    AccessControlType         = $AccessControlType
+                    AccessRule                = $AccessRule
+                }
+                Remove-EmptyValue -Hashtable $newActiveDirectoryAccessRuleSplat
+                $AccessRuleToAdd = New-ActiveDirectoryAccessRule @newActiveDirectoryAccessRuleSplat
+                $RuleAdded = Add-ACLRule -AccessRuleToAdd $AccessRuleToAdd -ntSecurityDescriptor $NTSecurityDescriptor -ACL $ACL
+            }
+            # lets now return value
+            $RuleAdded.Success
+        } else {
+            Write-Warning -Message "Add-PrivateACL - Unable to create ActiveDirectoryAccessRule for $($ADObject). Skipped."
+            $false
         }
-        # lets now return value
-        $RuleAdded.Success
     )
     if ($OutputRequiresCommit -notcontains $false -and $OutputRequiresCommit -contains $true) {
         Write-Verbose "Add-ADACL - Saving permissions for $($ADObject)"
