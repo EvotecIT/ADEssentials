@@ -38,52 +38,37 @@
     }
 
     $OutputRequiresCommit = @(
-        if ($ActiveDirectoryAccessRule) {
-            $AccessRuleToAdd = $ActiveDirectoryAccessRule
-        } elseif ($ObjectType -and $InheritanceType -and $InheritedObjectType) {
-            $ObjectTypeGuid = Convert-ADSchemaToGuid -SchemaName $ObjectType
-            $InheritedObjectTypeGuid = Convert-ADSchemaToGuid -SchemaName $InheritedObjectType
-            if ($ObjectTypeGuid -and $InheritedObjectTypeGuid) {
-                $AccessRuleToAdd = [System.DirectoryServices.ActiveDirectoryAccessRule]::new($Identity, $AccessRule, $AccessControlType, $ObjectTypeGuid, $InheritanceType, $InheritedObjectTypeGuid)
-            } else {
-                Write-Warning "Add-PrivateACL - Object type '$ObjectType' not found in schema"
-                return
-            }
-        } elseif ($ObjectType -and $InheritanceType) {
-            $ObjectTypeGuid = Convert-ADSchemaToGuid -SchemaName $ObjectType
-            if ($ObjectTypeGuid) {
-                $AccessRuleToAdd = [System.DirectoryServices.ActiveDirectoryAccessRule]::new($Identity, $AccessRule, $AccessControlType, $ObjectTypeGuid, $InheritanceType)
-            } else {
-                Write-Warning "Add-PrivateACL - Object type '$ObjectType' not found in schema"
-                return
-            }
-        } elseif ($ObjectType) {
-            $ObjectTypeGuid = Convert-ADSchemaToGuid -SchemaName $ObjectType
-            if ($ObjectTypeGuid) {
-                $AccessRuleToAdd = [System.DirectoryServices.ActiveDirectoryAccessRule]::new($Identity, $AccessRule, $AccessControlType, $ObjectTypeGuid)
-            } else {
-                Write-Warning "Add-PrivateACL - Object type '$ObjectType' not found in schema"
-                return
-            }
-        } else {
-            $AccessRuleToAdd = [System.DirectoryServices.ActiveDirectoryAccessRule]::new($Identity, $AccessRule, $AccessControlType)
+        $newActiveDirectoryAccessRuleSplat = @{
+            Identity                  = $Identity
+            ActiveDirectoryAccessRule = $ActiveDirectoryAccessRule
+            ObjectType                = $ObjectType
+            InheritanceType           = $InheritanceType
+            InheritedObjectType       = $InheritedObjectType
+            AccessControlType         = $AccessControlType
+            AccessRule                = $AccessRule
         }
-        try {
-            Write-Verbose "Add-ADACL - Adding access for $($AccessRuleToAdd.IdentityReference) / $($AccessRuleToAdd.ActiveDirectoryRights) / $($AccessRuleToAdd.AccessControlType) / $($AccessRuleToAdd.ObjectType) / $($AccessRuleToAdd.InheritanceType) to $($ACL.DistinguishedName)"
-            if ($ACL.ACL) {
-                $ntSecurityDescriptor = $ACL.ACL
-            } elseif ($ntSecurityDescriptor) {
-
-            } else {
-                Write-Warning "Add-PrivateACL - No ACL or ntSecurityDescriptor specified"
-                return
+        Remove-EmptyValue -Hashtable $newActiveDirectoryAccessRuleSplat
+        $AccessRuleToAdd = New-ActiveDirectoryAccessRule @newActiveDirectoryAccessRuleSplat
+        $RuleAdded = Add-ACLRule -AccessRuleToAdd $AccessRuleToAdd -ntSecurityDescriptor $NTSecurityDescriptor -ACL $ACL
+        if (-not $RuleAdded.Success -and $RuleAdded.Reason -eq 'Identity') {
+            # rule failed to add, so we need to convert the identity and try with SID
+            $AlternativeSID = (Convert-Identity -Identity $Identity).SID
+            [System.Security.Principal.IdentityReference] $Identity = [System.Security.Principal.SecurityIdentifier]::new($AlternativeSID)
+            $newActiveDirectoryAccessRuleSplat = @{
+                Identity                  = $Identity
+                ActiveDirectoryAccessRule = $ActiveDirectoryAccessRule
+                ObjectType                = $ObjectType
+                InheritanceType           = $InheritanceType
+                InheritedObjectType       = $InheritedObjectType
+                AccessControlType         = $AccessControlType
+                AccessRule                = $AccessRule
             }
-            $ntSecurityDescriptor.AddAccessRule($AccessRuleToAdd)
-            $true
-        } catch {
-            Write-Warning "Add-ADACL - Error adding permissions for $($AccessRuleToAdd.IdentityReference) / $($AccessRuleToAdd.ActiveDirectoryRights) due to error: $($_.Exception.Message)"
-            $false
+            Remove-EmptyValue -Hashtable $newActiveDirectoryAccessRuleSplat
+            $AccessRuleToAdd = New-ActiveDirectoryAccessRule @newActiveDirectoryAccessRuleSplat
+            $RuleAdded = Add-ACLRule -AccessRuleToAdd $AccessRuleToAdd -ntSecurityDescriptor $NTSecurityDescriptor -ACL $ACL
         }
+        # lets now return value
+        $RuleAdded.Success
     )
     if ($OutputRequiresCommit -notcontains $false -and $OutputRequiresCommit -contains $true) {
         Write-Verbose "Add-ADACL - Saving permissions for $($ADObject)"
