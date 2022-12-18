@@ -19,7 +19,13 @@
             if ($ObjectTypeGuid -and $InheritedObjectTypeGuid) {
                 $AccessRuleToAdd = [System.DirectoryServices.ActiveDirectoryAccessRule]::new($Identity, $AccessRule, $AccessControlType, $ObjectTypeGuid, $InheritanceType, $InheritedObjectTypeGuid)
             } else {
-                Write-Warning "Add-PrivateACL - Object type '$ObjectType' or '$InheritedObjectType' not found in schema"
+                if (-not $ObjectTypeGuid -and -not $InheritedObjectTypeGuid) {
+                    Write-Warning "Add-PrivateACL - Object type '$ObjectType' or '$InheritedObjectType' not found in schema"
+                } elseif (-not $ObjectTypeGuid) {
+                    Write-Warning "Add-PrivateACL - Object type '$ObjectType' not found in schema"
+                } else {
+                    Write-Warning "Add-PrivateACL - Object type '$InheritedObjectType' not found in schema"
+                }
                 return
             }
         } elseif ($ObjectType -and $InheritanceType) {
