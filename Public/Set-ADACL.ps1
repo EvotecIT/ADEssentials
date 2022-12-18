@@ -4,6 +4,7 @@
         [Parameter(Mandatory, Position = 0, ValueFromPipeline, ValueFromPipelineByPropertyName)]
         [alias('Identity')][string] $ADObject,
         [Parameter(Mandatory)][Array] $ACLSettings,
+        [Parameter(Mandatory)][ValidateSet('Enabled', 'Disabled')] $Inheritance,
         [switch] $Suppress
     )
     $Results = @{
@@ -177,27 +178,58 @@
                         }
                     )
                 } else {
-                    $Results.Remove.Add(
-                        [PSCustomObject] @{
-                            Principal         = $ConvertedPrincipal
-                            AccessControlType = $CurrentACL.AccessControlType
-                            Action            = 'Remove'
-                            Permissions       = $CurrentACL
-                        }
-                    )
+                    if ($Inheritance -eq 'Enabled' -and $CurrentACL.IsInherited) {
+                        # normally we would try to remove it, but it is inherited, so we will skip it
+                        $Results.Skip.Add(
+                            [PSCustomObject] @{
+                                Principal         = $ConvertedPrincipal
+                                AccessControlType = $CurrentACL.AccessControlType
+                                Action            = 'Skip'
+                                Permissions       = $CurrentACL
+                            }
+                        )
+                    } else {
+                        $Results.Remove.Add(
+                            [PSCustomObject] @{
+                                Principal         = $ConvertedPrincipal
+                                AccessControlType = $CurrentACL.AccessControlType
+                                Action            = 'Remove'
+                                Permissions       = $CurrentACL
+                            }
+                        )
+                    }
+                    # $Results.Remove.Add(
+                    #     [PSCustomObject] @{
+                    #         Principal         = $ConvertedPrincipal
+                    #         AccessControlType = $CurrentACL.AccessControlType
+                    #         Action            = 'Remove'
+                    #         Permissions       = $CurrentACL
+                    #     }
+                    # )
                 }
             }
         } else {
             # we don't have this principal defined for set, needs to be removed
             Write-Verbose "Set-ADACL - Preparing for removal of $($ConvertedPrincipal)"
-            $Results.Remove.Add(
-                [PSCustomObject] @{
-                    Principal         = $ConvertedPrincipal
-                    AccessControlType = $CurrentACL.AccessControlType
-                    Action            = 'Remove'
-                    Permissions       = $CurrentACL
-                }
-            )
+            if ($Inheritance -eq 'Enabled' -and $CurrentACL.IsInherited) {
+                $Results.Skip.Add(
+                    [PSCustomObject] @{
+                        Principal         = $ConvertedPrincipal
+                        AccessControlType = $CurrentACL.AccessControlType
+                        Action            = 'Skip'
+                        Permissions       = $CurrentACL
+                    }
+                )
+            } else {
+                $Results.Remove.Add(
+                    [PSCustomObject] @{
+                        Principal         = $ConvertedPrincipal
+                        AccessControlType = $CurrentACL.AccessControlType
+                        Action            = 'Remove'
+                        Permissions       = $CurrentACL
+                    }
+                )
+            }
             #Remove-ADACL -ActiveDirectorySecurity $MainAccessRights.ACL -ACL $CurrentACL -Principal $CurrentACL.Principal -AccessControlType $CurrentACL.AccessControlType
         }
     }
