@@ -1,4 +1,8 @@
-﻿#### 0.0.149
+﻿#### 0.0.150
+- Fixes `Add-ADACL` in some conditions would fail to add ACLs
+- Improve `Set-ADACL` to return Warnings and Errors as part of the final object (used in )
+
+#### 0.0.149
 - Improves Invoke-ADEssentials with `SplitReports` switch
 - Improves Invoke-ADEssentials Users and Computers report by adding conditional formatting
 - Improves Invoke-ADEssentials Users report - it was running unnsecary queries
