@@ -77,8 +77,6 @@
     )
     if ($OutputRequiresCommit -notcontains $false -and $OutputRequiresCommit -contains $true) {
         Write-Verbose "Add-ADACL - Saving permissions for $($ADObject)"
-        #Set-Acl -Path $ACL.Path -AclObject $ACL.ACL -ErrorAction Stop
-
         Set-ADObject -Identity $ADObject -Replace @{ ntSecurityDescriptor = $ntSecurityDescriptor } -ErrorAction Stop -Server $QueryServer
     } elseif ($OutputRequiresCommit -contains $false) {
         Write-Warning "Add-ADACL - Skipping saving permissions for $($ADObject) due to errors."
