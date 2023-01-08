@@ -8,9 +8,11 @@
         [switch] $Suppress
     )
     $Results = @{
-        Add    = [System.Collections.Generic.List[PSCustomObject]]::new()
-        Remove = [System.Collections.Generic.List[PSCustomObject]]::new()
-        Skip   = [System.Collections.Generic.List[PSCustomObject]]::new()
+        Add      = [System.Collections.Generic.List[PSCustomObject]]::new()
+        Remove   = [System.Collections.Generic.List[PSCustomObject]]::new()
+        Skip     = [System.Collections.Generic.List[PSCustomObject]]::new()
+        Warnings = [System.Collections.Generic.List[string]]::new()
+        Errors   = [System.Collections.Generic.List[string]]::new()
     }
     $CachedACL = [ordered] @{}
 
@@ -56,7 +58,12 @@
     }
     if ($FoundDisprepancy) {
         Write-Warning -Message "Set-ADACL - Please check your ACL configuration is correct. Each entry must have the following properties: $($ExpectedProperties -join ', ')"
-        return
+        $Results.Warnings.Add("Please check your ACL configuration is correct. Each entry must have the following properties: $($ExpectedProperties -join ', ')")
+        if (-not $Suppress) {
+            return $Results
+        } else {
+            return
+        }
     }
     foreach ($ExpectedACL in $ACLSettings) {
         if ($ExpectedACL.Principal -and $ExpectedACL.Permissions) {
@@ -64,6 +71,7 @@
                 $ConvertedIdentity = Convert-Identity -Identity $Principal -Verbose:$false
                 if ($ConvertedIdentity.Error) {
                     Write-Warning -Message "Set-ADACL - Converting identity $($Principal) failed with $($ConvertedIdentity.Error). Be warned."
+                    $Results.Warnings.Add("Converting identity $($Principal) failed with $($ConvertedIdentity.Error). Be warned.")
                 }
                 $ConvertedPrincipal = ($ConvertedIdentity).Name
                 if (-not $CachedACL[$ConvertedPrincipal]) {
@@ -131,6 +139,7 @@
         $ConvertedIdentity = Convert-Identity -Identity $CurrentACL.Principal -Verbose:$false
         if ($ConvertedIdentity.Error) {
             Write-Warning -Message "Set-ADACL - Converting identity $($Principal) failed with $($ConvertedIdentity.Error). Be warned."
+            $Results.Warnings.Add("Converting identity $($Principal) failed with $($ConvertedIdentity.Error). Be warned.")
         }
         $ConvertedPrincipal = ($ConvertedIdentity).Name
 
@@ -198,14 +207,6 @@
                             }
                         )
                     }
-                    # $Results.Remove.Add(
-                    #     [PSCustomObject] @{
-                    #         Principal         = $ConvertedPrincipal
-                    #         AccessControlType = $CurrentACL.AccessControlType
-                    #         Action            = 'Remove'
-                    #         Permissions       = $CurrentACL
-                    #     }
-                    # )
                 }
             }
         } else {
@@ -230,7 +231,6 @@
                     }
                 )
             }
-            #Remove-ADACL -ActiveDirectorySecurity $MainAccessRights.ACL -ACL $CurrentACL -Principal $CurrentACL.Principal -AccessControlType $CurrentACL.AccessControlType
         }
     }
     $AlreadyCovered = [System.Collections.Generic.List[PSCustomObject]]::new()
@@ -270,7 +270,7 @@
 
                 }
                 if ($DirectMatch) {
-                    Write-Verbose -Message "Set-ADACL - Skipping $($Principal)"
+                    Write-Verbose -Message "Set-ADACL - Skipping $($Principal), as it already exists"
                 } else {
                     $Results.Add.Add(
                         [PSCustomObject] @{
@@ -288,7 +288,12 @@
         Write-Verbose -Message "Set-ADACL - Applying changes to ACL"
         if ($Results.Remove.Permissions) {
             Write-Verbose -Message "Set-ADACL - Removing ACL"
-            Remove-ADACL -ActiveDirectorySecurity $MainAccessRights.ACL -ACL $Results.Remove.Permissions
+            try {
+                Remove-ADACL -ActiveDirectorySecurity $MainAccessRights.ACL -ACL $Results.Remove.Permissions
+            } catch {
+                Write-Warning -Message "Set-ADACL - Failed to remove ACL for at least one of principals $($Results.Remove.Principal -join ', ')"
+                $Results.Errors.Add("Failed to remove ACL for $($Results.Remove.Principal -join ', ')")
+            }
         }
         Write-Verbose -Message "Set-ADACL - Adding ACL"
         foreach ($Add in $Results.Add) {
@@ -306,6 +311,7 @@
                 Add-ADACL @addADACLSplat
             } catch {
                 Write-Warning -Message "Set-ADACL - Failed to add ACL for $($Add.Principal)"
+                $Results.Errors.Add("Failed to add ACL for $($Add.Principal)")
             }
         }
     }
