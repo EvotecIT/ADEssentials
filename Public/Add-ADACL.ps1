@@ -76,29 +76,31 @@
         foreach ($Object in $ADObject) {
             $MYACL = Get-ADACL -ADObject $Object -Verbose -NotInherited -Bundle
             $addPrivateACLSplat = @{
-                ACL                 = $MYACL
-                ADObject            = $Object
-                Principal           = $Principal
-                WhatIf              = $WhatIfPreference
-                AccessRule          = $AccessRule
-                AccessControlType   = $AccessControlType
-                ObjectType          = $ObjectType
-                InheritedObjectType = $InheritedObjectType
-                InheritanceType     = if ($InheritanceType) { $InheritanceType } else { $null }
+                ACL                  = $MYACL
+                ADObject             = $Object
+                Principal            = $Principal
+                WhatIf               = $WhatIfPreference
+                AccessRule           = $AccessRule
+                AccessControlType    = $AccessControlType
+                ObjectType           = $ObjectType
+                InheritedObjectType  = $InheritedObjectType
+                InheritanceType      = if ($InheritanceType) { $InheritanceType } else { $null }
+                NTSecurityDescriptor = $MYACL.ACL
             }
             Add-PrivateACL @addPrivateACLSplat
         }
     } elseif ($PSBoundParameters.ContainsKey('ACL')) {
         foreach ($SubACL in $ACL) {
             $addPrivateACLSplat = @{
-                ACL                 = $SubACL
-                Principal           = $Principal
-                WhatIf              = $WhatIfPreference
-                AccessRule          = $AccessRule
-                AccessControlType   = $AccessControlType
-                ObjectType          = $ObjectType
-                InheritedObjectType = $InheritedObjectType
-                InheritanceType     = if ($InheritanceType) { $InheritanceType } else { $null }
+                ACL                  = $SubACL
+                Principal            = $Principal
+                WhatIf               = $WhatIfPreference
+                AccessRule           = $AccessRule
+                AccessControlType    = $AccessControlType
+                ObjectType           = $ObjectType
+                InheritedObjectType  = $InheritedObjectType
+                InheritanceType      = if ($InheritanceType) { $InheritanceType } else { $null }
+                NTSecurityDescriptor = $SubACL.ACL
             }
             Add-PrivateACL @addPrivateACLSplat
         }
