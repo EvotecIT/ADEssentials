@@ -1,6 +1,8 @@
 ﻿#### 0.0.150
 - Fixes `Add-ADACL` in some conditions would fail to add ACLs
 - Improve `Set-ADACL` to return Warnings and Errors as part of the final object (used in )
+- Add `Force` to `New-ADACLObject` to reset cache (used in DelegationModel)
+- Add `ObjectType` and `InheritedObjectType` to have argument completers for `New-ADACLObject`
 
 #### 0.0.149
 - Improves Invoke-ADEssentials with `SplitReports` switch
