@@ -1,4 +1,4 @@
-﻿#### 0.0.150 - 2023.01.10
+﻿#### 0.0.151 - 2023.01.10
 - Fixes `Add-ADACL` in some conditions would fail to add ACLs
 - Improve `Set-ADACL` to return Warnings and Errors as part of the final object (used in )
 - Add `Force` to `New-ADACLObject` to reset cache (used in DelegationModel)
