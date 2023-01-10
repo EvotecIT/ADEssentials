@@ -168,9 +168,9 @@
     if ($OutputRequiresCommit -notcontains $false -and $OutputRequiresCommit -contains $true) {
         Write-Verbose "Remove-ADACL - Saving permissions for $($ACL.DistinguishedName)"
         try {
-            # TODO: This is a workaround for a bug in Set-ADObject
-            # It seems there's a bug of some sort that if you replace ntSecurityDescriptor it sets back Protected from Accidental Deletion
-            # I don't understand why this happens yet
+            # TODO: This is a workaround for a ProtectedFromAccidentalDeletion
+            # It seems if there's Everyone involved in ntSecurityDescriptor it sets back Protected from Accidental Deletion
+            # Need to write some detection mechanism around it
             $TemporaryObject = Get-ADObject -Identity $ACL.DistinguishedName -Properties ProtectedFromAccidentalDeletion
             Set-ADObject -Identity $ACL.DistinguishedName -Replace @{ ntSecurityDescriptor = $ntSecurityDescriptor } -ProtectedFromAccidentalDeletion $true -ErrorAction Stop -Server $QueryServer
             $AfterTemporaryObject = Get-ADObject -Identity $ACL.DistinguishedName -Properties ProtectedFromAccidentalDeletion
