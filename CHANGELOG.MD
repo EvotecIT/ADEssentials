@@ -1,4 +1,9 @@
-﻿#### 0.0.151 - 2023.01.10
+﻿#### 0.0.152 - 2023.03.27
+- Fix AccountTrustedForDelegation
+- Add `AccountDelegation` report to Invoke-ADEssentials
+- Improve `Laps` report in Invoke-ADEssentials with some charts
+
+#### 0.0.151 - 2023.01.10
 - Fixes `Add-ADACL` in some conditions would fail to add ACLs
 - Improve `Set-ADACL` to return Warnings and Errors as part of the final object (used in )
 - Add `Force` to `New-ADACLObject` to reset cache (used in DelegationModel)
