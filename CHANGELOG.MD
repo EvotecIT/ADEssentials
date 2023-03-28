@@ -1,4 +1,7 @@
-﻿#### 0.0.152 - 2023.03.27
+﻿#### 0.0.153 - 2023.03.28
+- Improve `Laps` report in Invoke-ADEssentials
+
+#### 0.0.152 - 2023.03.27
 - Fix AccountTrustedForDelegation
 - Add `AccountDelegation` report to Invoke-ADEssentials
 - Improve `Laps` report in Invoke-ADEssentials with some charts
