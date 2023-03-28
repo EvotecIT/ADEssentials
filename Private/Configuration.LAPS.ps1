@@ -14,6 +14,21 @@
                 } elseif ($Computer.LastLogonDays -lt 60 -and $Computer.Laps -eq $true -and $Computer.IsDC -eq $false) {
                     $Script:Reporting['LAPS']['Variables']['ComputersActiveWithLaps']++
                 }
+                if ($Computer.LastLogonDays -gt 360) {
+                    $Script:Reporting['LAPS']['Variables']['ComputersOver360days']++
+                } elseif ($Computer.LastLogonDays -gt 180) {
+                    $Script:Reporting['LAPS']['Variables']['ComputersOver180days']++
+                } elseif ($Computer.LastLogonDays -gt 90) {
+                    $Script:Reporting['LAPS']['Variables']['ComputersOver90days']++
+                } elseif ($Computer.LastLogonDays -gt 60) {
+                    $Script:Reporting['LAPS']['Variables']['ComputersOver60days']++
+                } elseif ($Computer.LastLogonDays -gt 30) {
+                    $Script:Reporting['LAPS']['Variables']['ComputersOver30days']++
+                } elseif ($Computer.LastLogonDays -gt 15) {
+                    $Script:Reporting['LAPS']['Variables']['ComputersOver15days']++
+                } else {
+                    $Script:Reporting['LAPS']['Variables']['ComputersRecent']++
+                }
             } else {
                 $Script:Reporting['LAPS']['Variables']['ComputersDisabled']++
             }
@@ -76,11 +91,86 @@
         }
     }
     Summary    = {
-
+        New-HTMLText -Text @(
+            "This report focuses on showing LAPS status of all computer objects in the domain. "
+            "It shows how many computers are enabled, disabled, have LAPS enabled, disabled, expired, etc."
+            "It's perfectly normal that some LAPS passwords are expired, due to working over VPN etc."
+        ) -FontSize 10pt -LineBreak
+        New-HTMLText -Text "Following computer resources are exempt from LAPS: " -FontSize 10pt
+        New-HTMLList {
+            New-HTMLListItem -Text "Domain Controllers and Read Only Domain Controllers"
+            New-HTMLListItem -Text 'Computer Service accounts such as AZUREADSSOACC$'
+        } -FontSize 10pt
+        New-HTMLText -Text "Here's an overview of some statistics about computers:" -FontSize 10pt
+        New-HTMLList {
+            New-HTMLListItem -Text "Total number of computers: ", $($Script:Reporting['LAPS']['Variables'].ComputersTotal) -Color None, BlueMarguerite -FontWeight normal, bold
+            New-HTMLListItem -Text "Total number of enabled computers: ", $($Script:Reporting['LAPS']['Variables'].ComputersEnabled) -Color None, BlueMarguerite -FontWeight normal, bold
+            New-HTMLListItem -Text "Total number of disabled computers: ", $($Script:Reporting['LAPS']['Variables'].ComputersDisabled) -Color None, BlueMarguerite -FontWeight normal, bold
+            New-HTMLListItem -Text "Total number of active computers (less then 60 days): ", $($Script:Reporting['LAPS']['Variables'].ComputersActive) -Color None, BlueMarguerite -FontWeight normal, bold
+            New-HTMLListItem -Text "Total number of inactive computers (over 60 days): ", $($Script:Reporting['LAPS']['Variables'].ComputersInactive) -Color None, BlueMarguerite -FontWeight normal, bold
+            New-HTMLListItem -Text "Total number of computers with LAPS: ", $($Script:Reporting['LAPS']['Variables'].ComputersLapsEnabled) -Color None, BlueMarguerite -FontWeight normal, bold
+            New-HTMLListItem -Text "Total number of computers without LAPS: ", $($Script:Reporting['LAPS']['Variables'].ComputersLapsDisabled) -Color None, BlueMarguerite -FontWeight normal, bold
+            New-HTMLListItem -Text "Total number of servers with LAPS: ", $($Script:Reporting['LAPS']['Variables'].ComputersServerLapsEnabled) -Color None, BlueMarguerite -FontWeight normal, bold
+            New-HTMLListItem -Text "Total number of servers without LAPS: ", $($Script:Reporting['LAPS']['Variables'].ComputersServerLapsDisabled) -Color None, BlueMarguerite -FontWeight normal, bold
+        } -FontSize 10pt
     }
-    Variables  = @{}
+    Variables  = @{
+        ComputersTotal                   = 0
+        ComputersEnabled                 = 0
+        ComputersDisabled                = 0
+        ComputersActive                  = 0
+        ComputersInactive                = 0
+        ComputersLapsEnabled             = 0
+        ComputersLapsDisabled            = 0
+        ComputersLapsNotApplicable       = 0
+        ComputersLapsExpired             = 0
+        ComputersLapsNotExpired          = 0
+        ComputersServer                  = 0
+        ComputersServerEnabled           = 0
+        ComputersServerDisabled          = 0
+        ComputersServerLapsEnabled       = 0
+        ComputersServerLapsDisabled      = 0
+        ComputersWorkstation             = 0
+        ComputersWorkstationEnabled      = 0
+        ComputersWorkstationDisabled     = 0
+        ComputersWorkstationLapsEnabled  = 0
+        ComputersWorkstationLapsDisabled = 0
+        ComputersOther                   = 0
+        ComputersOtherEnabled            = 0
+        ComputersOtherDisabled           = 0
+        ComputersOtherLapsEnabled        = 0
+        ComputersOtherLapsDisabled       = 0
+        ComputersOver360days             = 0
+        ComputersOver180days             = 0
+        ComputersOver90days              = 0
+        ComputersOver60days              = 0
+        ComputersOver30days              = 0
+        ComputersOver15days              = 0
+        ComputersRecent                  = 0
+    }
     Solution   = {
         if ($Script:Reporting['LAPS']['Data']) {
+            New-HTMLSection -Invisible {
+                New-HTMLPanel {
+                    $Script:Reporting['LAPS']['Summary']
+                }
+                New-HTMLPanel {
+
+                    New-HTMLChart {
+                        New-ChartBarOptions -Type bar
+                        New-ChartLegend -Name 'Active Computers (by last logon age)' -Color SpringGreen, Salmon
+                        New-ChartBar -Name 'Computers (over 360 days)' -Value $Script:Reporting['LAPS']['Variables'].ComputersOver360days
+                        New-ChartBar -Name 'Computers (over 180 days)' -Value $Script:Reporting['LAPS']['Variables'].ComputersOver180days
+                        New-ChartBar -Name 'Computers (over 90 days)' -Value $Script:Reporting['LAPS']['Variables'].ComputersOver90days
+                        New-ChartBar -Name 'Computers (over 60 days)' -Value $Script:Reporting['LAPS']['Variables'].ComputersOver60days
+                        New-ChartBar -Name 'Computers (over 30 days)' -Value $Script:Reporting['LAPS']['Variables'].ComputersOver30days
+                        New-ChartBar -Name 'Computers (over 15 days)' -Value $Script:Reporting['LAPS']['Variables'].ComputersOver15days
+                        New-ChartBar -Name 'Computers (Recent)' -Value $Script:Reporting['LAPS']['Variables'].ComputersRecent
+                        New-ChartAxisY -LabelMaxWidth 300 -Show
+                    } -Title 'Active Computers' -TitleAlignment center
+
+                }
+            }
             New-HTMLSection -HeaderText 'General statistics' -CanCollapse {
                 New-HTMLPanel {
                     New-HTMLChart -Gradient {
@@ -112,40 +202,38 @@
                 New-HTMLSection -Invisible {
                     New-HTMLPanel {
                         New-HTMLChart -Gradient {
-                            New-ChartPie -Name 'LAPS Available' -Value $Script:Reporting['LAPS']['Variables'].ComputersLapsEnabled -Color '#94ffc8'
-                            New-ChartPie -Name 'No LAPS' -Value $Script:Reporting['LAPS']['Variables'].ComputersLapsDisabled -Color 'Salmon'
+                            New-ChartPie -Name 'With LAPS' -Value $Script:Reporting['LAPS']['Variables'].ComputersLapsEnabled -Color '#94ffc8'
+                            New-ChartPie -Name 'Without LAPS' -Value $Script:Reporting['LAPS']['Variables'].ComputersLapsDisabled -Color 'Salmon'
                             New-ChartPie -Name 'LAPS N/A' -Value $Script:Reporting['LAPS']['Variables'].ComputersLapsNotApplicable -Color 'LightGray'
                         } -Title "All Computers with LAPS"
                     }
                     New-HTMLPanel {
                         New-HTMLChart -Gradient {
-                            New-ChartPie -Name 'LAPS Available' -Value $Script:Reporting['LAPS']['Variables'].ComputersActiveWithLaps -Color '#94ffc8'
-                            New-ChartPie -Name 'No LAPS' -Value $Script:Reporting['LAPS']['Variables'].ComputersActiveNoLaps -Color 'Salmon'
-                        } -Title "Active Computers with LAPS"
+                            New-ChartPie -Name 'With LAPS' -Value $Script:Reporting['LAPS']['Variables'].ComputersActiveWithLaps -Color '#94ffc8'
+                            New-ChartPie -Name 'Without LAPS' -Value $Script:Reporting['LAPS']['Variables'].ComputersActiveNoLaps -Color 'Salmon'
+                        } -Title "Active Computers with LAPS" -SubTitle "Logged on within the last 60 days"
                     }
                     New-HTMLPanel {
                         New-HTMLChart -Gradient {
                             New-ChartPie -Name 'LAPS Expired' -Value $Script:Reporting['LAPS']['Variables'].ComputersLapsExpired
                             New-ChartPie -Name 'LAPS Up-to-date' -Value $Script:Reporting['LAPS']['Variables'].ComputersLapsNotExpired
-                        }
+                        } -Title "LAPS Passwords Expired"
                     }
                 }
                 New-HTMLSection -Invisible {
                     New-HTMLSection -HeaderText 'Servers (Windows Server)' -CanCollapse {
                         New-HTMLPanel {
                             New-HTMLChart -Gradient {
-                                New-ChartPie -Name 'LAPS enabled' -Value $Script:Reporting['LAPS']['Variables'].ComputersServerLapsEnabled -Color '#94ffc8'
-                                New-ChartPie -Name 'No LAPS' -Value $Script:Reporting['LAPS']['Variables'].ComputersServerLapsDisabled -Color 'Salmon'
-                                #New-ChartPie -Name 'LAPS N/A' -Value $Script:Reporting['LAPS']['Variables'].ComputersServerLapsNotApplicable -Color 'LightGray'
+                                New-ChartPie -Name 'With LAPS' -Value $Script:Reporting['LAPS']['Variables'].ComputersServerLapsEnabled -Color '#94ffc8'
+                                New-ChartPie -Name 'Without LAPS' -Value $Script:Reporting['LAPS']['Variables'].ComputersServerLapsDisabled -Color 'Salmon'
                             } -Title "Servers with LAPS"
                         }
                     }
                     New-HTMLSection -HeaderText 'Workstations (Windows Client)' -CanCollapse {
                         New-HTMLPanel {
                             New-HTMLChart -Gradient {
-                                New-ChartPie -Name 'LAPS enabled' -Value $Script:Reporting['LAPS']['Variables'].ComputersWorkstationLapsEnabled -Color '#94ffc8'
-                                New-ChartPie -Name 'No LAPS' -Value $Script:Reporting['LAPS']['Variables'].ComputersWorkstationLapsDisabled -Color 'Salmon'
-                                #New-ChartPie -Name 'LAPS N/A' -Value $Script:Reporting['LAPS']['Variables'].ComputersWorkstationLapsNotApplicable -Color 'LightGray'
+                                New-ChartPie -Name 'With LAPS' -Value $Script:Reporting['LAPS']['Variables'].ComputersWorkstationLapsEnabled -Color '#94ffc8'
+                                New-ChartPie -Name 'Without LAPS' -Value $Script:Reporting['LAPS']['Variables'].ComputersWorkstationLapsDisabled -Color 'Salmon'
                             } -Title "Workstations with LAPS"
                         }
                     }
