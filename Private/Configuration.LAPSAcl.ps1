@@ -5,7 +5,30 @@
         Get-WinADComputerACLLAPS -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains
     }
     Processing = {
-
+        foreach ($Object in $Script:Reporting['LAPSACL']['Data']) {
+            if ($Object.Enabled) {
+                $Script:Reporting['LAPSACL']['Variables']['ComputersEnabled']++
+                if ($Object.LapsACL) {
+                    $Script:Reporting['LAPSACL']['Variables']['LapsACL']++
+                    if ($Object.OperatingSystem -like "Windows Server*") {
+                        $Script:Reporting['LAPSACL']['Variables']['LapsACLOKServer']++
+                    } elseif ($Object.OperatingSystem -notlike "Windows Server*" -and $Object.OperatingSystem -like "Windows*") {
+                        $Script:Reporting['LAPSACL']['Variables']['LapsACLOKClient']++
+                    }
+                } else {
+                    if ($Object.IsDC -eq $false) {
+                        $Script:Reporting['LAPSACL']['Variables']['LapsACLNot']++
+                        if ($Object.OperatingSystem -like "Windows Server*") {
+                            $Script:Reporting['LAPSACL']['Variables']['LapsACLNotServer']++
+                        } elseif ($Object.OperatingSystem -notlike "Windows Server*" -and $Object.OperatingSystem -like "Windows*") {
+                            $Script:Reporting['LAPSACL']['Variables']['LapsACLNotClient']++
+                        }
+                    }
+                }
+            } else {
+                $Script:Reporting['LAPSACL']['Variables']['ComputersDisabled']++
+            }
+        }
     }
     Summary    = {
         New-HTMLText -Text @(
@@ -22,25 +45,52 @@
         New-HTMLText -Text 'Everything else should have proper LAPS ACL for the computer to provide data.' -FontSize 10pt
     }
     Variables  = @{
-
+        ComputersEnabled  = 0
+        ComputersDisabled = 0
+        LapsACL           = 0
+        LapsACLNot        = 0
+        LapsACLOKServer   = 0
+        LapsACLOKClient   = 0
+        LapsACLNotServer  = 0
+        LapsACLNotClient  = 0
     }
     Solution   = {
-        New-HTMLSection -Invisible {
-            New-HTMLPanel {
-                $Script:Reporting['LAPSACL']['Summary']
-            }
-            New-HTMLPanel {
-                <#
-                New-HTMLChart {
-                    New-ChartBarOptions -Type barStacked
-                    New-ChartLegend -Name 'Yes', 'No' -Color SpringGreen, Salmon
-                    New-ChartBar -Name 'Authenticated Users Available' -Value $Script:Reporting['GPOPermissionsRead']['Variables']['WillNotTouch'], $Script:Reporting['GPOPermissionsRead']['Variables']['WillFix']
-                    New-ChartBar -Name 'Accessible Group Policies' -Value $Script:Reporting['GPOPermissionsRead']['Variables']['Read'], $Script:Reporting['GPOPermissionsRead']['Variables']['CouldNotRead']
-                } -Title 'Group Policy Permissions' -TitleAlignment center
-                #>
-            }
-        }
         if ($Script:Reporting['LAPSACL']['Data']) {
+            New-HTMLSection -Invisible {
+                New-HTMLPanel {
+                    $Script:Reporting['LAPSACL']['Summary']
+                }
+                New-HTMLPanel {
+                    New-HTMLChart {
+                        New-ChartBarOptions -Type barStacked
+                        New-ChartLegend -Names 'Enabled', 'Disabled' -Color SpringGreen, Salmon
+                        New-ChartBar -Name 'Computers' -Value $Script:Reporting['LAPSACL']['Variables'].ComputersEnabled, $Script:Reporting['LAPSACL']['Variables'].ComputersDisabled
+                        # New-ChartAxisY -LabelMaxWidth 300 -Show
+                    } -Title 'Active Computers' -TitleAlignment center
+                }
+            }
+            New-HTMLSection -HeaderText 'General statistics' -CanCollapse {
+                New-HTMLPanel {
+                    New-HTMLChart -Gradient {
+                        New-ChartPie -Name 'Computers Enabled' -Value $Script:Reporting['LAPSACL']['Variables'].ComputersEnabled
+                        New-ChartPie -Name 'Computers Disabled' -Value $Script:Reporting['LAPSACL']['Variables'].ComputersDisabled
+                    } -Title "Enabled vs Disabled All Computer Objects"
+                }
+                New-HTMLPanel {
+                    New-HTMLChart -Gradient {
+                        New-ChartPie -Name 'LAPS ACL OK' -Value $Script:Reporting['LAPSACL']['Variables'].LapsACL
+                        New-ChartPie -Name 'LAPS ACL Not OK' -Value $Script:Reporting['LAPSACL']['Variables'].LapsACLNot
+                    } -Title "LAPS ACL OK vs Not OK"
+                }
+                New-HTMLPanel {
+                    New-HTMLChart -Gradient {
+                        New-ChartPie -Name 'LAPS ACL OK - Server' -Value $Script:Reporting['LAPSACL']['Variables'].LapsACLOKServer -Color SpringGreen
+                        New-ChartPie -Name 'LAPS ACL OK - Client' -Value $Script:Reporting['LAPSACL']['Variables'].LapsACLOKClient -Color LimeGreen
+                        New-ChartPie -Name 'LAPS ACL Not OK - Server' -Value $Script:Reporting['LAPSACL']['Variables'].LapsACLNotServer -Color Salmon
+                        New-ChartPie -Name 'LAPS ACL Not OK - Client' -Value $Script:Reporting['LAPSACL']['Variables'].LapsACLNotClient -Color Red
+                    } -Title "LAPS ACL OK vs Not OK by Computer Type"
+                }
+            }
             New-HTMLSection -Name 'LAPS ACL Summary' {
                 New-HTMLTable -DataTable $Script:Reporting['LAPSACL']['Data'] -Filtering {
                     New-HTMLTableConditionGroup -Logic AND {
@@ -56,7 +106,6 @@
                     New-HTMLTableCondition -Name 'Enabled' -ComparisonType string -Operator eq -Value $true -BackgroundColor LimeGreen -FailBackgroundColor BlizzardBlue
                     New-HTMLTableCondition -Name 'IsDC' -ComparisonType string -Operator eq -Value $false -BackgroundColor LimeGreen -FailBackgroundColor BlizzardBlue
                     New-HTMLTableCondition -Name 'IsDC' -ComparisonType string -Operator eq -Value $true -BackgroundColor BlizzardBlue -HighlightHeaders LapsACL, LapsExpirationACL
-
                 }
             }
             if ($Script:Reporting['LAPSACL']['WarningsAndErrors']) {
