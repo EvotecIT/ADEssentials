@@ -52,6 +52,10 @@ $Configuration = @{
                 ActiveDirectory = @(
                     'Add-ADACL'
                     'Copy-ADOUSecurity'
+                    'New-ADACLObject'
+                    'Enable-ADACLInheritance'
+                    'Disable-ADACLInheritance'
+                    'Export-ADACLObject'
                     'Get-ADACL'
                     'Get-ADACLOwner'
                     'Get-WinADACLConfiguration'
