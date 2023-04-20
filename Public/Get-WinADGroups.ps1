@@ -4,7 +4,8 @@
         [alias('ForestName')][string] $Forest,
         [string[]] $ExcludeDomains,
         [alias('Domain', 'Domains')][string[]] $IncludeDomains,
-        [switch] $PerDomain
+        [switch] $PerDomain,
+        [switch] $AddOwner
     )
     $AllUsers = [ordered] @{}
     $AllContacts = [ordered] @{}
@@ -106,38 +107,76 @@
             #     #     $GroupWriteback = $false
             #     #  }
             # }
-
-            [PSCustomObject] @{
-                Name                            = $Group.Name
-                #DisplayName                     = $Group.DisplayName
-                CanonicalName                   = $Group.CanonicalName
-                Domain                          = $Domain
-                SamAccountName                  = $Group.SamAccountName
-                MemberCount                     = if ($Group.member) { $Group.member.Count } else { 0 }
-                GroupScope                      = $Group.GroupScope
-                GroupCategory                   = $Group.GroupCategory
-                #GroupWriteBack                  = $GroupWriteBack
-                #ManagedBy                       = $Group.ManagedBy
-                msExchRecipientTypeDetails      = $msExchRecipientTypeDetails
-                msExchRecipientDisplayType      = $msExchRecipientDisplayType
-                #msExchRemoteRecipientType       = $msExchRemoteRecipientType
-                Manager                         = $Manager
-                ManagerCanUpdateGroupMembership = if ($ACL) { $true } else { $false }
-                ManagerSamAccountName           = $ManagerSamAccountName
-                ManagerEmail                    = $ManagerEmail
-                ManagerEnabled                  = $ManagerEnabled
-                ManagerLastLogon                = $ManagerLastLogon
-                ManagerLastLogonDays            = $ManagerLastLogonDays
-                ManagerStatus                   = $ManagerStatus
-                WhenCreated                     = $Group.WhenCreated
-                WhenChanged                     = $Group.WhenChanged
-                ProtectedFromAccidentalDeletion = $Group.ProtectedFromAccidentalDeletion
-                ProxyAddresses                  = Convert-ExchangeEmail -Emails $Group.ProxyAddresses -RemoveDuplicates -RemovePrefix
-                Description                     = $Group.Description
-                DistinguishedName               = $Group.DistinguishedName
-                Level0                          = $Region
-                Level1                          = $Country
-                ManagerDN                       = $Group.ManagedBy
+            if ($AddOwner) {
+                $Owner = Get-ADACLOwner -ADObject $Group -Verbose -Resolve
+                [PSCustomObject] @{
+                    Name                            = $Group.Name
+                    #DisplayName                     = $Group.DisplayName
+                    CanonicalName                   = $Group.CanonicalName
+                    Domain                          = $Domain
+                    SamAccountName                  = $Group.SamAccountName
+                    MemberCount                     = if ($Group.member) { $Group.member.Count } else { 0 }
+                    GroupScope                      = $Group.GroupScope
+                    GroupCategory                   = $Group.GroupCategory
+                    #GroupWriteBack                  = $GroupWriteBack
+                    #ManagedBy                       = $Group.ManagedBy
+                    msExchRecipientTypeDetails      = $msExchRecipientTypeDetails
+                    msExchRecipientDisplayType      = $msExchRecipientDisplayType
+                    #msExchRemoteRecipientType       = $msExchRemoteRecipientType
+                    Manager                         = $Manager
+                    ManagerCanUpdateGroupMembership = if ($ACL) { $true } else { $false }
+                    ManagerSamAccountName           = $ManagerSamAccountName
+                    ManagerEmail                    = $ManagerEmail
+                    ManagerEnabled                  = $ManagerEnabled
+                    ManagerLastLogon                = $ManagerLastLogon
+                    ManagerLastLogonDays            = $ManagerLastLogonDays
+                    ManagerStatus                   = $ManagerStatus
+                    OwnerName                       = $Owner.OwnerName
+                    OwnerSID                        = $Owner.OwnerSID
+                    OwnerType                       = $Owner.OwnerType
+                    WhenCreated                     = $Group.WhenCreated
+                    WhenChanged                     = $Group.WhenChanged
+                    ProtectedFromAccidentalDeletion = $Group.ProtectedFromAccidentalDeletion
+                    ProxyAddresses                  = Convert-ExchangeEmail -Emails $Group.ProxyAddresses -RemoveDuplicates -RemovePrefix
+                    Description                     = $Group.Description
+                    DistinguishedName               = $Group.DistinguishedName
+                    Level0                          = $Region
+                    Level1                          = $Country
+                    ManagerDN                       = $Group.ManagedBy
+                }
+            } else {
+                [PSCustomObject] @{
+                    Name                            = $Group.Name
+                    #DisplayName                     = $Group.DisplayName
+                    CanonicalName                   = $Group.CanonicalName
+                    Domain                          = $Domain
+                    SamAccountName                  = $Group.SamAccountName
+                    MemberCount                     = if ($Group.member) { $Group.member.Count } else { 0 }
+                    GroupScope                      = $Group.GroupScope
+                    GroupCategory                   = $Group.GroupCategory
+                    #GroupWriteBack                  = $GroupWriteBack
+                    #ManagedBy                       = $Group.ManagedBy
+                    msExchRecipientTypeDetails      = $msExchRecipientTypeDetails
+                    msExchRecipientDisplayType      = $msExchRecipientDisplayType
+                    #msExchRemoteRecipientType       = $msExchRemoteRecipientType
+                    Manager                         = $Manager
+                    ManagerCanUpdateGroupMembership = if ($ACL) { $true } else { $false }
+                    ManagerSamAccountName           = $ManagerSamAccountName
+                    ManagerEmail                    = $ManagerEmail
+                    ManagerEnabled                  = $ManagerEnabled
+                    ManagerLastLogon                = $ManagerLastLogon
+                    ManagerLastLogonDays            = $ManagerLastLogonDays
+                    ManagerStatus                   = $ManagerStatus
+                    WhenCreated                     = $Group.WhenCreated
+                    WhenChanged                     = $Group.WhenChanged
+                    ProtectedFromAccidentalDeletion = $Group.ProtectedFromAccidentalDeletion
+                    ProxyAddresses                  = Convert-ExchangeEmail -Emails $Group.ProxyAddresses -RemoveDuplicates -RemovePrefix
+                    Description                     = $Group.Description
+                    DistinguishedName               = $Group.DistinguishedName
+                    Level0                          = $Region
+                    Level1                          = $Country
+                    ManagerDN                       = $Group.ManagedBy
+                }
             }
         }
     }

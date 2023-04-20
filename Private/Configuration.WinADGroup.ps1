@@ -2,7 +2,7 @@
     Name       = 'All Groups'
     Enabled    = $true
     Execute    = {
-        Get-WinADGroups -PerDomain
+        Get-WinADGroups -PerDomain -AddOwner
     }
     Processing = {
 

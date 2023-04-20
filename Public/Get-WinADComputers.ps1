@@ -4,7 +4,8 @@
         [alias('ForestName')][string] $Forest,
         [string[]] $ExcludeDomains,
         [alias('Domain', 'Domains')][string[]] $IncludeDomains,
-        [switch] $PerDomain
+        [switch] $PerDomain,
+        [switch] $AddOwner
     )
 
     $AllUsers = [ordered] @{}
@@ -34,6 +35,7 @@
         $Properties = @(
             'DistinguishedName', 'LastLogonDate', 'PasswordLastSet', 'Enabled', 'DnsHostName', 'PasswordNeverExpires', 'PasswordNotRequired',
             'PasswordExpired', 'ManagedBy', 'OperatingSystemVersion', 'OperatingSystem' , 'TrustedForDelegation', 'WhenCreated', 'WhenChanged', 'PrimaryGroupID'
+            'nTSecurityDescriptor'
         )
         $AllComputers[$Domain] = Get-ADComputer -Filter * -Server $QueryServer -Properties $Properties
     }
@@ -95,35 +97,71 @@
             } else {
                 $PasswordLastChangedDays = $null
             }
-            [PSCustomObject] @{
-                Name                  = $Computer.Name
-                SamAccountName        = $Computer.SamAccountName
-                IsDC                  = if ($Computer.PrimaryGroupID -in 516, 521) { $true } else { $false }
-                WhenChanged           = $Computer.WhenChanged
-                Enabled               = $Computer.Enabled
-                LastLogonDays         = $LastLogonDays
-                PasswordLastDays      = $PasswordLastChangedDays
-                Level0                = $Region
-                Level1                = $Country
-                OperatingSystem       = $Computer.OperatingSystem
-                #OperatingSystemVersion = $Computer.OperatingSystemVersion
-                OperatingSystemName   = ConvertTo-OperatingSystem -OperatingSystem $Computer.OperatingSystem -OperatingSystemVersion $Computer.OperatingSystemVersion
-                DistinguishedName     = $Computer.DistinguishedName
-                LastLogonDate         = $Computer.LastLogonDate
-                PasswordLastSet       = $Computer.PasswordLastSet
-                PasswordNeverExpires  = $Computer.PasswordNeverExpires
-                PasswordNotRequired   = $Computer.PasswordNotRequired
-                PasswordExpired       = $Computer.PasswordExpired
-                ManagerStatus         = $ManagerStatus
-                Manager               = $Manager
-                ManagerSamAccountName = $ManagerSamAccountName
-                ManagerEmail          = $ManagerEmail
-                ManagerLastLogonDays  = $ManagerLastLogonDays
-                ManagerDN             = $Computer.ManagedBy
-                Description           = $Computer.Description
-                TrustedForDelegation  = $Computer.TrustedForDelegation
-            }
 
+            if ($AddOwner) {
+                $Owner = Get-ADACLOwner -ADObject $Computer -Verbose -Resolve
+                [PSCustomObject] @{
+                    Name                  = $Computer.Name
+                    SamAccountName        = $Computer.SamAccountName
+                    IsDC                  = if ($Computer.PrimaryGroupID -in 516, 521) { $true } else { $false }
+                    WhenChanged           = $Computer.WhenChanged
+                    Enabled               = $Computer.Enabled
+                    LastLogonDays         = $LastLogonDays
+                    PasswordLastDays      = $PasswordLastChangedDays
+                    Level0                = $Region
+                    Level1                = $Country
+                    OperatingSystem       = $Computer.OperatingSystem
+                    #OperatingSystemVersion = $Computer.OperatingSystemVersion
+                    OperatingSystemName   = ConvertTo-OperatingSystem -OperatingSystem $Computer.OperatingSystem -OperatingSystemVersion $Computer.OperatingSystemVersion
+                    DistinguishedName     = $Computer.DistinguishedName
+                    LastLogonDate         = $Computer.LastLogonDate
+                    PasswordLastSet       = $Computer.PasswordLastSet
+                    PasswordNeverExpires  = $Computer.PasswordNeverExpires
+                    PasswordNotRequired   = $Computer.PasswordNotRequired
+                    PasswordExpired       = $Computer.PasswordExpired
+                    ManagerStatus         = $ManagerStatus
+                    Manager               = $Manager
+                    ManagerSamAccountName = $ManagerSamAccountName
+                    ManagerEmail          = $ManagerEmail
+                    ManagerLastLogonDays  = $ManagerLastLogonDays
+                    OwnerName             = $Owner.OwnerName
+                    OwnerSID              = $Owner.OwnerSID
+                    OwnerType             = $Owner.OwnerType
+                    ManagerDN             = $Computer.ManagedBy
+                    Description           = $Computer.Description
+                    TrustedForDelegation  = $Computer.TrustedForDelegation
+                }
+            } else {
+                $Owner = $null
+                [PSCustomObject] @{
+                    Name                  = $Computer.Name
+                    SamAccountName        = $Computer.SamAccountName
+                    IsDC                  = if ($Computer.PrimaryGroupID -in 516, 521) { $true } else { $false }
+                    WhenChanged           = $Computer.WhenChanged
+                    Enabled               = $Computer.Enabled
+                    LastLogonDays         = $LastLogonDays
+                    PasswordLastDays      = $PasswordLastChangedDays
+                    Level0                = $Region
+                    Level1                = $Country
+                    OperatingSystem       = $Computer.OperatingSystem
+                    #OperatingSystemVersion = $Computer.OperatingSystemVersion
+                    OperatingSystemName   = ConvertTo-OperatingSystem -OperatingSystem $Computer.OperatingSystem -OperatingSystemVersion $Computer.OperatingSystemVersion
+                    DistinguishedName     = $Computer.DistinguishedName
+                    LastLogonDate         = $Computer.LastLogonDate
+                    PasswordLastSet       = $Computer.PasswordLastSet
+                    PasswordNeverExpires  = $Computer.PasswordNeverExpires
+                    PasswordNotRequired   = $Computer.PasswordNotRequired
+                    PasswordExpired       = $Computer.PasswordExpired
+                    ManagerStatus         = $ManagerStatus
+                    Manager               = $Manager
+                    ManagerSamAccountName = $ManagerSamAccountName
+                    ManagerEmail          = $ManagerEmail
+                    ManagerLastLogonDays  = $ManagerLastLogonDays
+                    ManagerDN             = $Computer.ManagedBy
+                    Description           = $Computer.Description
+                    TrustedForDelegation  = $Computer.TrustedForDelegation
+                }
+            }
         }
     }
     if ($PerDomain) {

@@ -2,7 +2,7 @@
     Name       = 'All Users'
     Enabled    = $true
     Execute    = {
-        Get-WinADUsers -PerDomain
+        Get-WinADUsers -PerDomain -AddOwner
     }
     Processing = {
 

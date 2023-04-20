@@ -2,7 +2,7 @@
     Name       = 'All Computers'
     Enabled    = $true
     Execute    = {
-        Get-WinADComputers -PerDomain
+        Get-WinADComputers -PerDomain -AddOwner
     }
     Processing = {
         foreach ($Domain in $Script:Reporting['Computers']['Data'].Keys) {
