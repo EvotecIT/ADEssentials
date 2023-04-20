@@ -1,4 +1,10 @@
-﻿#### 0.0.154 - 2023.03.29
+﻿#### 0.0.154 - 2023.04.20
+- Improve `Laps` report in Invoke-ADEssentials
+- Improve `LapsACL` report in Invoke-ADEssentials
+- Improve `Computers` report in Invoke-ADEssentials
+- Improve `Users` report in Invoke-ADessentials
+
+#### 0.0.154 - 2023.03.29
 - Improve `Laps` report in Invoke-ADEssentials
 - Improve `LapsACL` report in Invoke-ADEssentials
 - Improve `Computers` report in Invoke-ADEssentials
