@@ -223,6 +223,9 @@ $Configuration = @{
             Path       = 'Docs'
             PathReadme = 'Docs\Readme.md'
         }
+        Signing           = @{
+            CertificateThumbprint = '36A8A2D0E227D81A2D3B60DCE0CFCF23BEFC343B'
+        }
     }
     Steps       = @{
         BuildModule        = @{  # requires Enable to be on to process all of that
