@@ -23,6 +23,9 @@
                             New-HTMLTableCondition -Name 'Enabled' -ComparisonType string -Operator eq -Value $false -Row -BackgroundColor LightYellow
                             # highlight enabled column as red if the computer is disabled
                             New-HTMLTableCondition -Name 'Enabled' -ComparisonType string -Operator eq -Value $false -BackgroundColor Salmon
+                            # highlight enabled column as BrightTurquoise if the computer is enabled
+                            # we don't know if it's any good, but lets try it
+                            New-HTMLTableCondition -Name 'Enabled' -ComparisonType string -Operator eq -Value $true -BackgroundColor BrightTurquoise
                             # highlight whole row as green if the computer is enabled and LastLogon, PasswordDays Over 30
                             New-HTMLTableConditionGroup -Conditions {
                                 New-HTMLTableCondition -Name 'Enabled' -ComparisonType string -Operator eq -Value $True
