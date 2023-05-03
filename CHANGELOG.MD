@@ -1,4 +1,14 @@
-﻿#### 0.0.154 - 2023.04.20
+﻿#### 0.0.157
+- Improve `Users` report in Invoke-ADEssentials
+- Improve `Get-WinADUser`
+
+#### 0.0.156
+- Improve `Laps` report in Invoke-ADEssentials
+- Improve `LapsACL` report in Invoke-ADEssentials
+- Improve `Computers` report in Invoke-ADEssentials
+- Improve `Users` report in Invoke-ADessentials
+
+#### 0.0.154 - 2023.04.20
 - Improve `Laps` report in Invoke-ADEssentials
 - Improve `LapsACL` report in Invoke-ADEssentials
 - Improve `Computers` report in Invoke-ADEssentials
