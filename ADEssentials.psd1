@@ -12,8 +12,8 @@
     PowerShellVersion    = '5.1'
     PrivateData          = @{
         PSData = @{
-            Tags       = @('Windows', 'ActiveDirectory')
             ProjectUri = 'https://github.com/EvotecIT/ADEssentials'
+            Tags       = @('Windows', 'ActiveDirectory')
         }
     }
     RequiredModules      = @(@{
