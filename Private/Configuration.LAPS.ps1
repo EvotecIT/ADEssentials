@@ -9,9 +9,9 @@
             $Script:Reporting['LAPS']['Variables']['ComputersTotal']++
             if ($Computer.Enabled) {
                 $Script:Reporting['LAPS']['Variables']['ComputersEnabled']++
-                if ($Computer.LastLogonDays -lt 60 -and $Computer.Laps -eq $false -and $Computer.IsDC -eq $false) {
+                if ($Computer.LastLogonDays -lt 60 -and $Computer.Laps -eq $false -and $Computer.IsDC -eq $false -and $Computer.System -like "Windows*") {
                     $Script:Reporting['LAPS']['Variables']['ComputersActiveNoLaps']++
-                } elseif ($Computer.LastLogonDays -lt 60 -and $Computer.Laps -eq $true -and $Computer.IsDC -eq $false) {
+                } elseif ($Computer.LastLogonDays -lt 60 -and $Computer.Laps -eq $true -and $Computer.IsDC -eq $false -and $Computer.System -like "Windows*") {
                     $Script:Reporting['LAPS']['Variables']['ComputersActiveWithLaps']++
                 }
                 if ($Computer.LastLogonDays -gt 360) {
@@ -32,14 +32,14 @@
             } else {
                 $Script:Reporting['LAPS']['Variables']['ComputersDisabled']++
             }
-            if ($Computer.Laps) {
+            if ($Computer.Laps -eq $true -and $Computer.Enabled -eq $true) {
                 $Script:Reporting['LAPS']['Variables']['ComputersLapsEnabled']++
                 if ($Computer.LapsExpirationDays -lt 0) {
                     $Script:Reporting['LAPS']['Variables']['ComputersLapsExpired']++
                 } else {
                     $Script:Reporting['LAPS']['Variables']['ComputersLapsNotExpired']++
                 }
-            } else {
+            } elseif ($Computer.Enabled -eq $true) {
                 if ($Computer.IsDC -eq $true) {
                     $Script:Reporting['LAPS']['Variables']['ComputersLapsNotApplicable']++
                 } else {
@@ -55,37 +55,37 @@
                 $Script:Reporting['LAPS']['Variables']['ComputersServer']++
                 if ($Computer.Enabled) {
                     $Script:Reporting['LAPS']['Variables']['ComputersServerEnabled']++
+                    if ($Computer.Laps -eq $true -and $Computer.IsDc -eq $false) {
+                        $Script:Reporting['LAPS']['Variables']['ComputersServerLapsEnabled']++
+                    } elseif ($Computer.Laps -eq $false -and $Computer.IsDc -eq $false) {
+                        $Script:Reporting['LAPS']['Variables']['ComputersServerLapsDisabled']++
+                    }
                 } else {
                     $Script:Reporting['LAPS']['Variables']['ComputersServerDisabled']++
-                }
-                if ($Computer.Laps) {
-                    $Script:Reporting['LAPS']['Variables']['ComputersServerLapsEnabled']++
-                } else {
-                    $Script:Reporting['LAPS']['Variables']['ComputersServerLapsDisabled']++
                 }
             } elseif ($Computer.System -notlike "Windows Server*" -and $Computer.System -like "Windows*") {
                 $Script:Reporting['LAPS']['Variables']['ComputersWorkstation']++
                 if ($Computer.Enabled) {
                     $Script:Reporting['LAPS']['Variables']['ComputersWorkstationEnabled']++
+                    if ($Computer.Laps) {
+                        $Script:Reporting['LAPS']['Variables']['ComputersWorkstationLapsEnabled']++
+                    } else {
+                        $Script:Reporting['LAPS']['Variables']['ComputersWorkstationLapsDisabled']++
+                    }
                 } else {
                     $Script:Reporting['LAPS']['Variables']['ComputersWorkstationDisabled']++
-                }
-                if ($Computer.Laps) {
-                    $Script:Reporting['LAPS']['Variables']['ComputersWorkstationLapsEnabled']++
-                } else {
-                    $Script:Reporting['LAPS']['Variables']['ComputersWorkstationLapsDisabled']++
                 }
             } else {
                 $Script:Reporting['LAPS']['Variables']['ComputersOther']++
                 if ($Computer.Enabled) {
                     $Script:Reporting['LAPS']['Variables']['ComputersOtherEnabled']++
+                    if ($Computer.Laps) {
+                        $Script:Reporting['LAPS']['Variables']['ComputersOtherLapsEnabled']++
+                    } else {
+                        $Script:Reporting['LAPS']['Variables']['ComputersOtherLapsDisabled']++
+                    }
                 } else {
                     $Script:Reporting['LAPS']['Variables']['ComputersOtherDisabled']++
-                }
-                if ($Computer.Laps) {
-                    $Script:Reporting['LAPS']['Variables']['ComputersOtherLapsEnabled']++
-                } else {
-                    $Script:Reporting['LAPS']['Variables']['ComputersOtherLapsDisabled']++
                 }
             }
         }
@@ -108,13 +108,19 @@
             New-HTMLListItem -Text "Total number of disabled computers: ", $($Script:Reporting['LAPS']['Variables'].ComputersDisabled) -Color None, BlueMarguerite -FontWeight normal, bold
             New-HTMLListItem -Text "Total number of active computers (less then 60 days): ", $($Script:Reporting['LAPS']['Variables'].ComputersActive) -Color None, BlueMarguerite -FontWeight normal, bold
             New-HTMLListItem -Text "Total number of inactive computers (over 60 days): ", $($Script:Reporting['LAPS']['Variables'].ComputersInactive) -Color None, BlueMarguerite -FontWeight normal, bold
-            New-HTMLListItem -Text "Total number of computers with LAPS: ", $($Script:Reporting['LAPS']['Variables'].ComputersLapsEnabled) -Color None, BlueMarguerite -FontWeight normal, bold
-            New-HTMLListItem -Text "Total number of computers without LAPS: ", $($Script:Reporting['LAPS']['Variables'].ComputersLapsDisabled) -Color None, BlueMarguerite -FontWeight normal, bold
-            New-HTMLListItem -Text "Total number of servers with LAPS: ", $($Script:Reporting['LAPS']['Variables'].ComputersServerLapsEnabled) -Color None, BlueMarguerite -FontWeight normal, bold
-            New-HTMLListItem -Text "Total number of servers without LAPS: ", $($Script:Reporting['LAPS']['Variables'].ComputersServerLapsDisabled) -Color None, BlueMarguerite -FontWeight normal, bold
+            New-HTMLListItem -Text "Total number of active computers with LAPS (less then 60 days): ", $($Script:Reporting['LAPS']['Variables'].ComputersActiveWithLaps) -Color None, BlueMarguerite -FontWeight normal, bold
+            New-HTMLListItem -Text "Total number of active computers without LAPS (less then 60 days): ", $($Script:Reporting['LAPS']['Variables'].ComputersActiveNoLaps) -Color None, BlueMarguerite -FontWeight normal, bold
+            New-HTMLListItem -Text "Total number of computers (enabled) with LAPS: ", $($Script:Reporting['LAPS']['Variables'].ComputersLapsEnabled) -Color None, BlueMarguerite -FontWeight normal, bold
+            New-HTMLListItem -Text "Total number of computers (enabled) without LAPS: ", $($Script:Reporting['LAPS']['Variables'].ComputersLapsDisabled) -Color None, BlueMarguerite -FontWeight normal, bold
+            New-HTMLListItem -Text "Total number of servers (enabled) with LAPS: ", $($Script:Reporting['LAPS']['Variables'].ComputersServerLapsEnabled) -Color None, BlueMarguerite -FontWeight normal, bold
+            New-HTMLListItem -Text "Total number of servers (enabled)  without LAPS: ", $($Script:Reporting['LAPS']['Variables'].ComputersServerLapsDisabled) -Color None, BlueMarguerite -FontWeight normal, bold
+            New-HTMLListItem -Text "Total number of workstations (enabled) with LAPS: ", $($Script:Reporting['LAPS']['Variables'].ComputersWorkstationLapsEnabled) -Color None, BlueMarguerite -FontWeight normal, bold
+            New-HTMLListItem -Text "Total number of workstations (enabled) without LAPS: ", $($Script:Reporting['LAPS']['Variables'].ComputersWorkstationLapsDisabled) -Color None, BlueMarguerite -FontWeight normal, bold
         } -FontSize 10pt
     }
     Variables  = @{
+        ComputersActiveNoLaps            = 0
+        ComputersActiveWithLaps          = 0
         ComputersTotal                   = 0
         ComputersEnabled                 = 0
         ComputersDisabled                = 0
