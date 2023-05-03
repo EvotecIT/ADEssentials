@@ -23,7 +23,8 @@
             'TrustedForDelegation', 'TrustedToAuthForDelegation', 'msExchMailboxGuid', 'msExchRemoteRecipientType', 'msExchRecipientTypeDetails',
             'msExchRecipientDisplayType', 'pwdLastSet', "msDS-UserPasswordExpiryTimeComputed",
             'WhenCreated', 'WhenChanged'
-            'nTSecurityDescriptor'
+            'nTSecurityDescriptor',
+            'Country', 'Title', 'Department'
         )
         $AllUsers[$Domain] = Get-ADUser -Filter * -Properties $Properties -Server $QueryServer #$ForestInformation['QueryServers'][$Domain].HostName[0]
         $AllContacts[$Domain] = Get-ADObject -Filter 'objectClass -eq "contact"' -Properties SamAccountName, Mail, Name, DistinguishedName, WhenChanged, Whencreated, DisplayName -Server $QueryServer
@@ -151,6 +152,9 @@
                     OwnerType                 = $Owner.OwnerType
                     Level0                    = $Region
                     Level1                    = $Country
+                    Title                     = $User.'Title'
+                    Department                = $User.'Department'
+                    Country                   = Convert-CountryCodeToCountry -CountryCode $User.Country
                     DistinguishedName         = $User.DistinguishedName
                     LastLogonDate             = $User.LastLogonDate
                     PasswordLastSet           = $User.PasswordLastSet
@@ -191,6 +195,9 @@
                     ManagerLastLogonDays      = $ManagerLastLogonDays
                     Level0                    = $Region
                     Level1                    = $Country
+                    Title                     = $User.'Title'
+                    Department                = $User.'Department'
+                    Country                   = Convert-CountryCodeToCountry -CountryCode $User.Country
                     DistinguishedName         = $User.DistinguishedName
                     LastLogonDate             = $User.LastLogonDate
                     PasswordLastSet           = $User.PasswordLastSet
