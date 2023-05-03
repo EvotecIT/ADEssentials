@@ -63,35 +63,6 @@
         }
     }
 
-
-    #$ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation
-    # foreach ($Domain in $ForestInformation.Domains) {
-    #     $QueryServer = $ForestInformation['QueryServers']["$Domain"].HostName[0]
-
-    #     $Properties = @(
-    #         'DistinguishedName', 'mail', 'LastLogonDate', 'PasswordLastSet', 'DisplayName', 'Manager', 'Description',
-    #         'PasswordNeverExpires', 'PasswordNotRequired', 'PasswordExpired', 'UserPrincipalName', 'SamAccountName', 'CannotChangePassword',
-    #         'TrustedForDelegation', 'TrustedToAuthForDelegation', 'msExchMailboxGuid', 'msExchRemoteRecipientType', 'msExchRecipientTypeDetails',
-    #         'msExchRecipientDisplayType', 'pwdLastSet', "msDS-UserPasswordExpiryTimeComputed",
-    #         'WhenCreated', 'WhenChanged'
-    #     )
-    # $AllUsers[$Domain] = Get-ADUser -Filter * -Server $QueryServer -Properties $Properties
-    # }
-    # if (-not $Script:Cache) {
-    #     $Script:Cache = @{}
-    #     foreach ($Domain in $AllUsers.Keys) {
-    #         foreach ($U in $AllUsers[$Domain]) {
-    #             $Script:Cache[$U.DistinguishedName] = $U
-    #         }
-    #     }
-    #     #foreach ($Domain in $AllComputers.Keys) {
-    #     #    foreach ($C in $AllComputers[$Domain]) {
-    #     #        $Script:Cache[$C.DistinguishedName] = $C
-    #     #    }
-    #     #}
-    # }
-
-
     # Build data
     foreach ($T in $Script:ADEssentialsConfiguration.Keys) {
         if ($Script:ADEssentialsConfiguration[$T].Enabled -eq $true) {
@@ -171,6 +142,9 @@
         Write-Color -Text '[i]', '[HTML ] ', 'Generating HTML report', " [Time to execute: $TimeLogEndHTML]" -Color Yellow, DarkGray, Yellow, DarkGray
     }
     Reset-ADEssentialsStatus
+    if ($PassThru) {
+        $Script:Reporting
+    }
 }
 
 [scriptblock] $SourcesAutoCompleter = {
