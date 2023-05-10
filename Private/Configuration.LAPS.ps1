@@ -40,7 +40,7 @@
                     $Script:Reporting['LAPS']['Variables']['ComputersLapsNotExpired']++
                 }
             } elseif ($Computer.Enabled -eq $true) {
-                if ($Computer.IsDC -eq $true) {
+                if ($Computer.IsDC -eq $true -or $Computer.System -notlike "Windows*") {
                     $Script:Reporting['LAPS']['Variables']['ComputersLapsNotApplicable']++
                 } else {
                     $Script:Reporting['LAPS']['Variables']['ComputersLapsDisabled']++
