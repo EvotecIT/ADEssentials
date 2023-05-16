@@ -1,4 +1,7 @@
-﻿#### 0.0.158 - 2023.05.10
+﻿#### 0.0.159 - 2023.05.16
+- Improve `Get-WinADACLForest` by adding ability to export directly to Excel
+
+#### 0.0.158 - 2023.05.10
 - Improve `Laps` report in Invoke-ADEssentials
 
 #### 0.0.157
