@@ -1,4 +1,7 @@
-﻿#### 0.0.159 - 2023.05.16
+﻿#### 0.0.160 - 2023.05.24
+- Improves OperatingSystemVersion in multiple report by updating PSSharedGoods
+
+#### 0.0.159 - 2023.05.16
 - Improve `Get-WinADACLForest` by adding ability to export directly to Excel
 
 #### 0.0.158 - 2023.05.10
