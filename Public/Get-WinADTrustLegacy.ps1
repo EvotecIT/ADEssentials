@@ -1,4 +1,35 @@
 ﻿function Get-WinADTrustLegacy {
+    <#
+    .SYNOPSIS
+    Short description
+
+    .DESCRIPTION
+    Long description
+
+    .PARAMETER Forest
+    Target different Forest, by default current forest is used
+
+    .PARAMETER ExcludeDomains
+    Exclude domain from search, by default whole forest is scanned
+
+    .PARAMETER IncludeDomains
+    Include only specific domains, by default whole forest is scanned
+
+    .PARAMETER Display
+    Parameter description
+
+    .PARAMETER ExtendedForestInformation
+    Parameter description
+
+    .PARAMETER Unique
+    Parameter description
+
+    .EXAMPLE
+    An example
+
+    .NOTES
+    General notes
+    #>
     [CmdletBinding()]
     param(
         [string] $Forest,
