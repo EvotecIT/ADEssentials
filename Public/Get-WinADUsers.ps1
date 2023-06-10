@@ -1,4 +1,32 @@
 ﻿function Get-WinADUsers {
+    <#
+    .SYNOPSIS
+    Short description
+
+    .DESCRIPTION
+    Long description
+
+    .PARAMETER Forest
+    Target different Forest, by default current forest is used
+
+    .PARAMETER ExcludeDomains
+    Exclude domain from search, by default whole forest is scanned
+
+    .PARAMETER IncludeDomains
+    Include only specific domains, by default whole forest is scanned
+
+    .PARAMETER PerDomain
+    Parameter description
+
+    .PARAMETER AddOwner
+    Parameter description
+
+    .EXAMPLE
+    An example
+
+    .NOTES
+    General notes
+    #>
     [cmdletBinding()]
     param(
         [alias('ForestName')][string] $Forest,
@@ -25,6 +53,7 @@
             'WhenCreated', 'WhenChanged'
             'nTSecurityDescriptor',
             'Country', 'Title', 'Department'
+            'msds-resultantpso'
         )
         $AllUsers[$Domain] = Get-ADUser -Filter * -Properties $Properties -Server $QueryServer #$ForestInformation['QueryServers'][$Domain].HostName[0]
         $AllContacts[$Domain] = Get-ADObject -Filter 'objectClass -eq "contact"' -Properties SamAccountName, Mail, Name, DistinguishedName, WhenChanged, Whencreated, DisplayName -Server $QueryServer
@@ -49,6 +78,8 @@
             $CacheUsersReport[$G.DistinguishedName] = $G
         }
     }
+
+    $PasswordPolicies = Get-WinADPasswordPolicy -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains
 
     $Output = [ordered] @{}
     foreach ($Domain in $ForestInformation.Domains) {
@@ -125,6 +156,13 @@
             $msExchRecipientDisplayType = Convert-ExchangeRecipient -msExchRecipientDisplayType $User.msExchRecipientDisplayType
             $msExchRemoteRecipientType = Convert-ExchangeRecipient -msExchRemoteRecipientType $User.msExchRemoteRecipientType
 
+            if ($User.'msds-resultantpso') {
+                $PasswordPolicy = 'FineGrained'
+
+            } else {
+                $PasswordPolicy = 'Default'
+            }
+
             if ($AddOwner) {
                 $Owner = Get-ADACLOwner -ADObject $User -Verbose -Resolve
                 [PSCustomObject] @{
@@ -137,6 +175,8 @@
                     #IsMissing                   = if ($Group) { $false } else { $true }
                     HasMailbox                = $HasMailbox
                     MustChangePasswordAtLogon = if ($User.pwdLastSet -eq 0 -and $User.PasswordExpired -eq $true) { $true } else { $false }
+                    PasswordPolicy            = $PasswordPolicy
+                    PasswordPolicyName        = $PasswordPolicyName
                     PasswordNeverExpires      = $PasswordNeverExpires
                     PasswordNotRequired       = $User.PasswordNotRequired
                     LastLogonDays             = $LastLogonDays
