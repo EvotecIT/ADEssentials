@@ -1,12 +1,34 @@
 ﻿function Get-WinADTrust {
+    <#
+    .SYNOPSIS
+    Short description
+
+    .DESCRIPTION
+    Long description
+
+    .PARAMETER Forest
+    Target different Forest, by default current forest is used
+
+    .PARAMETER Recursive
+    Parameter description
+
+    .PARAMETER Nesting
+    Parameter description
+
+    .PARAMETER UniqueTrusts
+    Parameter description
+
+    .EXAMPLE
+    An example
+
+    .NOTES
+    General notes
+    #>
     [alias('Get-WinADTrusts')]
     [cmdletBinding()]
     param(
         [string] $Forest,
-        #[alias('Domain')][string[]] $IncludeDomains,
-        #[string[]] $ExcludeDomains,
         [switch] $Recursive,
-        # [System.Collections.IDictionary] $ExtendedForestInformation,
         [Parameter(DontShow)][int] $Nesting = -1,
         [Parameter(DontShow)][System.Collections.IDictionary] $UniqueTrusts
     )
