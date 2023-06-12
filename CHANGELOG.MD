@@ -5,6 +5,12 @@
 - Improved `Get-WinADUsers` adding password policies to it, and who's affected with which policy
 - Improved `Invoke-ADEssentials` by improving `Users` report
 
+```powershell
+Get-WinADPasswordPolicy | Format-Table
+
+Invoke-ADEssentials -Type Users,PasswordPolicies -Verbose -FilePath $PSScriptRoot\Reports\UsersAndPasswordPolicies.html -Online
+```
+
 #### 0.0.160 - 2023.05.24
 - Improves OperatingSystemVersion in multiple report by updating PSSharedGoods
 
