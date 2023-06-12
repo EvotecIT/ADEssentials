@@ -92,6 +92,7 @@ $Configuration = @{
                     'Get-WinADUsers'
                     'Get-WinADUsersForeignSecurityPrincipalList'
                     'Get-WinADWellKnownFolders'
+                    'Get-WinADPasswordPolicy'
                     'Invoke-ADEssentials'
                     'Remove-ADACL'
                     'Remove-WinADDuplicateObject'
@@ -122,7 +123,7 @@ $Configuration = @{
                 DHCPServer      = @(
                     'Get-WinADDHCP'
                 )
-                DNSServer = @(
+                DNSServer       = @(
                     'Get-WinDNSRecords'
                 )
             }
@@ -192,7 +193,7 @@ $Configuration = @{
                 RemoveComments = $false
             }
             Integrate      = @{
-                ApprovedModules = @('PSSharedGoods', 'PSWriteColor', 'Connectimo', 'PSUnifi', 'PSWebToolbox', 'PSMyPassword')
+                ApprovedModules = @('PSSharedGoods', 'PSWriteColor', 'Connectimo', 'PSUnifi', 'PSWebToolbox', 'PSMyPassword', 'PSPublishModule')
             }
         }
         Standard          = @{
