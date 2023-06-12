@@ -61,7 +61,7 @@
     }
     Summary    = {
         New-HTMLText -Text @(
-            "This report focuses on showing status of all computer objects in the domain. "
+            "This report focuses on showing status of all computer objects in the Active Directory forest. "
             "It shows how many computers are enabled, disabled, expired, etc."
         ) -FontSize 10pt -LineBreak
         New-HTMLText -Text "Here's an overview of some statistics about computers:" -FontSize 10pt
