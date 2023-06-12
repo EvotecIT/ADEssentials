@@ -1,4 +1,4 @@
-﻿#### 0.0.161
+﻿#### 0.0.161 - 2023.06.12
 - Small text improvement to `Invoke-ADESsentials` `Computers` report
 - Added `PasswordPolicies` to Invoke-ADEssentials`
 - Added `Get-WinADPasswordPolicy` (make sure you have rights to read FineGrainedPasswordPolicy)
