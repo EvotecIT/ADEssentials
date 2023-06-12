@@ -4,6 +4,7 @@
 - Added `Get-WinADPasswordPolicy` (make sure you have rights to read FineGrainedPasswordPolicy)
 - Improved `Get-WinADUsers` adding password policies to it, and who's affected with which policy
 - Improved `Invoke-ADEssentials` by improving `Users` report
+- Bump `PSWriteHTML` dependency for better HTML output
 
 ```powershell
 Get-WinADPasswordPolicy | Format-Table
