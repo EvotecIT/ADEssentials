@@ -79,7 +79,7 @@
         }
     }
 
-    $PasswordPolicies = Get-WinADPasswordPolicy -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains
+    $PasswordPolicies = Get-WinADPasswordPolicy -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ReturnHashtable
 
     $Output = [ordered] @{}
     foreach ($Domain in $ForestInformation.Domains) {
@@ -157,10 +157,18 @@
             $msExchRemoteRecipientType = Convert-ExchangeRecipient -msExchRemoteRecipientType $User.msExchRemoteRecipientType
 
             if ($User.'msds-resultantpso') {
-                $PasswordPolicy = 'FineGrained'
-
+                # $PasswordPolicy = 'FineGrained'
+                if ($PasswordPolicies[$User.'msds-resultantpso']) {
+                    $PasswordPolicyName = $PasswordPolicies[$User.'msds-resultantpso'].Name
+                    $PasswordPolicyLength = $PasswordPolicies[$User.'msds-resultantpso'].MinPasswordLength
+                } else {
+                    $PasswordPolicyName = ConvertFrom-DistinguishedName -DistinguishedName $User.'msds-resultantpso'
+                    $PasswordPolicyLength = 'No permission'
+                }
             } else {
-                $PasswordPolicy = 'Default'
+                # $PasswordPolicy = 'Default'
+                $PasswordPolicyName = 'Default Password Policy'
+                $PasswordPolicyLength = $PasswordPolicies[$Domain].MinPasswordLength
             }
 
             if ($AddOwner) {
@@ -175,8 +183,9 @@
                     #IsMissing                   = if ($Group) { $false } else { $true }
                     HasMailbox                = $HasMailbox
                     MustChangePasswordAtLogon = if ($User.pwdLastSet -eq 0 -and $User.PasswordExpired -eq $true) { $true } else { $false }
-                    PasswordPolicy            = $PasswordPolicy
+                    #PasswordPolicy            = $PasswordPolicy
                     PasswordPolicyName        = $PasswordPolicyName
+                    PasswordPolicyMinLength   = $PasswordPolicyLength
                     PasswordNeverExpires      = $PasswordNeverExpires
                     PasswordNotRequired       = $User.PasswordNotRequired
                     LastLogonDays             = $LastLogonDays
@@ -223,6 +232,9 @@
                     #IsMissing                   = if ($Group) { $false } else { $true }
                     HasMailbox                = $HasMailbox
                     MustChangePasswordAtLogon = if ($User.pwdLastSet -eq 0 -and $User.PasswordExpired -eq $true) { $true } else { $false }
+                    #PasswordPolicy            = $PasswordPolicy
+                    PasswordPolicyName        = $PasswordPolicyName
+                    PasswordPolicyMinLength   = $PasswordPolicyLength
                     PasswordNeverExpires      = $PasswordNeverExpires
                     PasswordNotRequired       = $User.PasswordNotRequired
                     LastLogonDays             = $LastLogonDays
