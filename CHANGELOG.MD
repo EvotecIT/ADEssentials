@@ -1,4 +1,11 @@
-﻿#### 0.0.160 - 2023.05.24
+﻿#### 0.0.161
+- Small text improvement to `Invoke-ADESsentials` `Computers` report
+- Added `PasswordPolicies` to Invoke-ADEssentials`
+- Added `Get-WinADPasswordPolicy` (make sure you have rights to read FineGrainedPasswordPolicy)
+- Improved `Get-WinADUsers` adding password policies to it, and who's affected with which policy
+- Improved `Invoke-ADEssentials` by improving `Users` report
+
+#### 0.0.160 - 2023.05.24
 - Improves OperatingSystemVersion in multiple report by updating PSSharedGoods
 
 #### 0.0.159 - 2023.05.16
