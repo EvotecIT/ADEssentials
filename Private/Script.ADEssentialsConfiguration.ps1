@@ -9,4 +9,5 @@
     BitLocker         = $Script:ConfigurationBitLocker
     ServiceAccounts   = $Script:ConfigurationServiceAccounts
     ForestACLOwners   = $Script:ConfigurationACLOwners
+    PasswordPolicies  = $Script:ConfigurationPasswordPolicies
 }
