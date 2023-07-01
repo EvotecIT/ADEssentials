@@ -140,6 +140,7 @@
                     Write-Warning "Show-WinADGroupMember - Error processing group $Group. Skipping. Needs investigation why it failed. Error: $($_.Exception.Message)"
                     continue
                 }
+                Write-Verbose "Show-WinADGroupMember - processing HTML generation for $Group group"
                 if (-not $SummaryOnly) {
                     if ($ADGroup) {
                         # Means group returned something
@@ -207,7 +208,7 @@
                     }
                 }
             }
-
+            Write-Verbose -Message "Show-WinADGroupMember - saving HTML report"
         } -Online:$Online -FilePath $FilePath -ShowHTML:(-not $HideHTML)
     } else {
         Write-Warning -Message "Show-WinADGroupMember - Error processing Identity, as it's empty."
