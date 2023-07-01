@@ -195,6 +195,7 @@
                 }
             }
             if (-not $SkipDiagram.IsPresent -and ($Summary -or $SummaryOnly)) {
+                Write-Verbose "Show-WinADGroupMember - processing HTML generation for Summary"
                 New-HTMLTab -Name 'Summary' {
                     New-HTMLTab -TabName 'Diagram Basic' {
                         New-HTMLSection -Title "Diagram for Summary" {
