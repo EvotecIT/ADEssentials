@@ -82,7 +82,7 @@
                 continue
             }
             try {
-                Write-Verbose "Show-WinADObjectMember - requesting $Identity member of property"
+                Write-Verbose "Show-WinADObjectMember - requesting $ADObject memberof property"
                 $MyObject = Get-WinADGroupMemberOf -Identity $ADObject -AddSelf
                 if ($Summary -or $SummaryOnly) {
                     foreach ($Object in $MyObject) {
@@ -93,6 +93,7 @@
                 Write-Warning "Show-WinADGroupMemberOf - Error processing group $Group. Skipping. Needs investigation why it failed. Error: $($_.Exception.Message)"
                 continue
             }
+            Write-Verbose -Message "Show-WinADGroupMemberOf - Processing HTML generation for $ADObject"
             if ($MyObject -and -not $SummaryOnly) {
                 $ObjectName = $MyObject[0].ObjectName
                 $DataStoreID = -join ('table', (Get-RandomStringName -Size 10 -ToLower))
@@ -141,6 +142,7 @@
             }
         }
         if (-not $SkipDiagram.IsPresent -and ($Summary -or $SummaryOnly)) {
+            Write-Verbose -Message "Show-WinADGroupMemberOf - Processing HTML generation for Summary"
             New-HTMLTab -Name 'Summary' {
                 New-HTMLTab -TabName 'Diagram Basic' {
                     New-HTMLSection -Title "Diagram for Summary" {
@@ -154,5 +156,6 @@
                 }
             }
         }
+        Write-Verbose -Message "Show-WinADGroupMemberOf - saving HTML report"
     } -Online:$Online -FilePath $FilePath -ShowHTML:(-not $HideHTML)
 }
