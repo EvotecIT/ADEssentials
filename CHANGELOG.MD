@@ -1,11 +1,9 @@
-﻿#### 0.0.162
+﻿#### 0.0.161 - 2023.07.02
 - `Get-WinADObject` - added support for `contact`, `inetOrgPerson`
 - `Show-WinADGroupMember/Show-WinADGroupMemberOf` - added support for `contact`, `inetOrgPerson`
 - `Get-WinADGroupMember/Get-WinADGroupMemberOf` - added more verbose logging so you can see what's going on in more details
-
-#### 0.0.161 - 2023.06.12
 - Small text improvement to `Invoke-ADESsentials` `Computers` report
-- Added `PasswordPolicies` to Invoke-ADEssentials`
+- Added `PasswordPolicies` to `Invoke-ADEssentials`
 - Added `Get-WinADPasswordPolicy` (make sure you have rights to read FineGrainedPasswordPolicy)
 - Improved `Get-WinADUsers` adding password policies to it, and who's affected with which policy
 - Improved `Invoke-ADEssentials` by improving `Users` report
