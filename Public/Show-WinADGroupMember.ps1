@@ -103,7 +103,7 @@
                 }
             }
             New-HTMLSectionStyle -BorderRadius 0px -HeaderBackGroundColor Grey -RemoveShadow
-            New-HTMLTableOption -DataStore JavaScript
+            New-HTMLTableOption -DataStore JavaScript -BoolAsString
             New-HTMLTabStyle -BorderRadius 0px -TextTransform capitalize -BackgroundColorActive SlateGrey
 
             if ($Identity[0].GroupName) {
@@ -155,6 +155,7 @@
                     $DataStoreID = -join ('table', (Get-RandomStringName -Size 10 -ToLower))
                     $DataTableID = -join ('table', (Get-RandomStringName -Size 10 -ToLower))
                     New-HTMLTab -TabName $FullName {
+                        Write-Verbose -Message "Show-WinADGroupMember - processing HTML generation for $Group group - Table"
                         $SectionInformation = New-HTMLSection -Title "Information for $GroupName" {
                             New-HTMLTable -DataTable $ADGroup -Filtering -DataStoreID $DataStoreID {
                                 if (-not $DisableBuiltinConditions) {
@@ -180,11 +181,13 @@
                             $SectionInformation
                         }
                         if (-not $SkipDiagram.IsPresent) {
+                            Write-Verbose -Message "Show-WinADGroupMember - processing HTML generation for $Group group - Diagram"
                             New-HTMLTab -TabName 'Diagram Basic' {
                                 New-HTMLSection -Title "Diagram for $GroupName" {
                                     New-HTMLGroupDiagramDefault -ADGroup $ADGroup -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -DataTableID $DataTableID -ColumnID 1 -Online:$Online
                                 }
                             }
+                            Write-Verbose -Message "Show-WinADGroupMember - processing HTML generation for $Group group - Diagram Hierarchy"
                             New-HTMLTab -TabName 'Diagram Hierarchy' {
                                 New-HTMLSection -Title "Diagram for $GroupName" {
                                     New-HTMLGroupDiagramHierachical -ADGroup $ADGroup -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -Online:$Online
@@ -211,6 +214,7 @@
             }
             Write-Verbose -Message "Show-WinADGroupMember - saving HTML report"
         } -Online:$Online -FilePath $FilePath -ShowHTML:(-not $HideHTML)
+        Write-Verbose -Message "Show-WinADGroupMember - HTML report saved to $FilePath"
     } else {
         Write-Warning -Message "Show-WinADGroupMember - Error processing Identity, as it's empty."
     }
