@@ -195,6 +195,13 @@ $Configuration = @{
             Integrate      = @{
                 ApprovedModules = @('PSSharedGoods', 'PSWriteColor', 'Connectimo', 'PSUnifi', 'PSWebToolbox', 'PSMyPassword', 'PSPublishModule')
             }
+            ModuleSkip     = @{
+                IgnoreModuleName = @(
+                    'PSWriteExcel', 'ActiveDirectory', 'Microsoft.PowerShell.Security',
+                    'Microsoft.WSMan.Management', 'NetTCPIP', 'PowerShellGet', 'CimCmdlets'
+                    'DnsServer', 'DnsClient', 'DhcpServer'
+                )
+            }
         }
         Standard          = @{
             FormatCodePSM1 = @{
@@ -225,7 +232,7 @@ $Configuration = @{
             PathReadme = 'Docs\Readme.md'
         }
         Signing           = @{
-            CertificateThumbprint = '36A8A2D0E227D81A2D3B60DCE0CFCF23BEFC343B'
+            CertificateThumbprint = '483292C9E317AA13B07BB7A96AE9D1A5ED9E7703'
         }
     }
     Steps       = @{
