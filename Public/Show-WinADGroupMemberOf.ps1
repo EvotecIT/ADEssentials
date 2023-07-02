@@ -75,7 +75,7 @@
             }
         }
         New-HTMLSectionStyle -BorderRadius 0px -HeaderBackGroundColor Grey -RemoveShadow
-        New-HTMLTableOption -DataStore JavaScript
+        New-HTMLTableOption -DataStore JavaScript -BoolAsString
         New-HTMLTabStyle -BorderRadius 0px -TextTransform capitalize -BackgroundColorActive SlateGrey
         foreach ($ADObject in $Identity) {
             if ($null -eq $ADObject) {
@@ -99,6 +99,7 @@
                 $DataStoreID = -join ('table', (Get-RandomStringName -Size 10 -ToLower))
                 $DataTableID = -join ('table', (Get-RandomStringName -Size 10 -ToLower))
                 New-HTMLTab -TabName $ObjectName {
+                    Write-Verbose -Message "Show-WinADGroupMemberOf - Processing HTML generation for $ObjectName - Table"
                     $DataSection = New-HTMLSection -Title "Information for $ObjectName" {
                         New-HTMLTable -DataTable $MyObject -Filtering -DataStoreID $DataStoreID {
                             if (-not $DisableBuiltinConditions) {
@@ -106,7 +107,6 @@
                                 New-TableHeader -Names GroupType, GroupScope -Title 'Group Details'
                                 New-TableCondition -BackgroundColor CoralRed -Color White -ComparisonType bool -Value $false -Name Enabled -Operator eq
                                 New-TableCondition -BackgroundColor LightBlue -ComparisonType string -Value '' -Name ParentGroup -Operator eq -Row
-                                #New-TableCondition -BackgroundColor CoralRed -Color White -ComparisonType bool -Value $true -Name CrossForest -Operator eq
                                 New-TableCondition -BackgroundColor CoralRed -Color White -ComparisonType bool -Value $true -Name CircularDirect -Operator eq -Row
                                 New-TableCondition -BackgroundColor CoralRed -Color White -ComparisonType bool -Value $true -Name CircularIndirect -Operator eq -Row
                             }
@@ -121,21 +121,17 @@
                         New-HTMLTab -TabName 'Information' {
                             $DataSection
                         }
+                        Write-Verbose -Message "Show-WinADGroupMemberOf - Processing HTML generation for $ObjectName - Diagram"
                         New-HTMLTab -TabName 'Diagram Basic' {
                             New-HTMLSection -Title "Diagram for $ObjectName" {
                                 New-HTMLGroupOfDiagramDefault -Identity $MyObject -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -DataTableID $DataTableID -ColumnID 1 -Online:$Online
                             }
-                            #New-HTMLSection -Title "Group membership table $GroupName" {
-                            #    New-HTMLTable -DataTable $ADGroup -Filtering -DataStoreID $DataStoreID -DataTableID $DataTableID
-                            #}
                         }
+                        Write-Verbose -Message "Show-WinADGroupMemberOf - Processing HTML generation for $ObjectName - Diagram Hierarchy"
                         New-HTMLTab -TabName 'Diagram Hierarchy' {
                             New-HTMLSection -Title "Diagram for $ObjectName" {
                                 New-HTMLGroupOfDiagramHierarchical -Identity $MyObject -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -Online:$Online
                             }
-                            #New-HTMLSection -Title "Group membership table $GroupName" {
-                            #    New-HTMLTable -DataTable $ADGroup -Filtering -DataStoreID $DataStoreID
-                            #}
                         }
                     }
                 }
