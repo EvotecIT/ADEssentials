@@ -215,7 +215,7 @@
             foreach ($Object in $SearchResults) {
                 $UAC = Convert-UserAccountControl -UserAccountControl ($Object.properties.useraccountcontrol -as [string])
                 $ObjectClass = ($Object.properties.objectclass -as [array])[-1]
-                if ($ObjectClass -notin 'group', 'computer', 'user', 'foreignSecurityPrincipal', 'msDS-ManagedServiceAccount', 'msDS-GroupManagedServiceAccount' -and (-not $IncludeAllTypes)) {
+                if ($ObjectClass -notin 'group', 'contact', 'inetOrgPerson', 'computer', 'user', 'foreignSecurityPrincipal', 'msDS-ManagedServiceAccount', 'msDS-GroupManagedServiceAccount' -and (-not $IncludeAllTypes)) {
                     Write-Warning "Get-WinADObject - Unsupported object ($Ident) of type $ObjectClass. Only user,computer,group, foreignSecurityPrincipal, msDS-ManagedServiceAccount, msDS-GroupManagedServiceAccount are displayed by default. Use IncludeAllTypes switch to display all if nessecary."
                     continue
                 }
@@ -290,8 +290,8 @@
                     Name                = $Name
                     SamAccountName      = $SamAccountName
                     ObjectClass         = $ObjectClass
-                    Enabled             = if ($ObjectClass -eq 'group') { $null } else { $UAC -notcontains 'ACCOUNTDISABLE' }
-                    PasswordNeverExpire = if ($ObjectClass -eq 'group') { $null } else { $UAC -contains 'DONT_EXPIRE_PASSWORD' }
+                    Enabled             = if ($ObjectClass -in 'group', 'contact') { $null } else { $UAC -notcontains 'ACCOUNTDISABLE' }
+                    PasswordNeverExpire = if ($ObjectClass -in 'group', 'contact') { $null } else { $UAC -contains 'DONT_EXPIRE_PASSWORD' }
                     DomainName          = $ObjectDomainName
                     Distinguishedname   = $Object.properties.distinguishedname -as [string]
                     #Adspath             = $Object.properties.adspath -as [string]
