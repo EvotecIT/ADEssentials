@@ -13,11 +13,6 @@
     Begin {
         if (-not $Script:WinADGroupObjectCache -or $ClearCache) {
             $Script:WinADGroupObjectCache = @{}
-            #$Forest = [System.DirectoryServices.ActiveDirectory.Forest]::GetCurrentForest()
-            #$Script:WinADForestCache = @{
-            #    Forest  = $Forest
-            #    Domains = $Forest.Domains.Name
-            #}
         }
     }
     Process {
