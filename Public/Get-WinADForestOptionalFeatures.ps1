@@ -11,11 +11,13 @@
     }
     $QueryServer = $ForestInformation['QueryServers']["Forest"].HostName[0]
     $LapsProperties = 'ms-Mcs-AdmPwd'
+    $WindowsLapsProperties = 'msLAPS-Password'
     $OptionalFeatures = $(Get-ADOptionalFeature -Filter * -Server $QueryServer)
     $Optional = [ordered]@{
         'Recycle Bin Enabled'                          = $false
         'Privileged Access Management Feature Enabled' = $false
-        'Laps Enabled'                                 = ($ComputerProperties.Name -contains $LapsProperties)
+        'LAPS Enabled'                                 = ($ComputerProperties.Name -contains $LapsProperties)
+        'Windows LAPS Enabled'                         = ($ComputerProperties.Name -contains $WindowsLapsProperties)
     }
     foreach ($Feature in $OptionalFeatures) {
         if ($Feature.Name -eq 'Recycle Bin Feature') {
