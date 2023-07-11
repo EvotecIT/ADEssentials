@@ -103,6 +103,7 @@
                 [PSCustomObject] @{
                     Name                  = $Computer.Name
                     SamAccountName        = $Computer.SamAccountName
+                    Domain                = $Domain
                     IsDC                  = if ($Computer.PrimaryGroupID -in 516, 521) { $true } else { $false }
                     WhenChanged           = $Computer.WhenChanged
                     Enabled               = $Computer.Enabled
@@ -136,6 +137,7 @@
                 [PSCustomObject] @{
                     Name                  = $Computer.Name
                     SamAccountName        = $Computer.SamAccountName
+                    Domain                = $Domain
                     IsDC                  = if ($Computer.PrimaryGroupID -in 516, 521) { $true } else { $false }
                     WhenChanged           = $Computer.WhenChanged
                     Enabled               = $Computer.Enabled
@@ -167,6 +169,8 @@
     if ($PerDomain) {
         $Output
     } else {
-        $Output.Values
+        foreach ($O in $Output.Keys) {
+            $Output[$O]
+        }
     }
 }
