@@ -38,6 +38,21 @@
 
             $LAPS = $false
             $LAPSExpirationTime = $false
+            $WindowsLAPS = $false
+            $WindowsLAPSExpirationTime = $false
+            $WindowsLAPSEncryptedPassword = $false
+            $WindowsLAPSEncryptedPasswordHistory = $false
+            $WindowsLAPSEncryptedDSRMPassword = $false
+            $WindowsLAPSEncryptedDSRMPasswordHistory = $false
+
+            <#
+            msLAPS-PasswordExpirationTime
+            msLAPS-Password
+            msLAPS-EncryptedPassword
+            msLAPS-EncryptedPasswordHistory
+            msLAPS-EncryptedDSRMPassword
+            msLAPS-EncryptedDSRMPasswordHistory
+            #>
 
             foreach ($ACL in $ACLs) {
                 if ($ACL.ObjectTypeName -eq 'ms-Mcs-AdmPwd') {
@@ -48,6 +63,30 @@
                     if ($ACL.AccessControlType -eq 'Allow' -and $ACL.ActiveDirectoryRights -like '*WriteProperty*') {
                         $LAPSExpirationTime = $true
                     }
+                } elseif ($ACL.ObjectTypeName -eq 'msLAPS-Password') {
+                    if ($ACL.AccessControlType -eq 'Allow' -and $ACL.ActiveDirectoryRights -like '*WriteProperty*') {
+                        $WindowsLAPS = $true
+                    }
+                } elseif ($ACL.ObjectTypeName -eq 'msLAPS-PasswordExpirationTime') {
+                    if ($ACL.AccessControlType -eq 'Allow' -and $ACL.ActiveDirectoryRights -like '*WriteProperty*') {
+                        $WindowsLAPSExpirationTime = $true
+                    }
+                } elseif ($ACL.ObjectTypeName -eq 'msLAPS-EncryptedPassword') {
+                    if ($ACL.AccessControlType -eq 'Allow' -and $ACL.ActiveDirectoryRights -like '*WriteProperty*') {
+                        $WindowsLAPSEncryptedPassword = $true
+                    }
+                } elseif ($ACL.ObjectTypeName -eq 'msLAPS-EncryptedPasswordHistory') {
+                    if ($ACL.AccessControlType -eq 'Allow' -and $ACL.ActiveDirectoryRights -like '*WriteProperty*') {
+                        $WindowsLAPSEncryptedPasswordHistory = $true
+                    }
+                } elseif ($ACL.ObjectTypeName -eq 'msLAPS-EncryptedDSRMPassword') {
+                    if ($ACL.AccessControlType -eq 'Allow' -and $ACL.ActiveDirectoryRights -like '*WriteProperty*') {
+                        $WindowsLAPSEncryptedDSRMPassword = $true
+                    }
+                } elseif ($ACL.ObjectTypeName -eq 'msLAPS-EncryptedDSRMPasswordHistory') {
+                    if ($ACL.AccessControlType -eq 'Allow' -and $ACL.ActiveDirectoryRights -like '*WriteProperty*') {
+                        $WindowsLAPSEncryptedDSRMPasswordHistory = $true
+                    }
                 }
             }
             if ($ACLMissingOnly -and $LAPS -eq $true) {
@@ -55,21 +94,27 @@
             }
 
             [PSCustomObject] @{
-                Name                 = $Computer.Name
-                SamAccountName       = $Computer.SamAccountName
-                DomainName           = $Domain
-                Enabled              = $Computer.Enabled
-                IsDC                 = if ($Computer.PrimaryGroupID -in 516, 521) { $true } else { $false }
-                WhenChanged          = $Computer.WhenChanged
-                LapsACL              = $LAPS
-                LapsExpirationACL    = $LAPSExpirationTime
-                OperatingSystem      = $Computer.OperatingSystem
-                Level0               = $Region
-                Level1               = $Country
-                DistinguishedName    = $Computer.DistinguishedName
-                LastLogonDate        = $Computer.LastLogonDate
-                PasswordLastSet      = $Computer.PasswordLastSet
-                ServicePrincipalName = $Computer.servicePrincipalName
+                Name                                    = $Computer.Name
+                SamAccountName                          = $Computer.SamAccountName
+                DomainName                              = $Domain
+                Enabled                                 = $Computer.Enabled
+                IsDC                                    = if ($Computer.PrimaryGroupID -in 516, 521) { $true } else { $false }
+                WhenChanged                             = $Computer.WhenChanged
+                LapsACL                                 = $LAPS
+                LapsExpirationACL                       = $LAPSExpirationTime
+                WindowsLAPSACL                          = $WindowsLAPS
+                WindowsLAPSExpirationACL                = $WindowsLAPSExpirationTime
+                WindowsLAPSEncryptedPassword            = $WindowsLAPSEncryptedPassword
+                WindowsLAPSEncryptedPasswordHistory     = $WindowsLAPSEncryptedPasswordHistory
+                WindowsLAPSEncryptedDSRMPassword        = $WindowsLAPSEncryptedDSRMPassword
+                WindowsLAPSEncryptedDSRMPasswordHistory = $WindowsLAPSEncryptedDSRMPasswordHistory
+                OperatingSystem                         = $Computer.OperatingSystem
+                Level0                                  = $Region
+                Level1                                  = $Country
+                DistinguishedName                       = $Computer.DistinguishedName
+                LastLogonDate                           = $Computer.LastLogonDate
+                PasswordLastSet                         = $Computer.PasswordLastSet
+                ServicePrincipalName                    = $Computer.servicePrincipalName
             }
 
         }
