@@ -103,9 +103,19 @@
                         New-HTMLTableCondition -Name 'LapsExpirationACL' -ComparisonType string -Operator eq -Value $false
                         New-HTMLTableCondition -Name 'IsDC' -ComparisonType string -Operator eq -Value $false
                     } -BackgroundColor Alizarin -HighlightHeaders LapsACL, LapsExpirationACL
+
+                    New-HTMLTableCondition -Name 'WindowsLAPSACL' -ComparisonType string -Operator eq -Value $true -BackgroundColor LimeGreen
+                    New-HTMLTableCondition -Name 'WindowsLAPSExpirationACL' -ComparisonType string -Operator eq -Value $true -BackgroundColor LimeGreen
+                    New-HTMLTableCondition -Name 'WindowsLAPSEncryptedPassword' -ComparisonType string -Operator eq -Value $true -BackgroundColor LimeGreen
+
+                    New-HTMLTableCondition -Name 'WindowsLAPSACL' -ComparisonType string -Operator eq -Value $false -BackgroundColor Alizarin
+                    New-HTMLTableCondition -Name 'WindowsLAPSExpirationACL' -ComparisonType string -Operator eq -Value $false -BackgroundColor Alizarin
+                    New-HTMLTableCondition -Name 'WindowsLAPSEncryptedPassword' -ComparisonType string -Operator eq -Value $false -BackgroundColor Alizarin
+
                     New-HTMLTableCondition -Name 'Enabled' -ComparisonType string -Operator eq -Value $true -BackgroundColor LimeGreen -FailBackgroundColor BlizzardBlue
                     New-HTMLTableCondition -Name 'IsDC' -ComparisonType string -Operator eq -Value $false -BackgroundColor LimeGreen -FailBackgroundColor BlizzardBlue
                     New-HTMLTableCondition -Name 'IsDC' -ComparisonType string -Operator eq -Value $true -BackgroundColor BlizzardBlue -HighlightHeaders LapsACL, LapsExpirationACL
+                    New-HTMLTableCondition -Name 'IsDC' -ComparisonType string -Operator eq -Value $true -BackgroundColor BlizzardBlue -HighlightHeaders WindowsLAPSACL, WindowsLAPSExpirationACL, WindowsLAPSEncryptedPassword
                 }
             }
             if ($Script:Reporting['LAPSACL']['WarningsAndErrors']) {
