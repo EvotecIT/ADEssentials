@@ -1,4 +1,10 @@
-﻿#### 0.0.161 - 2023.07.02
+﻿#### 0.0.162
+- Improve output of `Get-WinADComputers` **Possibly breaking change** when using no parameters
+- Add `WindowsLAPS` detection in `Get-WinADForestOptionalFeatures`
+- Add `WindowsLAPS` detection in `Get-WinADComputerACLLAPS`
+- `Invoke-ADEssentials -Type Laps, LapsACL, LapsAndBitLocker -Online` by adding WindowsLAPS
+
+#### 0.0.161 - 2023.07.02
 - `Get-WinADObject` - added support for `contact`, `inetOrgPerson`
 - `Show-WinADGroupMember/Show-WinADGroupMemberOf` - added support for `contact`, `inetOrgPerson`
 - `Get-WinADGroupMember/Get-WinADGroupMemberOf` - added more verbose logging so you can see what's going on in more details
