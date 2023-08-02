@@ -12,21 +12,21 @@
     PowerShellVersion    = '5.1'
     PrivateData          = @{
         PSData = @{
-            ProjectUri = 'https://github.com/EvotecIT/ADEssentials'
             Tags       = @('Windows', 'ActiveDirectory')
+            ProjectUri = 'https://github.com/EvotecIT/ADEssentials'
         }
     }
     RequiredModules      = @(@{
-            ModuleVersion = '1.0.22'
             ModuleName    = 'PSEventViewer'
+            ModuleVersion = '1.0.22'
             Guid          = '5df72a79-cdf6-4add-b38d-bcacf26fb7bc'
         }, @{
-            ModuleVersion = '0.0.264'
             ModuleName    = 'PSSharedGoods'
+            ModuleVersion = '0.0.264'
             Guid          = 'ee272aa8-baaa-4edf-9f45-b6d6f7d844fe'
         }, @{
-            ModuleVersion = '1.1.0'
             ModuleName    = 'PSWriteHTML'
+            ModuleVersion = '1.1.0'
             Guid          = 'a7bdf640-f5cb-4acf-9de0-365b322d245c'
         })
     RootModule           = 'ADEssentials.psm1'
