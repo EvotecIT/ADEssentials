@@ -1,4 +1,4 @@
-﻿#### 0.0.162
+﻿#### 0.0.162 - 2023.08.02
 - Improve output of `Get-WinADComputers` **Possibly breaking change** when using no parameters
 - Add `WindowsLAPS` detection in `Get-WinADForestOptionalFeatures`
 - Add `WindowsLAPS` detection in `Get-WinADComputerACLLAPS`
