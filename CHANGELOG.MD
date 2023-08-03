@@ -1,4 +1,7 @@
-﻿#### 0.0.162 - 2023.08.02
+﻿#### 0.0.163 - 2023.08.03
+- Improve HTML reports
+
+#### 0.0.162 - 2023.08.02
 - Improve output of `Get-WinADComputers` **Possibly breaking change** when using no parameters
 - Add `WindowsLAPS` detection in `Get-WinADForestOptionalFeatures`
 - Add `WindowsLAPS` detection in `Get-WinADComputerACLLAPS`
