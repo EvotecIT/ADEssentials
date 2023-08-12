@@ -1,4 +1,7 @@
-﻿#### 0.0.163 - 2023.08.03
+﻿#### 0.0.164 - 2023.08.12
+- Fixes detection of contacts inside groups `Get-WinADGroupMember`, `Get-WinADObject`
+
+#### 0.0.163 - 2023.08.03
 - Improve HTML reports
 
 #### 0.0.162 - 2023.08.02
