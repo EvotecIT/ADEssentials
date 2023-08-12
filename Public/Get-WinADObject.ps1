@@ -229,13 +229,21 @@
 
                         $GroupMembers = [System.DirectoryServices.AccountManagement.GroupPrincipal]::FindByIdentity($Context, $Ident).Members
                         try {
-                            [Array] $Members = foreach ($Member in $GroupMembers) {
+                            $Members = [System.Collections.Generic.List[string]]::new()
+                            foreach ($Member in $Object.properties.member) {
+                                if ($Member) {
+                                    $Members.Add($Member)
+                                }
+                            }
+                            foreach ($Member in $GroupMembers) {
                                 if ($Member.DistinguishedName) {
-                                    $Member.DistinguishedName
+                                    if ($Member.DistinguishedName -notin $Members) {
+                                        $Members.Add($Member.DistinguishedName)
+                                    }
                                 } elseif ($Member.DisplayName) {
-                                    $Member.DisplayName
+                                    $Members.Add($Member.DisplayName)
                                 } else {
-                                    $Member.Sid
+                                    $Members.Add($Member.Sid)
                                 }
                             }
                         } catch {
