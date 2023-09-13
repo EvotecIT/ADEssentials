@@ -30,7 +30,8 @@ function Get-WinADForestControllerInformation {
             'IPv4Address'
             'IPv6Address'
         )
-        $DCs = Get-ADComputer -Server $QueryServer -SearchBase $ForestInformation['DomainsExtended'][$Domain].DomainControllersContainer -Filter * -Properties $Properties
+        $Filter = 'Name -ne "AzureADKerberos" -and DNSHostName -like "*"'
+        $DCs = Get-ADComputer -Server $QueryServer -SearchBase $ForestInformation['DomainsExtended'][$Domain].DomainControllersContainer -Filter $Filter -Properties $Properties
         $Count = 0
         foreach ($DC in $DCs) {
             $Count++
