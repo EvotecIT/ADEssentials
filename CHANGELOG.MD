@@ -1,4 +1,7 @@
-﻿#### 0.0.165 - 2023.09.13
+﻿#### 0.0.166 - 2023.10.09
+- Update `Set-ADACLinheritance` / `Disable-ADACLInheritance`
+
+#### 0.0.165 - 2023.09.13
 - Update `Get-WinADForestControllerInformation` - Remove AzureADKerberos account from DomainControllers
 
 #### 0.0.164 - 2023.08.12
