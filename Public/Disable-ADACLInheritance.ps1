@@ -38,6 +38,6 @@
     if ($ACL) {
         Set-ADACLInheritance -Inheritance 'Disabled' -ACL $ACL -RemoveInheritedAccessRules:$RemoveInheritedAccessRules.IsPresent
     } else {
-        Set-ADACLInheritance -Inheritance 'Disabled' -ADObject $ADObject -RemoveInheritedAccessRules:$RemoveInheritedAccessRules.IsPresentF
+        Set-ADACLInheritance -Inheritance 'Disabled' -ADObject $ADObject -RemoveInheritedAccessRules:$RemoveInheritedAccessRules.IsPresent
     }
 }

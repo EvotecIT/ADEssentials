@@ -37,12 +37,12 @@
             $QueryServer = $Script:ForestDetails['QueryServers'][$DomainName].HostName[0]
 
             if ($PSCmdlet.ShouldProcess($ACL.DistinguishedName, $Action)) {
-                Write-Verbose "Set-ADACLInheritance - Saving permissions for $($ACL.DistinguishedName)"
+                Write-Verbose "Set-ADACLInheritance - Saving permissions for $($ACL.DistinguishedName) on $QueryServer"
                 try {
                     Set-ADObject -Identity $ACL.DistinguishedName -Replace @{ ntSecurityDescriptor = $ACL.ACL } -ErrorAction Stop -Server $QueryServer
                     # Set-Acl -Path $ACL.Path -AclObject $ACL.ACL -ErrorAction Stop
                 } catch {
-                    Write-Warning "Set-ADACLInheritance - Saving permissions for $($ACL.DistinguishedName) failed: $($_.Exception.Message)"
+                    Write-Warning "Set-ADACLInheritance - Saving permissions for $($ACL.DistinguishedName) on $QueryServer failed: $($_.Exception.Message)"
                 }
             }
         }
