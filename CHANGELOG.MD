@@ -1,4 +1,8 @@
-﻿#### 0.0.168 - 2023.10.13
+﻿#### 0.0.169 - 2023.10.13
+- Improvements to `Invoke-ADEssentials` to LAPS report counting
+- Improvements to `Get-WinADBitlockerLapsSummary` changed to True/False/Null
+
+#### 0.0.168 - 2023.10.13
 - Improvements to `Invoke-ADEssentials` to LAPS report
 
 #### 0.0.167 - 2023.10.13
