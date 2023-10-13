@@ -56,9 +56,9 @@
                 $Script:Reporting['LAPS']['Variables']['ComputersServer']++
                 if ($Computer.Enabled) {
                     $Script:Reporting['LAPS']['Variables']['ComputersServerEnabled']++
-                    if ($Computer.Laps -eq $true -or $Computer.WindowsLaps -eq $true) {
+                    if ($Computer.Laps -eq 'Yes' -or $Computer.WindowsLaps -eq 'Yes') {
                         $Script:Reporting['LAPS']['Variables']['ComputersServerLapsEnabled']++
-                    } elseif ($Computer.Laps -eq $false -and $Computer.WindowsLaps -eq $false) {
+                    } elseif ($Computer.Laps -in 'No' -and $Computer.WindowsLaps -in 'No') {
                         $Script:Reporting['LAPS']['Variables']['ComputersServerLapsDisabled']++
                     }
                 } else {
@@ -68,7 +68,7 @@
                 $Script:Reporting['LAPS']['Variables']['ComputersWorkstation']++
                 if ($Computer.Enabled) {
                     $Script:Reporting['LAPS']['Variables']['ComputersWorkstationEnabled']++
-                    if ($Computer.Laps -eq $true -or $Computer.WindowsLaps -eq $true) {
+                    if ($Computer.Laps -eq 'Yes' -or $Computer.WindowsLaps -eq 'Yes') {
                         $Script:Reporting['LAPS']['Variables']['ComputersWorkstationLapsEnabled']++
                     } else {
                         $Script:Reporting['LAPS']['Variables']['ComputersWorkstationLapsDisabled']++
@@ -80,7 +80,7 @@
                 $Script:Reporting['LAPS']['Variables']['ComputersOther']++
                 if ($Computer.Enabled) {
                     $Script:Reporting['LAPS']['Variables']['ComputersOtherEnabled']++
-                    if ($Computer.Laps -eq $true -or $Computer.WindowsLaps -eq $true) {
+                    if ($Computer.Laps -eq 'Yes' -or $Computer.WindowsLaps -eq 'Yes') {
                         $Script:Reporting['LAPS']['Variables']['ComputersOtherLapsEnabled']++
                     } else {
                         $Script:Reporting['LAPS']['Variables']['ComputersOtherLapsDisabled']++
@@ -113,8 +113,10 @@
             New-HTMLListItem -Text "Total number of active computers without LAPS (less then 60 days): ", $($Script:Reporting['LAPS']['Variables'].ComputersActiveNoLaps) -Color None, BlueMarguerite -FontWeight normal, bold
             New-HTMLListItem -Text "Total number of computers (enabled) with LAPS: ", $($Script:Reporting['LAPS']['Variables'].ComputersLapsEnabled) -Color None, BlueMarguerite -FontWeight normal, bold
             New-HTMLListItem -Text "Total number of computers (enabled) without LAPS: ", $($Script:Reporting['LAPS']['Variables'].ComputersLapsDisabled) -Color None, BlueMarguerite -FontWeight normal, bold
+            New-HTMLListItem -Text "Total number of servers (enabled): ", $($Script:Reporting['LAPS']['Variables'].ComputersServerEnabled) -Color None, BlueMarguerite -FontWeight normal, bold
             New-HTMLListItem -Text "Total number of servers (enabled) with LAPS: ", $($Script:Reporting['LAPS']['Variables'].ComputersServerLapsEnabled) -Color None, BlueMarguerite -FontWeight normal, bold
-            New-HTMLListItem -Text "Total number of servers (enabled)  without LAPS: ", $($Script:Reporting['LAPS']['Variables'].ComputersServerLapsDisabled) -Color None, BlueMarguerite -FontWeight normal, bold
+            New-HTMLListItem -Text "Total number of servers (enabled) without LAPS: ", $($Script:Reporting['LAPS']['Variables'].ComputersServerLapsDisabled) -Color None, BlueMarguerite -FontWeight normal, bold
+            New-HTMLListItem -Text "Total number of servers (disabled): ", $($Script:Reporting['LAPS']['Variables'].ComputersServerDisabled) -Color None, BlueMarguerite -FontWeight normal, bold
             New-HTMLListItem -Text "Total number of workstations (enabled) with LAPS: ", $($Script:Reporting['LAPS']['Variables'].ComputersWorkstationLapsEnabled) -Color None, BlueMarguerite -FontWeight normal, bold
             New-HTMLListItem -Text "Total number of workstations (enabled) without LAPS: ", $($Script:Reporting['LAPS']['Variables'].ComputersWorkstationLapsDisabled) -Color None, BlueMarguerite -FontWeight normal, bold
         } -FontSize 10pt
@@ -137,6 +139,7 @@
         ComputersServerDisabled          = 0
         ComputersServerLapsEnabled       = 0
         ComputersServerLapsDisabled      = 0
+        ComputersServerLapsNotApplicable = 0
         ComputersWorkstation             = 0
         ComputersWorkstationEnabled      = 0
         ComputersWorkstationDisabled     = 0
@@ -253,12 +256,11 @@
         New-HTMLTable -DataTable $Script:Reporting['LAPS']['Data'] -Filtering {
             New-HTMLTableCondition -Name 'Enabled' -ComparisonType string -Operator eq -Value $true -BackgroundColor LimeGreen -FailBackgroundColor BlizzardBlue
             New-HTMLTableCondition -Name 'LapsExpirationDays' -ComparisonType number -Operator lt -Value 0 -BackgroundColor BurntOrange -HighlightHeaders LapsExpirationDays, LapsExpirationTime -FailBackgroundColor LimeGreen
-            New-HTMLTableCondition -Name 'Laps' -ComparisonType string -Operator eq -Value $true -BackgroundColor LimeGreen -FailBackgroundColor Alizarin
-            New-HTMLTableCondition -Name 'Laps' -ComparisonType string -Operator eq -Value $false -BackgroundColor Alizarin -HighlightHeaders LapsExpirationDays, LapsExpirationTime
+            New-HTMLTableCondition -Name 'Laps' -ComparisonType string -Operator eq -Value 'Yes' -BackgroundColor LimeGreen -FailBackgroundColor Alizarin
+            New-HTMLTableCondition -Name 'Laps' -ComparisonType string -Operator eq -Value 'No' -BackgroundColor Alizarin -HighlightHeaders LapsExpirationDays, LapsExpirationTime
             New-HTMLTableCondition -Name 'WindowsLapsExpirationDays' -ComparisonType number -Operator lt -Value 0 -BackgroundColor BurntOrange -HighlightHeaders WindowsLapsExpirationDays, WindowsLapsExpirationTime -FailBackgroundColor LimeGreen
-            New-HTMLTableCondition -Name 'WindowsLaps' -ComparisonType string -Operator eq -Value $true -BackgroundColor LimeGreen -FailBackgroundColor Alizarin
-            New-HTMLTableCondition -Name 'WindowsLaps' -ComparisonType string -Operator eq -Value $false -BackgroundColor Alizarin -HighlightHeaders WindowsLapsExpirationDays, WindowsLapsExpirationTime
-
+            New-HTMLTableCondition -Name 'WindowsLaps' -ComparisonType string -Operator eq -Value 'Yes' -BackgroundColor LimeGreen -FailBackgroundColor Alizarin
+            New-HTMLTableCondition -Name 'WindowsLaps' -ComparisonType string -Operator eq -Value 'No' -BackgroundColor Alizarin -HighlightHeaders WindowsLapsExpirationDays, WindowsLapsExpirationTime
             New-HTMLTableCondition -Name 'LastLogonDays' -ComparisonType number -Operator gt -Value 60 -BackgroundColor Alizarin -HighlightHeaders LastLogonDays, LastLogonDate -FailBackgroundColor LimeGreen
             New-HTMLTableCondition -Name 'PasswordLastChangedDays' -ComparisonType number -Operator ge -Value 0 -BackgroundColor LimeGreen -HighlightHeaders PasswordLastSet, PasswordLastChangedDays
             New-HTMLTableCondition -Name 'PasswordLastChangedDays' -ComparisonType number -Operator gt -Value 300 -BackgroundColor Orange -HighlightHeaders PasswordLastSet, PasswordLastChangedDays
