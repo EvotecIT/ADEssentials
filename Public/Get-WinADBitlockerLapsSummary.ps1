@@ -100,33 +100,33 @@
                 if ($LapsAvailable) {
                     # if ($_.'ms-Mcs-AdmPwd') {
                     if ($_.'ms-Mcs-AdmPwdExpirationTime') {
-                        $Laps = $true
+                        $Laps = 'Yes'
                         $LapsExpirationDays = Convert-TimeToDays -StartTime ($CurrentDate) -EndTime (Convert-ToDateTime -Timestring ($_.'ms-Mcs-AdmPwdExpirationTime'))
                         $LapsExpirationTime = Convert-ToDateTime -Timestring ($_.'ms-Mcs-AdmPwdExpirationTime')
                     } else {
-                        $Laps = $false
+                        $Laps = 'No'
                         $LapsExpirationDays = $null
                         $LapsExpirationTime = $null
                     }
                 } else {
-                    $Laps = 'N/A'
+                    $Laps = 'n/a'
                 }
             }
 
             if ($WindowsLapsAvailable) {
                 if ($_.'msLAPS-PasswordExpirationTime') {
-                    $WindowsLaps = $true
+                    $WindowsLaps = 'Yes'
                     $WindowsLapsExpirationDays = Convert-TimeToDays -StartTime ($CurrentDate) -EndTime (Convert-ToDateTime -Timestring ($_.'msLAPS-PasswordExpirationTime'))
                     $WindowsLapsExpirationTime = Convert-ToDateTime -Timestring ($_.'msLAPS-PasswordExpirationTime')
                     $WindowsLapsHistoryCount = $_.'msLAPS-EncryptedPasswordHistory'.Count
                 } else {
-                    $WindowsLaps = $false
+                    $WindowsLaps = 'No'
                     $WindowsLapsExpirationDays = $null
                     $WindowsLapsExpirationTime = $null
                     $WindowsLapsHistoryCount = 0
                 }
             } else {
-                $WindowsLaps = 'N/A'
+                $WindowsLaps = 'n/a'
                 $WindowsLapsExpirationDays = $null
                 $WindowsLapsExpirationTime = $null
                 $WindowsLapsHistoryCount = 0
