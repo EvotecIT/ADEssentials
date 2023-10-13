@@ -166,22 +166,22 @@
 
     )
     if ($OutputRequiresCommit -notcontains $false -and $OutputRequiresCommit -contains $true) {
-        Write-Verbose "Remove-ADACL - Saving permissions for $($ACL.DistinguishedName)"
+        Write-Verbose "Remove-ADACL - Saving permissions for $($ACL.DistinguishedName) on $($QueryServer)"
         try {
             # TODO: This is a workaround for a ProtectedFromAccidentalDeletion
             # It seems if there's Everyone involved in ntSecurityDescriptor it sets back Protected from Accidental Deletion
             # Need to write some detection mechanism around it
-            $TemporaryObject = Get-ADObject -Identity $ACL.DistinguishedName -Properties ProtectedFromAccidentalDeletion
-            Set-ADObject -Identity $ACL.DistinguishedName -Replace @{ ntSecurityDescriptor = $ntSecurityDescriptor } -ProtectedFromAccidentalDeletion $true -ErrorAction Stop -Server $QueryServer
-            $AfterTemporaryObject = Get-ADObject -Identity $ACL.DistinguishedName -Properties ProtectedFromAccidentalDeletion
+            $TemporaryObject = Get-ADObject -Identity $ACL.DistinguishedName -Properties ProtectedFromAccidentalDeletion -Server $QueryServer
+            Set-ADObject -Identity $ACL.DistinguishedName -Replace @{ ntSecurityDescriptor = $ntSecurityDescriptor } -ErrorAction Stop -Server $QueryServer #-ProtectedFromAccidentalDeletion $true
+            $AfterTemporaryObject = Get-ADObject -Identity $ACL.DistinguishedName -Properties ProtectedFromAccidentalDeletion -Server $QueryServer
             if ($TemporaryObject.ProtectedFromAccidentalDeletion -ne $AfterTemporaryObject.ProtectedFromAccidentalDeletion) {
-                Write-Warning -Message "Remove-ADACL - Restoring ProtectedFromAccidentalDeletion from $($AfterTemporaryObject.ProtectedFromAccidentalDeletion) to $($TemporaryObject.ProtectedFromAccidentalDeletion) for $($ACL.DistinguishedName) as a workaround."
+                Write-Warning -Message "Remove-ADACL - Restoring ProtectedFromAccidentalDeletion from $($AfterTemporaryObject.ProtectedFromAccidentalDeletion) to $($TemporaryObject.ProtectedFromAccidentalDeletion) for $($ACL.DistinguishedName) as a workaround on $($QueryServer)"
                 Set-ADObject -Identity $ACL.DistinguishedName -ProtectedFromAccidentalDeletion $TemporaryObject.ProtectedFromAccidentalDeletion -ErrorAction Stop -Server $QueryServer
             }
             # Old way of doing things
             # Set-Acl -Path $ACL.Path -AclObject $ntSecurityDescriptor -ErrorAction Stop
         } catch {
-            Write-Warning "Remove-ADACL - Saving permissions for $($ACL.DistinguishedName) failed: $($_.Exception.Message)"
+            Write-Warning "Remove-ADACL - Saving permissions for $($ACL.DistinguishedName) failed: $($_.Exception.Message) oon $($QueryServer)"
         }
     } elseif ($OutputRequiresCommit -contains $false) {
         Write-Warning "Remove-ADACL - Skipping saving permissions for $($ACL.DistinguishedName) due to errors."
