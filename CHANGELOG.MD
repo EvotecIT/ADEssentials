@@ -1,4 +1,9 @@
-﻿#### 0.0.166 - 2023.10.09
+﻿#### 0.0.167 - 2023.10.13
+- Update `Remove-ADACL` to better handle `ProtectedFromDeletion`
+- Improvements to `Invoke-ADEssentials` to LAPS report
+- Improvements to `Get-WinADBitlockerLapsSummary` true/false changed to 'Yes','No', 'N/A'
+
+#### 0.0.166 - 2023.10.09
 - Update `Set-ADACLinheritance` / `Disable-ADACLInheritance`
 
 #### 0.0.165 - 2023.09.13
