@@ -98,35 +98,34 @@
         foreach ($_ in $Computers) {
             if ($LapsOnly -or -not $BitlockerOnly) {
                 if ($LapsAvailable) {
-                    # if ($_.'ms-Mcs-AdmPwd') {
                     if ($_.'ms-Mcs-AdmPwdExpirationTime') {
-                        $Laps = 'Yes'
+                        $Laps = $true
                         $LapsExpirationDays = Convert-TimeToDays -StartTime ($CurrentDate) -EndTime (Convert-ToDateTime -Timestring ($_.'ms-Mcs-AdmPwdExpirationTime'))
                         $LapsExpirationTime = Convert-ToDateTime -Timestring ($_.'ms-Mcs-AdmPwdExpirationTime')
                     } else {
-                        $Laps = 'No'
+                        $Laps = $false
                         $LapsExpirationDays = $null
                         $LapsExpirationTime = $null
                     }
                 } else {
-                    $Laps = 'n/a'
+                    $Laps = $null
                 }
             }
 
             if ($WindowsLapsAvailable) {
                 if ($_.'msLAPS-PasswordExpirationTime') {
-                    $WindowsLaps = 'Yes'
+                    $WindowsLaps = $true
                     $WindowsLapsExpirationDays = Convert-TimeToDays -StartTime ($CurrentDate) -EndTime (Convert-ToDateTime -Timestring ($_.'msLAPS-PasswordExpirationTime'))
                     $WindowsLapsExpirationTime = Convert-ToDateTime -Timestring ($_.'msLAPS-PasswordExpirationTime')
                     $WindowsLapsHistoryCount = $_.'msLAPS-EncryptedPasswordHistory'.Count
                 } else {
-                    $WindowsLaps = 'No'
+                    $WindowsLaps = $false
                     $WindowsLapsExpirationDays = $null
                     $WindowsLapsExpirationTime = $null
                     $WindowsLapsHistoryCount = 0
                 }
             } else {
-                $WindowsLaps = 'n/a'
+                $WindowsLaps = $null
                 $WindowsLapsExpirationDays = $null
                 $WindowsLapsExpirationTime = $null
                 $WindowsLapsHistoryCount = 0
