@@ -58,7 +58,7 @@
                     $Script:Reporting['LAPS']['Variables']['ComputersServerEnabled']++
                     if ($Computer.Laps -eq 'Yes' -or $Computer.WindowsLaps -eq 'Yes') {
                         $Script:Reporting['LAPS']['Variables']['ComputersServerLapsEnabled']++
-                    } elseif ($Computer.Laps -in 'No' -and $Computer.WindowsLaps -in 'No') {
+                    } else {
                         $Script:Reporting['LAPS']['Variables']['ComputersServerLapsDisabled']++
                     }
                 } else {
