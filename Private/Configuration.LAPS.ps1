@@ -9,10 +9,15 @@
             $Script:Reporting['LAPS']['Variables']['ComputersTotal']++
             if ($Computer.Enabled) {
                 $Script:Reporting['LAPS']['Variables']['ComputersEnabled']++
-                if ($Computer.LastLogonDays -lt 60 -and ($Computer.Laps -eq $false -and $Computer.IsDC -eq $false) -and ($Computer.WindowsLaps -eq $false) -and $Computer.System -like "Windows*") {
-                    $Script:Reporting['LAPS']['Variables']['ComputersActiveNoLaps']++
-                } elseif ($Computer.LastLogonDays -lt 60 -and (($Computer.Laps -eq $true -and $Computer.IsDC -eq $false) -or ($Computer.WindowsLaps -eq $true)) -and $Computer.System -like "Windows*") {
-                    $Script:Reporting['LAPS']['Variables']['ComputersActiveWithLaps']++
+                if ($Computer.LastLogonDays -lt 60 -and $Computer.System -like "Windows*" -and $Computer.Enabled -eq $true) {
+                    if (($Computer.Laps -eq $true -or $Computer.WindowsLaps -eq $true)) {
+                        $Script:Reporting['LAPS']['Variables']['ComputersActiveWithLaps']++
+                    } else {
+                        # we exclude DC from this count, even tho Windows LAPS is supported there
+                        if ($Computer.IsDC -eq $false) {
+                            $Script:Reporting['LAPS']['Variables']['ComputersActiveNoLaps']++
+                        }
+                    }
                 }
                 if ($Computer.LastLogonDays -gt 360) {
                     $Script:Reporting['LAPS']['Variables']['ComputersOver360days']++
@@ -56,7 +61,7 @@
                 $Script:Reporting['LAPS']['Variables']['ComputersServer']++
                 if ($Computer.Enabled) {
                     $Script:Reporting['LAPS']['Variables']['ComputersServerEnabled']++
-                    if ($Computer.Laps -eq 'Yes' -or $Computer.WindowsLaps -eq 'Yes') {
+                    if ($Computer.Laps -eq $true -or $Computer.WindowsLaps -eq $true) {
                         $Script:Reporting['LAPS']['Variables']['ComputersServerLapsEnabled']++
                     } else {
                         $Script:Reporting['LAPS']['Variables']['ComputersServerLapsDisabled']++
@@ -68,7 +73,7 @@
                 $Script:Reporting['LAPS']['Variables']['ComputersWorkstation']++
                 if ($Computer.Enabled) {
                     $Script:Reporting['LAPS']['Variables']['ComputersWorkstationEnabled']++
-                    if ($Computer.Laps -eq 'Yes' -or $Computer.WindowsLaps -eq 'Yes') {
+                    if ($Computer.Laps -eq $true -or $Computer.WindowsLaps -eq $true) {
                         $Script:Reporting['LAPS']['Variables']['ComputersWorkstationLapsEnabled']++
                     } else {
                         $Script:Reporting['LAPS']['Variables']['ComputersWorkstationLapsDisabled']++
@@ -80,7 +85,7 @@
                 $Script:Reporting['LAPS']['Variables']['ComputersOther']++
                 if ($Computer.Enabled) {
                     $Script:Reporting['LAPS']['Variables']['ComputersOtherEnabled']++
-                    if ($Computer.Laps -eq 'Yes' -or $Computer.WindowsLaps -eq 'Yes') {
+                    if ($Computer.Laps -eq $true -or $Computer.WindowsLaps -eq $true) {
                         $Script:Reporting['LAPS']['Variables']['ComputersOtherLapsEnabled']++
                     } else {
                         $Script:Reporting['LAPS']['Variables']['ComputersOtherLapsDisabled']++
@@ -256,11 +261,11 @@
         New-HTMLTable -DataTable $Script:Reporting['LAPS']['Data'] -Filtering {
             New-HTMLTableCondition -Name 'Enabled' -ComparisonType string -Operator eq -Value $true -BackgroundColor LimeGreen -FailBackgroundColor BlizzardBlue
             New-HTMLTableCondition -Name 'LapsExpirationDays' -ComparisonType number -Operator lt -Value 0 -BackgroundColor BurntOrange -HighlightHeaders LapsExpirationDays, LapsExpirationTime -FailBackgroundColor LimeGreen
-            New-HTMLTableCondition -Name 'Laps' -ComparisonType string -Operator eq -Value 'Yes' -BackgroundColor LimeGreen -FailBackgroundColor Alizarin
-            New-HTMLTableCondition -Name 'Laps' -ComparisonType string -Operator eq -Value 'No' -BackgroundColor Alizarin -HighlightHeaders LapsExpirationDays, LapsExpirationTime
+            New-HTMLTableCondition -Name 'Laps' -ComparisonType string -Operator eq -Value $true -BackgroundColor LimeGreen -FailBackgroundColor Alizarin
+            New-HTMLTableCondition -Name 'Laps' -ComparisonType string -Operator eq -Value $false -BackgroundColor Alizarin -HighlightHeaders LapsExpirationDays, LapsExpirationTime
             New-HTMLTableCondition -Name 'WindowsLapsExpirationDays' -ComparisonType number -Operator lt -Value 0 -BackgroundColor BurntOrange -HighlightHeaders WindowsLapsExpirationDays, WindowsLapsExpirationTime -FailBackgroundColor LimeGreen
-            New-HTMLTableCondition -Name 'WindowsLaps' -ComparisonType string -Operator eq -Value 'Yes' -BackgroundColor LimeGreen -FailBackgroundColor Alizarin
-            New-HTMLTableCondition -Name 'WindowsLaps' -ComparisonType string -Operator eq -Value 'No' -BackgroundColor Alizarin -HighlightHeaders WindowsLapsExpirationDays, WindowsLapsExpirationTime
+            New-HTMLTableCondition -Name 'WindowsLaps' -ComparisonType string -Operator eq -Value $true -BackgroundColor LimeGreen -FailBackgroundColor Alizarin
+            New-HTMLTableCondition -Name 'WindowsLaps' -ComparisonType string -Operator eq -Value $false -BackgroundColor Alizarin -HighlightHeaders WindowsLapsExpirationDays, WindowsLapsExpirationTime
             New-HTMLTableCondition -Name 'LastLogonDays' -ComparisonType number -Operator gt -Value 60 -BackgroundColor Alizarin -HighlightHeaders LastLogonDays, LastLogonDate -FailBackgroundColor LimeGreen
             New-HTMLTableCondition -Name 'PasswordLastChangedDays' -ComparisonType number -Operator ge -Value 0 -BackgroundColor LimeGreen -HighlightHeaders PasswordLastSet, PasswordLastChangedDays
             New-HTMLTableCondition -Name 'PasswordLastChangedDays' -ComparisonType number -Operator gt -Value 300 -BackgroundColor Orange -HighlightHeaders PasswordLastSet, PasswordLastChangedDays
