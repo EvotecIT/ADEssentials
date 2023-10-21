@@ -1,4 +1,9 @@
-﻿#### 0.0.169 - 2023.10.13
+﻿#### 0.0.170
+- `Enable-ADACLInheritance` - improve documentation
+- `Restore-ADACL` - added new function to restore default ACL permissions
+- `Set-ADACLInheritance` - improve documentation
+
+#### 0.0.169 - 2023.10.13
 - Improvements to `Invoke-ADEssentials` to LAPS report counting
 - Improvements to `Get-WinADBitlockerLapsSummary` changed to True/False/Null
 
