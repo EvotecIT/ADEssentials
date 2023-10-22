@@ -23,7 +23,8 @@
     Restore-ADACLDefault -Object 'OU=ITR01,DC=ad,DC=evotec,DC=xyz' -RemoveInheritedAccessRules -Verbose -WhatIf
 
     .NOTES
-    General notes
+    Please be aware that when you use Restore-ADACLDefault it clears up existing permissions which may cut you out.
+
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
@@ -86,11 +87,11 @@
     $DomainName = ConvertFrom-DistinguishedName -ToDomainCN -DistinguishedName $Object.DistinguishedName
     $QueryServer = $Script:ForestDetails['QueryServers'][$DomainName].HostName[0]
 
-    Write-Verbose -Message "Restore-ADACLDefault - Disabling inheritance for $($Object.DistinguishedName)"
-    Disable-ADACLInheritance -ADObject $Object.DistinguishedName -RemoveInheritedAccessRules -Verbose
+    #Write-Verbose -Message "Restore-ADACLDefault - Disabling inheritance for $($Object.DistinguishedName)"
+    #Disable-ADACLInheritance -ADObject $Object.DistinguishedName -RemoveInheritedAccessRules -Verbose
 
-    Write-Verbose -Message "Restore-ADACLDefault - Removing permissions for $($Object.DistinguishedName)"
-    Remove-ADACL -ADObject $Object.DistinguishedName
+    #Write-Verbose -Message "Restore-ADACLDefault - Removing permissions for $($Object.DistinguishedName)"
+    #Remove-ADACL -ADObject $Object.DistinguishedName
 
     # $Descriptor | ConvertFrom-SddlString -Type ActiveDirectoryRights
     # $SecurityDescriptor = [System.DirectoryServices.ActiveDirectorySecurity]::new()
