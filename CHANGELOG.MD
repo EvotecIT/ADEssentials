@@ -1,4 +1,4 @@
-﻿#### 0.0.170
+﻿#### 0.0.170 - 2023.10.22
 - `Enable-ADACLInheritance` - improve documentation
 - `Restore-ADACLDefault` - added new function to restore default ACL permissions
 - `Set-ADACLInheritance` - improve documentation
