@@ -1,4 +1,4 @@
-﻿function Restore-ADACL {
+﻿function Restore-ADACLDefault {
     <#
     .SYNOPSIS
     Restore default permissions for given object in Active Directory
@@ -17,10 +17,10 @@
 
     .EXAMPLE
     $ObjectCheck = Get-ADObject -Id 'OU=_root,DC=ad,DC=evotec,DC=xyz' -Properties 'NtSecurityDescriptor', 'DistinguishedName'
-    Restore-ADACL -Object $ObjectCheck -Verbose
+    Restore-ADACLDefault -Object $ObjectCheck -Verbose
 
     .EXAMPLE
-    Restore-ADACL -Object 'OU=ITR01,DC=ad,DC=evotec,DC=xyz' -RemoveInheritedAccessRules -Verbose -WhatIf
+    Restore-ADACLDefault -Object 'OU=ITR01,DC=ad,DC=evotec,DC=xyz' -RemoveInheritedAccessRules -Verbose -WhatIf
 
     .NOTES
     General notes
@@ -32,7 +32,7 @@
     )
     # lets get our forest details
     if (-not $Script:ForestDetails) {
-        Write-Verbose "Restore-ADACL - Gathering Forest Details"
+        Write-Verbose "Restore-ADACLDefault - Gathering Forest Details"
         $Script:ForestDetails = Get-WinADForestDetails
     }
     # Lets get our schema
@@ -55,7 +55,7 @@
             $QueryServer = $Script:ForestDetails['QueryServers'][$DomainName].HostName[0]
             $Object = Get-ADObject -Id $Object -Properties 'NtSecurityDescriptor', 'DistinguishedName' -Server $QueryServer
         } else {
-            Write-Warning -Message "Restore-ADACL - Unknown object type $($Object.GetType().FullName)"
+            Write-Warning -Message "Restore-ADACLDefault - Unknown object type $($Object.GetType().FullName)"
             return
         }
     } else {
@@ -67,18 +67,18 @@
     # We have our object, now lets get the default permissions for given type
 
     if ($Object.ObjectClass -eq 'Unknown') {
-        Write-Verbose -Message "Restore-ADACL - Unknown object type $($Object.ObjectClass), using default filter for Organizational-Unit"
+        Write-Verbose -Message "Restore-ADACLDefault - Unknown object type $($Object.ObjectClass), using default filter for Organizational-Unit"
         $Filter = 'name -eq "Organizational-Unit"'
     } else {
         $Class = $($Object.ObjectClass)
         $Filter = "lDAPDisplayName -eq '$Class'"
     }
 
-    Write-Verbose "Restore-ADACL - Getting default permissions from $Script:RootDSESchema using filter $Filter"
+    Write-Verbose "Restore-ADACLDefault - Getting default permissions from $Script:RootDSESchema using filter $Filter"
     #$ADObject = Get-ADObject -Filter $Filter -SearchBase $Script:RootDSESchema -Properties defaultSecurityDescriptor
     $DefaultPermissionsObject = Get-ADObject -Filter $Filter -SearchBase (Get-ADRootDSE).SchemaNamingContext -Properties defaultSecurityDescriptor, canonicalName, lDAPDisplayName
     if (-not $DefaultPermissionsObject.defaultsecuritydescriptor) {
-        Write-Warning -Message "Restore-ADACL - Unable to find default permissions for $($Object.ObjectClass)"
+        Write-Warning -Message "Restore-ADACLDefault - Unable to find default permissions for $($Object.ObjectClass)"
         return
     }
     $Descriptor = $DefaultPermissionsObject.defaultsecuritydescriptor
@@ -86,10 +86,10 @@
     $DomainName = ConvertFrom-DistinguishedName -ToDomainCN -DistinguishedName $Object.DistinguishedName
     $QueryServer = $Script:ForestDetails['QueryServers'][$DomainName].HostName[0]
 
-    Write-Verbose -Message "Restore-ADACL - Disabling inheritance for $($Object.DistinguishedName)"
+    Write-Verbose -Message "Restore-ADACLDefault - Disabling inheritance for $($Object.DistinguishedName)"
     Disable-ADACLInheritance -ADObject $Object.DistinguishedName -RemoveInheritedAccessRules -Verbose
 
-    Write-Verbose -Message "Restore-ADACL - Removing permissions for $($Object.DistinguishedName)"
+    Write-Verbose -Message "Restore-ADACLDefault - Removing permissions for $($Object.DistinguishedName)"
     Remove-ADACL -ADObject $Object.DistinguishedName
 
     # $Descriptor | ConvertFrom-SddlString -Type ActiveDirectoryRights
@@ -99,11 +99,11 @@
 
     $Object.NtSecurityDescriptor.SetSecurityDescriptorSddlForm($Descriptor)
 
-    Write-Verbose "Restore-ADACL - Saving permissions for $($Object.DistinguishedName) on $($QueryServer)"
+    Write-Verbose "Restore-ADACLDefault - Saving permissions for $($Object.DistinguishedName) on $($QueryServer)"
     Set-ADObject -Identity $Object.DistinguishedName -Replace @{ ntSecurityDescriptor = $Object.NtSecurityDescriptor } -ErrorAction Stop -Server $QueryServer
 
     if ($RemoveInheritedAccessRules) {
-        Write-Verbose -Message "Restore-ADACL - Disabling inheritance for $($Object.DistinguishedName)"
+        Write-Verbose -Message "Restore-ADACLDefault - Disabling inheritance for $($Object.DistinguishedName)"
         Disable-ADACLInheritance -ADObject $Object.DistinguishedName -RemoveInheritedAccessRules
     }
 }
