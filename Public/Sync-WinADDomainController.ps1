@@ -1,4 +1,5 @@
-﻿function Sync-DomainController {
+﻿function Sync-WinADDomainController {
+    [alias('Sync-DomainController')]
     [CmdletBinding()]
     param(
         [alias('ForestName')][string] $Forest,
