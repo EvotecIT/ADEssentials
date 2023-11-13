@@ -18,9 +18,12 @@ $Object = @(
     'EVOTEC\Print Operators'
     'TEST\Protected Users'
     'TEST\Print Operators'
+    'CN=Test IntetOrgUser,OU=Contacts,OU=Accounts,OU=Production,DC=ad,DC=evotec,DC=xyz'
+    'Test Contact'
 )
 
 $Results = Get-WinADObject -Identity $Object #-ErrorAction Stop
 $Results | Format-Table
 $Results.Count
 $Object.Count
+$Results | Out-HtmlView -ScrollX -Filtering -DataStore JavaScript
