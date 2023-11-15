@@ -1,4 +1,17 @@
-﻿#### 0.0.170 - 2023.10.22
+﻿#### 0.0.171
+- Renamed `Sync-DomainController` to `Sync-WinADDomainController` (aliased)
+- Added `Get-WinADSiteOptions`
+- Added `Show-WinADDNSRecords`
+- Improved `Get-WinDNSRecords` to display tombstoned DNS records
+- Added `Get-WinDNSZones`, requires improvements
+- Added `Find-WinADObjectDifference`
+- Added `Show-WinADObjectDifference`
+- Added `Get-WinADDomainControllerOption`
+- Improved `Get-WinADForestControllerInformation` with more information
+- Fixed `Get-WinADForestSubnet` not working under certain parameters
+- Added `Set-WinADDomainControllerOption`
+
+#### 0.0.170 - 2023.10.22
 - `Enable-ADACLInheritance` - improve documentation
 - `Restore-ADACLDefault` - added new function to restore default ACL permissions
 - `Set-ADACLInheritance` - improve documentation
