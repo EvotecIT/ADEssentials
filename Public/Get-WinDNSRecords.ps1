@@ -47,6 +47,7 @@
     $DNSRecordsCached = [ordered] @{}
     $DNSRecordsPerZone = [ordered] @{}
     $ADRecordsPerZone = [ordered] @{}
+    $ADRecordsPerZoneByDns = [ordered] @{}
 
     try {
         $oRootDSE = Get-ADRootDSE -ErrorAction Stop
@@ -74,6 +75,13 @@
     foreach ($Zone in $ZonesToProcess) {
         Write-Verbose -Message "Get-WinDNSRecords - Processing zone for DNS records: $($Zone.ZoneName)"
         $DNSRecordsPerZone[$Zone.ZoneName] = Get-DnsServerResourceRecord -ComputerName $ADServer -ZoneName $Zone.ZoneName -RRType A
+        $ADRecordsPerZoneByDns[$Zone.ZoneName] = [ordered] @{}
+        foreach ($Record in  $DNSRecordsPerZone[$Zone.ZoneName]) {
+            if (-not $ADRecordsPerZoneByDns[$Zone.ZoneName][$Record.HostName]) {
+                $ADRecordsPerZoneByDns[$Zone.ZoneName][$Record.HostName] = [System.Collections.Generic.List[Object]]::new()
+            }
+            $ADRecordsPerZoneByDns[$Zone.ZoneName][$Record.HostName].Add($Record)
+        }
     }
     if ($IncludeDetails) {
         $Filter = { (Name -notlike "@" -and Name -notlike "_*" -and ObjectClass -eq 'dnsNode' -and Name -ne 'ForestDnsZone' -and Name -ne 'DomainDnsZone' ) }
@@ -83,13 +91,25 @@
             $TempObjects = @(
                 if ($Zone.ReplicationScope -eq 'Domain') {
                     try {
-                        Get-ADObject -Server $ADServer -Filter $Filter -SearchBase ("DC=$($Zone.ZoneName),CN=MicrosoftDNS,DC=DomainDnsZones," + $oRootDSE.defaultNamingContext) -Properties CanonicalName, whenChanged, whenCreated, DistinguishedName, ProtectedFromAccidentalDeletion, dNSTombstoned
+                        $getADObjectSplat = @{
+                            Server     = $ADServer
+                            Filter     = $Filter
+                            SearchBase = ("DC=$($Zone.ZoneName),CN=MicrosoftDNS,DC=DomainDnsZones," + $oRootDSE.defaultNamingContext)
+                            Properties = 'CanonicalName', 'whenChanged', 'whenCreated', 'DistinguishedName', 'ProtectedFromAccidentalDeletion', 'dNSTombstoned', 'nTSecurityDescriptor'
+                        }
+                        Get-ADObject @getADObjectSplat
                     } catch {
                         Write-Warning -Message "Get-WinDNSRecords - Error getting AD records for DomainDnsZones zone: $($Zone.ZoneName). Error: $($_.Exception.Message)"
                     }
                 } elseif ($Zone.ReplicationScope -eq 'Forest') {
                     try {
-                        Get-ADObject -Server $ADServer -Filter $Filter -SearchBase ("DC=$($Zone.ZoneName),CN=MicrosoftDNS,DC=ForestDnsZones," + $oRootDSE.defaultNamingContext) -Properties CanonicalName, whenChanged, whenCreated, DistinguishedName, ProtectedFromAccidentalDeletion, dNSTombstoned
+                        $getADObjectSplat = @{
+                            Server     = $ADServer
+                            Filter     = $Filter
+                            SearchBase = ("DC=$($Zone.ZoneName),CN=MicrosoftDNS,DC=ForestDnsZones," + $oRootDSE.defaultNamingContext)
+                            Properties = 'CanonicalName', 'whenChanged', 'whenCreated', 'DistinguishedName', 'ProtectedFromAccidentalDeletion', 'dNSTombstoned', 'nTSecurityDescriptor'
+                        }
+                        Get-ADObject @getADObjectSplat
                     } catch {
                         Write-Warning -Message "Get-WinDNSRecords - Error getting AD records for ForestDnsZones zone: $($Zone.ZoneName). Error: $($_.Exception.Message)"
                     }
@@ -102,45 +122,58 @@
             }
         }
     }
-    foreach ($Zone in $DNSRecordsPerZone.PSBase.Keys) {
-        foreach ($Record in $DNSRecordsPerZone[$Zone]) {
-            if ($Record.HostName -in $Exclusions) {
+    # PSBase is required because of "Keys" DNS name
+    foreach ($Zone in $ADRecordsPerZone.PSBase.Keys) {
+        foreach ($RecordName in [string[]] $ADRecordsPerZone[$Zone].PSBase.Keys) {
+            $ADDNSRecord = $ADRecordsPerZone[$Zone][$RecordName]
+            [Array] $ListRecords = $ADRecordsPerZoneByDns[$Zone][$RecordName]
+
+            if ($ADDNSRecord.Name -in $Exclusions) {
                 continue
             }
-            if (-not $DNSRecordsCached["$($Record.HostName).$($Zone)"]) {
-                $DNSRecordsCached["$($Record.HostName).$($Zone)"] = [ordered] @{
-                    'HostName' = $Record.HostName
+            if (-not $DNSRecordsCached["$($ADDNSRecord.Name).$($Zone)"]) {
+                $DNSRecordsCached["$($ADDNSRecord.Name).$($Zone)"] = [ordered] @{
+                    'HostName' = $ADDNSRecord.Name
                     'Zone'     = $Zone
-                    #'RecordType' = $Record.RecordType
+                    'Status'   = if ($ADDNSRecord.dNSTombstoned -eq $true) { 'Tombstoned' } else { 'Active' }
+                    Owner      = $ADDNSRecord.ntsecuritydescriptor.owner
                     RecordIP   = [System.Collections.Generic.List[Object]]::new()
                     Types      = [System.Collections.Generic.List[Object]]::new()
                     Timestamps = [System.Collections.Generic.List[Object]]::new()
                     Count      = 0
                 }
-                if ($ADRecordsPerZone.Keys.Count -gt 0) {
-                    $DNSRecordsCached["$($Record.HostName).$($Zone)"].WhenCreated = $ADRecordsPerZone[$Zone][$Record.HostName].whenCreated
-                    $DNSRecordsCached["$($Record.HostName).$($Zone)"].WhenChanged = $ADRecordsPerZone[$Zone][$Record.HostName].whenChanged
-                }
+                #if ($ADRecordsPerZone.Keys.Count -gt 0) {
+                #$DNSRecordsCached["$($ADDNSRecord.Name).$($Zone)"].dNSTombstoned = $ADRecordsPerZone[$Zone][$ADDNSRecord.Name].dNSTombstoned
+                $DNSRecordsCached["$($ADDNSRecord.Name).$($Zone)"].WhenCreated = $ADRecordsPerZone[$Zone][$ADDNSRecord.Name].whenCreated
+                $DNSRecordsCached["$($ADDNSRecord.Name).$($Zone)"].WhenChanged = $ADRecordsPerZone[$Zone][$ADDNSRecord.Name].whenChanged
+                #}
                 if ($IncludeDNSRecords) {
-                    $DNSRecordsCached["$($Record.HostName).$($Zone)"].List = [System.Collections.Generic.List[Object]]::new()
+                    $DNSRecordsCached["$($ADDNSRecord.Name).$($Zone)"].List = [System.Collections.Generic.List[Object]]::new()
                 }
             }
-            if ($IncludeDNSRecords) {
-                $DNSRecordsCached["$($Record.HostName).$($Zone)"].List.Add($Record)
-            }
-            if ($null -ne $Record.TimeStamp) {
-                $DNSRecordsCached["$($Record.HostName).$($Zone)"].Timestamps.Add($Record.TimeStamp)
+            if ($ListRecords.Count -gt 0) {
+                foreach ($Record in $ListRecords) {
+                    if ($IncludeDNSRecords) {
+                        $DNSRecordsCached["$($ADDNSRecord.Name).$($Zone)"].List.Add($Record)
+                    }
+                    if ($null -ne $Record.TimeStamp) {
+                        $DNSRecordsCached["$($ADDNSRecord.Name).$($Zone)"].Timestamps.Add($Record.TimeStamp)
+                    } else {
+                        $DNSRecordsCached["$($ADDNSRecord.Name).$($Zone)"].Timestamps.Add("Not available")
+                    }
+                    $DNSRecordsCached["$($ADDNSRecord.Name).$($Zone)"].RecordIP.Add($Record.RecordData.IPv4Address)
+                    if ($Null -ne $Record.Timestamp) {
+                        $DNSRecordsCached["$($ADDNSRecord.Name).$($Zone)"].Types.Add('Dynamic')
+                    } else {
+                        $DNSRecordsCached["$($ADDNSRecord.Name).$($Zone)"].Types.Add('Static')
+                    }
+                }
             } else {
-                $DNSRecordsCached["$($Record.HostName).$($Zone)"].Timestamps.Add("Not available")
+                $DNSRecordsCached["$($ADDNSRecord.Name).$($Zone)"].RecordIP.Add('Not available')
+                $DNSRecordsCached["$($ADDNSRecord.Name).$($Zone)"].Types.Add('Not available')
+                $DNSRecordsCached["$($ADDNSRecord.Name).$($Zone)"].Timestamps.Add('Not available')
             }
-            $DNSRecordsCached["$($Record.HostName).$($Zone)"].RecordIP.Add($Record.RecordData.IPv4Address)
-            if ($Null -ne $Record.Timestamp) {
-                $DNSRecordsCached["$($Record.HostName).$($Zone)"].Types.Add('Dynamic')
-            } else {
-                $DNSRecordsCached["$($Record.HostName).$($Zone)"].Types.Add('Static')
-            }
-            $DNSRecordsCached["$($Record.HostName).$($Zone)"] = [PSCustomObject] $DNSRecordsCached["$($Record.HostName).$($Zone)"]
-
+            $DNSRecordsCached["$($ADDNSRecord.Name).$($Zone)"] = [PSCustomObject] $DNSRecordsCached["$($ADDNSRecord.Name).$($Zone)"]
         }
     }
     foreach ($DNS in $DNSRecordsCached.PSBase.Keys) {
