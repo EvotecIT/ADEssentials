@@ -46,9 +46,7 @@
             }
             [PSCustomObject] $Subnet
         }
-
-
     } else {
-        Get-ADSubnet -Subnets $Subnets
+        Get-ADSubnet -Subnets $SubnetsList
     }
 }
