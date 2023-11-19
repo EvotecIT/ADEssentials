@@ -20,10 +20,11 @@
     $ForestInformation = Get-WinADForestDetails -Extended
 
     $Output = [ordered] @{
-        List        = [System.Collections.Generic.List[Object]]::new()
-        ListSummary = [System.Collections.Generic.List[Object]]::new()
+        List                = [System.Collections.Generic.List[Object]]::new()
+        ListDetails         = [System.Collections.Generic.List[Object]]::new()
+        ListDetailsReversed = [System.Collections.Generic.List[Object]]::new()
+        ListSummary         = [System.Collections.Generic.List[Object]]::new()
     }
-
 
     $Properties = @(
         'company'
@@ -62,6 +63,8 @@
     }
 
     $CountObject = 0
+    $CachedReversedObjects = [ordered] @{}
+
     foreach ($I in $Identity) {
         $PrimaryObject = $null
         $ADObject = [ordered] @{
@@ -76,9 +79,17 @@
             PropertiesSame        = [System.Collections.Generic.List[Object]]::new()
             PropertiesDifferent   = [System.Collections.Generic.List[Object]]::new()
         }
+        $CachedReversedObjects[$I] = [ordered] @{}
+
+        foreach ($Property in $Properties) {
+            $ADObjectDetailsReversed = [ordered] @{
+                DistinguishedName = $I
+                Property = $Property
+            }
+            $CachedReversedObjects[$I][$Property] = $ADObjectDetailsReversed
+        }
 
         $CountObject++
-        $DistinguishedName = $I
 
         $Count = 0
         foreach ($GC in $GCs) {
@@ -99,6 +110,10 @@
             if ($ObjectInfo) {
                 if (-not $PrimaryObject) {
                     $PrimaryObject = $ObjectInfo
+                }
+                $ADObjectDetails = [ordered] @{
+                    DistinguishedName = $I
+                    Server            = $GC.HostName
                 }
                 foreach ($Property in $Properties) {
                     $PropertyNameSame = "$Property-Same"
@@ -155,15 +170,20 @@
                             }
                         }
                     }
+                    $ADObjectDetails[$Property] = $ObjectInfo.$Property
+
+                    $CachedReversedObjects[$I][$Property][$GC.HostName] = $ObjectInfo.$Property
                 }
+                $Output.ListDetails.Add([PSCustomObject] $ADObjectDetails)
             }
-
-
         }
         $ADObjectMinimal.ServersDifferentCount = $ADObjectMinimal.ServersDifferent.Count
         $ADObjectMinimal.ServersSameCount = $ADObjectMinimal.ServersSame.Count
         $Output.List.Add([PSCustomObject] $ADObject)
         $Output.ListSummary.Add([PSCustomObject] $ADObjectMinimal)
+        foreach ($Object in $CachedReversedObjects[$I].Keys) {
+            $Output.ListDetailsReversed.Add([PSCustomObject] $CachedReversedObjects[$I][$Object])
+        }
     }
     $Output
 }
