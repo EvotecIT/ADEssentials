@@ -10,6 +10,8 @@
 - Improved `Get-WinADForestControllerInformation` with more information
 - Fixed `Get-WinADForestSubnet` not working under certain parameters
 - Added `Set-WinADDomainControllerOption`
+- Added `Test-WinADObjectReplicationStatus` *work in progress*
+- Added `Show-WinADObjectReplicationStatus` *Not ready*
 
 #### 0.0.170 - 2023.10.22
 - `Enable-ADACLInheritance` - improve documentation
