@@ -1,4 +1,7 @@
-﻿#### 0.0.171
+﻿#### 0.0.172
+- Added `Show-WinADObjectReplicationStatus` *Not ready*
+
+#### 0.0.171
 - Renamed `Sync-DomainController` to `Sync-WinADDomainController` (aliased)
 - Added `Get-WinADSiteOptions`
 - Added `Show-WinADDNSRecords`
@@ -11,7 +14,6 @@
 - Fixed `Get-WinADForestSubnet` not working under certain parameters
 - Added `Set-WinADDomainControllerOption`
 - Added `Test-WinADObjectReplicationStatus` *work in progress*
-- Added `Show-WinADObjectReplicationStatus` *Not ready*
 
 #### 0.0.170 - 2023.10.22
 - `Enable-ADACLInheritance` - improve documentation
