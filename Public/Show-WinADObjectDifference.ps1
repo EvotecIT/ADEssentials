@@ -24,7 +24,7 @@
         New-HTMLTab -Name 'Details per server' {
             New-HTMLTable -DataTable $OutputValue.ListDetailsReversed -Filtering -DataStore JavaScript -ScrollX
         }
-        New-HTMLTab -Name 'Details summary' {
+        New-HTMLTab -Name 'Detailed Differences' {
             New-HTMLTable -DataTable $OutputValue.List -Filtering -DataStore JavaScript -ScrollX
         }
     } -ShowHTML
