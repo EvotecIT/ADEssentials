@@ -35,6 +35,13 @@
         ListSummary         = [System.Collections.Generic.List[Object]]::new()
     }
 
+    $ExcludeProperties = @(
+        'WhenChanged'
+        'DistinguishedName'
+        'uSNChanged'
+        'uSNCreated'
+    )
+
     if (-not $Properties) {
         # $PropertiesUser = @(
         #     'AccountExpirationDate'
@@ -156,36 +163,42 @@
     foreach ($I in $Identity) {
         $PrimaryObject = $null
 
+        if (-not $I.DistinguishedName) {
+            $DN = $I
+        } else {
+            $DN = $I.DistinguishedName
+        }
+
         #if ($Modes -contains 'DetailsSummary') {
-            $ADObject = [ordered] @{
-                DistinguishedName = $I
-            }
+        $ADObject = [ordered] @{
+            DistinguishedName = $DN
+        }
         #}
         #if ($Modes -contains 'Details') {
-            $ADObjectMinimal = [ordered] @{
-                DistinguishedName     = $I
-                DifferentServers      = [System.Collections.Generic.List[Object]]::new()
-                DifferentServersCount = 0
-                DifferentProperties   = [System.Collections.Generic.List[Object]]::new()
-                SameServers           = [System.Collections.Generic.List[Object]]::new()
-                SameServersCount      = 0
-                SameProperties        = [System.Collections.Generic.List[Object]]::new()
-            }
+        $ADObjectMinimal = [ordered] @{
+            DistinguishedName     = $DN
+            DifferentServers      = [System.Collections.Generic.List[Object]]::new()
+            DifferentServersCount = 0
+            DifferentProperties   = [System.Collections.Generic.List[Object]]::new()
+            SameServers           = [System.Collections.Generic.List[Object]]::new()
+            SameServersCount      = 0
+            SameProperties        = [System.Collections.Generic.List[Object]]::new()
+        }
         #}
-        $CachedReversedObjects[$I] = [ordered] @{}
+        $CachedReversedObjects[$DN] = [ordered] @{}
 
         $ADObjectDetailsReversed = [ordered] @{
-            DistinguishedName = $I
+            DistinguishedName = $DN
             Property          = 'Status'
         }
-        $CachedReversedObjects[$I]['Status'] = $ADObjectDetailsReversed
+        $CachedReversedObjects[$DN]['Status'] = $ADObjectDetailsReversed
 
         foreach ($Property in $Properties) {
             $ADObjectDetailsReversed = [ordered] @{
-                DistinguishedName = $I
+                DistinguishedName = $DN
                 Property          = $Property
             }
-            $CachedReversedObjects[$I][$Property] = $ADObjectDetailsReversed
+            $CachedReversedObjects[$DN][$Property] = $ADObjectDetailsReversed
         }
 
         $CountObject++
@@ -196,12 +209,11 @@
             Write-Verbose -Message "Find-WinADObjectDifference - Processing object [Object: $CountObject / $($Identity.Count)][DC: $Count / $($GCs.Count)] $($GC.HostName) for $I"
             # Query the specific object on each GC
             if ($I -is [Microsoft.ActiveDirectory.Management.ADUser]) {
-                $DN = $I.DistinguishedName
                 Try {
                     if ($GlobalCatalog) {
-                        $ObjectInfo = Get-ADUser -Identity $I.DistinguishedName -Server "$($GC.HostName):3268" -ErrorAction Stop -Properties $Properties
+                        $ObjectInfo = Get-ADUser -Identity $DN -Server "$($GC.HostName):3268" -ErrorAction Stop -Properties $Properties
                     } else {
-                        $ObjectInfo = Get-ADUser -Identity $I.DistinguishedName -Server $GC.HostName -Properties * -ErrorAction Stop
+                        $ObjectInfo = Get-ADUser -Identity $DN -Server $GC.HostName -Properties * -ErrorAction Stop
                     }
                 } catch {
                     $ObjectInfo = $null
@@ -209,12 +221,11 @@
                     $ErrorValue = $_.Exception.Message.Replace([System.Environment]::NewLine, '')
                 }
             } elseif ($I -is [Microsoft.ActiveDirectory.Management.ADComputer]) {
-                $DN = $I.DistinguishedName
                 Try {
                     if ($GlobalCatalog) {
-                        $ObjectInfo = Get-ADComputer -Identity $I.DistinguishedName -Server "$($GC.HostName):3268" -ErrorAction Stop -Properties $Properties
+                        $ObjectInfo = Get-ADComputer -Identity $DN -Server "$($GC.HostName):3268" -ErrorAction Stop -Properties $Properties
                     } else {
-                        $ObjectInfo = Get-ADComputer -Identity $I.DistinguishedName -Server $GC.HostName -Properties * -ErrorAction Stop
+                        $ObjectInfo = Get-ADComputer -Identity $DN -Server $GC.HostName -Properties * -ErrorAction Stop
                     }
                 } catch {
                     $ObjectInfo = $null
@@ -223,11 +234,6 @@
                 }
             } else {
                 if ($I -is [string] -or $I.DistinguishedName) {
-                    if (-not $I.DistinguishedName) {
-                        $DN = $I
-                    } else {
-                        $DN = $I.DistinguishedName
-                    }
                     Try {
                         if ($GlobalCatalog) {
                             $ObjectInfo = Get-ADObject -Identity $DN -Server "$($GC.HostName):3268" -ErrorAction Stop -Properties $Properties
@@ -242,8 +248,7 @@
                 } else {
                     $ObjectInfo = $null
                     Write-Warning "Test-ADObject - Error: $($_.Exception.Message.Replace([System.Environment]::NewLine,''))"
-                    #$ErrorValue = $_.Exception.Message.Replace([System.Environment]::NewLine, '')
-                   # return
+                    $ErrorValue = $_.Exception.Message.Replace([System.Environment]::NewLine, '')
                 }
             }
             if ($ObjectInfo) {
@@ -253,12 +258,12 @@
                 $ADObjectDetails = [ordered] @{
                     DistinguishedName = $DN
                     Server            = $GC.HostName
-                    StatusMessage     = 'Exists'
+                    Status            = 'Exists'
                 }
-                $CachedReversedObjects[$I]['Status'][$GC.HostName] = 'Exists'
+                $CachedReversedObjects[$DN]['Status'][$GC.HostName] = 'Exists'
                 foreach ($Property in $Properties) {
                     # Comparing WhenChanged is not needed, because it is special and will always be different
-                    if ($Property -notin 'WhenChanged') {
+                    if ($Property -notin $ExcludeProperties) {
                         $PropertyNameSame = "$Property-Same"
                         $PropertyNameDiff = "$Property-Diff"
                         if (-not $ADObject[$PropertyNameSame]) {
@@ -267,7 +272,7 @@
                         if (-not $ADObject[$PropertyNameDiff]) {
                             $ADObject[$PropertyNameDiff] = [System.Collections.Generic.List[Object]]::new()
                         }
-                        if ($Property -eq 'MemberOf') {
+                        if ($Property -in 'MemberOf', 'servicePrincipalName') {
 
                         } elseif ($null -eq $($PrimaryObject.$Property) -and $null -eq ($ObjectInfo.$Property)) {
                             $ADObject[$PropertyNameSame].Add($GC.HostName)
@@ -314,7 +319,7 @@
                         }
                     }
                     $ADObjectDetails[$Property] = $ObjectInfo.$Property
-                    $CachedReversedObjects[$I][$Property][$GC.HostName] = $ObjectInfo.$Property
+                    $CachedReversedObjects[$DN][$Property][$GC.HostName] = $ObjectInfo.$Property
                 }
                 $Output.ListDetails.Add([PSCustomObject] $ADObjectDetails)
             } else {
@@ -329,12 +334,14 @@
 
                 $ADObjectMinimal.DifferentServers.Add($GC.HostName)
 
-                $CachedReversedObjects[$I]['Status'][$GC.HostName] = $ErrorValue
+                $CachedReversedObjects[$DN]['Status'][$GC.HostName] = $ErrorValue
                 foreach ($Property in $Properties) {
-                    $ADObjectDetails[$Property] = $null
-                    $CachedReversedObjects[$I][$Property][$GC.HostName] = $ObjectInfo.$Property
+                    if ($Property -notin $ExcludeProperties) {
+                        $ADObjectDetails[$Property] = $null
+                        $CachedReversedObjects[$DN][$Property][$GC.HostName] = $ObjectInfo.$Property
 
-                    $ADObjectMinimal.DifferentProperties.Add($Property)
+                        $ADObjectMinimal.DifferentProperties.Add($Property)
+                    }
                 }
                 $Output.ListDetails.Add([PSCustomObject] $ADObjectDetails)
             }
@@ -343,8 +350,8 @@
         $ADObjectMinimal.SameServersCount = $ADObjectMinimal.SameServers.Count
         $Output.List.Add([PSCustomObject] $ADObject)
         $Output.ListSummary.Add([PSCustomObject] $ADObjectMinimal)
-        foreach ($Object in $CachedReversedObjects[$I].Keys) {
-            $Output.ListDetailsReversed.Add([PSCustomObject] $CachedReversedObjects[$I][$Object])
+        foreach ($Object in $CachedReversedObjects[$DN].Keys) {
+            $Output.ListDetailsReversed.Add([PSCustomObject] $CachedReversedObjects[$DN][$Object])
         }
     }
     $Output
