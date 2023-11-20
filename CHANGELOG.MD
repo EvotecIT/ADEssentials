@@ -1,7 +1,9 @@
 ﻿#### 0.0.172
 - Added `Show-WinADObjectReplicationStatus` *Not ready*
+- Improvements to `Show-WinADObjectDifference`
+- Improvements to `Find-WinADObjectDifference`
 
-#### 0.0.171
+#### 0.0.171 - 2023.11.20
 - Renamed `Sync-DomainController` to `Sync-WinADDomainController` (aliased)
 - Added `Get-WinADSiteOptions`
 - Added `Show-WinADDNSRecords`
