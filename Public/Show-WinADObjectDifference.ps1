@@ -3,7 +3,9 @@
     param(
         [Array] $Identity,
         [switch] $GlobalCatalog,
-        [string[]] $Properties
+        [string[]] $Properties,
+        [string] $FilePath,
+        [switch] $HideHTML
     )
 
     $OutputValue = Find-WinADObjectDifference -Identity $Identity -GlobalCatalog:$GlobalCatalog.IsPresent -Properties $Properties
@@ -27,6 +29,6 @@
         New-HTMLTab -Name 'Detailed Differences' {
             New-HTMLTable -DataTable $OutputValue.List -Filtering -DataStore JavaScript -ScrollX
         }
-    } -ShowHTML
+    } -ShowHTML:(-not $HideHTML.IsPresent) -FilePath $FilePath
     Write-Verbose -Message "Show-WinADObjectDifference - Generating HTML - Done"
 }
