@@ -354,9 +354,10 @@
                     if ($Property -notin $ExcludeProperties) {
                         $ADObjectDetailsPerProperty[$Property] = $null
                         $CachedReversedObjects[$DN][$Property][$GC.HostName] = $ObjectInfo.$Property
-
-                        $ADObjectSummary.DifferentProperties.Add($Property)
-                        $CachedReversedObjects[$DN][$Property]['StatusComparison'] = $false
+                        if ($Property -notin $ADObjectSummary.DifferentProperties) {
+                            $ADObjectSummary.DifferentProperties.Add($Property)
+                        }
+                        #$CachedReversedObjects[$DN][$Property]['StatusComparison'] = $false
                     }
                 }
                 $Output.ListDetails.Add([PSCustomObject] $ADObjectDetailsPerProperty)
