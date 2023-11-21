@@ -1,5 +1,10 @@
-﻿#### 0.0.172
+﻿#### 0.0.174
 - Added `Show-WinADObjectReplicationStatus` *Not ready*
+
+#### 0.0.173
+- Improvements to `Find-WinADObjectDifference`
+
+#### 0.0.172
 - Improvements to `Show-WinADObjectDifference`
 - Improvements to `Find-WinADObjectDifference`
 
