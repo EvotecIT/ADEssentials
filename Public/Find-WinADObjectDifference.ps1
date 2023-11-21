@@ -36,6 +36,8 @@
     }
 
     $ExcludeProperties = @(
+        'MemberOf'
+        'servicePrincipalName'
         'WhenChanged'
         'DistinguishedName'
         'uSNChanged'
@@ -130,14 +132,15 @@
                 "extensionAttribute$i"
             }
             'manager'
-            'memberOf'
+            #'memberOf'
             'facsimileTelephoneNumber'
             'givenName'
             'homePhone'
             'postalCode'
             'pager'
             'UserAccountControl', 'DisplayName', 'mailNickname', 'mail', 'ipPhone'
-            'WhenChanged'
+            'whenChanged'
+            'whenCreated'
         )
     }
     $Properties = $Properties | Sort-Object -Unique
@@ -170,12 +173,12 @@
         }
 
         #if ($Modes -contains 'DetailsSummary') {
-        $ADObject = [ordered] @{
+        $ADObjectDetailedDifferences = [ordered] @{
             DistinguishedName = $DN
         }
         #}
         #if ($Modes -contains 'Details') {
-        $ADObjectMinimal = [ordered] @{
+        $ADObjectSummary = [ordered] @{
             DistinguishedName     = $DN
             DifferentServers      = [System.Collections.Generic.List[Object]]::new()
             DifferentServersCount = 0
@@ -187,18 +190,18 @@
         #}
         $CachedReversedObjects[$DN] = [ordered] @{}
 
-        $ADObjectDetailsReversed = [ordered] @{
+        $ADObjectDetailsPerPropertyReversed = [ordered] @{
             DistinguishedName = $DN
             Property          = 'Status'
         }
-        $CachedReversedObjects[$DN]['Status'] = $ADObjectDetailsReversed
+        $CachedReversedObjects[$DN]['Status'] = $ADObjectDetailsPerPropertyReversed
 
         foreach ($Property in $Properties) {
-            $ADObjectDetailsReversed = [ordered] @{
+            $ADObjectDetailsPerPropertyReversed = [ordered] @{
                 DistinguishedName = $DN
                 Property          = $Property
             }
-            $CachedReversedObjects[$DN][$Property] = $ADObjectDetailsReversed
+            $CachedReversedObjects[$DN][$Property] = $ADObjectDetailsPerPropertyReversed
         }
 
         $CountObject++
@@ -255,101 +258,114 @@
                 if (-not $PrimaryObject) {
                     $PrimaryObject = $ObjectInfo
                 }
-                $ADObjectDetails = [ordered] @{
+                $ADObjectDetailsPerProperty = [ordered] @{
                     DistinguishedName = $DN
                     Server            = $GC.HostName
                     Status            = 'Exists'
                 }
+                #$CachedReversedObjects[$DN]['Status']['StatusComparison'] = $true
                 $CachedReversedObjects[$DN]['Status'][$GC.HostName] = 'Exists'
                 foreach ($Property in $Properties) {
+                    #$CachedReversedObjects[$DN]['Status']['StatusComparison'] = $true
                     # Comparing WhenChanged is not needed, because it is special and will always be different
                     if ($Property -notin $ExcludeProperties) {
                         $PropertyNameSame = "$Property-Same"
                         $PropertyNameDiff = "$Property-Diff"
-                        if (-not $ADObject[$PropertyNameSame]) {
-                            $ADObject[$PropertyNameSame] = [System.Collections.Generic.List[Object]]::new()
+                        if (-not $ADObjectDetailedDifferences[$PropertyNameSame]) {
+                            $ADObjectDetailedDifferences[$PropertyNameSame] = [System.Collections.Generic.List[Object]]::new()
                         }
-                        if (-not $ADObject[$PropertyNameDiff]) {
-                            $ADObject[$PropertyNameDiff] = [System.Collections.Generic.List[Object]]::new()
+                        if (-not $ADObjectDetailedDifferences[$PropertyNameDiff]) {
+                            $ADObjectDetailedDifferences[$PropertyNameDiff] = [System.Collections.Generic.List[Object]]::new()
                         }
                         if ($Property -in 'MemberOf', 'servicePrincipalName') {
+                            # this requires complicated logic for comparison
 
                         } elseif ($null -eq $($PrimaryObject.$Property) -and $null -eq ($ObjectInfo.$Property)) {
-                            $ADObject[$PropertyNameSame].Add($GC.HostName)
-                            if ($Property -notin $ADObjectMinimal.SameProperties) {
-                                $ADObjectMinimal.SameProperties.Add($Property)
+                            # Both are null, so it's the same
+                            $ADObjectDetailedDifferences[$PropertyNameSame].Add($GC.HostName)
+                            if ($Property -notin $ADObjectSummary.SameProperties) {
+                                $ADObjectSummary.SameProperties.Add($Property)
                             }
-                            if ($GC.HostName -notin $ADObjectMinimal.SameServers) {
-                                $ADObjectMinimal.SameServers.Add($GC.HostName)
+                            if ($GC.HostName -notin $ADObjectSummary.SameServers) {
+                                $ADObjectSummary.SameServers.Add($GC.HostName)
                             }
                         } elseif ($null -eq $PrimaryObject.$Property) {
-                            $ADObject[$PropertyNameDiff].Add($GC.HostName)
-                            if ($Property -notin $ADObjectMinimal.DifferentProperties) {
-                                $ADObjectMinimal.DifferentProperties.Add($Property)
+                            # PrimaryObject is null, but ObjectInfo is not, so it's different
+                            $ADObjectDetailedDifferences[$PropertyNameDiff].Add($GC.HostName)
+                            if ($Property -notin $ADObjectSummary.DifferentProperties) {
+                                $ADObjectSummary.DifferentProperties.Add($Property)
                             }
-                            if ($GC.HostName -notin $ADObjectMinimal.DifferentServers) {
-                                $ADObjectMinimal.DifferentServers.Add($GC.HostName)
+                            if ($GC.HostName -notin $ADObjectSummary.DifferentServers) {
+                                $ADObjectSummary.DifferentServers.Add($GC.HostName)
                             }
+                            # $CachedReversedObjects[$DN]['Status']['StatusComparison'] = $false
                         } elseif ($null -eq $ObjectInfo.$Property) {
-                            $ADObject[$PropertyNameDiff].Add($GC.HostName)
-                            if ($Property -notin $ADObjectMinimal.DifferentProperties) {
-                                $ADObjectMinimal.DifferentProperties.Add($Property)
+                            # ObjectInfo is null, but PrimaryObject is not, so it's different
+                            $ADObjectDetailedDifferences[$PropertyNameDiff].Add($GC.HostName)
+                            if ($Property -notin $ADObjectSummary.DifferentProperties) {
+                                $ADObjectSummary.DifferentProperties.Add($Property)
                             }
-                            if ($GC.HostName -notin $ADObjectMinimal.DifferentServers) {
-                                $ADObjectMinimal.DifferentServers.Add($GC.HostName)
+                            if ($GC.HostName -notin $ADObjectSummary.DifferentServers) {
+                                $ADObjectSummary.DifferentServers.Add($GC.HostName)
                             }
+                            # $CachedReversedObjects[$DN]['Status']['StatusComparison'] = $false
                         } else {
                             if ($ObjectInfo.$Property -ne $PrimaryObject.$Property) {
-                                $ADObject[$PropertyNameDiff].Add($GC.HostName)
-                                if ($Property -notin $ADObjectMinimal.DifferentProperties) {
-                                    $ADObjectMinimal.DifferentProperties.Add($Property)
+                                # Both are not null, and they are different
+                                $ADObjectDetailedDifferences[$PropertyNameDiff].Add($GC.HostName)
+                                if ($Property -notin $ADObjectSummary.DifferentProperties) {
+                                    $ADObjectSummary.DifferentProperties.Add($Property)
                                 }
-                                if ($GC.HostName -notin $ADObjectMinimal.DifferentServers) {
-                                    $ADObjectMinimal.DifferentServers.Add($GC.HostName)
+                                if ($GC.HostName -notin $ADObjectSummary.DifferentServers) {
+                                    $ADObjectSummary.DifferentServers.Add($GC.HostName)
                                 }
+                                # $CachedReversedObjects[$DN]['Status']['StatusComparison'] = $false
                             } else {
-                                $ADObject[$PropertyNameSame].Add($GC.HostName)
-                                if ($Property -notin $ADObjectMinimal.SameProperties) {
-                                    $ADObjectMinimal.SameProperties.Add($Property)
+                                # Both are not null, and they are the same
+                                $ADObjectDetailedDifferences[$PropertyNameSame].Add($GC.HostName)
+                                if ($Property -notin $ADObjectSummary.SameProperties) {
+                                    $ADObjectSummary.SameProperties.Add($Property)
                                 }
-                                if ($GC.HostName -notin $ADObjectMinimal.SameServers) {
-                                    $ADObjectMinimal.SameServers.Add($GC.HostName)
+                                if ($GC.HostName -notin $ADObjectSummary.SameServers) {
+                                    $ADObjectSummary.SameServers.Add($GC.HostName)
                                 }
                             }
                         }
                     }
-                    $ADObjectDetails[$Property] = $ObjectInfo.$Property
+                    $ADObjectDetailsPerProperty[$Property] = $ObjectInfo.$Property
                     $CachedReversedObjects[$DN][$Property][$GC.HostName] = $ObjectInfo.$Property
                 }
-                $Output.ListDetails.Add([PSCustomObject] $ADObjectDetails)
+                $Output.ListDetails.Add([PSCustomObject] $ADObjectDetailsPerProperty)
             } else {
                 if (-not $PrimaryObject) {
                     $PrimaryObject = $ObjectInfo
                 }
-                $ADObjectDetails = [ordered] @{
+                $ADObjectDetailsPerProperty = [ordered] @{
                     DistinguishedName = $DN
                     Server            = $GC.HostName
                     Status            = $ErrorValue
                 }
 
-                $ADObjectMinimal.DifferentServers.Add($GC.HostName)
+                $ADObjectSummary.DifferentServers.Add($GC.HostName)
 
                 $CachedReversedObjects[$DN]['Status'][$GC.HostName] = $ErrorValue
+                #$CachedReversedObjects[$DN]['Status']['StatusComparison'] = $false
                 foreach ($Property in $Properties) {
                     if ($Property -notin $ExcludeProperties) {
-                        $ADObjectDetails[$Property] = $null
+                        $ADObjectDetailsPerProperty[$Property] = $null
                         $CachedReversedObjects[$DN][$Property][$GC.HostName] = $ObjectInfo.$Property
 
-                        $ADObjectMinimal.DifferentProperties.Add($Property)
+                        $ADObjectSummary.DifferentProperties.Add($Property)
+                        $CachedReversedObjects[$DN][$Property]['StatusComparison'] = $false
                     }
                 }
-                $Output.ListDetails.Add([PSCustomObject] $ADObjectDetails)
+                $Output.ListDetails.Add([PSCustomObject] $ADObjectDetailsPerProperty)
             }
         }
-        $ADObjectMinimal.DifferentServersCount = $ADObjectMinimal.DifferentServers.Count
-        $ADObjectMinimal.SameServersCount = $ADObjectMinimal.SameServers.Count
-        $Output.List.Add([PSCustomObject] $ADObject)
-        $Output.ListSummary.Add([PSCustomObject] $ADObjectMinimal)
+        $ADObjectSummary.DifferentServersCount = $ADObjectSummary.DifferentServers.Count
+        $ADObjectSummary.SameServersCount = $ADObjectSummary.SameServers.Count
+        $Output.List.Add([PSCustomObject] $ADObjectDetailedDifferences)
+        $Output.ListSummary.Add([PSCustomObject] $ADObjectSummary)
         foreach ($Object in $CachedReversedObjects[$DN].Keys) {
             $Output.ListDetailsReversed.Add([PSCustomObject] $CachedReversedObjects[$DN][$Object])
         }
