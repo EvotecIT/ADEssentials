@@ -138,6 +138,7 @@
             'homePhone'
             'postalCode'
             'pager'
+            'lastLogonTimestamp'
             'UserAccountControl', 'DisplayName', 'mailNickname', 'mail', 'ipPhone'
             'whenChanged'
             'whenCreated'

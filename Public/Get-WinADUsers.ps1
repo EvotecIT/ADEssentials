@@ -1,10 +1,12 @@
 ﻿function Get-WinADUsers {
     <#
     .SYNOPSIS
-    Short description
+    Get-WinADUsers is a function that retrieves all users from Active Directory.
+    It can be used to retrieve users from a single domain or from all domains in the forest.
 
     .DESCRIPTION
-    Long description
+    Get-WinADUsers is a function that retrieves all users from Active Directory.
+    It can be used to retrieve users from a single domain or from all domains in the forest.
 
     .PARAMETER Forest
     Target different Forest, by default current forest is used
@@ -16,10 +18,10 @@
     Include only specific domains, by default whole forest is scanned
 
     .PARAMETER PerDomain
-    Parameter description
+    Return results per domain
 
     .PARAMETER AddOwner
-    Parameter description
+    Add Owner information to the output
 
     .EXAMPLE
     An example
@@ -39,9 +41,9 @@
     $AllContacts = [ordered] @{}
     $AllGroups = [ordered] @{}
     $CacheUsersReport = [ordered] @{}
-    #}
     $Today = Get-Date
     $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation
+    $ErrorCount = 0
     foreach ($Domain in $ForestInformation.Domains) {
         $QueryServer = $ForestInformation['QueryServers']["$Domain"].HostName[0]
 
@@ -55,12 +57,31 @@
             'Country', 'Title', 'Department'
             'msds-resultantpso'
         )
-        $AllUsers[$Domain] = Get-ADUser -Filter * -Properties $Properties -Server $QueryServer #$ForestInformation['QueryServers'][$Domain].HostName[0]
-        $AllContacts[$Domain] = Get-ADObject -Filter 'objectClass -eq "contact"' -Properties SamAccountName, Mail, Name, DistinguishedName, WhenChanged, Whencreated, DisplayName -Server $QueryServer
+        try {
+            $AllUsers[$Domain] = Get-ADUser -Filter * -Properties $Properties -Server $QueryServer #$ForestInformation['QueryServers'][$Domain].HostName[0]
+        } catch {
+            $ErrorCount++
+            Write-Warning -Message "Get-WinADUsers - Failed to get users from $Domain using $($QueryServer). Error: $($_.Exception.Message)"
+        }
+        try {
+            $AllContacts[$Domain] = Get-ADObject -Filter 'objectClass -eq "contact"' -Properties SamAccountName, Mail, Name, DistinguishedName, WhenChanged, Whencreated, DisplayName -Server $QueryServer
+        } catch {
+            $ErrorCount++
+            Write-Warning -Message "Get-WinADUsers - Failed to get contacts from $Domain using $($QueryServer). Error: $($_.Exception.Message)"
+        }
         $Properties = @(
             'SamAccountName', 'CanonicalName', 'Mail', 'Name', 'DistinguishedName', 'isCriticalSystemObject', 'ObjectSID'
         )
-        $AllGroups[$Domain] = Get-ADGroup -Filter * -Properties $Properties -Server $QueryServer
+        try {
+            $AllGroups[$Domain] = Get-ADGroup -Filter * -Properties $Properties -Server $QueryServer
+        } catch {
+            $ErrorCount++
+            Write-Warning -Message "Get-WinADUsers - Failed to get groups from $Domain using $($QueryServer). Error: $($_.Exception.Message)"
+        }
+    }
+    if ($ErrorCount -gt 0) {
+        Write-Warning -Message "Get-WinADUsers - Failed to get data from domains. Found $ErrorCount errors. Please check the error messages above."
+        return
     }
 
     foreach ($Domain in $AllUsers.Keys) {
