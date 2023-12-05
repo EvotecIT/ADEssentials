@@ -1,5 +1,7 @@
 ﻿#### 0.0.174
-- Added `Show-WinADObjectReplicationStatus` *Not ready*
+- Improve `Get-WinADUsers` error handling
+- Added `Update-LastLogonTimestamp` - to impersonate user and update LastLogonTimestamp without requring to log-in (Domain Admins only, without ProtectedUsers group)
+- Improvements to `Find-WinADObjectDifference`
 
 #### 0.0.173
 - Improvements to `Find-WinADObjectDifference`
