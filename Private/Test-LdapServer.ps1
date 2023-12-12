@@ -3,7 +3,13 @@
     param(
         [string] $ServerName,
         [string] $Computer,
-        [PSCustomObject] $Advanced
+        [PSCustomObject] $Advanced,
+        [int] $GCPortLDAP = 3268,
+        [int] $GCPortLDAPSSL = 3269,
+        [int] $PortLDAP = 389,
+        [int] $PortLDAPS = 636,
+        [switch] $VerifyCertificate,
+        [PSCredential] $Credential
     )
     if ($ServerName -notlike '*.*') {
         # $FQDN = $false

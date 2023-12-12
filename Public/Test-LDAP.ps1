@@ -99,12 +99,31 @@
             foreach ($Computer in $ComputerName) {
                 Write-Verbose "Test-LDAP - Processing $Computer"
                 $ServerName = ConvertTo-ComputerFQDN -Computer $Computer
-                Test-LdapServer -ServerName $ServerName -Computer $Computer
+                $testLdapServerSplat = @{
+                    ServerName        = $ServerName
+                    Computer          = $Computer
+                    GCPortLDAP        = $GCPortLDAP
+                    GCPortLDAPSSL     = $GCPortLDAPSSL
+                    PortLDAP          = $PortLDAP
+                    PortLDAPS         = $PortLDAPS
+                    VerifyCertificate = $VerifyCertificate.IsPresent
+                }
+                Test-LdapServer @testLdapServerSplat
             }
         } else {
             foreach ($Computer in $ForestInformation.ForestDomainControllers) {
                 Write-Verbose "Test-LDAP - Processing $($Computer.HostName)"
-                Test-LdapServer -ServerName $($Computer.HostName) -Computer $Computer.HostName -Advanced $Computer
+                $testLdapServerSplat = @{
+                    ServerName        = $($Computer.HostName)
+                    Computer          = $Computer.HostName
+                    Advanced          = $Computer
+                    GCPortLDAP        = $GCPortLDAP
+                    GCPortLDAPSSL     = $GCPortLDAPSSL
+                    PortLDAP          = $PortLDAP
+                    PortLDAPS         = $PortLDAPS
+                    VerifyCertificate = $VerifyCertificate.IsPresent
+                }
+                Test-LdapServer @testLdapServerSplat
             }
         }
     }
