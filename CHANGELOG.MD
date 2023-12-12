@@ -1,7 +1,10 @@
 ﻿#### 0.0.174
 - Improve `Get-WinADUsers` error handling
+- Improve `Test-LDAP` parameters handling
+- Fixes issue when providing IncludeDomainControllers that would sometime return null value
 - Added `Update-LastLogonTimestamp` - to impersonate user and update LastLogonTimestamp without requring to log-in (Domain Admins only, without ProtectedUsers group)
 - Improvements to `Find-WinADObjectDifference`
+- Added `Get-WinADDFSTopology`
 
 #### 0.0.173
 - Improvements to `Find-WinADObjectDifference`
