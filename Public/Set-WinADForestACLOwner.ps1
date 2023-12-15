@@ -13,7 +13,7 @@
     Defines which object owners are to be included in the replacement. Options are: 'WellKnownAdministrative', 'Administrative', 'NotAdministrative', 'Unknown'
 
     .PARAMETER LimitProcessing
-    Parameter description
+    Provide limit of objects that will be processed in a single run
 
     .PARAMETER Principal
     Defines the principal to be used as the new owner. By default those are Domain Admins for all objects. If you want to use a different principal, you can specify it here. Not really useful as the idea is to always have Domain Admins as object owners.
