@@ -1,4 +1,8 @@
-﻿#### 0.0.174
+﻿#### 0.0.175
+- Added `Request-ChangePasswordAtLogon` - This command will find all users that have expired password and set them to change password at next logon. This is useful for example for Azure AD Connect where you want to force users to change password on next logon.
+- Added `Request-DisableOnAccountExpiration` - This command will find all users that have expired account and set them to be disabled. This is useful for example for Azure AD Connect where you want to disable users that have expired account.
+
+#### 0.0.174
 - Improve `Get-WinADUsers` error handling
 - Improve `Test-LDAP` parameters handling
 - Fixes issue when providing IncludeDomainControllers that would sometime return null value
