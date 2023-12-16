@@ -4,7 +4,6 @@
         [alias('ForestName')][string] $Forest,
         [string[]] $ExcludeDomains,
         [alias('Domain', 'Domains')][string[]] $IncludeDomains,
-        [System.Collections.IDictionary] $ExtendedForestInformation,
         [switch] $Online,
         [switch] $HideHTML,
         [string] $FilePath
@@ -13,7 +12,7 @@
     $Script:Reporting = [ordered] @{}
     $Script:Reporting['Version'] = Get-GitHubVersion -Cmdlet 'Invoke-ADEssentials' -RepositoryOwner 'evotecit' -RepositoryName 'ADEssentials'
 
-    $AccountData = Get-WinADKerberosAccount -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation
+    $AccountData = Get-WinADKerberosAccount -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains
 
     New-HTML -Author 'Przemysław Kłys' -TitleText 'Kerberos Reporting' {
         New-HTMLTabStyle -BorderRadius 0px -TextTransform lowercase -BackgroundColorActive SlateGrey
@@ -120,12 +119,17 @@
                                             New-HTMLStatusItem -Name 'Domain Controller' -Status "Synchronized $CountMatched/$CountTotal ($Percentage)" -BackgroundColor $BackgroundColor -IconHex $IconType
                                             $newHTMLToastSplat = @{
                                                 TextHeader   = 'Kerberos password date'
-                                                Text         = "Password set to: $NewestPassword (Days: $($TimeSinceLastChange.Days), Hours: $($TimeSinceLastChange.Hours), Minutes: $($TimeSinceLastChange.Minutes))"
+                                                Text         = "Password set on: $NewestPassword (Days: $($TimeSinceLastChange.Days), Hours: $($TimeSinceLastChange.Hours), Minutes: $($TimeSinceLastChange.Minutes))"
                                                 BarColorLeft = 'AirForceBlue'
                                                 IconSolid    = 'info-circle'
                                                 IconColor    = 'AirForceBlue'
                                             }
-
+                                            if ($TimeSinceLastChange.Days -ge 180) {
+                                                $newHTMLToastSplat['BarColorLeft'] = 'Salmon'
+                                                $newHTMLToastSplat['IconSolid'] = 'exclamation-triangle'
+                                                $newHTMLToastSplat['IconColor'] = 'Salmon'
+                                                $newHTMLToastSplat['TextHeader'] = 'Kerberos password date (outdated)'
+                                            }
                                             New-HTMLToast @newHTMLToastSplat
                                         }
                                     }
@@ -162,12 +166,17 @@
                                         New-HTMLStatusItem -Name 'Global Catalogs' -Status "Synchronized $CountMatchedGC/$CountTotalGC ($Percentage)" -BackgroundColor $BackgroundColor -IconHex $IconType
                                         $newHTMLToastSplat = @{
                                             TextHeader   = 'Kerberos password date'
-                                            Text         = "Password set to: $NewestPasswordGC (Days: $($TimeSinceLastChangeGC.Days), Hours: $($TimeSinceLastChangeGC.Hours), Minutes: $($TimeSinceLastChangeGC.Minutes))"
+                                            Text         = "Password set on: $NewestPasswordGC (Days: $($TimeSinceLastChangeGC.Days), Hours: $($TimeSinceLastChangeGC.Hours), Minutes: $($TimeSinceLastChangeGC.Minutes))"
                                             BarColorLeft = 'AirForceBlue'
                                             IconSolid    = 'info-circle'
                                             IconColor    = 'AirForceBlue'
                                         }
-
+                                        if ($TimeSinceLastChange.Days -ge 180) {
+                                            $newHTMLToastSplat['BarColorLeft'] = 'Salmon'
+                                            $newHTMLToastSplat['IconSolid'] = 'exclamation-triangle'
+                                            $newHTMLToastSplat['IconColor'] = 'Salmon'
+                                            $newHTMLToastSplat['TextHeader'] = 'Kerberos password date (outdated)'
+                                        }
                                         New-HTMLToast @newHTMLToastSplat
                                     }
                                 }
