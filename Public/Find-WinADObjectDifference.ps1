@@ -16,7 +16,8 @@
         [Parameter(ParameterSetName = 'Standard')]
         [switch] $GlobalCatalog,
 
-        [string[]] $Properties
+        [string[]] $Properties,
+        [string[]] $AddProperties
 
         # [ValidateSet(
         #     'Summary',
@@ -144,6 +145,9 @@
             'whenCreated'
         )
     }
+    if ($AddProperties) {
+        $Properties += $AddProperties
+    }
     $Properties = $Properties | Sort-Object -Unique
 
     if ($GlobalCatalog) {
@@ -217,7 +221,7 @@
                     if ($GlobalCatalog) {
                         $ObjectInfo = Get-ADUser -Identity $DN -Server "$($GC.HostName):3268" -ErrorAction Stop -Properties $Properties
                     } else {
-                        $ObjectInfo = Get-ADUser -Identity $DN -Server $GC.HostName -Properties * -ErrorAction Stop
+                        $ObjectInfo = Get-ADUser -Identity $DN -Server $GC.HostName -Properties $Properties -ErrorAction Stop
                     }
                 } catch {
                     $ObjectInfo = $null
@@ -229,7 +233,7 @@
                     if ($GlobalCatalog) {
                         $ObjectInfo = Get-ADComputer -Identity $DN -Server "$($GC.HostName):3268" -ErrorAction Stop -Properties $Properties
                     } else {
-                        $ObjectInfo = Get-ADComputer -Identity $DN -Server $GC.HostName -Properties * -ErrorAction Stop
+                        $ObjectInfo = Get-ADComputer -Identity $DN -Server $GC.HostName -Properties $Properties -ErrorAction Stop
                     }
                 } catch {
                     $ObjectInfo = $null
@@ -242,7 +246,7 @@
                         if ($GlobalCatalog) {
                             $ObjectInfo = Get-ADObject -Identity $DN -Server "$($GC.HostName):3268" -ErrorAction Stop -Properties $Properties
                         } else {
-                            $ObjectInfo = Get-ADObject -Identity $DN -Server $GC.HostName -Properties * -ErrorAction Stop
+                            $ObjectInfo = Get-ADObject -Identity $DN -Server $GC.HostName -Properties $Properties -ErrorAction Stop
                         }
                     } catch {
                         $ObjectInfo = $null
