@@ -25,7 +25,6 @@
         )
 
         $KerberosPasswords = Get-ADUser -Filter "Name -like 'krbtgt*'" -Server $QueryServer -Properties $Properties #| Select-Object -Property $Properties
-
         foreach ($Account in $KerberosPasswords) {
             Write-Verbose -Message "Get-WinADKerberosAccount - Processing domain $Domain \ Kerberos account $($Account.SamAccountName) \ DC"
 
@@ -80,8 +79,24 @@
                 }
             }
 
+            $PasswordLastSetAgo = ($Today) - $Account.PasswordLastSet
+            $WhenChangedDaysAgo = ($Today) - $Account.WhenChanged
             $Accounts["$Domain"][$Account.SamAccountName] = @{
-                FullInformation   = $Account
+                FullInformation   = [PSCustomObject] @{
+                    'Name'                              = $Account.Name
+                    'SamAccountName'                    = $Account.SamAccountName
+                    'Enabled'                           = $Account.Enabled
+                    'PasswordLastSet'                   = $Account.PasswordLastSet
+                    'PasswordLastSetDays'               = $PasswordLastSetAgo
+                    'WhenChangedDays'                   = $WhenChangedDaysAgo
+                    'WhenChanged'                       = $Account.WhenChanged
+                    'WhenCreated'                       = $Account.WhenCreated
+                    'AllowReversiblePasswordEncryption' = $Account.AllowReversiblePasswordEncryption
+                    'BadLogonCount'                     = $Account.BadLogonCount
+                    'AccountNotDelegated'               = $Account.AccountNotDelegated
+                    'SID'                               = $Account.SID
+                    'SIDHistory'                        = $Account.SIDHistory
+                }
                 DomainControllers = $CachedServers
                 GlobalCatalogs    = $GlobalCatalogs
             }
