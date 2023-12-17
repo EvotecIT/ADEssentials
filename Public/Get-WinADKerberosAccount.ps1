@@ -40,10 +40,10 @@
             $ProcessingText = "[Domain: $DomainCount/$DomainCountTotal / Account: $CountK/$($KerberosPasswords.Count)]"
             Write-Verbose -Message "Get-WinADKerberosAccount - $ProcessingText Processing domain $Domain \ Kerberos account ($CountK/$($KerberosPasswords.Count)) $($Account.SamAccountName) \ DC"
 
-            if ($Account.SamAccountName -like "*_*" -and -not $Account.'msDS-KrbTgtLinkBl') {
-                Write-Warning -Message "Get-WinADKerberosAccount - Processing domain $Domain \ Kerberos account $($Account.SamAccountName) \ DC - Skipping"
-                continue
-            }
+            #if ($Account.SamAccountName -like "*_*" -and -not $Account.'msDS-KrbTgtLinkBl') {
+            #    Write-Warning -Message "Get-WinADKerberosAccount - Processing domain $Domain \ Kerberos account $($Account.SamAccountName) \ DC - Skipping"
+            #    continue
+            #}
 
             $CachedServers = [ordered] @{}
             $CountDC = 0
@@ -58,6 +58,14 @@
                     $WhenChangedDaysAgo = ($Today) - $ServerData.WhenChanged
                     $PasswordLastSetAgo = ($Today) - $ServerData.PasswordLastSet
 
+                    if ($Account.SamAccountName -like "*_*" -and $ServerData.'msDS-KrbTgtLinkBl') {
+                        $Status = 'OK'
+                    } elseif ($Account.SamAccountName -like "*_*" -and -not $ServerData.'msDS-KrbTgtLinkBl') {
+                        $Status = 'Missing link, orphaned?'
+                    } else {
+                        $Status = 'OK'
+                    }
+
                     $CachedServers[$Server] = [PSCustomObject] @{
                         'Server'              = $Server
                         'Name'                = $ServerData.Name
@@ -67,7 +75,7 @@
                         'WhenChanged'         = $ServerData.'WhenChanged'
                         'WhenCreated'         = $ServerData.'WhenCreated'
                         'msDS-KrbTgtLinkBl'   = $ServerData.'msDS-KrbTgtLinkBl'
-                        'Status'              = 'OK'
+                        'Status'              = $Status
                     }
                 } catch {
                     Write-Warning -Message "Get-WinADKerberosAccount - Processing domain $Domain $ProcessingText \ Kerberos account $($Account.SamAccountName) \ DC Server $Server - Error: $($_.Exception.Message)"
@@ -115,7 +123,7 @@
                             'WhenChanged'         = $ServerData.'WhenChanged'
                             'WhenCreated'         = $ServerData.'WhenCreated'
                             'msDS-KrbTgtLinkBl'   = $ServerData.'msDS-KrbTgtLinkBl'
-                            'Status'              = $_.Exception.Message
+                            'Status'              = 'OK'
                         }
                     } catch {
                         Write-Warning -Message "Get-WinADKerberosAccount - Processing domain $Domain $ProcessingText \ Kerberos account $($Account.SamAccountName) \ GC Server $Server - Error: $($_.Exception.Message)"
