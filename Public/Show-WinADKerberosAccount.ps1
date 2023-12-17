@@ -14,6 +14,7 @@
 
     $AccountData = Get-WinADKerberosAccount -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains
 
+    Write-Verbose -Message "Show-WinADKerberosAccount - Building HTML report based on delivered data"
     New-HTML -Author 'Przemysław Kłys' -TitleText 'Kerberos Reporting' {
         New-HTMLTabStyle -BorderRadius 0px -TextTransform lowercase -BackgroundColorActive SlateGrey
         New-HTMLSectionStyle -BorderRadius 0px -HeaderBackGroundColor Grey -RemoveShadow
@@ -188,12 +189,12 @@
 
                             New-HTMLSection -HeaderText 'Domain Controllers by Domain' {
                                 New-HTMLTable -DataTable $DomainControllers.Values {
-
+                                    New-HTMLTableCondition -Name 'Status' -Operator eq -Value 'OK' -BackgroundColor '#0ef49b' -FailBackgroundColor '#ff5a64'
                                 } -Filtering -DataStore JavaScript
                             }
                             New-HTMLSection -HeaderText 'Global Catalogs in Forest' {
                                 New-HTMLTable -DataTable $GlobalCatalogs.Values {
-
+                                    New-HTMLTableCondition -Name 'Status' -Operator eq -Value 'OK' -BackgroundColor '#0ef49b' -FailBackgroundColor '#ff5a64'
                                 } -Filtering -DataStore JavaScript
                             }
                         }
@@ -203,4 +204,5 @@
 
         }
     } -Online:$Online.IsPresent -ShowHTML:(-not $HideHTML) -FilePath $FilePath
+    Write-Verbose -Message "Show-WinADKerberosAccount - HTML Report generated"
 }
