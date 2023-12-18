@@ -55,9 +55,31 @@
                 Write-Verbose -Message "Get-WinADKerberosAccount - $ProcessingText Processing domain $Domain \ Kerberos account $($Account.SamAccountName) \ DC Server $Server"
                 try {
                     $ServerData = Get-ADUser -Identity $Account.DistinguishedName -Server $Server -Properties 'msDS-KrbTgtLinkBl', 'PasswordLastSet', 'WhenCreated', 'WhenChanged' -ErrorAction Stop
-                    $WhenChangedDaysAgo = ($Today) - $ServerData.WhenChanged
-                    $PasswordLastSetAgo = ($Today) - $ServerData.PasswordLastSet
-
+                } catch {
+                    Write-Warning -Message "Get-WinADKerberosAccount - Processing domain $Domain $ProcessingText \ Kerberos account $($Account.SamAccountName) \ DC Server $Server - Error: $($_.Exception.Message)"
+                    $CachedServers[$Server] = [PSCustomObject] @{
+                        'Server'              = $Server
+                        'Name'                = $Server
+                        'PasswordLastSet'     = $null
+                        'PasswordLastSetDays' = $null
+                        'WhenChangedDays'     = $null
+                        'WhenChanged'         = $null
+                        'WhenCreated'         = $null
+                        'msDS-KrbTgtLinkBl'   = $ServerData.'msDS-KrbTgtLinkBl'
+                        'Status'              = $_.Exception.Message
+                    }
+                }
+                if ($ServerData.Name) {
+                    if ($null -eq $ServerData.WhenChanged) {
+                        $WhenChangedDaysAgo = $null
+                    } else {
+                        $WhenChangedDaysAgo = ($Today) - $ServerData.WhenChanged
+                    }
+                    if ($null -eq $ServerData.PasswordLastSet) {
+                        $PasswordLastSetAgo = $null
+                    } else {
+                        $PasswordLastSetAgo = ($Today) - $ServerData.PasswordLastSet
+                    }
                     if ($Account.SamAccountName -like "*_*" -and $ServerData.'msDS-KrbTgtLinkBl') {
                         $Status = 'OK'
                     } elseif ($Account.SamAccountName -like "*_*" -and -not $ServerData.'msDS-KrbTgtLinkBl') {
@@ -76,19 +98,6 @@
                         'WhenCreated'         = $ServerData.'WhenCreated'
                         'msDS-KrbTgtLinkBl'   = $ServerData.'msDS-KrbTgtLinkBl'
                         'Status'              = $Status
-                    }
-                } catch {
-                    Write-Warning -Message "Get-WinADKerberosAccount - Processing domain $Domain $ProcessingText \ Kerberos account $($Account.SamAccountName) \ DC Server $Server - Error: $($_.Exception.Message)"
-                    $CachedServers[$Server] = [PSCustomObject] @{
-                        'Server'              = $Server
-                        'Name'                = $Server
-                        'PasswordLastSet'     = $null
-                        'PasswordLastSetDays' = $null
-                        'WhenChangedDays'     = $null
-                        'WhenChanged'         = $null
-                        'WhenCreated'         = $null
-                        'msDS-KrbTgtLinkBl'   = $ServerData.'msDS-KrbTgtLinkBl'
-                        'Status'              = $_.Exception.Message
                     }
                 }
             }
@@ -110,21 +119,6 @@
                 if ($DC.IsGlobalCatalog ) {
                     try {
                         $ServerData = Get-ADUser -Identity $Account.DistinguishedName -Server "$($Server):3268" -Properties 'msDS-KrbTgtLinkBl', 'PasswordLastSet', 'WhenCreated', 'WhenChanged' -ErrorAction Stop
-
-                        $WhenChangedDaysAgo = ($Today) - $ServerData.WhenChanged
-                        $PasswordLastSetAgo = ($Today) - $ServerData.PasswordLastSet
-
-                        $GlobalCatalogs[$Server] = [PSCustomObject] @{
-                            'Server'              = $Server
-                            'Name'                = $ServerData.Name
-                            'PasswordLastSet'     = $ServerData.'PasswordLastSet'
-                            'PasswordLastSetDays' = $PasswordLastSetAgo.Days
-                            'WhenChangedDays'     = $WhenChangedDaysAgo.Days
-                            'WhenChanged'         = $ServerData.'WhenChanged'
-                            'WhenCreated'         = $ServerData.'WhenCreated'
-                            'msDS-KrbTgtLinkBl'   = $ServerData.'msDS-KrbTgtLinkBl'
-                            'Status'              = 'OK'
-                        }
                     } catch {
                         Write-Warning -Message "Get-WinADKerberosAccount - Processing domain $Domain $ProcessingText \ Kerberos account $($Account.SamAccountName) \ GC Server $Server - Error: $($_.Exception.Message)"
                         $GlobalCatalogs[$Server] = [PSCustomObject] @{
@@ -139,11 +133,43 @@
                             'Status'              = $_.Exception.Message
                         }
                     }
+
+                    if ($ServerData.Name) {
+                        if ($null -eq $ServerData.WhenChanged) {
+                            $WhenChangedDaysAgo = $null
+                        } else {
+                            $WhenChangedDaysAgo = ($Today) - $ServerData.WhenChanged
+                        }
+                        if ($null -eq $ServerData.PasswordLastSet) {
+                            $PasswordLastSetAgo = $null
+                        } else {
+                            $PasswordLastSetAgo = ($Today) - $ServerData.PasswordLastSet
+                        }
+                        $GlobalCatalogs[$Server] = [PSCustomObject] @{
+                            'Server'              = $Server
+                            'Name'                = $ServerData.Name
+                            'PasswordLastSet'     = $ServerData.'PasswordLastSet'
+                            'PasswordLastSetDays' = $PasswordLastSetAgo.Days
+                            'WhenChangedDays'     = $WhenChangedDaysAgo.Days
+                            'WhenChanged'         = $ServerData.'WhenChanged'
+                            'WhenCreated'         = $ServerData.'WhenCreated'
+                            'msDS-KrbTgtLinkBl'   = $ServerData.'msDS-KrbTgtLinkBl'
+                            'Status'              = 'OK'
+                        }
+                    }
                 }
             }
 
-            $PasswordLastSetAgo = ($Today) - $Account.PasswordLastSet
-            $WhenChangedDaysAgo = ($Today) - $Account.WhenChanged
+            if ($null -eq $Account.PasswordLastSet) {
+                $PasswordLastSetAgo = $null
+            } else {
+                $PasswordLastSetAgo = ($Today) - $Account.PasswordLastSet
+            }
+            if ($null -eq $Account.WhenChanged) {
+                $WhenChangedDaysAgo = $null
+            } else {
+                $WhenChangedDaysAgo = ($Today) - $Account.WhenChanged
+            }
             $Accounts["$Domain"][$Account.SamAccountName] = @{
                 FullInformation   = [PSCustomObject] @{
                     'Name'                              = $Account.Name
