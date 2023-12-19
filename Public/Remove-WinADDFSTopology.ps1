@@ -1,4 +1,29 @@
 ﻿function Remove-WinADDFSTopology {
+    <#
+    .SYNOPSIS
+    This command removes DFS topology objects from Active Directory that are missing one or more properties
+
+    .DESCRIPTION
+    This command removes DFS topology objects from Active Directory that are missing one or more properties.
+
+    .PARAMETER Forest
+    Target different Forest, by default current forest is used
+
+    .PARAMETER ExcludeDomains
+    Exclude domain from search, by default whole forest is scanned
+
+    .PARAMETER IncludeDomains
+    Include only specific domains, by default whole forest is scanned
+
+    .PARAMETER Type
+    Type of objects to remove - to remove those missing at least one property or all properties (MissingAtLeastOne, MissingAll)
+
+    .EXAMPLE
+    Remove-WinADDFSTopology -Type MissingAll -Verbose -WhatIf
+
+    .NOTES
+    General notes
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [alias('ForestName')][string] $Forest,

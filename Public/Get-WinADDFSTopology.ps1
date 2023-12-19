@@ -1,4 +1,30 @@
 ﻿function Get-WinADDFSTopology {
+    <#
+    .SYNOPSIS
+    This command gets the DFS topology for a forest, listing it's current members
+
+    .DESCRIPTION
+    This command gets the DFS topology for a forest, listing it's current members.
+    It can be used to find broken DFS members, which then can be removed using Remove-WinADDFSTopology
+
+    .PARAMETER Forest
+    Target different Forest, by default current forest is used
+
+    .PARAMETER ExcludeDomains
+    Exclude domain from search, by default whole forest is scanned
+
+    .PARAMETER IncludeDomains
+    Include only specific domains, by default whole forest is scanned
+
+    .PARAMETER Type
+    Type of objects to return (MissingAtLeastOne, MissingAll, All)
+
+    .EXAMPLE
+    Get-WinADDFSTopology | ft -AutoSize
+
+    .NOTES
+    General notes
+    #>
     [cmdletbinding()]
     param(
         [alias('ForestName')][string] $Forest,
