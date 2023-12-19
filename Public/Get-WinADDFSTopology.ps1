@@ -6,6 +6,7 @@
         [alias('Domain', 'Domains')][string[]] $IncludeDomains,
         [ValidateSet('MissingAtLeastOne', 'MissingAll', 'All')][string] $Type = 'All'
     )
+    Write-Verbose -Message "Get-WinADDFSTopology - Getting forest information"
     $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains
 
     $Properties = @(
@@ -16,6 +17,7 @@
     )
 
     foreach ($Domain in $ForestInformation.Domains) {
+        Write-Verbose -Message "Get-WinADDFSTopology - Getting topology for $Domain"
         $DomainDN = ConvertTo-DistinguishedName -CanonicalName $Domain -ToDomain
         $QueryServer = $ForestInformation['QueryServers'][$Domain].HostName[0]
         $ObjectsInOu = Get-ADObject -LDAPFilter "(ObjectClass=msDFSR-Member)" -Properties $Properties -SearchBase "CN=Topology,CN=Domain System Volume,CN=DFSR-GlobalSettings,CN=System,$DomainDN" -Server $QueryServer
@@ -51,16 +53,8 @@
                 if ($Status -eq 'MissingAll') {
                     $DataObject
                 }
-            } elseif ($Type -eq 'MissingComputerReference') {
-                if ($Status -eq 'MissingComputerReference') {
-                    $DataObject
-                }
-            } elseif ($Type -eq 'MissingMemberReferenceBL') {
-                if ($Status -eq 'MissingMemberReferenceBL') {
-                    $DataObject
-                }
-            } elseif ($Type -eq 'MissingServerReference') {
-                if ($Status -eq 'MissingServerReference') {
+            } elseif ($Type -eq 'MissingAtLeastOne') {
+                if ($Status -in 'MissingAll', 'MissingAtLeastOne') {
                     $DataObject
                 }
             } else {
