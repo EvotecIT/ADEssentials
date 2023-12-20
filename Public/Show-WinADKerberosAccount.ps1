@@ -6,13 +6,14 @@
         [alias('Domain', 'Domains')][string[]] $IncludeDomains,
         [switch] $Online,
         [switch] $HideHTML,
-        [string] $FilePath
+        [string] $FilePath,
+        [switch] $PassThru
     )
     $Today = Get-Date
     $Script:Reporting = [ordered] @{}
     $Script:Reporting['Version'] = Get-GitHubVersion -Cmdlet 'Invoke-ADEssentials' -RepositoryOwner 'evotecit' -RepositoryName 'ADEssentials'
 
-    $AccountData = Get-WinADKerberosAccount -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains
+    $AccountData = Get-WinADKerberosAccount -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -IncludeCriticalAccounts
 
     Write-Verbose -Message "Show-WinADKerberosAccount - Building HTML report based on delivered data"
     New-HTML -Author 'Przemysław Kłys' -TitleText 'Kerberos Reporting' {
@@ -32,10 +33,10 @@
             }
         }
 
-        foreach ($Domain in $AccountData.Keys) {
+        foreach ($Domain in $AccountData.Data.Keys) {
             New-HTMLTab -Name $Domain {
                 New-HTMLPanel {
-                    New-HTMLTable -DataTable $AccountData[$Domain].Values.FullInformation -Filtering -DataStore JavaScript -ScrollX {
+                    New-HTMLTable -DataTable $AccountData['Data'][$Domain].Values.FullInformation -Filtering -DataStore JavaScript -ScrollX {
                         $newHTMLTableConditionSplat = @{
                             Name                = 'PasswordLastSetDays'
                             ComparisonType      = 'number'
@@ -49,8 +50,9 @@
                         New-HTMLTableCondition @newHTMLTableConditionSplat
                     }
                 }
+
                 New-HTMLTabPanel {
-                    foreach ($Account in $AccountData[$Domain].Values) {
+                    foreach ($Account in $AccountData['Data'][$Domain].Values) {
                         $DomainControllers = $Account.DomainControllers
                         $GlobalCatalogs = $Account.GlobalCatalogs
 
@@ -67,7 +69,11 @@
                             $CountTotal++
                         }
 
-                        $TimeSinceLastChange = ($Today) - $NewestPassword
+                        if ($NewestPassword) {
+                            $TimeSinceLastChange = ($Today) - $NewestPassword
+                        } else {
+                            $TimeSinceLastChange = $null
+                        }
 
                         $CountMatchedGC = 0
                         $CountNotMatchedGC = 0
@@ -82,7 +88,11 @@
                             $CountTotalGC++
                         }
 
-                        $TimeSinceLastChangeGC = ($Today) - $NewestPasswordGC
+                        if ($NewestPasswordGC) {
+                            $TimeSinceLastChangeGC = ($Today) - $NewestPasswordGC
+                        } else {
+                            $TimeSinceLastChangeGC = $null
+                        }
 
                         New-HTMLTab -Name $Account.FullInformation.SamAccountName {
                             New-HTMLSection -Invisible {
@@ -187,12 +197,12 @@
 
                             #$DataAccount = $Account.FullInformation
 
-                            New-HTMLSection -HeaderText 'Domain Controllers by Domain' {
+                            New-HTMLSection -HeaderText "Domain Controllers for '$($Account.FullInformation.SamAccountName)'" {
                                 New-HTMLTable -DataTable $DomainControllers.Values {
                                     New-HTMLTableCondition -Name 'Status' -Operator eq -Value 'OK' -BackgroundColor '#0ef49b' -FailBackgroundColor '#ff5a64'
                                 } -Filtering -DataStore JavaScript
                             }
-                            New-HTMLSection -HeaderText 'Global Catalogs in Forest' {
+                            New-HTMLSection -HeaderText "Global Catalogs for account '$($Account.FullInformation.SamAccountName)'" {
                                 New-HTMLTable -DataTable $GlobalCatalogs.Values {
                                     New-HTMLTableCondition -Name 'Status' -Operator eq -Value 'OK' -BackgroundColor '#0ef49b' -FailBackgroundColor '#ff5a64'
                                 } -Filtering -DataStore JavaScript
@@ -200,9 +210,35 @@
                         }
                     }
                 }
+
+                $KerberosAccount = $AccountData['Data'][$Domain]['krbtgt'].FullInformation
+                $NewestPassword = $KerberosAccount.PasswordLastSetDays
+
+                New-HTMLSection -HeaderText "Critical Accounts for domain '$Domain'" {
+                    New-HTMLContainer {
+                        New-HTMLPanel {
+                            New-HTMLText -Text "Critical accounts that should have their password changed after every kerberos password change."
+                            New-HTMLList {
+                                New-HTMLListItem -Text 'Domain Admins'
+                                New-HTMLListItem -Text 'Enterprise Admins'
+                            }
+                        }
+                        New-HTMLPanel {
+                            New-HTMLTable -DataTable $AccountData['CriticalAccounts'][$Domain] {
+                                if ($null -ne $NewestPassword) {
+                                    New-HTMLTableCondition -Name 'PasswordLastSetDays' -Operator le -Value $NewestPassword -ComparisonType number -BackgroundColor MintGreen -FailBackgroundColor Salmon -HighlightHeaders PasswordLastSetDays, PasswordLastSet
+                                }
+                            } -Filtering -DataStore JavaScript -ScrollX
+                        }
+                    }
+                }
             }
 
         }
     } -Online:$Online.IsPresent -ShowHTML:(-not $HideHTML) -FilePath $FilePath
+
+    if ($PassThru) {
+        $AccountData
+    }
     Write-Verbose -Message "Show-WinADKerberosAccount - HTML Report generated"
 }

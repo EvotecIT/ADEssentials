@@ -3,14 +3,18 @@
     param(
         [alias('ForestName')][string] $Forest,
         [string[]] $ExcludeDomains,
-        [alias('Domain', 'Domains')][string[]] $IncludeDomains
+        [alias('Domain', 'Domains')][string[]] $IncludeDomains,
+        [switch] $IncludeCriticalAccounts
     )
     $Today = Get-Date
-    $Accounts = [ordered] @{}
+    $Accounts = [ordered] @{
+        'CriticalAccounts' = [ordered] @{}
+        'Data'             = [ordered] @{}
+    }
     Write-Verbose -Message "Get-WinADKerberosAccount - Gathering information about forest"
     $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -PreferWritable
     foreach ($Domain in $ForestInformation.Domains) {
-        $Accounts["$Domain"] = [ordered] @{}
+        $Accounts['Data']["$Domain"] = [ordered] @{}
     }
     $DomainCount = 0
     $DomainCountTotal = $ForestInformation.Domains.Count
@@ -27,6 +31,13 @@
             'AllowReversiblePasswordEncryption', 'BadLogonCount', 'AccountNotDelegated'
             'SID', 'SIDHistory'
         )
+        $PropertiesMembers = @(
+            'Name', 'SamAccountName'
+            'Enabled',
+            'PasswordLastSet', 'WhenCreated', 'WhenChanged'
+            'AllowReversiblePasswordEncryption', 'BadLogonCount', 'AccountNotDelegated'
+            'SID', 'SIDHistory'
+        )
 
         $CountK = 0
         try {
@@ -35,6 +46,59 @@
             Write-Warning -Message "Get-WinADKerberosAccount - $ProcessingText Processing domain $Domain - unable to get Kerberos accounts. Error: $($_.Exception.Message)"
             continue
         }
+
+        if ($IncludeCriticalAccounts) {
+            $Members = @(
+                try {
+                    Get-ADGroupMember -Identity 'Domain Admins' -Server $QueryServer -Recursive -ErrorAction Stop
+                } catch {
+                    Write-Warning -Message "Get-WinADKerberosAccount - $ProcessingText Processing domain $Domain - unable to get Domain Admins. Error: $($_.Exception.Message)"
+                }
+                try {
+                    Get-ADGroupMember -Identity 'Enterprise Admins' -Server $QueryServer -Recursive -ErrorAction Stop
+                } catch {
+                    Write-Warning -Message "Get-WinADKerberosAccount - $ProcessingText Processing domain $Domain - unable to get Enterprise Admins. Error: $($_.Exception.Message)"
+                }
+            ) | Sort-Object -Unique -Property DistinguishedName
+        } else {
+            $Members = @()
+        }
+        $CriticalAccounts = foreach ($Member in $Members) {
+            Try {
+                $User = Get-ADUser -Identity $Member.DistinguishedName -Server $QueryServer -Properties $PropertiesMembers -ErrorAction Stop
+            } Catch {
+                Write-Warning -Message "Get-WinADKerberosAccount - $ProcessingText Processing domain $Domain - unable to get critical account $($Member.DistinguishedName). Error: $($_.Exception.Message)"
+            }
+            if ($User) {
+                if ($null -eq $User.WhenChanged) {
+                    $WhenChangedDaysAgo = $null
+                } else {
+                    $WhenChangedDaysAgo = ($Today) - $User.WhenChanged
+                }
+                if ($null -eq $User.PasswordLastSet) {
+                    $PasswordLastSetAgo = $null
+                } else {
+                    $PasswordLastSetAgo = ($Today) - $User.PasswordLastSet
+                }
+
+                [PSCustomObject] @{
+                    'Name'                              = $User.Name
+                    'SamAccountName'                    = $User.SamAccountName
+                    'Enabled'                           = $User.Enabled
+                    'PasswordLastSet'                   = $User.PasswordLastSet
+                    'PasswordLastSetDays'               = $PasswordLastSetAgo.Days
+                    'WhenChangedDays'                   = $WhenChangedDaysAgo.Days
+                    'WhenChanged'                       = $User.WhenChanged
+                    'WhenCreated'                       = $User.WhenCreated
+                    'AllowReversiblePasswordEncryption' = $User.AllowReversiblePasswordEncryption
+                    'BadLogonCount'                     = $User.BadLogonCount
+                    'AccountNotDelegated'               = $User.AccountNotDelegated
+                    'SID'                               = $User.SID
+                    'SIDHistory'                        = $User.SIDHistory
+                }
+            }
+        }
+
         foreach ($Account in $KerberosPasswords) {
             $CountK++
             $ProcessingText = "[Domain: $DomainCount/$DomainCountTotal / Account: $CountK/$($KerberosPasswords.Count)]"
@@ -170,7 +234,7 @@
             } else {
                 $WhenChangedDaysAgo = ($Today) - $Account.WhenChanged
             }
-            $Accounts["$Domain"][$Account.SamAccountName] = @{
+            $Accounts['Data']["$Domain"][$Account.SamAccountName] = @{
                 FullInformation   = [PSCustomObject] @{
                     'Name'                              = $Account.Name
                     'SamAccountName'                    = $Account.SamAccountName
@@ -188,8 +252,10 @@
                 }
                 DomainControllers = $CachedServers
                 GlobalCatalogs    = $GlobalCatalogs
+
             }
         }
+        $Accounts['CriticalAccounts']["$Domain"] = $CriticalAccounts
     }
     $Accounts
 }
