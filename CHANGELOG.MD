@@ -1,4 +1,8 @@
-﻿#### 0.0.178 - 2023.12.18
+﻿#### 0.0.179 - 2023.12.20
+- Improve `Get-WinADKerberosAccount`
+- Improve `Show-WinADKerberosAccount`
+
+#### 0.0.178 - 2023.12.18
 - Improve `Get-WinADKerberosAccount` WIP
 - Improve `Show-WinADKerberosAccount` WIP
 
