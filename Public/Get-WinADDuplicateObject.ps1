@@ -15,6 +15,7 @@
     # Based on https://gallery.technet.microsoft.com/scriptcenter/Get-ADForestConflictObjects-4667fa37
     $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation
     foreach ($Domain in $ForestInformation.Domains) {
+        Write-Verbose -Message "Get-WinADDuplicateObject - Processing $($Domain)"
         $DC = $ForestInformation['QueryServers']["$Domain"].HostName[0]
         #Get conflict objects
         $getADObjectSplat = @{
