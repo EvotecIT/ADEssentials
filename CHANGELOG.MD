@@ -1,4 +1,7 @@
-﻿#### 0.0.179 - 2023.12.20
+﻿#### 0.0.180 - 2024.01.02
+- Fixes `Test-LDAP`
+
+#### 0.0.179 - 2023.12.20
 - Improve `Get-WinADKerberosAccount`
 - Improve `Show-WinADKerberosAccount`
 
