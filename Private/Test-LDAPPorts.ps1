@@ -21,7 +21,7 @@
             if ($_.Exception.ToString() -match "The server is not operational") {
                 Write-Warning "Test-LDAPPorts - Can't open $ServerName`:$Port. Error: $ErrorMessage"
             } elseif ($_.Exception.ToString() -match "The user name or password is incorrect") {
-                Write-Warning "Test-LDAPPorts - Current user ($Env:USERNAME) doesn't seem to have access to to LDAP on port $Server`:$Port. Error: $ErrorMessage"
+                Write-Warning "Test-LDAPPorts - Current user ($Env:USERNAME) doesn't seem to have access to to LDAP on port $ServerName`:$Port. Error: $ErrorMessage"
             } else {
                 Write-Warning -Message "Test-LDAPPorts - Error: $ErrorMessage"
             }
