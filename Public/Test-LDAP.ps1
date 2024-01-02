@@ -97,8 +97,22 @@
     Process {
         if ($ComputerName) {
             foreach ($Computer in $ComputerName) {
-                Write-Verbose "Test-LDAP - Processing $Computer"
-                $ServerName = ConvertTo-ComputerFQDN -Computer $Computer
+                if ($Computer -match '^(\d+\.){3}\d+$') {
+                    try {
+                        $ServerName = [System.Net.Dns]::GetHostByAddress($Computer).HostName
+                    } catch {
+                        Write-Warning "Test-LDAP - Unable to resolve $Computer. $($_.Exception.Message)"
+                        $ServerName = $Computer
+                    }
+                } else {
+                    try {
+                        $ServerName = [System.Net.Dns]::GetHostByName($Computer).HostName
+                    } catch {
+                        Write-Warning "Test-LDAP - Unable to resolve $Computer. $($_.Exception.Message)"
+                        $ServerName = $Computer
+                    }
+                }
+                Write-Verbose "Test-LDAP - Processing $Computer / $ServerName"
                 $testLdapServerSplat = @{
                     ServerName        = $ServerName
                     Computer          = $Computer
