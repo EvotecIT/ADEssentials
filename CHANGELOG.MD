@@ -1,4 +1,7 @@
-﻿#### 0.0.181 - 2024.01.02
+﻿#### 0.0.181 - 2024.01.03
+- Improves `Test-LDAP` when using credential parameter
+
+#### 0.0.181 - 2024.01.02
 - Fixes `Test-LDAP`
 
 #### 0.0.180 - 2024.01.02
