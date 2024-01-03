@@ -122,6 +122,9 @@
                     PortLDAPS         = $PortLDAPS
                     VerifyCertificate = $VerifyCertificate.IsPresent
                 }
+                if ($PSBoundParameters.ContainsKey('Credential')) {
+                    $testLdapServerSplat.Credential = $Credential
+                }
                 Test-LdapServer @testLdapServerSplat
             }
         } else {
@@ -136,6 +139,9 @@
                     PortLDAP          = $PortLDAP
                     PortLDAPS         = $PortLDAPS
                     VerifyCertificate = $VerifyCertificate.IsPresent
+                }
+                if ($PSBoundParameters.ContainsKey('Credential')) {
+                    $testLdapServerSplat.Credential = $Credential
                 }
                 Test-LdapServer @testLdapServerSplat
             }

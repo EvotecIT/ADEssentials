@@ -1,14 +1,44 @@
 ﻿function Test-LDAPPorts {
+    <#
+    .SYNOPSIS
+    Short description
+
+    .DESCRIPTION
+    Long description
+
+    .PARAMETER ServerName
+    Parameter description
+
+    .PARAMETER Port
+    Parameter description
+
+    .PARAMETER Credential
+    Parameter description
+
+    .EXAMPLE
+    Test-LDAPPorts -ServerName 'SomeServer' -port 3269 -Credential (Get-Credential)
+
+    .EXAMPLE
+    Test-LDAPPorts -ServerName 'SomeServer' -port 3269
+
+    .NOTES
+    General notes
+    #>
     [CmdletBinding()]
     param(
         [string] $ServerName,
-        [int] $Port
+        [int] $Port,
+        [pscredential] $Credential
     )
     if ($ServerName -and $Port -ne 0) {
         Write-Verbose "Test-LDAPPorts - Processing $ServerName / $Port"
         try {
             $LDAP = "LDAP://" + $ServerName + ':' + $Port
-            $Connection = [ADSI]($LDAP)
+            if ($Credential) {
+                $Connection = [ADSI]::new($LDAP, $Credential.UserName, $Credential.GetNetworkCredential().Password)
+            } else {
+                $Connection = [ADSI]($LDAP)
+            }
             $Connection.Close()
             [PSCustomObject] @{
                 Computer     = $ServerName

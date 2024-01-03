@@ -15,9 +15,14 @@
         # $FQDN = $false
         # querying SSL won't work for non-fqdn, we check if after all our checks it's string with dot.
         $GlobalCatalogSSL = [PSCustomObject] @{ Status = $false; ErrorMessage = 'No FQDN' }
-        $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP
         $ConnectionLDAPS = [PSCustomObject] @{ Status = $false; ErrorMessage = 'No FQDN' }
-        $ConnectionLDAP = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAP
+        if ($PSBoundParameters.ContainsKey('Credential')) {
+            $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP -Credential $Credential
+            $ConnectionLDAP = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAP -Credential $Credential
+        } else {
+            $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP
+            $ConnectionLDAP = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAP
+        }
 
         $PortsThatWork = @(
             if ($GlobalCatalogNonSSL.Status) { $GCPortLDAP }
@@ -26,12 +31,17 @@
             if ($ConnectionLDAPS.Status) { $PortLDAPS }
         ) | Sort-Object
     } else {
-        #$FQDN = $true
-        $GlobalCatalogSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAPSSL
-        $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP
-        $ConnectionLDAPS = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAPS
-        $ConnectionLDAP = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAP
-
+        if ($PSBoundParameters.ContainsKey('Credential')) {
+            $GlobalCatalogSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAPSSL -Credential $Credential
+            $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP -Credential $Credential
+            $ConnectionLDAPS = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAPS -Credential $Credential
+            $ConnectionLDAP = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAP -Credential $Credential
+        } else {
+            $GlobalCatalogSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAPSSL
+            $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP
+            $ConnectionLDAPS = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAPS
+            $ConnectionLDAP = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAP
+        }
         $PortsThatWork = @(
             if ($GlobalCatalogNonSSL.Status) { $GCPortLDAP }
             if ($GlobalCatalogSSL.Status) { $GCPortLDAPSSL }
@@ -97,7 +107,7 @@
         }
     }
     if ($VerifyCertificate) {
-        if ($psboundparameters.ContainsKey("Credential")) {
+        if ($PSBoundParameters.ContainsKey("Credential")) {
             $Certificate = Test-LDAPCertificate -Computer $ServerName -Port $PortLDAPS -Credential $Credential
             $CertificateGC = Test-LDAPCertificate -Computer $ServerName -Port $GCPortLDAPSSL -Credential $Credential
         } else {
