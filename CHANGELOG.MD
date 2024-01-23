@@ -1,7 +1,13 @@
 ﻿#### 0.0.183
 - Improves `Test-LDAP` to allow querying for `Identity`
-- Improves `Get-WinADDuplicateObject` by 
+- Improves `Get-WinADDuplicateObject` by
 - Improves `Remove-WinADDuplicateObject` to adjust for changes in `Get-WinADDuplicateObject`
+- Modify `Test-DNSNameServers` to convert scriptblock filtering to string
+- Modify `New-ADSite` to convert scriptblock filtering to string
+- Modify `Get-WinADUsersForeignSecurityPrincipalList` to convert scriptblock filtering to string
+- Modify `Get-WinDNSRecords` to convert scriptblock filtering to string
+- Modify `Get-WinDNSIPAddresses` to convert scriptblock filtering to string
+- Convert * to '*' in multiple functions
 
 #### 0.0.182 - 2024.01.03
 - Improves `Test-LDAP` when using credential parameter
