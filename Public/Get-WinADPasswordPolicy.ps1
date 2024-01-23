@@ -44,7 +44,7 @@
     $AllPasswordPolicies = foreach ($Domain in $ForestInformation.Domains) {
         $Policies = @(
             Get-ADDefaultDomainPasswordPolicy -Server $ForestInformation['QueryServers'][$Domain].Hostname[0]
-            Get-ADFineGrainedPasswordPolicy -Filter * -Server $ForestInformation['QueryServers'][$Domain].Hostname[0]
+            Get-ADFineGrainedPasswordPolicy -Filter "*" -Server $ForestInformation['QueryServers'][$Domain].Hostname[0]
         )
         foreach ($Policy in $Policies) {
             $FineGrainedPolicy[$Policy.DistinguishedName] = [PSCustomObject] @{

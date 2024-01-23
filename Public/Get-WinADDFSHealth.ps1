@@ -22,7 +22,7 @@
             Write-Warning "Get-WinADDFSHealth - You need to specify domain when using SkipAutodetection."
             return
         }
-        # This is for case when Get-ADDomainController -Filter * is broken
+        # This is for case when Get-ADDomainController -Filter "*" is broken
         $ForestInformation = @{
             Domains                 = $IncludeDomains
             DomainDomainControllers = @{}
@@ -59,7 +59,7 @@
                 if ($SystemsContainer) {
                     $PoliciesSearchBase = -join ("CN=Policies,", $SystemsContainer)
                 }
-                [Array]$GPOs = Get-ADObject -ErrorAction Stop -SearchBase $PoliciesSearchBase -SearchScope OneLevel -Filter * -Server $QueryServer -Properties Name, gPCFileSysPath, DisplayName, DistinguishedName, Description, Created, Modified, ObjectClass, ObjectGUID
+                [Array]$GPOs = Get-ADObject -ErrorAction Stop -SearchBase $PoliciesSearchBase -SearchScope OneLevel -Filter "*" -Server $QueryServer -Properties Name, gPCFileSysPath, DisplayName, DistinguishedName, Description, Created, Modified, ObjectClass, ObjectGUID
             } catch {
                 $GPOs = $null
             }

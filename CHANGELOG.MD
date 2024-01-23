@@ -1,4 +1,9 @@
-﻿#### 0.0.181 - 2024.01.03
+﻿#### 0.0.183
+- Improves `Test-LDAP` to allow querying for `Identity`
+- Improves `Get-WinADDuplicateObject` by 
+- Improves `Remove-WinADDuplicateObject` to adjust for changes in `Get-WinADDuplicateObject`
+
+#### 0.0.182 - 2024.01.03
 - Improves `Test-LDAP` when using credential parameter
 
 #### 0.0.181 - 2024.01.02

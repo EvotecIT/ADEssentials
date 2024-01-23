@@ -123,11 +123,11 @@
         $DomainStructure = @(
             if ($SearchBase) {
                 foreach ($S in $SearchBase) {
-                    Get-ADObject -Filter * -Properties canonicalName, ntSecurityDescriptor -SearchScope Base -SearchBase $S -Server $Server
+                    Get-ADObject -Filter "*" -Properties canonicalName, ntSecurityDescriptor -SearchScope Base -SearchBase $S -Server $Server
                 }
             } else {
-                Get-ADObject -Filter * -Properties canonicalName, ntSecurityDescriptor -SearchScope Base -Server $Server
-                Get-ADObject -Filter * -Properties canonicalName, ntSecurityDescriptor -SearchScope OneLevel -Server $Server
+                Get-ADObject -Filter "*" -Properties canonicalName, ntSecurityDescriptor -SearchScope Base -Server $Server
+                Get-ADObject -Filter "*" -Properties canonicalName, ntSecurityDescriptor -SearchScope OneLevel -Server $Server
             }
         )
         $LdapFilter = "(|(ObjectClass=user)(ObjectClass=contact)(ObjectClass=computer)(ObjectClass=group)(objectClass=inetOrgPerson)(objectClass=foreignSecurityPrincipal)(objectClass=container)(objectClass=organizationalUnit)(objectclass=msDS-ManagedServiceAccount)(objectclass=msDS-GroupManagedServiceAccount))"
@@ -163,7 +163,6 @@
 
                     -join ('*,CN=System,', $ForestInformation['DomainsExtended'][$DOmain].DistinguishedName)
                 )
-                #$Containers = Get-ADObject -SearchBase $Structure.DistinguishedName -Filter { ObjectClass -eq 'container' } -Properties canonicalName -Server $Server -SearchScope Subtree
                 $Containers = Get-ADObject -LDAPFilter $LdapFilter -SearchBase $Structure.DistinguishedName -Properties canonicalName, ntSecurityDescriptor -Server $Server -SearchScope Subtree | ForEach-Object {
                     $Found = $false
                     foreach ($I in $Ignore) {

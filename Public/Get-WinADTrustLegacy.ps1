@@ -43,7 +43,7 @@
     $UniqueTrusts = [ordered]@{}
     foreach ($Domain in $ForestInformation.Domains) {
         $QueryServer = $ForestInformation['QueryServers']["$Domain"].HostName[0]
-        $Trusts = Get-ADTrust -Server $QueryServer -Filter * -Properties *
+        $Trusts = Get-ADTrust -Server $QueryServer -Filter "*" -Properties *
         $DomainPDC = $ForestInformation['DomainDomainControllers'][$Domain] | Where-Object { $_.IsPDC -eq $true }
 
         $PropertiesTrustWMI = @(

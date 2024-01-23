@@ -25,7 +25,7 @@
             # 'WhenCreated', 'WhenChanged'
         )
 
-        $AllUsers[$Domain] = Get-ADUser -Filter * -Properties $Properties -Server $QueryServer #$ForestInformation['QueryServers'][$Domain].HostName[0]
+        $AllUsers[$Domain] = Get-ADUser -Filter "*" -Properties $Properties -Server $QueryServer #$ForestInformation['QueryServers'][$Domain].HostName[0]
         $AllContacts[$Domain] = Get-ADObject -Filter 'objectClass -eq "contact"' -Properties SamAccountName, Mail, Name, DistinguishedName, WhenChanged, Whencreated, DisplayName, ObjectSID -Server $QueryServer
 
         $Properties = @(
@@ -34,7 +34,7 @@
             'ManagedBy', 'member', 'memberof', 'ProtectedFromAccidentalDeletion', 'nTSecurityDescriptor', 'groupType'
             'SID', 'SIDHistory', 'proxyaddresses', 'ObjectSID'
         )
-        $AllGroups[$Domain] = Get-ADGroup -Filter * -Properties $Properties -Server $QueryServer
+        $AllGroups[$Domain] = Get-ADGroup -Filter "*" -Properties $Properties -Server $QueryServer
     }
 
     foreach ($Domain in $AllUsers.Keys) {

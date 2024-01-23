@@ -28,7 +28,7 @@
     #>
     $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC -ExtendedForestInformation $ExtendedForestInformation
     $QueryServer = $ForestInformation.QueryServers[$($ForestInformation.Forest.Name)]['HostName'][0]
-    $Sites = Get-ADReplicationSite -Filter * -Properties * -Server $QueryServer
+    $Sites = Get-ADReplicationSite -Filter "*" -Properties * -Server $QueryServer
     foreach ($Site in $Sites) {
         [Array] $DCs = $ForestInformation.ForestDomainControllers | Where-Object { $_.Site -eq $Site.Name }
         [Array] $Subnets = ConvertFrom-DistinguishedName -DistinguishedName $Site.'Subnets'

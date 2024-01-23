@@ -26,18 +26,18 @@
             'msExchRecipientDisplayType', 'pwdLastSet', "msDS-UserPasswordExpiryTimeComputed",
             'WhenCreated', 'WhenChanged'
         )
-        $AllUsers[$Domain] = Get-ADUser -Filter * -Properties $Properties -Server $QueryServer #$ForestInformation['QueryServers'][$Domain].HostName[0]
+        $AllUsers[$Domain] = Get-ADUser -Filter "*" -Properties $Properties -Server $QueryServer #$ForestInformation['QueryServers'][$Domain].HostName[0]
         $AllContacts[$Domain] = Get-ADObject -Filter 'objectClass -eq "contact"' -Properties SamAccountName, Mail, Name, DistinguishedName, WhenChanged, Whencreated, DisplayName -Server $QueryServer
         $Properties = @(
             'SamAccountName', 'CanonicalName', 'Mail', 'Name', 'DistinguishedName', 'isCriticalSystemObject', 'ObjectSID'
         )
-        $AllGroups[$Domain] = Get-ADGroup -Filter * -Properties $Properties -Server $QueryServer
+        $AllGroups[$Domain] = Get-ADGroup -Filter "*" -Properties $Properties -Server $QueryServer
         $Properties = @(
             'DistinguishedName', 'LastLogonDate', 'PasswordLastSet', 'Enabled', 'DnsHostName', 'PasswordNeverExpires', 'PasswordNotRequired',
             'PasswordExpired', 'ManagedBy', 'OperatingSystemVersion', 'OperatingSystem' , 'TrustedForDelegation', 'WhenCreated', 'WhenChanged', 'PrimaryGroupID'
             'nTSecurityDescriptor'
         )
-        $AllComputers[$Domain] = Get-ADComputer -Filter * -Server $QueryServer -Properties $Properties
+        $AllComputers[$Domain] = Get-ADComputer -Filter "*" -Server $QueryServer -Properties $Properties
     }
 
     foreach ($Domain in $AllUsers.Keys) {

@@ -58,7 +58,7 @@
             'msds-resultantpso'
         )
         try {
-            $AllUsers[$Domain] = Get-ADUser -Filter * -Properties $Properties -Server $QueryServer #$ForestInformation['QueryServers'][$Domain].HostName[0]
+            $AllUsers[$Domain] = Get-ADUser -Filter "*" -Properties $Properties -Server $QueryServer #$ForestInformation['QueryServers'][$Domain].HostName[0]
         } catch {
             $ErrorCount++
             Write-Warning -Message "Get-WinADUsers - Failed to get users from $Domain using $($QueryServer). Error: $($_.Exception.Message)"
@@ -73,7 +73,7 @@
             'SamAccountName', 'CanonicalName', 'Mail', 'Name', 'DistinguishedName', 'isCriticalSystemObject', 'ObjectSID'
         )
         try {
-            $AllGroups[$Domain] = Get-ADGroup -Filter * -Properties $Properties -Server $QueryServer
+            $AllGroups[$Domain] = Get-ADGroup -Filter "*" -Properties $Properties -Server $QueryServer
         } catch {
             $ErrorCount++
             Write-Warning -Message "Get-WinADUsers - Failed to get groups from $Domain using $($QueryServer). Error: $($_.Exception.Message)"

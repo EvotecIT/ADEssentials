@@ -22,13 +22,13 @@
     Splitter or Joiner that connects data together such as an array of 3 aliases
 
     .EXAMPLE
-    $ADUsers = Get-ADUser -Filter * -Properties ProxyAddresses
+    $ADUsers = Get-ADUser -Filter "*" -Properties ProxyAddresses
     foreach ($User in $ADUsers) {
         Get-WinADProxyAddresses -ADUser $User
     }
 
     .EXAMPLE
-    $ADUsers = Get-ADUser -Filter * -Properties ProxyAddresses
+    $ADUsers = Get-ADUser -Filter "*" -Properties ProxyAddresses
     foreach ($User in $ADUsers) {
         Get-WinADProxyAddresses -ADUser $User -RemovePrefix
     }

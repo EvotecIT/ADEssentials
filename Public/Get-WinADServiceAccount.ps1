@@ -21,7 +21,7 @@
             'msDS-ManagedPasswordInterval', 'msDS-GroupMSAMembership', 'ManagedPasswordIntervalInDays', 'msDS-RevealedDSAs', 'servicePrincipalName'
             #'msDS-ManagedPasswordId', 'msDS-ManagedPasswordPreviousId'
         )
-        $Accounts = Get-ADServiceAccount -Filter * -Server $QueryServer -Properties $Properties
+        $Accounts = Get-ADServiceAccount -Filter "*" -Server $QueryServer -Properties $Properties
         $Output[$Domain] = foreach ($Account in $Accounts) {
             #$Account
 
