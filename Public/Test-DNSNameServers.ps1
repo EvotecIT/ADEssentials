@@ -5,7 +5,7 @@
         [string] $Domain
     )
     if ($DomainController) {
-        $AllDomainControllers = (Get-ADDomainController -Server $Domain -Filter { IsReadOnly -eq $false } ).HostName
+        $AllDomainControllers = (Get-ADDomainController -Server $Domain -Filter "IsReadOnly -eq '$false'").HostName
         try {
             $Hosts = Get-DnsServerResourceRecord -ZoneName $Domain -ComputerName $DomainController -RRType NS -ErrorAction Stop
             $NameServers = (($Hosts | Where-Object { $_.HostName -eq '@' }).RecordData.NameServer) -replace ".$"

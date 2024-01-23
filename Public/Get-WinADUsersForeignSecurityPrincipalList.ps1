@@ -9,7 +9,7 @@
     $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation
     foreach ($Domain in $ForestInformation.Domains) {
         $QueryServer = $ForestInformation['QueryServers']["$Domain"].HostName[0]
-        $ForeignSecurityPrincipalList = Get-ADObject -Filter { ObjectClass -eq 'ForeignSecurityPrincipal' } -Properties * -Server $QueryServer
+        $ForeignSecurityPrincipalList = Get-ADObject -Filter "ObjectClass -eq 'ForeignSecurityPrincipal'" -Properties * -Server $QueryServer
         foreach ($FSP in $ForeignSecurityPrincipalList) {
             Try {
                 $Translated = (([System.Security.Principal.SecurityIdentifier]::new($FSP.objectSid)).Translate([System.Security.Principal.NTAccount])).Value

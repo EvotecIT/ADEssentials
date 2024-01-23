@@ -41,7 +41,7 @@ function New-ADSite {
         try {
             if ($Subnets) {
                 foreach ($subnet in $Subnets) {
-                    if (Get-ADReplicationSubnet -Filter { Name -eq $subnet }) {
+                    if (Get-ADReplicationSubnet -Filter "Name -eq '$subnet'") {
 
                         Write-Warning -Message "$($subnet) exists, will try reconnect to new site"
 
