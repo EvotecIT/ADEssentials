@@ -3,7 +3,7 @@
     param(
         [string] $Domain = $Env:USERDNSDOMAIN
     )
-    $DC = Get-ADDomainController -Server $Domain -Filter *
+    $DC = Get-ADDomainController -Server $Domain -Filter "*"
     $Output = foreach ($S in $DC) {
         if ($S.OperationMasterRoles.Count -gt 0) {
             $Status = Test-Connection -ComputerName $S.HostName -Count 2 -Quiet

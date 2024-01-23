@@ -28,7 +28,7 @@
                         foreach ($Domain in $ForestInformation.Domains) {
                             New-DiagramNode -Label $Domain -Id $Domain -Image 'https://cdn-icons-png.flaticon.com/512/6329/6329785.png'
 
-                            $Script:OrganiazationalUnits = Get-ADOrganizationalUnit -Filter * -Server $ForestInformation['QueryServers'][$Domain].HostName[0] -Properties DistinguishedName, CanonicalName
+                            $Script:OrganiazationalUnits = Get-ADOrganizationalUnit -Filter "*" -Server $ForestInformation['QueryServers'][$Domain].HostName[0] -Properties DistinguishedName, CanonicalName
                             foreach ($OU in $OrganiazationalUnits) {
                                 New-DiagramNode -Id $OU.DistinguishedName -Label $OU.Name -Image 'https://cdn-icons-png.flaticon.com/512/3767/3767084.png'
 
@@ -128,7 +128,7 @@
                         foreach ($Domain in $ForestInformation.Domains) {
                             New-DiagramNode -Label $Domain -Id $Domain -Image 'https://cdn-icons-png.flaticon.com/512/6329/6329785.png'
 
-                            $Script:OrganiazationalUnits = Get-ADOrganizationalUnit -Filter * -Server $ForestInformation['QueryServers'][$Domain].HostName[0] -Properties DistinguishedName, CanonicalName
+                            $Script:OrganiazationalUnits = Get-ADOrganizationalUnit -Filter "*" -Server $ForestInformation['QueryServers'][$Domain].HostName[0] -Properties DistinguishedName, CanonicalName
                             foreach ($OU in $OrganiazationalUnits) {
                                 New-DiagramNode -Id $OU.DistinguishedName -Label $OU.Name -Image 'https://cdn-icons-png.flaticon.com/512/3767/3767084.png'
 

@@ -11,9 +11,9 @@
         $Server = Get-ADDomainController -Discover -DomainName $Domain
         try {
             $DomainInformation = Get-ADDomain -Server $Server.Hostname[0]
-            $Users = Get-ADUser -Filter * -Server $Server.Hostname[0]
-            $Groups = Get-ADGroup -Filter * -Server $Server.Hostname[0]
-            $Computers = Get-ADComputer -Filter * -Server $Server.Hostname[0]
+            $Users = Get-ADUser -Filter "*" -Server $Server.Hostname[0]
+            $Groups = Get-ADGroup -Filter "*" -Server $Server.Hostname[0]
+            $Computers = Get-ADComputer -Filter "*" -Server $Server.Hostname[0]
         } catch {
             Write-Warning "Get-ADCache - Can't process domain $Domain - $($_.Exception.Message)"
             continue
