@@ -77,7 +77,8 @@
         $DNSRecordsPerZone[$Zone.ZoneName] = Get-DnsServerResourceRecord -ComputerName $ADServer -ZoneName $Zone.ZoneName -RRType A
     }
     if ($IncludeDetails) {
-        $Filter = { (Name -notlike "@" -and Name -notlike "_*" -and ObjectClass -eq 'dnsNode' -and Name -ne 'ForestDnsZone' -and Name -ne 'DomainDnsZone' ) }
+        $Filter = "(Name -notlike '@' -and Name -notlike '_*' -and ObjectClass -eq 'dnsNode' -and Name -ne 'ForestDnsZone' -and Name -ne 'DomainDnsZone' )"
+        #$Filter = { (Name -notlike "@" -and Name -notlike "_*" -and ObjectClass -eq 'dnsNode' -and Name -ne 'ForestDnsZone' -and Name -ne 'DomainDnsZone' ) }
         foreach ($Zone in $ZonesToProcess) {
             $ADRecordsPerZone[$Zone.ZoneName] = [ordered]@{}
             Write-Verbose -Message "Get-WinDNSIPAddresses - Processing zone for AD records: $($Zone.ZoneName)"
