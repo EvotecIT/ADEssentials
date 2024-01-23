@@ -24,7 +24,7 @@
 
 
     $NamingContext = (Get-ADRootDSE -Server $QueryServer).configurationNamingContext
-    $Connections = Get-ADObject –Searchbase $NamingContext -LDAPFilter "(objectCategory=ntDSConnection)" -Properties * -Server $QueryServer
+    $Connections = Get-ADObject -Searchbase $NamingContext -LDAPFilter "(objectCategory=ntDSConnection)" -Properties * -Server $QueryServer
     $FormmatedConnections = foreach ($_ in $Connections) {
         if ($null -eq $_.Options) {
             $Options = 'None'
