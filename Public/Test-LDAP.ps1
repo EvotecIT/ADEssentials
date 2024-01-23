@@ -48,6 +48,12 @@
     .PARAMETER Credential
     Allows to define credentials. This switches authentication for LDAP Binding from Kerberos to Basic
 
+    .PARAMETER Identity
+    User to search for using LDAP query by objectGUID, objectSID, SamAccountName, UserPrincipalName, Name or DistinguishedName
+
+    .PARAMETER Extended
+    Returns additional information about LDAP Server including full objects
+
     .EXAMPLE
     Test-LDAP -ComputerName 'AD1' -VerifyCertificate | Format-Table *
 
@@ -86,7 +92,15 @@
         [switch] $VerifyCertificate,
         [Parameter(ParameterSetName = 'Forest')]
         [Parameter(ParameterSetName = 'Computer')]
-        [PSCredential] $Credential
+        [PSCredential] $Credential,
+
+        [Parameter(ParameterSetName = 'Computer')]
+        [Parameter(ParameterSetName = 'Forest')]
+        [string] $Identity,
+
+        [Parameter(ParameterSetName = 'Computer')]
+        [Parameter(ParameterSetName = 'Forest')]
+        [switch] $Extended
     )
     begin {
         Add-Type -Assembly System.DirectoryServices.Protocols
@@ -121,6 +135,7 @@
                     PortLDAP          = $PortLDAP
                     PortLDAPS         = $PortLDAPS
                     VerifyCertificate = $VerifyCertificate.IsPresent
+                    Identity          = $Identity
                 }
                 if ($PSBoundParameters.ContainsKey('Credential')) {
                     $testLdapServerSplat.Credential = $Credential
@@ -139,6 +154,7 @@
                     PortLDAP          = $PortLDAP
                     PortLDAPS         = $PortLDAPS
                     VerifyCertificate = $VerifyCertificate.IsPresent
+                    Identity          = $Identity
                 }
                 if ($PSBoundParameters.ContainsKey('Credential')) {
                     $testLdapServerSplat.Credential = $Credential

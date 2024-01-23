@@ -9,7 +9,8 @@
         [int] $PortLDAP = 389,
         [int] $PortLDAPS = 636,
         [switch] $VerifyCertificate,
-        [PSCredential] $Credential
+        [PSCredential] $Credential,
+        [string] $Identity
     )
     if ($ServerName -notlike '*.*') {
         # $FQDN = $false
@@ -17,38 +18,61 @@
         $GlobalCatalogSSL = [PSCustomObject] @{ Status = $false; ErrorMessage = 'No FQDN' }
         $ConnectionLDAPS = [PSCustomObject] @{ Status = $false; ErrorMessage = 'No FQDN' }
         if ($PSBoundParameters.ContainsKey('Credential')) {
-            $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP -Credential $Credential
-            $ConnectionLDAP = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAP -Credential $Credential
+            $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP -Credential $Credential -Identity $Identity
+            $ConnectionLDAP = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAP -Credential $Credential -Identity $Identity
         } else {
-            $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP
-            $ConnectionLDAP = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAP
+            $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP -Identity $Identity
+            $ConnectionLDAP = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAP -Identity $Identity
         }
-
-        $PortsThatWork = @(
-            if ($GlobalCatalogNonSSL.Status) { $GCPortLDAP }
-            if ($GlobalCatalogSSL.Status) { $GCPortLDAPSSL }
-            if ($ConnectionLDAP.Status) { $PortLDAP }
-            if ($ConnectionLDAPS.Status) { $PortLDAPS }
-        ) | Sort-Object
     } else {
         if ($PSBoundParameters.ContainsKey('Credential')) {
-            $GlobalCatalogSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAPSSL -Credential $Credential
-            $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP -Credential $Credential
-            $ConnectionLDAPS = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAPS -Credential $Credential
-            $ConnectionLDAP = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAP -Credential $Credential
+            $GlobalCatalogSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAPSSL -Credential $Credential -Identity $Identity
+            $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP -Credential $Credential -Identity $Identity
+            $ConnectionLDAPS = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAPS -Credential $Credential -Identity $Identity
+            $ConnectionLDAP = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAP -Credential $Credential -Identity $Identity
         } else {
-            $GlobalCatalogSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAPSSL
-            $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP
-            $ConnectionLDAPS = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAPS
-            $ConnectionLDAP = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAP
+            $GlobalCatalogSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAPSSL -Identity $Identity
+            $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP -Identity $Identity
+            $ConnectionLDAPS = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAPS -Identity $Identity
+            $ConnectionLDAP = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAP -Identity $Identity
         }
-        $PortsThatWork = @(
-            if ($GlobalCatalogNonSSL.Status) { $GCPortLDAP }
-            if ($GlobalCatalogSSL.Status) { $GCPortLDAPSSL }
-            if ($ConnectionLDAP.Status) { $PortLDAP }
-            if ($ConnectionLDAPS.Status) { $PortLDAPS }
-        ) | Sort-Object
     }
+    $PortsThatWork = @(
+        if ($GlobalCatalogNonSSL.Status) { $GCPortLDAP }
+        if ($GlobalCatalogSSL.Status) { $GCPortLDAPSSL }
+        if ($ConnectionLDAP.Status) { $PortLDAP }
+        if ($ConnectionLDAPS.Status) { $PortLDAPS }
+    ) | Sort-Object
+
+    $PortsIdentityStatus = @(
+        if ($GlobalCatalogNonSSL.IdentityStatus) { $GCPortLDAP }
+        if ($GlobalCatalogSSL.IdentityStatus) { $GCPortLDAPSSL }
+        if ($ConnectionLDAP.IdentityStatus) { $PortLDAP }
+        if ($ConnectionLDAPS.IdentityStatus) { $PortLDAPS }
+    ) | Sort-Object
+
+    $ListIdentityStatus = @(
+        $GlobalCatalogSSL.IdentityStatus
+        $GlobalCatalogNonSSL.IdentityStatus
+        $ConnectionLDAP.IdentityStatus
+        $ConnectionLDAPS.IdentityStatus
+    )
+    if ($ListIdentityStatus -contains $false) {
+        $IsIdentical = $false
+    } else {
+        $IsIdentical = $true
+    }
+
+    if ($VerifyCertificate) {
+        if ($PSBoundParameters.ContainsKey("Credential")) {
+            $Certificate = Test-LDAPCertificate -Computer $ServerName -Port $PortLDAPS -Credential $Credential
+            $CertificateGC = Test-LDAPCertificate -Computer $ServerName -Port $GCPortLDAPSSL -Credential $Credential
+        } else {
+            $Certificate = Test-LDAPCertificate -Computer $ServerName -Port $PortLDAPS
+            $CertificateGC = Test-LDAPCertificate -Computer $ServerName -Port $GCPortLDAPSSL
+        }
+    }
+
     if ($VerifyCertificate) {
         $Output = [ordered] @{
             Computer                = $ServerName
@@ -62,6 +86,18 @@
             LDAPS                   = $ConnectionLDAPS.Status
             LDAPSBind               = $null
             AvailablePorts          = $PortsThatWork -join ','
+
+            Identity                = $Identity
+            IdentityStatus          = $IsIdentical
+            IdentityAvailablePorts  = $PortsIdentityStatus -join ','
+            IdentityData            = $null
+            IdentityErrorMessage    = $null
+
+            IdentityGCLDAP          = $GlobalCatalogNonSSL.IdentityStatus
+            IdentityGCLDAPS         = $GlobalCatalogSSL.IdentityStatus
+            IdentityLDAP            = $ConnectionLDAP.IdentityStatus
+            IdentityLDAPS           = $ConnectionLDAPS.IdentityStatus
+
             X509NotBeforeDays       = $null
             X509NotAfterDays        = $null
             X509DnsNameList         = $null
@@ -101,19 +137,19 @@
             LDAPS                  = $ConnectionLDAPS.Status
             LDAPSBind              = $null
             AvailablePorts         = $PortsThatWork -join ','
+
+            Identity               = $Identity
+            IdentityStatus         = $IsIdentical
+            IdentityAvailablePorts = $PortsIdentityStatus -join ','
+            IdentityData           = $null
+            IdentityErrorMessage   = $null
+
             OperatingSystem        = $Advanced.OperatingSystem
             IPV4Address            = $Advanced.IPV4Address
             IPV6Address            = $Advanced.IPV6Address
         }
     }
     if ($VerifyCertificate) {
-        if ($PSBoundParameters.ContainsKey("Credential")) {
-            $Certificate = Test-LDAPCertificate -Computer $ServerName -Port $PortLDAPS -Credential $Credential
-            $CertificateGC = Test-LDAPCertificate -Computer $ServerName -Port $GCPortLDAPSSL -Credential $Credential
-        } else {
-            $Certificate = Test-LDAPCertificate -Computer $ServerName -Port $PortLDAPS
-            $CertificateGC = Test-LDAPCertificate -Computer $ServerName -Port $GCPortLDAPSSL
-        }
         $Output['LDAPSBind'] = $Certificate.State
         $Output['GlobalCatalogLDAPSBind'] = $CertificateGC.State
         $Output['X509NotBeforeDays'] = $Certificate['X509NotBeforeDays']
@@ -142,6 +178,20 @@
         $Output.Remove('LDAPSBind')
         $Output.Remove('GlobalCatalogLDAPSBind')
     }
+    if ($Identity) {
+        $Output['IdentityData'] = $ConnectionLDAP.IdentityData
+        $Output['IdentityErrorMessage'] = $ConnectionLDAP.IdentityErrorMessage
+    } else {
+        $Output.Remove('Identity')
+        $Output.Remove('IdentityStatus')
+        $Output.Remove('IdentityAvailablePorts')
+        $Output.Remove('IdentityData')
+        $Output.Remove('IdentityErrorMessage')
+        $Output.Remove('IdentityGCLDAP')
+        $Output.Remove('IdentityGCLDAPS')
+        $Output.Remove('IdentityLDAP')
+        $Output.Remove('IdentityLDAPS')
+    }
     if (-not $Advanced) {
         $Output.Remove('IPV4Address')
         $Output.Remove('OperatingSystem')
@@ -149,6 +199,15 @@
         $Output.Remove('Site')
         $Output.Remove('IsRO')
         $Output.Remove('IsGC')
+    }
+    # lets return the objects if required
+    if ($Extended) {
+        $Output['GlobalCatalogSSL'] = $GlobalCatalogSSL
+        $Output['GlobalCatalogNonSSL'] = $GlobalCatalogNonSSL
+        $Output['ConnectionLDAP'] = $ConnectionLDAP
+        $Output['ConnectionLDAPS'] = $ConnectionLDAPS
+        $Output['Certificate'] = $Certificate
+        $Output['CertificateGC'] = $CertificateGC
     }
     [PSCustomObject] $Output
 }
