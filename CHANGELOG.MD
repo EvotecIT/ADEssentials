@@ -1,4 +1,4 @@
-﻿#### 0.0.183
+﻿#### 0.0.184 - 2024.01.24
 - Improves `Test-LDAP` to allow querying for `Identity`
 - Improves `Get-WinADDuplicateObject` by
 - Improves `Remove-WinADDuplicateObject` to adjust for changes in `Get-WinADDuplicateObject`
