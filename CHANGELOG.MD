@@ -1,4 +1,7 @@
-﻿#### 0.0.184 - 2024.01.24
+﻿#### 0.0.185
+- Improves `Test-LDAP` to ignore test for GC LDAP if server is not Global Catalog. Related queries return `$null`
+
+#### 0.0.184 - 2024.01.24
 - Improves `Test-LDAP` to allow querying for `Identity`
 - Improves `Get-WinADDuplicateObject` by
 - Improves `Remove-WinADDuplicateObject` to adjust for changes in `Get-WinADDuplicateObject`
