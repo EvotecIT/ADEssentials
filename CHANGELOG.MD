@@ -1,4 +1,4 @@
-﻿#### 0.0.185
+﻿#### 0.0.185 - 2024.01.25
 - Improves `Test-LDAP` to ignore test for GC LDAP if server is not Global Catalog. Related queries return `$null`
 
 #### 0.0.184 - 2024.01.24
