@@ -59,16 +59,25 @@
     # Based on https://gallery.technet.microsoft.com/scriptcenter/Get-ADForestConflictObjects-4667fa37
     $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation -Extended
     foreach ($Domain in $ForestInformation.Domains) {
+        $DomainInformation = $ForestInformation.DomainsExtended[$Domain]
         Write-Verbose -Message "Get-WinADDuplicateObject - Processing $($Domain)"
         $Partitions = @(
             if ($Domain -eq $ForestInformation.Forest) {
                 "CN=Configuration,$($ForestInformation['DomainsExtended'][$Domain].DistinguishedName)"
-                "DC=ForestDnsZones,$($ForestInformation['DomainsExtended'][$Domain].DistinguishedName)"
+                if ($DomainInformation.SubordinateReferences -contains "DC=ForestDnsZones,$($ForestInformation['DomainsExtended'][$Domain].DistinguishedName)") {
+                    "DC=ForestDnsZones,$($ForestInformation['DomainsExtended'][$Domain].DistinguishedName)"
+                } else {
+                    Write-Warning -Message "Get-WinADDuplicateObject - ForestDnsZones not found for domain '$Domain'. Skipping"
+                }
             }
             # Domain Name
             $ForestInformation['DomainsExtended'][$Domain].DistinguishedName
             # DNS Name
-            "DC=DomainDnsZones,$($ForestInformation['DomainsExtended'][$Domain].DistinguishedName)"
+            if ($DomainInformation.SubordinateReferences -contains "DC=DomainDnsZones,$($ForestInformation['DomainsExtended'][$Domain].DistinguishedName)") {
+                "DC=DomainDnsZones,$($ForestInformation['DomainsExtended'][$Domain].DistinguishedName)"
+            } else {
+                Write-Warning -Message "Get-WinADDuplicateObject - DomainDnsZones not found for domain '$Domain'. Skipping"
+            }
         )
         $DC = $ForestInformation['QueryServers']["$Domain"].HostName[0]
         #Get conflict objects
@@ -81,49 +90,54 @@
                 Server      = $DC
                 SearchScope = 'Subtree'
             }
-            $Objects = Get-ADObject @getADObjectSplat -SearchBase $Partition
-            foreach ($_ in $Objects) {
+            try {
+                $Objects = Get-ADObject @getADObjectSplat -SearchBase $Partition -ErrorAction Stop
+            } catch {
+                Write-Warning -Message "Get-WinADDuplicateObject - Getting objects from domain '$Domain' / partition: '$Partition' failed. Error: $($Object.Exception.Message)"
+                continue
+            }
+            foreach ($Object in $Objects) {
                 # Lets allow users to filter on it
                 if ($ExcludeObjectClass) {
-                    if ($ExcludeObjectClass -contains $_.ObjectClass) {
+                    if ($ExcludeObjectClass -contains $Object.ObjectClass) {
                         continue
                     }
                 }
                 if ($IncludeObjectClass) {
-                    if ($IncludeObjectClass -notcontains $_.ObjectClass) {
+                    if ($IncludeObjectClass -notcontains $Object.ObjectClass) {
                         continue
                     }
                 }
                 if ($PartialMatchDistinguishedName) {
-                    if ($_.DistinguishedName -notlike $PartialMatchDistinguishedName) {
+                    if ($Object.DistinguishedName -notlike $PartialMatchDistinguishedName) {
                         continue
                     }
                 }
                 if ($NoPostProcessing) {
-                    $_
+                    $Object
                     continue
                 }
-                $DomainName = ConvertFrom-DistinguishedName -DistinguishedName $_.DistinguishedName -ToDomainCN
+                $DomainName = ConvertFrom-DistinguishedName -DistinguishedName $Object.DistinguishedName -ToDomainCN
                 # Lets create separate objects for different purpoeses
                 $ConflictObject = [ordered] @{
-                    ConflictDN          = $_.DistinguishedName
-                    ConflictWhenChanged = $_.WhenChanged
+                    ConflictDN          = $Object.DistinguishedName
+                    ConflictWhenChanged = $Object.WhenChanged
                     DomainName          = $DomainName
-                    ObjectClass         = $_.ObjectClass
+                    ObjectClass         = $Object.ObjectClass
                 }
                 $LiveObjectData = [ordered] @{
                     LiveDn          = "N/A"
                     LiveWhenChanged = "N/A"
                 }
                 $RestData = [ordered] @{
-                    DisplayName                     = $_.DisplayName
-                    Name                            = $_.Name.Replace("`n", ' ')
-                    SamAccountName                  = $_.SamAccountName
-                    ObjectCategory                  = $_.ObjectCategory
-                    WhenCreated                     = $_.WhenCreated
-                    WhenChanged                     = $_.WhenChanged
-                    ProtectedFromAccidentalDeletion = $_.ProtectedFromAccidentalDeletion
-                    ObjectGUID                      = $_.ObjectGUID.Guid
+                    DisplayName                     = $Object.DisplayName
+                    Name                            = $Object.Name.Replace("`n", ' ')
+                    SamAccountName                  = $Object.SamAccountName
+                    ObjectCategory                  = $Object.ObjectCategory
+                    WhenCreated                     = $Object.WhenCreated
+                    WhenChanged                     = $Object.WhenChanged
+                    ProtectedFromAccidentalDeletion = $Object.ProtectedFromAccidentalDeletion
+                    ObjectGUID                      = $Object.ObjectGUID.Guid
                     # Server used to query the object
                     Server                          = $DC
                     # Partition used to query the object
