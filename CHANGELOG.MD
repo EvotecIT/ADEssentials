@@ -1,4 +1,7 @@
-﻿#### 0.0.186 - 2024.02.07
+﻿#### 0.0.187 - 2024.02.19
+- Update `Test-WinADObjectReplicationStatus` with additional error handling
+
+#### 0.0.186 - 2024.02.07
 - Update `Get-WinADDuplicateObject` with additional error handling
 
 #### 0.0.185 - 2024.01.25
