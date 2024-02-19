@@ -17,10 +17,6 @@
         }
     }
     RequiredModules      = @(@{
-            Guid          = '5df72a79-cdf6-4add-b38d-bcacf26fb7bc'
-            ModuleName    = 'PSEventViewer'
-            ModuleVersion = '2.0.0'
-        }, @{
             Guid          = 'ee272aa8-baaa-4edf-9f45-b6d6f7d844fe'
             ModuleName    = 'PSSharedGoods'
             ModuleVersion = '0.0.277'
@@ -28,6 +24,10 @@
             Guid          = 'a7bdf640-f5cb-4acf-9de0-365b322d245c'
             ModuleName    = 'PSWriteHTML'
             ModuleVersion = '1.0.12'
+        }, @{
+            Guid          = '5df72a79-cdf6-4add-b38d-bcacf26fb7bc'
+            ModuleName    = 'PSEventViewer'
+            ModuleVersion = '1.0.22'
         })
     RootModule           = 'ADEssentials.psm1'
 }
