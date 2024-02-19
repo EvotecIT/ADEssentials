@@ -43,7 +43,7 @@
     $DistinguishedName = $Identity
     $DomainFromIdentity = ConvertFrom-DistinguishedName -DistinguishedName $Identity -ToDomainCN
 
-    $ForestInformation = Get-WinADForestDetails -Extended
+    $ForestInformation = Get-WinADForestDetails -Extended -PreferWritable
     if ($GlobalCatalog) {
         [Array] $GCs = foreach ($DC in $ForestInformation.ForestDomainControllers) {
             if ($DC.IsGlobalCatalog) {
@@ -59,13 +59,17 @@
     }
     $ResultsCached = [ordered] @{}
     $Results = foreach ($GC in $GCs) {
+
         # Query the specific object on each GC
         Try {
             if ($GlobalCatalog) {
+                Write-Verbose -Message "Test-WinADObjectReplicationStatus - Querying $($GC.HostName) on port 3268 for $Identity"
                 $ObjectInfo = Get-ADObject -Identity $Identity -Server "$($GC.HostName):3268" -Properties * -ErrorAction Stop
             } else {
+                Write-Verbose -Message "Test-WinADObjectReplicationStatus - Querying $($GC.HostName) for $Identity"
                 $ObjectInfo = Get-ADObject -Identity $Identity -Server $GC.HostName -Properties * -ErrorAction Stop
             }
+            $ErrorValue = $null
         } catch {
             $ObjectInfo = $null
             Write-Warning "Test-WinADObjectReplicationStatus - Error: $($_.Exception.Message.Replace([System.Environment]::NewLine,''))"
@@ -81,6 +85,20 @@
                 uSNCreated         = $ObjectInfo.uSNCreated
                 whenCreated        = $ObjectInfo.whenCreated
                 WhenChanged        = $ObjectInfo.WhenChanged
+                Error              = $ErrorValue
+            }
+            $ResultsCached[$GC.HostName] = $PreparedObject
+            $PreparedObject
+        } else {
+            $PreparedObject = [PSCustomObject] @{
+                DomainController   = $GC.HostName
+                Domain             = $GC.Domain
+                UserAccountControl = $null
+                Created            = $null
+                uSNChanged         = $null
+                uSNCreated         = $null
+                whenCreated        = $null
+                WhenChanged        = $null
                 Error              = $ErrorValue
             }
             $ResultsCached[$GC.HostName] = $PreparedObject
