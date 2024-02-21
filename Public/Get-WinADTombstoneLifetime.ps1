@@ -12,7 +12,7 @@
     $QueryServer = $ForestInformation.QueryServers[$($ForestInformation.Forest.Name)]['HostName'][0]
     $RootDSE = Get-ADRootDSE -Server $QueryServer
     $Output = (Get-ADObject -Server $QueryServer -Identity "CN=Directory Service,CN=Windows NT,CN=Services,$(($RootDSE).configurationNamingContext)" -Properties tombstoneLifetime)
-    if ($null -eq $Output) {
+    if ($null -eq $Output -or $null -eq $Output.tombstoneLifetime) {
         [PSCustomObject] @{
             TombstoneLifeTime = 60
         }
