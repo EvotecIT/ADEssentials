@@ -27,9 +27,10 @@ Invoke-ModuleBuild -ModuleName 'ADEssentials' {
     }
     New-ConfigurationManifest @Manifest
 
-    New-ConfigurationModule -Type RequiredModule -Name 'PSEventViewer', 'PSSharedGoods' -Version Latest -Guid Auto
+    New-ConfigurationModule -Type RequiredModule -Name 'PSSharedGoods' -Version Latest -Guid Auto
 
     New-ConfigurationModule -Type RequiredModule -Name 'PSWriteHTML' -Version 1.0.12 -Guid Auto
+    New-ConfigurationModule -Type RequiredModule -Name 'PSEventViewer' -Version 1.0.22 -Guid Auto
     New-ConfigurationModule -Type ApprovedModule -Name @('PSSharedGoods', 'PSWriteColor', 'Connectimo', 'PSUnifi', 'PSWebToolbox', 'PSMyPassword')
 
     New-ConfigurationModuleSkip -IgnoreFunctionName @(
