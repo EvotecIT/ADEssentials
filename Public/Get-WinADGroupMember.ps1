@@ -57,11 +57,6 @@
     Begin {
         $Properties = 'GroupName', 'Name', 'SamAccountName', 'DisplayName', 'Enabled', 'Type', 'Nesting', 'CrossForest', 'ParentGroup', 'ParentGroupDomain', 'GroupDomainName', 'DistinguishedName', 'Sid'
         if (-not $Script:WinADGroupMemberCache -or $ClearCache) {
-            #if ($ClearCache) {
-            # This is to distinguish globally used cache and standard cache
-            # As it's entirely possible user used standard approach without cache and then enabled cache so we need to track whether that is the case
-            # $Script:WinADGroupMemberCacheGlobal = $false
-            #}
             $Script:WinADGroupMemberCache = @{}
             $Forest = [System.DirectoryServices.ActiveDirectory.Forest]::GetCurrentForest()
             $Script:WinADForestCache = @{
@@ -165,7 +160,6 @@
                     }
                 }
 
-                #if ($CountMembers) {
                 # This tracks amount of members for our groups
                 if (-not $MembersCache[$ADGroupName.DistinguishedName]) {
                     $DirectMembers = $NestedMembers.Where( { $_.ObjectClass -ne 'group' }, 'split')
@@ -180,11 +174,9 @@
                         IndirectGroupsCount  = $null
                     }
                 }
-                #}
                 $DomainParentGroup = ConvertFrom-DistinguishedName -DistinguishedName $ADGroupName.DistinguishedName -ToDomainCN
                 foreach ($NestedMember in $NestedMembers) {
                     # for each member we either create new user or group, if group we will dive into nesting
-
                     $CreatedObject = [ordered] @{
                         GroupName         = $InitialGroup.GroupName
                         Name              = $NestedMember.name
@@ -214,13 +206,6 @@
                         $CreatedObject['CrossForest'] = $true
                     }
                     if ($NestedMember.ObjectClass -eq "group") {
-
-                        #if (-not $CircularGroups[$NestedMember.DistinguishedName]) {
-                        #    $CircularGroups[$NestedMember.DistinguishedName] = $Nesting
-                        #} else {
-                        #    Write-Verbose "Shit... $($CircularGroups[$NestedMember.DistinguishedName])"
-                        #}
-
                         if ($ADGroupName.memberof -contains $NestedMember.DistinguishedName) {
                             $Circular = $ADGroupName.DistinguishedName
                             $CreatedObject['CircularDirect'] = $true
@@ -236,8 +221,9 @@
                         }
                         Write-Verbose "Get-WinADGroupMember - Going into $($NestedMember.DistinguishedName) (Nesting: $Nesting) (Circular:$Circular)"
                         $OutputFromGroup = Get-WinADGroupMember -GroupName $NestedMember -Nesting $Nesting -Circular $Circular -InitialGroup $InitialGroup -CollectedGroups $CollectedGroups -Nested -All:$All.IsPresent #-CountMembers:$CountMembers.IsPresent
-                        $OutputFromGroup
-                        #if ($CountMembers) {
+                        if ($null -ne $OutputFromGroup) {
+                            $OutputFromGroup
+                        }
                         foreach ($Member in $OutputFromGroup) {
                             if ($Member.Type -eq 'group') {
                                 $MembersCache[$ADGroupName.DistinguishedName]['IndirectGroups'].Add($Member)
@@ -245,7 +231,6 @@
                                 $MembersCache[$ADGroupName.DistinguishedName]['IndirectMembers'].Add($Member)
                             }
                         }
-                        #}
                     } else {
                         [PSCustomObject] $CreatedObject
                     }
@@ -254,7 +239,6 @@
         }
     }
     End {
-        #if ($Output.Count -gt 0) {
         if ($Nesting -eq 0) {
             # If nesting is 0 this means we are ending our run
             if (-not $All) {
@@ -332,6 +316,5 @@
             # this is nested call so we want to get whatever it gives us
             $Output
         }
-        # }
     }
 }
