@@ -43,17 +43,21 @@
         Get-ADGroup -Filter 'admincount -eq 1 -and iscriticalsystemobject -eq $true' -Server $QueryServer #| Select-Object @{name = 'Domain'; expression = { $domain } }, distinguishedname
     }
 
-    $CacheCritical = @{}
+    $CacheCritical = [ordered] @{}
     foreach ($Group in $CriticalGroups) {
-        $Members = Get-WinADGroupMember -Identity $Group.distinguishedname -Verbose:$false -All
+        [Array] $Members = Get-WinADGroupMember -Identity $Group.distinguishedname -Verbose:$false -All
+        Write-Verbose -Message "Processing $($Group.DistinguishedName) with $($Members.Count) members"
         foreach ($Member in $Members) {
-            if (-not $CacheCritical[$Member.DistinguishedName]) {
-                $CacheCritical[$Member.DistinguishedName] = [System.Collections.Generic.List[string]]::new()
+            if ($null -ne $Member -and $Member.DistinguishedName) {
+                if (-not $CacheCritical[$Member.DistinguishedName]) {
+                    $CacheCritical[$Member.DistinguishedName] = [System.Collections.Generic.List[string]]::new()
+                }
+                if ($Group.DistinguishedName -notin $CacheCritical[$Member.DistinguishedName]) {
+                    $CacheCritical[$Member.DistinguishedName].Add($Group.DistinguishedName)
+                }
             }
-            $CacheCritical[$Member.DistinguishedName].Add($Group.DistinguishedName)
         }
     }
-
 
     $AdminCountAll = foreach ($object in $UsersWithAdminCount) {
         $DistinguishedName = $object.distinguishedname
