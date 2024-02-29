@@ -1,4 +1,11 @@
-﻿#### 0.0.187 - 2024.02.19
+﻿#### 0.0.189 - 2024.02.29
+- Improved `Get-WinADGroupMember` to handle empty groups and prevent null returns
+- Improved `Get-WinADPrivilegedObjects` to handle empty groups and prevent null returns
+
+#### 0.0.187 - 2024.02.19
+- Update `Test-WinADObjectReplicationStatus` with additional error handling
+
+#### 0.0.187 - 2024.02.19
 - Update `Test-WinADObjectReplicationStatus` with additional error handling
 
 #### 0.0.186 - 2024.02.07
