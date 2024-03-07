@@ -1,4 +1,7 @@
-﻿#### 0.0.189 - 2024.02.29
+﻿#### 0.0.190 - 2024.03.07
+- Added `Test-WinADDNSResolving` - This command will test DNS resolving for given domain and record type. It will return all DNS servers that were used to resolve the query and the result of the query.
+
+#### 0.0.189 - 2024.02.29
 - Improved `Get-WinADGroupMember` to handle empty groups and prevent null returns
 - Improved `Get-WinADPrivilegedObjects` to handle empty groups and prevent null returns
 
