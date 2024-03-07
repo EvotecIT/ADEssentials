@@ -160,6 +160,7 @@ Invoke-ModuleBuild -ModuleName 'ADEssentials' {
         'Get-WinDNSIPAddresses'
         'Find-WinADObjectDifference'
         'Show-WinADObjectDifference'
+        'Test-WinADDNSResolving'
     )
     New-ConfigurationCommand -ModuleName 'DHCPServer' -CommandName @(
         'Get-WinADDHCP'
