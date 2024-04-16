@@ -180,7 +180,7 @@
                     Enabled                 = $_.Enabled
                     Domain                  = $Domain
                     DNSHostName             = $_.DNSHostName
-                    IsDC                    = if ($Computer.PrimaryGroupID -in 516, 521) { $true } else { $false }
+                    IsDC                    = if ($_.PrimaryGroupID -in 516, 521) { $true } else { $false }
                     Encrypted               = $Encrypted
                     EncryptedTime           = $EncryptedTime
                     System                  = ConvertTo-OperatingSystem -OperatingSystem $_.OperatingSystem -OperatingSystemVersion $_.OperatingSystemVersion
@@ -197,7 +197,7 @@
                     Enabled                   = $_.Enabled
                     Domain                    = $Domain
                     DNSHostName               = $_.DNSHostName
-                    IsDC                      = if ($Computer.PrimaryGroupID -in 516, 521) { $true } else { $false }
+                    IsDC                      = if ($_.PrimaryGroupID -in 516, 521) { $true } else { $false }
                     Encrypted                 = $Encrypted
                     EncryptedTime             = $EncryptedTime
                     Laps                      = $Laps
