@@ -1,9 +1,17 @@
 ﻿#### 0.0.191 - 2024.04.16
-- Renamed `Get-WinDnsIPAddresses` to `Get-WinADDNSIPAddresses`
-- Renamed `Get-WinDnsRecords` to `Get-WinADDNSRecords`
-- Renamed `Get-WinDnsZones` to `Get-WinADDNSZones`
+- Renamed with aliases preserved:
+  - Renamed `Get-WinDnsIPAddresses` to `Get-WinADDNSIPAddresses`
+  - Renamed `Get-WinDnsRecords` to `Get-WinADDNSRecords`
+  - Renamed `Get-WinDnsZones` to `Get-WinADDNSZones`
 - Improve Laps and Bitlocker reporting in `Invoke-ADEssentials`
 - Added `Get-WinADomainControllerrGenerationId`
+- Added `Get-WinADForestReplicationSummary` wrapper around `repadmin /replsummary`
+- Added `Get-WinADDomainControllerGenerationId` to get GenerationId for Domain Controllers (VM ID)
+- Copied from `PSWinDocumentation.DNS`
+  - Copied from `PSWinDocumentation.DNS` - `Get-WinADDnsInformation` as is with function rename to minimize dependencies for Testimo and further improvements
+  - Copied from `PSWinDocumentation.DNS` - `Get-WinADDnsServerForwarder` as is with function rename to minimize dependencies for Testimo and further improvements
+  - Copied from `PSWinDocumentation.DNS` - `Get-WinADDnsServerScavenging` as is with function rename to minimize dependencies for Testimo and further improvements
+  - Copied from `PSWinDocumentation.DNS` - `Get-WinADDnsServerZones` as is with function rename to minimize dependencies for Testimo and further improvements
 
 #### 0.0.190 - 2024.03.07
 - Added `Test-WinADDNSResolving` - This command will test DNS resolving for given domain and record type. It will return all DNS servers that were used to resolve the query and the result of the query.
