@@ -31,7 +31,7 @@
         $Data.ServerDirectoryPartition = Get-WinDnsServerDirectoryPartition -ComputerName $Computer -Splitter $Splitter
         $Data.ServerDsSetting = Get-WinDnsServerDsSetting -ComputerName $Computer
         $Data.ServerEdns = Get-WinDnsServerEDns -ComputerName $Computer
-        $Data.ServerForwarder = Get-WinDnsServerForwarder -ComputerName $Computer -ExtendedForestInformation $ForestInformation -Formatted -Splitter $Splitter
+        $Data.ServerForwarder = Get-WinADDnsServerForwarder -ComputerName $Computer -ExtendedForestInformation $ForestInformation -Formatted -Splitter $Splitter
         $Data.ServerGlobalNameZone = Get-WinDnsServerGlobalNameZone -ComputerName $Computer
         $Data.ServerGlobalQueryBlockList = Get-WinDnsServerGlobalQueryBlockList -ComputerName $Computer -Splitter $Splitter
         # $Data.ServerPolicies = $DNSServer.ServerPolicies
@@ -41,7 +41,7 @@
         $Data.ServerResponseRateLimiting = Get-WinDnsServerResponseRateLimiting -ComputerName $Computer
         $Data.ServerResponseRateLimitingExceptionlists = Get-DnsServerResponseRateLimitingExceptionlist -ComputerName $Computer # TODO
         $Data.ServerRootHint = Get-WinDnsRootHint -ComputerName $Computer
-        $Data.ServerScavenging = Get-WinDnsServerScavenging -ComputerName $Computer
+        $Data.ServerScavenging = Get-WinADDnsServerScavenging -ComputerName $Computer
         $Data.ServerSetting = Get-WinDnsServerSettings -ComputerName $Computer
         # $Data.ServerZone = Get-DnsServerZone -ComputerName $Computer # problem
         # $Data.ServerZoneAging = Get-DnsServerZoneAging -ComputerName $Computer # problem
