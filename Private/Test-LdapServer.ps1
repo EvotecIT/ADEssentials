@@ -10,7 +10,8 @@
         [int] $PortLDAPS = 636,
         [switch] $VerifyCertificate,
         [PSCredential] $Credential,
-        [string] $Identity
+        [string] $Identity,
+        [switch] $SkipCheckGC
     )
     if ($ServerName -notlike '*.*') {
         # $FQDN = $false
@@ -18,55 +19,63 @@
         $GlobalCatalogSSL = [PSCustomObject] @{ Status = $false; ErrorMessage = 'No FQDN' }
         $ConnectionLDAPS = [PSCustomObject] @{ Status = $false; ErrorMessage = 'No FQDN' }
         if ($PSBoundParameters.ContainsKey('Credential')) {
-            if (-not $Advanced) {
-                $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP -Credential $Credential -Identity $Identity
-            } else {
-                if ($Advanced.IsGlobalCatalog) {
+            if (-not $SkipCheckGC) {
+                if (-not $Advanced) {
                     $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP -Credential $Credential -Identity $Identity
                 } else {
-                    $GlobalCatalogNonSSL = [PSCustomObject] @{ Status = $null; ErrorMessage = 'Not Global Catalog' }
+                    if ($Advanced.IsGlobalCatalog) {
+                        $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP -Credential $Credential -Identity $Identity
+                    } else {
+                        $GlobalCatalogNonSSL = [PSCustomObject] @{ Status = $null; ErrorMessage = 'Not Global Catalog' }
+                    }
                 }
             }
             $ConnectionLDAP = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAP -Credential $Credential -Identity $Identity
         } else {
-            if (-not $Advanced) {
-                $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP -Identity $Identity
-            } else {
-                if ($Advanced.IsGlobalCatalog) {
+            if (-not $SkipCheckGC) {
+                if (-not $Advanced) {
                     $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP -Identity $Identity
                 } else {
-                    $GlobalCatalogNonSSL = [PSCustomObject] @{ Status = $null; ErrorMessage = 'Not Global Catalog' }
+                    if ($Advanced.IsGlobalCatalog) {
+                        $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP -Identity $Identity
+                    } else {
+                        $GlobalCatalogNonSSL = [PSCustomObject] @{ Status = $null; ErrorMessage = 'Not Global Catalog' }
+                    }
                 }
             }
             $ConnectionLDAP = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAP -Identity $Identity
         }
     } else {
         if ($PSBoundParameters.ContainsKey('Credential')) {
-            if (-not $Advanced) {
-                $GlobalCatalogSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAPSSL -Credential $Credential -Identity $Identity
-                $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP -Credential $Credential -Identity $Identity
-            } else {
-                if ($Advanced.IsGlobalCatalog) {
+            if (-not $SkipCheckGC) {
+                if (-not $Advanced) {
                     $GlobalCatalogSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAPSSL -Credential $Credential -Identity $Identity
                     $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP -Credential $Credential -Identity $Identity
                 } else {
-                    $GlobalCatalogSSL = [PSCustomObject] @{ Status = $null; ErrorMessage = 'Not Global Catalog' }
-                    $GlobalCatalogNonSSL = [PSCustomObject] @{ Status = $null; ErrorMessage = 'Not Global Catalog' }
+                    if ($Advanced.IsGlobalCatalog) {
+                        $GlobalCatalogSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAPSSL -Credential $Credential -Identity $Identity
+                        $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP -Credential $Credential -Identity $Identity
+                    } else {
+                        $GlobalCatalogSSL = [PSCustomObject] @{ Status = $null; ErrorMessage = 'Not Global Catalog' }
+                        $GlobalCatalogNonSSL = [PSCustomObject] @{ Status = $null; ErrorMessage = 'Not Global Catalog' }
+                    }
                 }
             }
             $ConnectionLDAPS = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAPS -Credential $Credential -Identity $Identity
             $ConnectionLDAP = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAP -Credential $Credential -Identity $Identity
         } else {
-            if (-not $Advanced) {
-                $GlobalCatalogSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAPSSL -Identity $Identity
-                $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP -Identity $Identity
-            } else {
-                if ($Advanced -and $Advanced.IsGlobalCatalog) {
+            if (-not $SkipCheckGC) {
+                if (-not $Advanced) {
                     $GlobalCatalogSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAPSSL -Identity $Identity
                     $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP -Identity $Identity
                 } else {
-                    $GlobalCatalogSSL = [PSCustomObject] @{ Status = $null; ErrorMessage = 'Not Global Catalog' }
-                    $GlobalCatalogNonSSL = [PSCustomObject] @{ Status = $null; ErrorMessage = 'Not Global Catalog' }
+                    if ($Advanced -and $Advanced.IsGlobalCatalog) {
+                        $GlobalCatalogSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAPSSL -Identity $Identity
+                        $GlobalCatalogNonSSL = Test-LDAPPorts -ServerName $ServerName -Port $GCPortLDAP -Identity $Identity
+                    } else {
+                        $GlobalCatalogSSL = [PSCustomObject] @{ Status = $null; ErrorMessage = 'Not Global Catalog' }
+                        $GlobalCatalogNonSSL = [PSCustomObject] @{ Status = $null; ErrorMessage = 'Not Global Catalog' }
+                    }
                 }
             }
             $ConnectionLDAPS = Test-LDAPPorts -ServerName $ServerName -Port $PortLDAPS -Identity $Identity
