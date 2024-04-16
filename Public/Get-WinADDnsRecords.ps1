@@ -1,4 +1,4 @@
-﻿function Get-WinDNSRecords {
+﻿function Get-WinADDnsRecords {
     <#
     .SYNOPSIS
     Gets all the DNS records from all the zones within a forest
@@ -35,6 +35,7 @@
     .NOTES
     General notes
     #>
+    [alias('Get-WinDNSRecords')]
     [cmdletbinding()]
     param(
         [string[]] $IncludeZone,

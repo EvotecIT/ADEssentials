@@ -1,4 +1,5 @@
-﻿function Get-WinDNSZones {
+﻿function Get-WinADDNSZones {
+    [alias('Get-WinDNSZones')]
     [CmdletBinding()]
     param(
 

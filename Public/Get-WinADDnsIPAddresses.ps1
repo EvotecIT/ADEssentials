@@ -1,4 +1,4 @@
-﻿function Get-WinDNSIPAddresses {
+﻿function Get-WinADDnsIPAddresses {
     <#
     .SYNOPSIS
     Gets all the DNS records from all the zones within a forest sorted by IPAddress
@@ -25,17 +25,18 @@
     Outputs the results as a hashtable instead of an array
 
     .EXAMPLE
-    Get-WinDNSIPAddresses | Format-Table *
+    Get-WinADDnsIPAddresses | Format-Table *
 
     .EXAMPLE
-    Get-WinDNSIPAddresses -Prettify | Format-Table *
+    Get-WinADDnsIPAddresses -Prettify | Format-Table *
 
     .EXAMPLE
-    Get-WinDNSIPAddresses -Prettify -IncludeDetails -IncludeDNSRecords | Format-Table *
+    Get-WinADDnsIPAddresses -Prettify -IncludeDetails -IncludeDNSRecords | Format-Table *
 
     .NOTES
     General notes
     #>
+    [alias('Get-WinDnsIPAddresses')]
     [cmdletbinding()]
     param(
         [string[]] $IncludeZone,
@@ -52,7 +53,7 @@
     try {
         $oRootDSE = Get-ADRootDSE -ErrorAction Stop
     } catch {
-        Write-Warning -Message "Get-WinDNSIPAddresses - Could not get the root DSE. Make sure you're logged in to machine with Active Directory RSAT tools installed, and there's connecitivity to the domain. Error: $($_.Exception.Message)"
+        Write-Warning -Message "Get-WinADDnsIPAddresses - Could not get the root DSE. Make sure you're logged in to machine with Active Directory RSAT tools installed, and there's connecitivity to the domain. Error: $($_.Exception.Message)"
         return
     }
     $ADServer = ($oRootDSE.dnsHostName)
@@ -73,7 +74,7 @@
     }
 
     foreach ($Zone in $ZonesToProcess) {
-        Write-Verbose -Message "Get-WinDNSIPAddresses - Processing zone for DNS records: $($Zone.ZoneName)"
+        Write-Verbose -Message "Get-WinADDnsIPAddresses - Processing zone for DNS records: $($Zone.ZoneName)"
         $DNSRecordsPerZone[$Zone.ZoneName] = Get-DnsServerResourceRecord -ComputerName $ADServer -ZoneName $Zone.ZoneName -RRType A
     }
     if ($IncludeDetails) {
@@ -81,22 +82,22 @@
         #$Filter = { (Name -notlike "@" -and Name -notlike "_*" -and ObjectClass -eq 'dnsNode' -and Name -ne 'ForestDnsZone' -and Name -ne 'DomainDnsZone' ) }
         foreach ($Zone in $ZonesToProcess) {
             $ADRecordsPerZone[$Zone.ZoneName] = [ordered]@{}
-            Write-Verbose -Message "Get-WinDNSIPAddresses - Processing zone for AD records: $($Zone.ZoneName)"
+            Write-Verbose -Message "Get-WinADDnsIPAddresses - Processing zone for AD records: $($Zone.ZoneName)"
             $TempObjects = @(
                 if ($Zone.ReplicationScope -eq 'Domain') {
                     try {
                         Get-ADObject -Server $ADServer -Filter $Filter -SearchBase ("DC=$($Zone.ZoneName),CN=MicrosoftDNS,DC=DomainDnsZones," + $oRootDSE.defaultNamingContext) -Properties CanonicalName, whenChanged, whenCreated, DistinguishedName, ProtectedFromAccidentalDeletion, dNSTombstoned
                     } catch {
-                        Write-Warning -Message "Get-WinDNSIPAddresses - Error getting AD records for DomainDnsZones zone: $($Zone.ZoneName). Error: $($_.Exception.Message)"
+                        Write-Warning -Message "Get-WinADDnsIPAddresses - Error getting AD records for DomainDnsZones zone: $($Zone.ZoneName). Error: $($_.Exception.Message)"
                     }
                 } elseif ($Zone.ReplicationScope -eq 'Forest') {
                     try {
                         Get-ADObject -Server $ADServer -Filter $Filter -SearchBase ("DC=$($Zone.ZoneName),CN=MicrosoftDNS,DC=ForestDnsZones," + $oRootDSE.defaultNamingContext) -Properties CanonicalName, whenChanged, whenCreated, DistinguishedName, ProtectedFromAccidentalDeletion, dNSTombstoned
                     } catch {
-                        Write-Warning -Message "Get-WinDNSIPAddresses - Error getting AD records for ForestDnsZones zone: $($Zone.ZoneName). Error: $($_.Exception.Message)"
+                        Write-Warning -Message "Get-WinADDnsIPAddresses - Error getting AD records for ForestDnsZones zone: $($Zone.ZoneName). Error: $($_.Exception.Message)"
                     }
                 } else {
-                    Write-Warning -Message "Get-WinDNSIPAddresses - Unknown replication scope: $($Zone.ReplicationScope)"
+                    Write-Warning -Message "Get-WinADDnsIPAddresses - Unknown replication scope: $($Zone.ReplicationScope)"
                 }
             )
             foreach ($DNSObject in $TempObjects) {
