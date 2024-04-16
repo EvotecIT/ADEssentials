@@ -1,4 +1,13 @@
-﻿#### 0.0.190 - 2024.03.07
+﻿#### 0.0.192
+- Renamed `Get-WinDnsIPAddresses` to `Get-WinADDNSIPAddresses`
+- Renamed `Get-WinDnsRecords` to `Get-WinADDNSRecords`
+- Renamed `Get-WinDnsZones` to `Get-WinADDNSZones`
+- Improve Laps and Bitlocker reporting in `Invoke-ADEssentials`
+
+#### 0.0.191 - 2024.03.21
+- Added `Get-WinADomainControllerrGenerationId`
+
+#### 0.0.190 - 2024.03.07
 - Added `Test-WinADDNSResolving` - This command will test DNS resolving for given domain and record type. It will return all DNS servers that were used to resolve the query and the result of the query.
 
 #### 0.0.189 - 2024.02.29
