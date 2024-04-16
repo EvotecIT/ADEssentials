@@ -54,6 +54,9 @@
     .PARAMETER Extended
     Returns additional information about LDAP Server including full objects
 
+    .PARAMETER SkipCheckGC
+    Skips querying GC ports
+
     .EXAMPLE
     Test-LDAP -ComputerName 'AD1' -VerifyCertificate | Format-Table *
 
@@ -100,7 +103,10 @@
 
         [Parameter(ParameterSetName = 'Computer')]
         [Parameter(ParameterSetName = 'Forest')]
-        [switch] $Extended
+        [switch] $Extended,
+
+        [Parameter(ParameterSetName = 'Computer')]
+        [switch] $SkipCheckGC
     )
     begin {
         Add-Type -Assembly System.DirectoryServices.Protocols
@@ -136,6 +142,7 @@
                     PortLDAPS         = $PortLDAPS
                     VerifyCertificate = $VerifyCertificate.IsPresent
                     Identity          = $Identity
+                    SkipCheckGC       = $SkipCheckGC
                 }
                 if ($PSBoundParameters.ContainsKey('Credential')) {
                     $testLdapServerSplat.Credential = $Credential
