@@ -1,6 +1,21 @@
 ﻿
-$ZoneNames = "ad.evotec.xyz"
+
 $DnsServer = "AD1"
+
+$ZonesList = Get-DnsServerZone -ComputerName $DnsServer | Where-Object { $_.ZoneType -eq 'Primary' -and $_.IsReverseLookupZone -eq $true }
+$ZonesList | Format-Table
+$ZoneNames = $ZonesList.ZoneName
+
+
+$ZoneNames = $ZoneNames | Select-Object -First 2
+$ZonesName
+
+
+
+
+return
+
+
 
 foreach ($ZoneName in $ZoneNames) {
     $setDnsServerPrimaryZoneSplat = @{

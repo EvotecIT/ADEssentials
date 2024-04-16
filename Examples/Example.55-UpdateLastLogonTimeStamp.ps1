@@ -1,7 +1,7 @@
 ﻿Import-Module .\ADEssentials.psd1 -Force
 
 # check current timestamps
-$DCs = Get-ADDomainController -Filter * -Server 'ad.evotec.xyz'
+$DCs = Get-ADDomainController -Filter "*" -Server 'ad.evotec.xyz'
 $All = foreach ($DC in $DCs) {
     Get-ADUser -Identity 'PUID' -Server $DC.Hostname -Properties *
 }

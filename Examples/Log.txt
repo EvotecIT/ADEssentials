@@ -1,0 +1,9 @@
+Request-ChangePasswordOnExpiry - Skipping Administrator / CN=Administrator,OU=Administrative,OU=Users.NoSync,OU=Accounts,OU=Production,DC=ad,DC=evotec,DC=xyz - Password already requested at next logon or never expires.
+Request-ChangePasswordOnExpiry - Skipping expiration / CN=Expiration Date Test,OU=Default,OU=Users.NoSync,OU=Accounts,OU=Production,DC=ad,DC=evotec,DC=xyz - Password already requested at next logon or never expires.
+Request-ChangePasswordOnExpiry - Skipping myuser / CN=My User,OU=Default,OU=Users.NoSync,OU=Accounts,OU=Production,DC=ad,DC=evotec,DC=xyz - Password already requested at next logon or never expires.
+Request-ChangePasswordOnExpiry - Skipping OhNo$ / CN=Oh No,OU=Default,OU=Users.NoSync,OU=Accounts,OU=Production,DC=ad,DC=evotec,DC=xyz - Password already requested at next logon or never expires.
+Request-ChangePasswordOnExpiry - Skipping testing1 / CN=Testing 1,OU=Administrative,OU=Users.NoSync,OU=Accounts,OU=Production,DC=ad,DC=evotec,DC=xyz - Password already requested at next logon or never expires.
+Request-ChangePasswordOnExpiry - Found 5 expired users. Processing...
+Request-ChangePasswordOnExpiry - Setting EU_SVC_AGPM to change password on next logon / ad.evotec.xyz
+Failed to remove Computer1 from GroupName
+Failed to remove Computer2 from GroupName

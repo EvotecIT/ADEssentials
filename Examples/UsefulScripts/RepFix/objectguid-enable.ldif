@@ -1,0 +1,4 @@
+﻿dn: CN=Directory Service,CN=Windows NT,CN=Services,CN=Configuration,DC=ad,DC=evotec,DC=xyz
+Changetype: modify
+replace: dsHeuristics
+dsHeuristics: 00000000011

@@ -1,0 +1,4 @@
+﻿dn: CN=Class Store\0ADEL:4f56aca0-9acc-4f19-a492-d54011cc3df9,CN=Deleted Objects,DC=abb,DC=com
+changetype: modify
+replace: removeLingeringObject
+removeLingeringObject: CN=NTDS Settings,CN=XE-S-EUR0002,CN=Servers,CN=XELPG,CN=Sites,CN=Configuration,DC=abb,DC=com

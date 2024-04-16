@@ -1,0 +1,1 @@
+﻿repadmin /showobjmeta * CN=Schema,CN=Configuration,DC=AD,DC=EVOTEC,DC=XYZ | findstr "objectVersion"

@@ -10,7 +10,7 @@ foreach ($Domain in $ForestInformation.Domains) {
     $DataSet['SummaryPerDomain'] = [ordered] @{}
     $DataSet['SummaryPerDomain'][$Domain] = [ordered] @{}
     $DataSet[$Domain] = [ordered] @{}
-    $DataSet[$Domain]['Groups'] = Get-ADGroup -Filter * -Server $ForestInformation['QueryServers'][$Domain]['Hostname'][0] | ForEach-Object {
+    $DataSet[$Domain]['Groups'] = Get-ADGroup -Filter "*" -Server $ForestInformation['QueryServers'][$Domain]['Hostname'][0] | ForEach-Object {
         [PSCustomObject] @{
             Name              = $_.Name
             DomainName        = $Domain
@@ -23,7 +23,7 @@ foreach ($Domain in $ForestInformation.Domains) {
             SID               = $_.SID.Value
         }
     }
-    $DataSet[$Domain]['Users'] = Get-ADUser -Filter * -Server $ForestInformation['QueryServers'][$Domain]['Hostname'][0] | ForEach-Object {
+    $DataSet[$Domain]['Users'] = Get-ADUser -Filter "*" -Server $ForestInformation['QueryServers'][$Domain]['Hostname'][0] | ForEach-Object {
         [PSCustomObject] @{
             Name              = $_.Name
             DomainName        = $Domain
@@ -35,7 +35,7 @@ foreach ($Domain in $ForestInformation.Domains) {
             SID               = $_.SID.Value
         }
     }
-    $DataSet[$Domain]['Computers'] = Get-ADComputer -Filter * -Server $ForestInformation['QueryServers'][$Domain]['Hostname'][0] | ForEach-Object {
+    $DataSet[$Domain]['Computers'] = Get-ADComputer -Filter "*" -Server $ForestInformation['QueryServers'][$Domain]['Hostname'][0] | ForEach-Object {
         [PSCustomObject] @{
             Name              = $_.Name
             DomainName        = $Domain

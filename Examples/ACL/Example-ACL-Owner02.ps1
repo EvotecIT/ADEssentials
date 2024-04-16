@@ -3,8 +3,8 @@
 # With split per sheet
 $Server = 'ad.evotec.pl'
 $SearchBases = @(
-    Get-ADObject -Filter * -Properties canonicalName, ntSecurityDescriptor -SearchScope Base -Server $Server
-    Get-ADObject -Filter * -Properties canonicalName, ntSecurityDescriptor -SearchScope OneLevel -Server $Server
+    Get-ADObject -Filter "*" -Properties canonicalName, ntSecurityDescriptor -SearchScope Base -Server $Server
+    Get-ADObject -Filter "*" -Properties canonicalName, ntSecurityDescriptor -SearchScope OneLevel -Server $Server
 )
 foreach ($Search in $SearchBases) {
     $Owners = Get-WinADACLForest -Verbose -Separate -Owner -SearchBase $Search.DistinguishedName

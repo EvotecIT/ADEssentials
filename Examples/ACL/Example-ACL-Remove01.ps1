@@ -1,9 +1,27 @@
-﻿Import-Module .\ADEssentials.psd1 -Force
+﻿Clear-Host
+Import-Module .\ADEssentials.psd1 -Force
 
-$FindOU = 'OU=Users,OU=Accounts,OU=Production,DC=ad,DC=evotec,DC=xyz'
+$FindOU = 'OU=Accounts01,OU=Tier2,DC=ad,DC=evotec,DC=xyz'
 
-Remove-ADACL -ADObject $FindOU -Principal 'mmmm@ad.evotec.pl' -Verbose -AccessControlType Deny
+$T = Get-ADACL -ADObject $FindOU -Verbose
+$T | Format-Table
+
 Add-ADACL -Verbose -ADObject $FindOU -Principal 'mmmm@ad.evotec.pl' -AccessRule GenericAll -AccessControlType Allow
+Add-ADACL -Verbose -ADObject $FindOU -Principal 'przemyslaw.klys' -AccessRule GenericAll -AccessControlType Allow
+
+$T1 = Get-ADACL -ADObject $FindOU -Verbose -Bundle
+$T1 | Format-Table
+
+
+return
+#$ACL | Out-HtmlView -ScrollX -Filtering
+
+#Get-ADACL -ADObject $FindOU -Verbose -Resolve -Principal 'S-1-5-32-548' -AccessControlType Allow -ObjectTypeName Group,User | Format-Table
+#Get-ADACL -ADObject $FindOU -Verbose -Resolve -AccessControlType Allow -InheritedObjectTypeName User | Format-Table
+Get-ADACL -ADObject $FindOU -Verbose -Principal 'Exchange Windows Permissions' -Resolve -AccessControlType Allow -InheritedObjectTypeName User | Format-Table *
+#Remove-ADACL -ADObject $FindOU -Principal 'Exchange Windows Permissions' -Verbose -AccessControlType Allow -AccessRule CreateChild -InheritedObjectTypeName User -IncludeObjectTypeName 'User-Change-Password'
+Remove-ADACL -ADObject $FindOU -Principal 'Exchange Windows Permissions' -Verbose -AccessControlType Allow -InheritedObjectTypeName User -WhatIf:$false -Force #-AccessRule CreateChild -IncludeObjectTypeName 'User-Change-Password'
+#Remove-ADACL -ADObject $FindOU -Principal 'S-1-5-32-548' -Verbose -AccessControlType Allow
 
 return
 $OUs = Get-ADOrganizationalUnit -Properties CanonicalName -Identity $FindOU

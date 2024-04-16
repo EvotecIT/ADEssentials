@@ -1,5 +1,11 @@
 ﻿Import-Module .\ADEssentials.psd1 -Force
 
+
+Get-WinDnsServerForwarder
+
+#Invoke-ADEssentials -FilePath $PSScriptRoot\Reports\ADEssentials.html -Type Laps,LapsAndBitLocker -Verbose
+return
+
 Invoke-ADEssentials -Online -FilePath $PSScriptRoot\Reports\ADEssentials.html
 Invoke-ADEssentials -Online -FilePath $PSScriptRoot\Reports\ADEssentials.html -Type Computers, Groups, Users, ServiceAccounts
 Invoke-ADEssentials -Online -FilePath $PSScriptRoot\Reports\ADEssentials.html -Type ForestACLOwners

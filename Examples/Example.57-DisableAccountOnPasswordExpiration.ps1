@@ -3,7 +3,7 @@
 
 # Disable accounts on account expiration (not password expiration)
 # Disable all of them
-#Request-DisableOnAccountExpiration -LimitProcessing 1 -PassThru -Verbose -WhatIf | Format-Table
+Request-DisableOnAccountExpiration -LimitProcessing 1 -PassThru -Verbose -WhatIf | Format-Table
 
 # Disable accounts on account expiration (not password expiration)
 # Disable only from specific OU
