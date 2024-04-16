@@ -32,9 +32,9 @@
         [switch] $TabPerZone
     )
     # Gather data
-    $DNSByName = Get-WinDNSRecords -Prettify -IncludeDetails
-    $DNSByIP = Get-WinDNSIPAddresses -Prettify -IncludeDetails
-    $DNSZones = Get-WinDNSZones
+    $DNSByName = Get-WinADDNSRecords -Prettify -IncludeDetails
+    $DNSByIP = Get-WinADDnsIPAddresses -Prettify -IncludeDetails
+    $DNSZones = Get-WinADDNSZones
     $CachedZones = [ordered] @{}
     if ($TabPerZone) {
         foreach ($DnsEntry in $DNSByName) {
