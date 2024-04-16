@@ -34,7 +34,7 @@ Invoke-ModuleBuild -ModuleName 'ADEssentials' {
     New-ConfigurationModule -Type ApprovedModule -Name @('PSSharedGoods', 'PSWriteColor', 'Connectimo', 'PSUnifi', 'PSWebToolbox', 'PSMyPassword')
 
     New-ConfigurationModuleSkip -IgnoreFunctionName @(
-
+        'ConvertTo-Excel'
     ) -IgnoreModuleName @(
         'PSWriteExcel', 'ActiveDirectory', 'Microsoft.PowerShell.Security',
         'Microsoft.WSMan.Management', 'NetTCPIP', 'PowerShellGet', 'CimCmdlets'
@@ -161,14 +161,20 @@ Invoke-ModuleBuild -ModuleName 'ADEssentials' {
         'Find-WinADObjectDifference'
         'Show-WinADObjectDifference'
         'Test-WinADDNSResolving'
+        'Get-WinADDomainControllerGenerationId'
     )
     New-ConfigurationCommand -ModuleName 'DHCPServer' -CommandName @(
         'Get-WinADDHCP'
     )
     New-ConfigurationCommand -ModuleName 'DNSServer' -CommandName @(
-        'Get-WinDNSRecords'
-        'Get-WinDNSZones'
-        'Get-WinDNSIPAddresses'
+        'Get-WinADDnsInformation'
+        'Get-WinADDNSIPAddresses'
+        'Get-WinADDNSRecords'
+        'Get-WinADDnsServerForwarder'
+        'Get-WinADDnsServerScavenging'
+        'Get-WinADDnsServerZones'
+        'Get-WinADDnsZones'
+        'Remove-WinADDnsRecord'
     )
 
     New-ConfigurationBuild -Enable:$true -SignModule -MergeModuleOnBuild -MergeFunctionsFromApprovedModules -CertificateThumbprint '483292C9E317AA13B07BB7A96AE9D1A5ED9E7703'
