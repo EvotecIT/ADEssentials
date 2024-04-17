@@ -1,4 +1,7 @@
-﻿#### 0.0.191 - 2024.04.16
+﻿#### 0.0.192 - 2024.04.17
+- Improve `Get-WinADForestReplicationSummary` with more information
+
+#### 0.0.191 - 2024.04.16
 - Renamed with aliases preserved:
   - Renamed `Get-WinDnsIPAddresses` to `Get-WinADDNSIPAddresses`
   - Renamed `Get-WinDnsRecords` to `Get-WinADDNSRecords`
