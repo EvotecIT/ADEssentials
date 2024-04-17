@@ -1,8 +1,51 @@
 ﻿function Get-WinADForestReplicationSummary {
+    <#
+    .SYNOPSIS
+    Function that retrieves the replication summary of the Active Directory forest.
+
+    .DESCRIPTION
+    This function retrieves the replication summary of the Active Directory forest.
+    It uses the repadmin command to retrieve the replication summary and then parses
+    the output to create a custom object with the following properties:
+    - Server: The server name.
+    - LargestDelta: The largest delta between replication cycles.
+    - Fails: The number of failed replication cycles.
+    - Total: The total number of replication cycles.
+    - PercentageError: The percentage of failed replication cycles.
+    - Type: The type of server (Source or Destination).
+    - ReplicationError: The replication error message.
+
+    .PARAMETER InputContent
+    Allow the user to pass the repadmin output as a string.
+
+    .PARAMETER FilePath
+    Allow the user to pass the path of a file containing the repadmin output.
+
+    .PARAMETER IncludeStatisticsVariable
+    Allow the user to pass the name of a variable to store the statistics.
+
+    .EXAMPLE
+    Get-WinADForestReplicationSummary | Format-Table
+
+    .EXAMPLE
+    Get-WinADForestReplicationSummary -FilePath C:\repadmin.txt | Format-Table
+
+    .EXAMPLE
+    Get-WinADForestReplicationSummary -InputContent $repadminOutput | Format-Table
+
+    .EXAMPLE
+    Get-WinADForestReplicationSummary -IncludeStatisticsVariable Statistics | Format-Table
+
+    $Statistics | Format-Table
+
+    .NOTES
+    General notes
+    #>
     [CmdletBinding(DefaultParameterSetName = 'Default')]
     param(
         [Parameter(ParameterSetName = 'InputContent')][string] $InputContent,
-        [Parameter(ParameterSetName = 'FilePath')][string] $FilePath
+        [Parameter(ParameterSetName = 'FilePath')][string] $FilePath,
+        [string] $IncludeStatisticsVariable
     )
 
     if ($InputContent) {
@@ -56,8 +99,8 @@
                 [PSCustomObject]@{
                     Server           = $DSA
                     LargestDelta     = $LargestDelta
-                    Fails            = if ($null -ne $Fails) { $Fails.Replace("/", "").Trim() } else { $null }
-                    Total            = $Total
+                    Fails            = if ($null -ne $Fails) { [int] $Fails.Replace("/", "").Trim() } else { $null }
+                    Total            = [int] $Total
                     PercentageError  = $Percentage
                     Type             = $Type
                     ReplicationError = $ReplicationError
@@ -100,12 +143,11 @@
                     $Type = "Destination"
                 }
 
-
                 [PSCustomObject]@{
                     Server           = $DSA
                     LargestDelta     = $LargestDelta
-                    Fails            = if ($null -ne $Fails) { $Fails.Replace("/", "").Trim() } else { $null }
-                    Total            = $Total
+                    Fails            = if ($null -ne $Fails) { [int] $Fails.Replace("/", "").Trim() } else { $null }
+                    Total            = [int] $Total
                     PercentageError  = $Percentage
                     Type             = $Type
                     ReplicationError = $ReplicationError
@@ -114,5 +156,45 @@
         }
     }
     # Combine the data from both sections
-    $sourceData + $destinationData
+    $ReplicationSummary = $sourceData + $destinationData
+    $ReplicationSummary
+
+    if ($IncludeStatisticsVariable) {
+        $Statistics = [ordered] @{
+            "Good"             = 0
+            "Failures"         = 0
+            "Total"            = 0
+            "DeltaOver1Hours"  = 0
+            "DeltaOver3Hours"  = 0
+            "DeltaOver6Hours"  = 0
+            "DeltaOver12Hours" = 0
+            "DeltaOver24Hours" = 0
+            "UniqueErrors"     = [System.Collections.Generic.List[string]]::new()
+        }
+        foreach ($Replication in $ReplicationSummary) {
+            if ($Replication.LargestDelta -gt (New-TimeSpan -Hours 24)) {
+                $Statistics.DeltaOver24Hours++
+            } elseif ($Replication.LargestDelta -gt (New-TimeSpan -Hours 12)) {
+                $Statistics.DeltaOver12Hours++
+            } elseif ($Replication.LargestDelta -gt (New-TimeSpan -Hours 6)) {
+                $Statistics.DeltaOver6Hours++
+            } elseif ($Replication.LargestDelta -gt (New-TimeSpan -Hours 3)) {
+                $Statistics.DeltaOver3Hours++
+            } elseif ($Replication.LargestDelta -gt (New-TimeSpan -Hours 1)) {
+                $Statistics.DeltaOver1Hours++
+            }
+            if ($Replication.Fails -eq 0) {
+                $Statistics.Good++
+            } else {
+                $Statistics.Failures++
+            }
+            if ($Replication.ReplicationError -notin "None", "") {
+                if ($Statistics.UniqueErrors -notcontains $Replication.ReplicationError) {
+                    $Statistics.UniqueErrors.Add($Replication.ReplicationError)
+                }
+            }
+        }
+
+        Set-Variable -Scope Global -Name $IncludeStatisticsVariable -Value $Statistics
+    }
 }
