@@ -1,4 +1,7 @@
-﻿#### 0.0.192 - 2024.04.17
+﻿#### 0.0.193 - 2024.04.23
+- Fixes [#44](https://github.com/EvotecIT/ADEssentials/issues/44)
+
+#### 0.0.192 - 2024.04.17
 - Improve `Get-WinADForestReplicationSummary` with more information
 
 #### 0.0.191 - 2024.04.16
