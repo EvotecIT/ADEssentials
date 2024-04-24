@@ -1,4 +1,7 @@
-﻿#### 0.0.193 - 2024.04.23
+﻿#### 0.0.194 - 2024.04.24
+- Improve `Get-WinADForestReplicationSummary` by providing UniqueWarnings and missing replication errors
+
+#### 0.0.193 - 2024.04.23
 - Fixes [#44](https://github.com/EvotecIT/ADEssentials/issues/44)
 
 #### 0.0.192 - 2024.04.17
