@@ -166,12 +166,11 @@
                 Write-Verbose -Message "Processing error line: $line"
                 $ErrorCode = $Matches.ErrorCode
                 $ServerName = $Matches.ServerName
-                $HostName = $ServerName.Split(".")[0]
-                # [PSCustomObject]@{
-                #     ErrorCode  = [int] $ErrorCode
-                #     ServerName = $ServerName
-                # }
-
+                if ($ServerName -match "\.") {
+                    $HostName = $ServerName.Split(".")[0]
+                } else {
+                    $HostName = $ServerName
+                }
                 [PSCustomObject]@{
                     Server           = $HostName
                     LargestDelta     = $null
@@ -179,7 +178,7 @@
                     Total            = 1
                     PercentageError  = 100
                     Type             = "Unknown"
-                    ReplicationError = "Operational errors trying to retrieve replication information with error $ErrorCode"
+                    ReplicationError = "($ErrorCode) Error trying to retrieve replication information"
                 }
             }
         }
@@ -204,6 +203,8 @@
             "UniqueWarnings"   = [System.Collections.Generic.List[string]]::new()
         }
         foreach ($Replication in $ReplicationSummary) {
+            $Statistics.Total++
+
             if ($Replication.LargestDelta -gt (New-TimeSpan -Hours 24)) {
                 $Statistics.DeltaOver24Hours++
             } elseif ($Replication.LargestDelta -gt (New-TimeSpan -Hours 12)) {
@@ -221,11 +222,15 @@
                 $Statistics.Failures++
             }
             if ($Replication.ReplicationError -notin "None", "") {
-                if ($Replication.ReplicationError -like "Operational errors trying to retrieve replication information*") {
+                if ($Replication.ReplicationError -like "*Operational errors trying to retrieve replication information*") {
                     if ($Replication.ReplicationError -notin $Statistics.UniqueWarnings) {
                         $Statistics.UniqueWarnings.Add($Replication.ReplicationError)
                     }
                 } elseif ($Replication.ReplicationError -like "*The remote procedure call was cancelled.*") {
+                    if ($Replication.ReplicationError -notin $Statistics.UniqueWarnings) {
+                        $Statistics.UniqueWarnings.Add($Replication.ReplicationError)
+                    }
+                } elseif ($Replication.ReplicationError -like "*The RPC server is unavailable*") {
                     if ($Replication.ReplicationError -notin $Statistics.UniqueWarnings) {
                         $Statistics.UniqueWarnings.Add($Replication.ReplicationError)
                     }

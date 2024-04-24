@@ -1,4 +1,7 @@
-﻿#### 0.0.194 - 2024.04.24
+﻿#### 0.0.195 - 2024.04.24
+- Improve `Get-WinADForestReplicationSummary` by enhancing UniqueWarnings and fixing minor issues
+
+#### 0.0.194 - 2024.04.24
 - Improve `Get-WinADForestReplicationSummary` by providing UniqueWarnings and missing replication errors
 
 #### 0.0.193 - 2024.04.23
