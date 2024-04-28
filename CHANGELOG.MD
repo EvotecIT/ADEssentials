@@ -1,4 +1,8 @@
-﻿#### 0.0.195 - 2024.04.24
+﻿#### 0.0.196 - 2024.04.28
+- Added `Compare-WinADGlobalCatalogObjects`
+- Added new type to `Invoke-ADEssentials`: `GlobalCatalogComparison`
+
+#### 0.0.195 - 2024.04.24
 - Improve `Get-WinADForestReplicationSummary` by enhancing UniqueWarnings and fixing minor issues
 
 #### 0.0.194 - 2024.04.24
