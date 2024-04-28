@@ -60,6 +60,8 @@
             if (-not $Source[$U.DistinguishedName]) {
                 if ($U.WhenCreated -lt $Today) {
                     Add-Member -NotePropertyName 'GlobalCatalog' -NotePropertyValue $DC.Hostname -Force -InputObject $U
+                    Add-Member -NotePropertyName 'Type' -NotePropertyValue 'Missing' -Force -InputObject $U
+                    Add-Member -NotePropertyName 'Domain' -NotePropertyValue $SourceDomain -Force -InputObject $U
                     $Summary[$DC.Hostname]['Missing'].Add($U)
                     $Summary['Summary'].MissingObject++
                     if (-not $Summary['Summary'].MissingObjectDC.Contains($DC.Hostname)) {
@@ -72,6 +74,8 @@
                 if ($Source[$U.DistinguishedName].ObjectGUID.Guid -ne $U.ObjectGuid.Guid) {
                     Write-Color -Text "Processing [$Count/$($DCs.Count)][$CountOU/$($ListOU.Count)] ", $DC.HostName, " OU: ", $OU, " object: ", $U.DistinguishedName, " expected: ", $Source[$U.DistinguishedName].ObjectGUID.Guid, " got: ", $U.ObjectGuid.Guid -Color Yellow, White, Yellow, White, Red
                     Add-Member -NotePropertyName 'GlobalCatalog' -NotePropertyValue $DC.Hostname -Force -InputObject $U
+                    Add-Member -NotePropertyName 'Type' -NotePropertyValue 'WrongGuid' -Force -InputObject $U
+                    Add-Member -NotePropertyName 'Domain' -NotePropertyValue $SourceDomain -Force -InputObject $U
                     $Summary[$DC.Hostname]['WrongGuid'].Add($U)
                     $Summary['Summary'].WrongGuid++
                     if (-not $Summary['Summary'].WrongGuidDC.Contains($DC.Hostname)) {
