@@ -2,7 +2,7 @@
     Name       = 'Global Catalogs Object Summary'
     Enabled    = $true
     Execute    = {
-        Compare-WinADGlobalCatalogObjects
+        Compare-WinADGlobalCatalogObjects -Advanced
     }
     Processing = {
 
