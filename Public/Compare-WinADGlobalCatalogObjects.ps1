@@ -1,4 +1,29 @@
 ﻿function Compare-WinADGlobalCatalogObjects {
+    <#
+    .SYNOPSIS
+    This function compares objects in the Global Catalog of an Active Directory forest.
+
+    .DESCRIPTION
+    The function iterates over each domain in the forest, and for each domain, it compares the objects in the domain with the objects in the Global Catalog.
+    It checks for missing objects and objects with wrong GUIDs. The results are returned in a summary object.
+
+    .PARAMETER Advanced
+    If this switch is provided, the function will return the full summary object.
+    If not, it will only return the missing objects and objects with wrong GUIDs.
+
+    .EXAMPLE
+    Compare-WinADGlobalCatalogObjects -Advanced
+
+    This will return the full summary object for all domains in the forest.
+
+    .EXAMPLE
+    Compare-WinADGlobalCatalogObjects
+
+    This will return only the missing objects and objects with wrong GUIDs for all domains in the forest.
+
+    .NOTES
+    This function requires the Get-WinADForestDetails and Compare-InternalMissingObject functions.
+    #>
     [CmdletBinding()]
     param(
         [switch] $Advanced
