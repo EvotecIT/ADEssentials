@@ -61,7 +61,7 @@
     $sections = $OutputRepadmin -split "Source DSA|Destination DSA"
 
     $lines = $sections[1] -split "`r`n"
-    $sourceData = foreach ($line in $lines) {
+    [Array] $sourceData = foreach ($line in $lines) {
         if ($line -match '^Experienced the following operational errors trying to retrieve replication information') {
             break
         }
@@ -110,7 +110,7 @@
     }
 
     $lines = $sections[2] -split "`r`n"
-    $destinationData = foreach ($line in $lines) {
+    [Array] $destinationData = foreach ($line in $lines) {
         if ($line -match '^Experienced the following operational errors trying to retrieve replication information') {
             break
         }
@@ -156,7 +156,7 @@
         }
     }
 
-    $operationalErrors = foreach ($line in $lines) {
+    [Array] $operationalErrors = foreach ($line in $lines) {
         if ($line -match '^Experienced the following operational errors trying to retrieve replication information') {
             $processingErrors = $true
             continue
