@@ -5,13 +5,7 @@
         Compare-WinADGlobalCatalogObjects
     }
     Processing = {
-        # foreach ($PasswordPolicy in $Script:Reporting['PasswordPolicies']['Data']) {
-        #     if ($PasswordPolicy.Name -eq 'Default Password Policy') {
-        #         $Script:Reporting['PasswordPolicies']['Variables'].DefaultPasswordPolicy += 1
-        #     } else {
-        #         $Script:Reporting['PasswordPolicies']['Variables'].FineGrainedPasswordPolicies += 1
-        #     }
-        # }
+
     }
     Summary    = {
         New-HTMLText -Text @(
