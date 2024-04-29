@@ -20,12 +20,17 @@
         }
     }
     $Source = [ordered] @{}
-    [Array] $ListOU = @(
-        Get-ADObject -Filter 'ObjectClass -eq "container"' -SearchScope OneLevel -Server $Server | Select-Object Name, DistinguishedName
-        Get-ADOrganizationalUnit -Filter * -Server $Server -SearchScope OneLevel | Select-Object Name, DistinguishedName
-    )
-    [Array] $Objects = foreach ($OU in $ListOU.DistinguishedName) {
-        Get-ADObject -Filter * -SearchBase $OU -Server $Server -Properties Name, DistinguishedName, ObjectGuid, WhenChanged, WhenCreated
+    try {
+        [Array] $ListOU = @(
+            Get-ADObject -Filter 'ObjectClass -eq "container"' -SearchScope OneLevel -Server $Server -ErrorAction Stop | Select-Object Name, DistinguishedName
+            Get-ADOrganizationalUnit -Filter * -Server $Server -SearchScope OneLevel -ErrorAction Stop | Select-Object Name, DistinguishedName
+        )
+        [Array] $Objects = foreach ($OU in $ListOU.DistinguishedName) {
+            Get-ADObject -Filter * -SearchBase $OU -Server $Server -Properties Name, DistinguishedName, ObjectGuid, WhenChanged -ErrorAction Stop
+        }
+    } catch {
+        Write-Color -Text "Couldn't get the objects from the source domain [$SourceDomain] on server [$Server].", " Error: ", $_.Exception.Message -Color Red, White, Red, White
+        return $Source
     }
     foreach ($U in $Objects) {
         $Source[$U.DistinguishedName] = $U
@@ -61,7 +66,12 @@
             } else {
                 $QueryServer = $DC.HostName
             }
-            Get-ADObject -Filter * -SearchBase $OU -Server $QueryServer -Properties Name, DistinguishedName, ObjectGuid, WhenCreated, WhenChanged
+            try {
+                Get-ADObject -Filter * -SearchBase $OU -Server $QueryServer -Properties Name, DistinguishedName, ObjectGuid, WhenCreated, WhenChanged -ErrorAction Stop
+            } catch {
+                Write-Color -Text "Couldn't get the objects from the target domain [$SourceDomain] on server [$QueryServer].", " Error: ", $_.Exception.Message -Color Red, White, Red, White
+                break
+            }
         }
         foreach ($U in $UsersTarget) {
             if (-not $Source[$U.DistinguishedName]) {
