@@ -33,6 +33,10 @@
     }
     $Count = 0
     foreach ($DC in $DomainControllers) {
+        if ($DC.HostName -eq $Server) {
+            Write-Color -Text "Skipping [$Count/$($DomainControllers.Count)] ", $DC.HostName, " [Same as Source]" -Color Yellow, White, Green
+            continue
+        }
         $Count++
         if ($DC.IsGlobalCatalog) {
             Write-Color -Text "Processing [$Count/$($DomainControllers.Count)] ", $DC.HostName, " [IS GC]" -Color Yellow, White, Green

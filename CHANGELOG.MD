@@ -1,4 +1,7 @@
-﻿#### 0.0.197 - 2024.04.29
+﻿#### 0.0.198 - 2024.04.29
+- Improvements to `Compare-WinADGlobalCatalogObjects` to skip source server
+
+#### 0.0.197 - 2024.04.29
 - Improve `Compare-WinADGlobalCatalogObjects` by adding `IncludeDomains`,`ExcludeDomains`,`Forest`
 
 #### 0.0.196 - 2024.04.28
