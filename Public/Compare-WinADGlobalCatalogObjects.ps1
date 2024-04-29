@@ -26,12 +26,17 @@
     #>
     [CmdletBinding()]
     param(
-        [switch] $Advanced
+        [switch] $Advanced,
+        [string] $Forest,
+        [string[]] $IncludeDomains,
+        [string[]] $ExcludeDomains
     )
 
     $SummaryDomains = [ordered] @{}
-    $ForestInformation = Get-WinADForestDetails -PreferWritable
+    $ForestInformation = Get-WinADForestDetails -PreferWritable -Forest $Forest
     foreach ($Domain in $ForestInformation.Domains) {
+        if ($IncludeDomains -and $Domain -notin $IncludeDomains) { continue }
+        if ($ExcludeDomains -and $Domain -in $ExcludeDomains) { continue }
         Write-Color -Text "Processing Domain: ", $Domain -Color Yellow, White
         $QueryServer = $ForestInformation['QueryServers'][$Domain].HostName[0]
         $SummaryDomains[$Domain] = Compare-InternalMissingObject -ForestInformation $ForestInformation -Server $QueryServer -SourceDomain $Domain -TargetDomain $ForestInformation.Domains

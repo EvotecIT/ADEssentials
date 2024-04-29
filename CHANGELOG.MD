@@ -1,4 +1,7 @@
-﻿#### 0.0.196 - 2024.04.28
+﻿#### 0.0.197 - 2024.04.29
+- Improve `Compare-WinADGlobalCatalogObjects` by adding `IncludeDomains`,`ExcludeDomains`,`Forest`
+
+#### 0.0.196 - 2024.04.28
 - Added `Compare-WinADGlobalCatalogObjects`
 - Added new type to `Invoke-ADEssentials`: `GlobalCatalogComparison`
 

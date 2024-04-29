@@ -2,7 +2,7 @@
     Name       = 'Global Catalogs Object Summary'
     Enabled    = $true
     Execute    = {
-        Compare-WinADGlobalCatalogObjects -Advanced
+        Compare-WinADGlobalCatalogObjects -Advanced -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains
     }
     Processing = {
 
