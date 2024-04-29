@@ -54,6 +54,9 @@
                     if ($Null -ne $SummaryDomains[$Domain][$Server].WrongGuid.Count -gt 0) {
                         $SummaryDomains[$Domain][$Server].WrongGuid
                     }
+                    if ($Null -ne $SummaryDomains[$Domain][$Server].Ignored.Count -gt 0) {
+                        $SummaryDomains[$Domain][$Server].Ignored
+                    }
                 }
             }
         }

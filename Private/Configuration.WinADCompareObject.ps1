@@ -41,7 +41,12 @@
             } -FontSize 10pt
         }
 
-        New-HTMLText -Text "While it's possible to have some missing objects, it should be investigated why that is. " -FontSize 10pt
+        New-HTMLText -Text @(
+            "While it's possible to have some missing objects, it should be investigated why that is. ",
+            "We also ignore objects that were modified in the last 6 hours to avoid false positives, and that don't exists in the Global Catalog on any given domain controller.",
+            "Those objects are shown in the Ignored Objects section, but they are not considered as missing or wrong GUID objects."
+            "However you can investigate them further if needed."
+        ) -FontSize 10pt
     }
     Variables  = @{
 
@@ -76,6 +81,17 @@
                                     continue
                                 }
                                 $Script:Reporting['GlobalCatalogComparison']['Data'][$Domain][$Key].WrongGuid
+                            }
+                            New-HTMLTable -DataTable $Data -Filtering {
+
+                            } -IncludeProperty 'GlobalCatalog', 'DistinguishedName', 'Name', 'ObjectClass', 'WhenCreated', 'WhenChanged', 'ObjectGuid'
+                        }
+                        New-HTMLSection -HeaderText "Ignored Objects in $Domain per Domain Controller" {
+                            $Data = foreach ($Key in  $Script:Reporting['GlobalCatalogComparison']['Data'][$Domain].Keys) {
+                                if ($Key -eq 'Summary') {
+                                    continue
+                                }
+                                $Script:Reporting['GlobalCatalogComparison']['Data'][$Domain][$Key].Ignored
                             }
                             New-HTMLTable -DataTable $Data -Filtering {
 

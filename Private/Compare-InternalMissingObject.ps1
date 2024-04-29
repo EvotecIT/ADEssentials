@@ -6,7 +6,7 @@
         [string] $SourceDomain,
         [string[]] $TargetDomain
     )
-    $Today = Get-Date -Hour 00 -Minute 00 -Second 00
+    $Today = (Get-Date).AddHours(-6)
     $Port = "3268"
     $Summary = [ordered] @{
         'Summary' = [PSCustomObject] @{
@@ -15,6 +15,8 @@
             WrongGuid       = 0
             MissingObjectDC = [System.Collections.Generic.List[string]]::new()
             WrongGuidDC     = [System.Collections.Generic.List[string]]::new()
+            Ignored         = 0
+            IgnoredDC       = [System.Collections.Generic.List[string]]::new()
         }
     }
     $Source = [ordered] @{}
@@ -48,6 +50,7 @@
         $Summary[$DC.HostName] = @{
             Missing   = [System.Collections.Generic.List[Object]]::new()
             WrongGuid = [System.Collections.Generic.List[Object]]::new()
+            Ignored   = [System.Collections.Generic.List[Object]]::new()
         }
         $CountOU = 0
         [Array] $UsersTarget = foreach ($OU in $ListOU.DistinguishedName) {
@@ -63,6 +66,7 @@
         foreach ($U in $UsersTarget) {
             if (-not $Source[$U.DistinguishedName]) {
                 if ($U.WhenCreated -lt $Today) {
+                    Write-Color -Text "Missing [$Count/$($DCs.Count)][$CountOU/$($ListOU.Count)] ", $DC.HostName, " OU: ", $OU, " object: ", $U.DistinguishedName, " created: ", $U.WhenCreated -Color Yellow, White, Yellow, White, Yellow
                     Add-Member -NotePropertyName 'GlobalCatalog' -NotePropertyValue $DC.Hostname -Force -InputObject $U
                     Add-Member -NotePropertyName 'Type' -NotePropertyValue 'Missing' -Force -InputObject $U
                     Add-Member -NotePropertyName 'Domain' -NotePropertyValue $SourceDomain -Force -InputObject $U
@@ -72,11 +76,20 @@
                         $Summary['Summary'].MissingObjectDC.Add($DC.Hostname)
                     }
                 } else {
-                    Write-Color -Text "Processing [$Count/$($DCs.Count)][$CountOU/$($ListOU.Count)] ", $DC.HostName, " OU: ", $OU, " object: ", $U.DistinguishedName, " changed: ", $U.WhenChanged -Color Yellow, White, Yellow, White, Yellow
+                    # the object is too new to try and compare, as it could be it was just created/moved
+                    Write-Color -Text "Ignoring [$Count/$($DCs.Count)][$CountOU/$($ListOU.Count)] ", $DC.HostName, " OU: ", $OU, " object: ", $U.DistinguishedName, " changed: ", $U.WhenChanged -Color Yellow, White, Yellow, White, Yellow
+                    Add-Member -NotePropertyName 'GlobalCatalog' -NotePropertyValue $DC.Hostname -Force -InputObject $U
+                    Add-Member -NotePropertyName 'Type' -NotePropertyValue 'Ignored' -Force -InputObject $U
+                    Add-Member -NotePropertyName 'Domain' -NotePropertyValue $SourceDomain -Force -InputObject $U
+                    $Summary[$DC.Hostname]['Ignored'].Add($U)
+                    $Summary['Summary'].Ignored++
+                    if (-not $Summary['Summary'].IgnoredDC.Contains($DC.Hostname)) {
+                        $Summary['Summary'].IgnoredDC.Add($DC.Hostname)
+                    }
                 }
             } else {
                 if ($Source[$U.DistinguishedName].ObjectGUID.Guid -ne $U.ObjectGuid.Guid) {
-                    Write-Color -Text "Processing [$Count/$($DCs.Count)][$CountOU/$($ListOU.Count)] ", $DC.HostName, " OU: ", $OU, " object: ", $U.DistinguishedName, " expected: ", $Source[$U.DistinguishedName].ObjectGUID.Guid, " got: ", $U.ObjectGuid.Guid -Color Yellow, White, Yellow, White, Red
+                    Write-Color -Text "WrongGUID [$Count/$($DCs.Count)][$CountOU/$($ListOU.Count)] ", $DC.HostName, " OU: ", $OU, " object: ", $U.DistinguishedName, " expected: ", $Source[$U.DistinguishedName].ObjectGUID.Guid, " got: ", $U.ObjectGuid.Guid -Color Yellow, White, Yellow, White, Red
                     Add-Member -NotePropertyName 'GlobalCatalog' -NotePropertyValue $DC.Hostname -Force -InputObject $U
                     Add-Member -NotePropertyName 'Type' -NotePropertyValue 'WrongGuid' -Force -InputObject $U
                     Add-Member -NotePropertyName 'Domain' -NotePropertyValue $SourceDomain -Force -InputObject $U
