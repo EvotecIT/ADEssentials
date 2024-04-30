@@ -97,6 +97,17 @@
 
                             } -IncludeProperty 'GlobalCatalog', 'DistinguishedName', 'Name', 'ObjectClass', 'WhenCreated', 'WhenChanged', 'ObjectGuid'
                         }
+                        New-HTMLSection -HeaderText "Errors during scan in $Domain per Domain Controller" {
+                            $Data = foreach ($Key in  $Script:Reporting['GlobalCatalogComparison']['Data'][$Domain].Keys) {
+                                if ($Key -eq 'Summary') {
+                                    continue
+                                }
+                                $Script:Reporting['GlobalCatalogComparison']['Data'][$Domain][$Key].Errors
+                            }
+                            New-HTMLTable -DataTable $Data -Filtering {
+
+                            } -IncludeProperty 'GlobalCatalog', 'Domain', 'Object', 'Error'
+                        }
                     }
                 }
             }
