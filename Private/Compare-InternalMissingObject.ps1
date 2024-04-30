@@ -157,12 +157,14 @@
                     Write-Color -Text "[*] TargetGuid: ", $U.ObjectGuid.Guid, " TargetWhenCreated: ", $U.WhenCreated, " TargetWhenChanged: ", $U.WhenChanged -Color Yellow, White, Yellow, White, Yellow, White
 
                     try {
-                        $TryToFind = Get-ADObject -Filter "ObjectGuid -eq '$($Source[$U.DistinguishedName].ObjectGUID.Guid)'" -Server $Server -Properties Name, DistinguishedName, ObjectGuid, WhenCreated, WhenChanged -ErrorAction Stop
+                        $TryToFind = Get-ADObject -Filter "ObjectGuid -eq '$($Source[$U.DistinguishedName].ObjectGUID.Guid)'" -Server $QueryServer -Properties Name, DistinguishedName, ObjectGuid, WhenCreated, WhenChanged -ErrorAction Stop
                     } catch {
                         $TryToFind = $null
                     }
                     if ($TryToFind) {
-                        Write-Color -Text "Wrong GUID [$Count/$($DomainControllers.Count)][$CountOU/$($ListOU.Count)] ", $DC.HostName, " OU: ", $OU, " object: ", $U.DistinguishedName, " expected: ", $Source[$U.DistinguishedName].ObjectGUID.Guid, " got: ", $U.ObjectGuid.Guid, " found: ", $TryToFind.DistinguishedName -Color Red, White, Yellow, White, Red
+                        Write-Color -Text "[*] Found: ", $TryToFind.DistinguishedName, " Name: ", $TryToFind.Name -Color Yellow, White, Yellow, White
+                        Write-Color -Text "[*] FoundGuid: ", $TryToFind.ObjectGuid.Guid, " FoundWhenCreated: ", $TryToFind.WhenCreated, " FoundWhenChanged: ", $TryToFind.WhenChanged -Color Yellow, White, Yellow, White, Yellow, White
+                        #Write-Color -Text "Wrong GUID [$Count/$($DomainControllers.Count)][$CountOU/$($ListOU.Count)] ", $DC.HostName, " OU: ", $OU, " object: ", $U.DistinguishedName, " expected: ", $Source[$U.DistinguishedName].ObjectGUID.Guid, " got: ", $U.ObjectGuid.Guid, " found: ", $TryToFind.DistinguishedName -Color Red, White, Yellow, White, Red
                     }
 
                     $Summary[$DC.Hostname]['WrongGuid'].Add(
