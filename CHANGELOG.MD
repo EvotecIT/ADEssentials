@@ -1,4 +1,7 @@
-﻿#### 0.0.202 - 2024.04.30
+﻿#### 0.0.203 - 2024.04.30
+- Improvements to `Compare-WinADGlobalCatalogObjects` on error handling and reporting
+
+#### 0.0.202 - 2024.04.30
 - Improvements to `Compare-WinADGlobalCatalogObjects` on error handling and reporting
 
 #### 0.0.201 - 2024.04.30

@@ -144,10 +144,17 @@
                 }
             } else {
                 if ($Source[$U.DistinguishedName].ObjectGUID.Guid -ne $U.ObjectGuid.Guid) {
-                    Write-Color -Text "WrongGUID [$Count/$($DomainControllers.Count)][$CountOU/$($ListOU.Count)] ", $DC.HostName, " OU: ", $OU, " object: ", $U.DistinguishedName, " expected: ", $Source[$U.DistinguishedName].ObjectGUID.Guid, " got: ", $U.ObjectGuid.Guid -Color Red, White, Yellow, White, Red
+
+
+                    Write-Color -Text "Wrong GUID [$Count/$($DomainControllers.Count)][$CountOU/$($ListOU.Count)] ", $DC.HostName, " OU: ", $OU, " object: ", $U.DistinguishedName, " expected: ", $Source[$U.DistinguishedName].ObjectGUID.Guid, " got: ", $U.ObjectGuid.Guid -Color Red, White, Yellow, White, Red
                     #Add-Member -NotePropertyName 'GlobalCatalog' -NotePropertyValue $DC.Hostname -Force -InputObject $U
                     #Add-Member -NotePropertyName 'Type' -NotePropertyValue 'WrongGuid' -Force -InputObject $U
                     #Add-Member -NotePropertyName 'Domain' -NotePropertyValue $SourceDomain -Force -InputObject $U
+
+                    Write-Color -Text "[*] SourceDN: ", $Source[$U.DistinguishedName].DistinguishedName, " SourceName: ", $Source[$U.DistinguishedName].Name -Color Yellow, White, Yellow, White
+                    Write-Color -Text "[*] SourceGuid: ", $Source[$U.DistinguishedName].ObjectGUID.Guid, " SourceWhenCreated: ", $Source[$U.DistinguishedName].WhenCreated, " SourceWhenChanged: ", $Source[$U.DistinguishedName].WhenChanged -Color Yellow, White, Yellow, White, Yellow, White
+                    Write-Color -Text "[*] TargetDN: ", $U.DistinguishedName, " TargetName: ", $U.Name -Color Yellow, White, Yellow, White
+                    Write-Color -Text "[*] TargetGuid: ", $U.ObjectGuid.Guid, " TargetWhenCreated: ", $U.WhenCreated, " TargetWhenChanged: ", $U.WhenChanged -Color Yellow, White, Yellow, White, Yellow, White
 
                     try {
                         $TryToFind = Get-ADObject -Filter "ObjectGuid -eq '$($Source[$U.DistinguishedName].ObjectGUID.Guid)'" -Server $Server -Properties Name, DistinguishedName, ObjectGuid, WhenCreated, WhenChanged -ErrorAction Stop
@@ -155,7 +162,7 @@
                         $TryToFind = $null
                     }
                     if ($TryToFind) {
-                        Write-Color -Text "WrongGUID [$Count/$($DomainControllers.Count)][$CountOU/$($ListOU.Count)] ", $DC.HostName, " OU: ", $OU, " object: ", $U.DistinguishedName, " expected: ", $Source[$U.DistinguishedName].ObjectGUID.Guid, " got: ", $U.ObjectGuid.Guid, " found: ", $TryToFind.DistinguishedName -Color Red, White, Yellow, White, Red
+                        Write-Color -Text "Wrong GUID [$Count/$($DomainControllers.Count)][$CountOU/$($ListOU.Count)] ", $DC.HostName, " OU: ", $OU, " object: ", $U.DistinguishedName, " expected: ", $Source[$U.DistinguishedName].ObjectGUID.Guid, " got: ", $U.ObjectGuid.Guid, " found: ", $TryToFind.DistinguishedName -Color Red, White, Yellow, White, Red
                     }
 
                     $Summary[$DC.Hostname]['WrongGuid'].Add(
