@@ -4,7 +4,8 @@
         [System.Collections.IDictionary] $ForestInformation,
         [string] $Server,
         [string] $SourceDomain,
-        [string[]] $TargetDomain
+        [string[]] $TargetDomain,
+        [int] $LimitPerDomain
     )
     $Today = (Get-Date).AddHours(-6)
     $Port = "3268"
@@ -20,6 +21,7 @@
         }
     }
     $Source = [ordered] @{}
+    Write-Color -Text "Getting objects from the source domain [$SourceDomain] on server [$Server]." -Color Yellow, White
     try {
         [Array] $ListOU = @(
             Get-ADObject -Filter 'ObjectClass -eq "container"' -SearchScope OneLevel -Server $Server -ErrorAction Stop | Select-Object Name, DistinguishedName
@@ -36,10 +38,20 @@
         $Source[$U.DistinguishedName] = $U
     }
     $DomainControllers = foreach ($Domain in $TargetDomain) {
-        $ForestInformation['DomainDomainControllers'][$Domain]
+        if ($LimitPerDomain -gt 0) {
+            for ($i = 0; $i -le $ForestInformation['DomainDomainControllers'][$Domain].Count; $i++) {
+                if ($i -ge $LimitPerDomain) {
+                    break
+                }
+                $ForestInformation['DomainDomainControllers'][$Domain][$i]
+            }
+        } else {
+            $ForestInformation['DomainDomainControllers'][$Domain]
+        }
     }
     $Count = 0
     :nextDC foreach ($DC in $DomainControllers) {
+        $Count++
         $Summary[$DC.HostName] = @{
             Missing   = [System.Collections.Generic.List[Object]]::new()
             WrongGuid = [System.Collections.Generic.List[Object]]::new()
@@ -50,11 +62,10 @@
             Write-Color -Text "Skipping [$Count/$($DomainControllers.Count)] ", $DC.HostName, " [Same as Source]" -Color Yellow, White, Green
             continue
         }
-        $Count++
         if ($DC.IsGlobalCatalog) {
-            Write-Color -Text "Processing [$Count/$($DomainControllers.Count)] ", $DC.HostName, " [IS GC]" -Color Yellow, White, Green
+            Write-Color -Text "Processing [$Count/$($DomainControllers.Count)] ", $DC.HostName, " [Is Global Catalog]" -Color Yellow, White, Green
         } else {
-            Write-Color -Text "Processing [$Count/$($DomainControllers.Count)] ", $DC.HostName, " [NOT GC]" -Color Yellow, White, Red
+            Write-Color -Text "Processing [$Count/$($DomainControllers.Count)] ", $DC.HostName, " [Is not Global Catalog]" -Color Yellow, White, Red
             continue
         }
 
@@ -84,8 +95,8 @@
         }
         foreach ($U in $UsersTarget) {
             if (-not $Source[$U.DistinguishedName]) {
-                if ($U.WhenCreated -lt $Today) {
-                    Write-Color -Text "Missing [$Count/$($DomainControllers.Count)][$CountOU/$($ListOU.Count)] ", $DC.HostName, " OU: ", $OU, " object: ", $U.DistinguishedName, " created: ", $U.WhenCreated -Color Yellow, White, Yellow, White, Yellow
+                if ($U.WhenChanged -lt $Today) {
+                    Write-Color -Text "Missing [$Count/$($DomainControllers.Count)][$CountOU/$($ListOU.Count)] ", $DC.HostName, " OU: ", $OU, " object: ", $U.DistinguishedName, " changed: ", $U.WhenChanged -Color Yellow, White, Yellow, White, Yellow
                     # Add-Member -NotePropertyName 'GlobalCatalog' -NotePropertyValue $DC.Hostname -Force -InputObject $U
                     # Add-Member -NotePropertyName 'Type' -NotePropertyValue 'Missing' -Force -InputObject $U
                     # Add-Member -NotePropertyName 'Domain' -NotePropertyValue $SourceDomain -Force -InputObject $U
@@ -149,16 +160,21 @@
 
                     $Summary[$DC.Hostname]['WrongGuid'].Add(
                         [PSCustomObject] @{
-                            GlobalCatalog        = $DC.Hostname
-                            Type                 = 'WrongGuid'
-                            Domain               = $SourceDomain
-                            DistinguishedName    = $U.DistinguishedName
-                            NewDistinguishedName = $TryToFind.DistinguishedName
-                            Name                 = $U.Name
-                            ObjectClass          = $U.ObjectClass
-                            ObjectGuid           = $U.ObjectGuid.Guid
-                            WhenCreated          = $U.WhenCreated
-                            WhenChanged          = $U.WhenChanged
+                            GlobalCatalog           = $DC.Hostname
+                            Type                    = 'WrongGuid'
+                            Domain                  = $SourceDomain
+                            DistinguishedName       = $U.DistinguishedName
+                            Name                    = $U.Name
+                            ObjectClass             = $U.ObjectClass
+                            ObjectGuid              = $U.ObjectGuid.Guid
+                            WhenCreated             = $U.WhenCreated
+                            WhenChanged             = $U.WhenChanged
+                            SourceObjectName        = $Source[$U.DistinguishedName].Name
+                            SourceObjectDN          = $Source[$U.DistinguishedName].DistinguishedName
+                            SourceObjectGuid        = $Source[$U.DistinguishedName].ObjectGUID.Guid
+                            SourceObjectWhenCreated = $Source[$U.DistinguishedName].WhenCreated
+                            SourceObjectWhenChanged = $Source[$U.DistinguishedName].WhenChanged
+                            NewDistinguishedName    = $TryToFind.DistinguishedName
                         }
                     )
                     $Summary['Summary'].WrongGuid++

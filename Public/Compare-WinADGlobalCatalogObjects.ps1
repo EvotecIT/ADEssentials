@@ -29,7 +29,8 @@
         [switch] $Advanced,
         [string] $Forest,
         [string[]] $IncludeDomains,
-        [string[]] $ExcludeDomains
+        [string[]] $ExcludeDomains,
+        [int] $LimitPerDomain
     )
 
     $SummaryDomains = [ordered] @{}
@@ -39,7 +40,7 @@
         if ($ExcludeDomains -and $Domain -in $ExcludeDomains) { continue }
         Write-Color -Text "Processing Domain: ", $Domain -Color Yellow, White
         $QueryServer = $ForestInformation['QueryServers'][$Domain].HostName[0]
-        $SummaryDomains[$Domain] = Compare-InternalMissingObject -ForestInformation $ForestInformation -Server $QueryServer -SourceDomain $Domain -TargetDomain $ForestInformation.Domains
+        $SummaryDomains[$Domain] = Compare-InternalMissingObject -ForestInformation $ForestInformation -Server $QueryServer -SourceDomain $Domain -TargetDomain $ForestInformation.Domains -LimitPerDomain $LimitPerDomain
     }
 
     if ($Advanced) {

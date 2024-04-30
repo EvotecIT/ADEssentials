@@ -73,7 +73,7 @@
                             }
                             New-HTMLTable -DataTable $Data -Filtering {
 
-                            } -IncludeProperty 'GlobalCatalog', 'DistinguishedName', 'Name', 'ObjectClass', 'WhenCreated', 'WhenChanged', 'ObjectGuid'
+                            } -IncludeProperty 'GlobalCatalog', 'Domain', 'Type', 'DistinguishedName', 'Name', 'ObjectClass', 'WhenCreated', 'WhenChanged'
                         }
                         New-HTMLSection -HeaderText "Wrong GUID Objects in $Domain per Domain Controller" {
                             $Data = foreach ($Key in  $Script:Reporting['GlobalCatalogComparison']['Data'][$Domain].Keys) {
@@ -82,9 +82,9 @@
                                 }
                                 $Script:Reporting['GlobalCatalogComparison']['Data'][$Domain][$Key].WrongGuid
                             }
-                            New-HTMLTable -DataTable $Data -Filtering {
+                            New-HTMLTable -DataTable $Data -Filtering -ScrollX {
 
-                            } -IncludeProperty 'GlobalCatalog', 'DistinguishedName', 'Name', 'ObjectClass', 'WhenCreated', 'WhenChanged', 'ObjectGuid'
+                            } -IncludeProperty 'GlobalCatalog', 'Domain', 'Type', 'DistinguishedName', 'Name', 'ObjectClass', 'WhenCreated', 'WhenChanged', 'ObjectGuid', 'NewDistinguishedName', 'SourceObjectName', 'SourceObjectDN', 'SourceObjectGuid', 'SourceObjectWhenCreated', 'SourceObjectWhenChanged'
                         }
                         New-HTMLSection -HeaderText "Ignored Objects in $Domain per Domain Controller" {
                             $Data = foreach ($Key in  $Script:Reporting['GlobalCatalogComparison']['Data'][$Domain].Keys) {
@@ -93,9 +93,9 @@
                                 }
                                 $Script:Reporting['GlobalCatalogComparison']['Data'][$Domain][$Key].Ignored
                             }
-                            New-HTMLTable -DataTable $Data -Filtering {
+                            New-HTMLTable -DataTable $Data -Filtering -ScrollX {
 
-                            } -IncludeProperty 'GlobalCatalog', 'DistinguishedName', 'Name', 'ObjectClass', 'WhenCreated', 'WhenChanged', 'ObjectGuid'
+                            } -IncludeProperty 'GlobalCatalog', 'Domain', 'Type', 'DistinguishedName', 'Name', 'ObjectClass', 'WhenCreated', 'WhenChanged', 'ObjectGuid'
                         }
                         New-HTMLSection -HeaderText "Errors during scan in $Domain per Domain Controller" {
                             $Data = foreach ($Key in  $Script:Reporting['GlobalCatalogComparison']['Data'][$Domain].Keys) {
