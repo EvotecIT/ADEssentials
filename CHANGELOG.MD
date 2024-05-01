@@ -1,4 +1,4 @@
-﻿#### 0.0.204 - 2024.04.30
+﻿#### 0.0.204 - 2024.05.01
 - Improvements to `Compare-WinADGlobalCatalogObjects` on reporting
 - Added `Compare-PingCastleReport` to compare 2 PingCastle reports (XML files)
 - Added `Invoke-PingCastle` to run PingCastle report (requires PingCastle installed)
