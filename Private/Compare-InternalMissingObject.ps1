@@ -37,6 +37,8 @@
     foreach ($U in $Objects) {
         $Source[$U.DistinguishedName] = $U
     }
+    # Clearing the objects to free up memory
+    $Objects = $null
     $DomainControllers = foreach ($Domain in $TargetDomain) {
         if ($LimitPerDomain -gt 0) {
             for ($i = 0; $i -le $ForestInformation['DomainDomainControllers'][$Domain].Count; $i++) {
@@ -70,6 +72,8 @@
         }
 
         $CountOU = 0
+        # lets free up memory before we start again
+        $UsersTarget = $null
         [Array] $UsersTarget = foreach ($OU in $ListOU.DistinguishedName) {
             $CountOU++
             Write-Color -Text "Processing [$Count/$($DomainControllers.Count)][$CountOU/$($ListOU.Count)] ", $DC.HostName, " OU: ", $OU -Color Yellow, White, Yellow, White
@@ -194,6 +198,9 @@
             }
         }
     }
+    # Clearing the objects to free up memory
+    $UsersTarget = $null
+    $Source = $null
     $Summary
 }
 
