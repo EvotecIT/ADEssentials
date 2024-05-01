@@ -20,24 +20,8 @@
             New-HTMLList {
                 New-HTMLListItem -Text "Missing Objects: ", $($Script:Reporting['GlobalCatalogComparison']['Data'][$Domain].Summary.MissingObject) -Color Black, Red -FontWeight normal, bold
                 New-HTMLListItem -Text "Wrong GUID Objects: ", $($Script:Reporting['GlobalCatalogComparison']['Data'][$Domain].Summary.WrongGuid) -Color Black, Red -FontWeight normal, bold
-                if ($Script:Reporting['GlobalCatalogComparison']['Data'][$Domain].Summary.MissingObjectDC.Count -gt 0) {
-                    New-HTMLListItem -Text "Domain Controllers with Missing Objects: " -FontSize 10pt -FontWeight normal, bold -NestedListItems {
-                        New-HTMLList -Type Unordered {
-                            foreach ($DC in $Script:Reporting['GlobalCatalogComparison']['Data'][$Domain].Summary.MissingObjectDC) {
-                                New-HTMLListItem -Text $DC -Color Black, Red -FontSize 10p
-                            }
-                        }
-                    }
-                }
-                if ($Script:Reporting['GlobalCatalogComparison']['Data'][$Domain].Summary.WrongGuidDC.Count -gt 0) {
-                    New-HTMLListItem -Text "Domain Controllers with Wrong GUID Objects: " -FontSize 10pt -FontWeight normal, bold -NestedListItems {
-                        New-HTMLList -Type Unordered {
-                            foreach ($DC in $Script:Reporting['GlobalCatalogComparison']['Data'][$Domain].Summary.WrongGuidDC) {
-                                New-HTMLListItem -Text $DC -Color Black, Red -FontSize 10pt
-                            }
-                        }
-                    }
-                }
+                New-HTMLListItem -Text "Domain Controllers with Missing Objects: ", $Script:Reporting['GlobalCatalogComparison']['Data'][$Domain].Summary.MissingObjectDC.Count -FontSize 10pt -FontWeight normal, bold
+                New-HTMLListItem -Text "Domain Controllers with Wrong GUID Objects: ", $Script:Reporting['GlobalCatalogComparison']['Data'][$Domain].Summary.WrongGuidD.Count -FontSize 10pt -FontWeight normal, bold
             } -FontSize 10pt
         }
 
