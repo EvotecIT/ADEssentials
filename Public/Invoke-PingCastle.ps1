@@ -2,7 +2,8 @@
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string] $FolderPath,
-        [Parameter(Mandatory)][string] $ReportPath
+        [Parameter(Mandatory)][string] $ReportPath,
+        [string[]] $IncludeDomain
     )
     $PingCastleExecutable = [io.path]::Combine($FolderPath, 'PingCastle.exe')
     if ($FolderPath -and (Test-Path -LiteralPath $FolderPath) -and (Test-Path -LiteralPath $PingCastleExecutable)) {
@@ -37,13 +38,13 @@
         return
     }
 
-    try {
+    if ($IncludeDomain) {
+        foreach ($Domain in $IncludeDomain) {
+            & $PingCastleExecutable --healthcheck --server $Domain --reachable
+        }
+    } else {
         & $PingCastleExecutable --healthcheck --server * --reachable
-    } catch {
-        Write-Warning -Message "Invoke-PingCastle - Error while executing $PingCastleExecutable. Error: $($_.Exception.Message)"
-        return
     }
-
     $AllFiles = Get-ChildItem -LiteralPath $TemporaryReportFolder
     foreach ($File in $AllFiles) {
         $DomainName = $File.BaseName.Replace("ad_hc_", '')
