@@ -1,4 +1,8 @@
-﻿#### 0.0.205 - 2024.05.01
+﻿#### 0.0.206 - 2024.05.08
+- Improve `Compare-WinADGlobalCatalogObjects` on reporting (remove ignored objects as not nessecary / added reverse search)
+- Improve `Invoke-ADEssentials`: `GlobalCatalogComparison` on reporting (remove ignored objects as not nessecary / added reverse search)
+
+#### 0.0.205 - 2024.05.01
 - Improve `Invoke-PingCastle`
 
 #### 0.0.204 - 2024.05.01

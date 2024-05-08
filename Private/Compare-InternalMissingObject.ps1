@@ -11,13 +11,15 @@
     $Port = "3268"
     $Summary = [ordered] @{
         'Summary' = [PSCustomObject] @{
-            Domain          = $SourceDomain
-            MissingObject   = 0
-            WrongGuid       = 0
-            MissingObjectDC = [System.Collections.Generic.List[string]]::new()
-            WrongGuidDC     = [System.Collections.Generic.List[string]]::new()
-            Ignored         = 0
-            IgnoredDC       = [System.Collections.Generic.List[string]]::new()
+            Domain                = $SourceDomain
+            MissingObject         = 0
+            WrongGuid             = 0
+            MissingObjectDC       = [System.Collections.Generic.List[string]]::new()
+            WrongGuidDC           = [System.Collections.Generic.List[string]]::new()
+            #Ignored         = 0
+            #IgnoredDC       = [System.Collections.Generic.List[string]]::new()
+            MissingAtSource       = 0
+            MissingAtSourceDC     = [System.Collections.Generic.List[string]]::new()
         }
     }
     $Source = [ordered] @{}
@@ -55,10 +57,11 @@
     :nextDC foreach ($DC in $DomainControllers) {
         $Count++
         $Summary[$DC.HostName] = @{
-            Missing   = [System.Collections.Generic.List[Object]]::new()
-            WrongGuid = [System.Collections.Generic.List[Object]]::new()
-            Ignored   = [System.Collections.Generic.List[Object]]::new()
-            Errors    = [System.Collections.Generic.List[string]]::new()
+            Missing         = [System.Collections.Generic.List[Object]]::new()
+            MissingAtSource = [System.Collections.Generic.List[Object]]::new()
+            WrongGuid       = [System.Collections.Generic.List[Object]]::new()
+            # Ignored         = [System.Collections.Generic.List[Object]]::new()
+            Errors          = [System.Collections.Generic.List[string]]::new()
         }
         if ($DC.HostName -eq $Server) {
             Write-Color -Text "Skipping [$Count/$($DomainControllers.Count)] ", $DC.HostName, " [Same as Source]" -Color Yellow, White, Green
@@ -74,6 +77,7 @@
         $CountOU = 0
         # lets free up memory before we start again
         $UsersTarget = $null
+        $CacheTarget = [ordered] @{}
         [Array] $UsersTarget = foreach ($OU in $ListOU.DistinguishedName) {
             $CountOU++
             Write-Color -Text "Processing [$Count/$($DomainControllers.Count)][$CountOU/$($ListOU.Count)] ", $DC.HostName, " OU: ", $OU -Color Yellow, White, Yellow, White
@@ -98,13 +102,12 @@
             }
         }
         foreach ($U in $UsersTarget) {
+            if ($U.DistinguishedName) {
+                $CacheTarget[$U.DistinguishedName] = $U
+            }
             if (-not $Source[$U.DistinguishedName]) {
                 if ($U.WhenChanged -lt $Today) {
                     Write-Color -Text "Missing [$Count/$($DomainControllers.Count)][$CountOU/$($ListOU.Count)] ", $DC.HostName, " OU: ", $OU, " object: ", $U.DistinguishedName, " changed: ", $U.WhenChanged -Color Yellow, White, Yellow, White, Yellow
-                    # Add-Member -NotePropertyName 'GlobalCatalog' -NotePropertyValue $DC.Hostname -Force -InputObject $U
-                    # Add-Member -NotePropertyName 'Type' -NotePropertyValue 'Missing' -Force -InputObject $U
-                    # Add-Member -NotePropertyName 'Domain' -NotePropertyValue $SourceDomain -Force -InputObject $U
-
                     $Summary[$DC.Hostname]['Missing'].Add(
                         [PSCustomObject] @{
                             GlobalCatalog     = $DC.Hostname
@@ -124,37 +127,27 @@
                     }
                 } else {
                     # the object is too new to try and compare, as it could be it was just created/moved
-                    #Write-Color -Text "Ignoring [$Count/$($DomainControllers.Count)][$CountOU/$($ListOU.Count)] ", $DC.HostName, " OU: ", $OU, " object: ", $U.DistinguishedName, " changed: ", $U.WhenChanged -Color Yellow, White, Yellow, White, Yellow
-                    # Add-Member -NotePropertyName 'GlobalCatalog' -NotePropertyValue $DC.Hostname -Force -InputObject $U
-                    # Add-Member -NotePropertyName 'Type' -NotePropertyValue 'Ignored' -Force -InputObject $U
-                    # Add-Member -NotePropertyName 'Domain' -NotePropertyValue $SourceDomain -Force -InputObject $U
-                    $Summary[$DC.Hostname]['Ignored'].Add(
-                        [PSCustomObject] @{
-                            GlobalCatalog     = $DC.Hostname
-                            Type              = 'Ignored'
-                            Domain            = $SourceDomain
-                            DistinguishedName = $U.DistinguishedName
-                            Name              = $U.Name
-                            ObjectClass       = $U.ObjectClass
-                            ObjectGuid        = $U.ObjectGuid.Guid
-                            WhenCreated       = $U.WhenCreated
-                            WhenChanged       = $U.WhenChanged
-                        }
-                    )
-                    $Summary['Summary'].Ignored++
-                    if (-not $Summary['Summary'].IgnoredDC.Contains($DC.Hostname)) {
-                        $Summary['Summary'].IgnoredDC.Add($DC.Hostname)
-                    }
+                    # $Summary[$DC.Hostname]['Ignored'].Add(
+                    #     [PSCustomObject] @{
+                    #         GlobalCatalog     = $DC.Hostname
+                    #         Type              = 'Ignored'
+                    #         Domain            = $SourceDomain
+                    #         DistinguishedName = $U.DistinguishedName
+                    #         Name              = $U.Name
+                    #         ObjectClass       = $U.ObjectClass
+                    #         ObjectGuid        = $U.ObjectGuid.Guid
+                    #         WhenCreated       = $U.WhenCreated
+                    #         WhenChanged       = $U.WhenChanged
+                    #     }
+                    # )
+                    # $Summary['Summary'].Ignored++
+                    # if (-not $Summary['Summary'].IgnoredDC.Contains($DC.Hostname)) {
+                    #     $Summary['Summary'].IgnoredDC.Add($DC.Hostname)
+                    # }
                 }
             } else {
                 if ($Source[$U.DistinguishedName].ObjectGUID.Guid -ne $U.ObjectGuid.Guid) {
-
-
                     Write-Color -Text "Wrong GUID [$Count/$($DomainControllers.Count)][$CountOU/$($ListOU.Count)] ", $DC.HostName, " OU: ", $OU, " object: ", $U.DistinguishedName, " expected: ", $Source[$U.DistinguishedName].ObjectGUID.Guid, " got: ", $U.ObjectGuid.Guid -Color Red, White, Yellow, White, Red
-                    #Add-Member -NotePropertyName 'GlobalCatalog' -NotePropertyValue $DC.Hostname -Force -InputObject $U
-                    #Add-Member -NotePropertyName 'Type' -NotePropertyValue 'WrongGuid' -Force -InputObject $U
-                    #Add-Member -NotePropertyName 'Domain' -NotePropertyValue $SourceDomain -Force -InputObject $U
-
                     Write-Color -Text "[*] SourceDN: ", $Source[$U.DistinguishedName].DistinguishedName, " SourceName: ", $Source[$U.DistinguishedName].Name -Color Yellow, White, Yellow, White
                     Write-Color -Text "[*] SourceGuid: ", $Source[$U.DistinguishedName].ObjectGUID.Guid, " SourceWhenCreated: ", $Source[$U.DistinguishedName].WhenCreated, " SourceWhenChanged: ", $Source[$U.DistinguishedName].WhenChanged -Color Yellow, White, Yellow, White, Yellow, White
                     Write-Color -Text "[*] TargetDN: ", $U.DistinguishedName, " TargetName: ", $U.Name -Color Yellow, White, Yellow, White
@@ -168,7 +161,6 @@
                     if ($TryToFind) {
                         Write-Color -Text "[*] Found: ", $TryToFind.DistinguishedName, " Name: ", $TryToFind.Name -Color Yellow, White, Yellow, White
                         Write-Color -Text "[*] FoundGuid: ", $TryToFind.ObjectGuid.Guid, " FoundWhenCreated: ", $TryToFind.WhenCreated, " FoundWhenChanged: ", $TryToFind.WhenChanged -Color Yellow, White, Yellow, White, Yellow, White
-                        #Write-Color -Text "Wrong GUID [$Count/$($DomainControllers.Count)][$CountOU/$($ListOU.Count)] ", $DC.HostName, " OU: ", $OU, " object: ", $U.DistinguishedName, " expected: ", $Source[$U.DistinguishedName].ObjectGUID.Guid, " got: ", $U.ObjectGuid.Guid, " found: ", $TryToFind.DistinguishedName -Color Red, White, Yellow, White, Red
                     }
 
                     $Summary[$DC.Hostname]['WrongGuid'].Add(
@@ -197,9 +189,35 @@
                 }
             }
         }
+        foreach ($SourceDN in $Source.Keys) {
+            if (-not $CacheTarget[$SourceDN]) {
+                if ($Source[$SourceDN].WhenChanged -lt $Today) {
+                    # the object is missing at the target, but it's too old to be considered as a missing object
+                    Write-Color -Text "Missing at Target [$Count/$($DomainControllers.Count)][$CountOU/$($ListOU.Count)] ", $DC.HostName, " OU: ", $OU, " object: ", $SourceDN -Color Yellow, White, Yellow, White, Yellow
+                    $Summary[$DC.Hostname]['MissingAtSource'].Add(
+                        [PSCustomObject] @{
+                            GlobalCatalog     = $DC.Hostname
+                            Type              = 'MissingAtSource'
+                            Domain            = $SourceDomain
+                            DistinguishedName = $SourceDN
+                            Name              = $Source[$SourceDN].Name
+                            ObjectClass       = $Source[$SourceDN].ObjectClass
+                            ObjectGuid        = $Source[$SourceDN].ObjectGuid.Guid
+                            WhenCreated       = $Source[$SourceDN].WhenCreated
+                            WhenChanged       = $Source[$SourceDN].WhenChanged
+                        }
+                    )
+                    $Summary['Summary'].MissingAtSource++
+                    if (-not $Summary['Summary'].MissingAtSourceDC.Contains($DC.Hostname)) {
+                        $Summary['Summary'].MissingAtSourceDC.Add($DC.Hostname)
+                    }
+                }
+            }
+        }
+        $CacheTarget = $null
+        $UsersTarget = $null
     }
     # Clearing the objects to free up memory
-    $UsersTarget = $null
     $Source = $null
     $Summary
 }
