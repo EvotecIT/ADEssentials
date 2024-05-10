@@ -7,19 +7,19 @@
         [string[]] $TargetDomain,
         [int] $LimitPerDomain
     )
-    $Today = (Get-Date).AddHours(-6)
+    $Today = (Get-Date).AddHours(-24)
     $Port = "3268"
     $Summary = [ordered] @{
         'Summary' = [PSCustomObject] @{
-            Domain                = $SourceDomain
-            MissingObject         = 0
-            WrongGuid             = 0
-            MissingObjectDC       = [System.Collections.Generic.List[string]]::new()
-            WrongGuidDC           = [System.Collections.Generic.List[string]]::new()
+            Domain          = $SourceDomain
+            MissingObject   = 0
+            WrongGuid       = 0
+            MissingObjectDC = [System.Collections.Generic.List[string]]::new()
+            WrongGuidDC     = [System.Collections.Generic.List[string]]::new()
             #Ignored         = 0
             #IgnoredDC       = [System.Collections.Generic.List[string]]::new()
-            MissingAtSource       = 0
-            MissingAtSourceDC     = [System.Collections.Generic.List[string]]::new()
+            #MissingAtSource   = 0
+            #MissingAtSourceDC = [System.Collections.Generic.List[string]]::new()
         }
     }
     $Source = [ordered] @{}
@@ -77,7 +77,7 @@
         $CountOU = 0
         # lets free up memory before we start again
         $UsersTarget = $null
-        $CacheTarget = [ordered] @{}
+        # $CacheTarget = [ordered] @{}
         [Array] $UsersTarget = foreach ($OU in $ListOU.DistinguishedName) {
             $CountOU++
             Write-Color -Text "Processing [$Count/$($DomainControllers.Count)][$CountOU/$($ListOU.Count)] ", $DC.HostName, " OU: ", $OU -Color Yellow, White, Yellow, White
@@ -102,9 +102,9 @@
             }
         }
         foreach ($U in $UsersTarget) {
-            if ($U.DistinguishedName) {
-                $CacheTarget[$U.DistinguishedName] = $U
-            }
+            # if ($U.DistinguishedName) {
+            # $CacheTarget[$U.DistinguishedName] = $U
+            # }
             if (-not $Source[$U.DistinguishedName]) {
                 if ($U.WhenChanged -lt $Today) {
                     Write-Color -Text "Missing [$Count/$($DomainControllers.Count)][$CountOU/$($ListOU.Count)] ", $DC.HostName, " OU: ", $OU, " object: ", $U.DistinguishedName, " changed: ", $U.WhenChanged -Color Yellow, White, Yellow, White, Yellow
@@ -163,58 +163,62 @@
                         Write-Color -Text "[*] FoundGuid: ", $TryToFind.ObjectGuid.Guid, " FoundWhenCreated: ", $TryToFind.WhenCreated, " FoundWhenChanged: ", $TryToFind.WhenChanged -Color Yellow, White, Yellow, White, Yellow, White
                     }
 
-                    $Summary[$DC.Hostname]['WrongGuid'].Add(
-                        [PSCustomObject] @{
-                            GlobalCatalog           = $DC.Hostname
-                            Type                    = 'WrongGuid'
-                            Domain                  = $SourceDomain
-                            DistinguishedName       = $U.DistinguishedName
-                            Name                    = $U.Name
-                            ObjectClass             = $U.ObjectClass
-                            ObjectGuid              = $U.ObjectGuid.Guid
-                            WhenCreated             = $U.WhenCreated
-                            WhenChanged             = $U.WhenChanged
-                            SourceObjectName        = $Source[$U.DistinguishedName].Name
-                            SourceObjectDN          = $Source[$U.DistinguishedName].DistinguishedName
-                            SourceObjectGuid        = $Source[$U.DistinguishedName].ObjectGUID.Guid
-                            SourceObjectWhenCreated = $Source[$U.DistinguishedName].WhenCreated
-                            SourceObjectWhenChanged = $Source[$U.DistinguishedName].WhenChanged
-                            NewDistinguishedName    = $TryToFind.DistinguishedName
+                    if ($null -eq $TryToFind -or $TryToFind.WhenCreated -lt $Today) {
+                        $Summary[$DC.Hostname]['WrongGuid'].Add(
+                            [PSCustomObject] @{
+                                GlobalCatalog           = $DC.Hostname
+                                Type                    = 'WrongGuid'
+                                Domain                  = $SourceDomain
+                                DistinguishedName       = $U.DistinguishedName
+                                Name                    = $U.Name
+                                ObjectClass             = $U.ObjectClass
+                                ObjectGuid              = $U.ObjectGuid.Guid
+                                WhenCreated             = $U.WhenCreated
+                                WhenChanged             = $U.WhenChanged
+                                SourceObjectName        = $Source[$U.DistinguishedName].Name
+                                SourceObjectDN          = $Source[$U.DistinguishedName].DistinguishedName
+                                SourceObjectGuid        = $Source[$U.DistinguishedName].ObjectGUID.Guid
+                                SourceObjectWhenCreated = $Source[$U.DistinguishedName].WhenCreated
+                                SourceObjectWhenChanged = $Source[$U.DistinguishedName].WhenChanged
+                                NewDistinguishedName    = $TryToFind.DistinguishedName
+                            }
+                        )
+                        $Summary['Summary'].WrongGuid++
+                        if (-not $Summary['Summary'].WrongGuidDC.Contains($DC.Hostname)) {
+                            $Summary['Summary'].WrongGuidDC.Add($DC.Hostname)
                         }
-                    )
-                    $Summary['Summary'].WrongGuid++
-                    if (-not $Summary['Summary'].WrongGuidDC.Contains($DC.Hostname)) {
-                        $Summary['Summary'].WrongGuidDC.Add($DC.Hostname)
+                    } else {
+                        # the object is too new to try and compare, as it could be just recreated object
                     }
                 }
             }
         }
-        foreach ($SourceDN in $Source.Keys) {
-            if (-not $CacheTarget[$SourceDN]) {
-                if ($Source[$SourceDN].WhenChanged -lt $Today) {
-                    # the object is missing at the target, but it's too old to be considered as a missing object
-                    Write-Color -Text "Missing at Target [$Count/$($DomainControllers.Count)][$CountOU/$($ListOU.Count)] ", $DC.HostName, " OU: ", $OU, " object: ", $SourceDN -Color Yellow, White, Yellow, White, Yellow
-                    $Summary[$DC.Hostname]['MissingAtSource'].Add(
-                        [PSCustomObject] @{
-                            GlobalCatalog     = $DC.Hostname
-                            Type              = 'MissingAtSource'
-                            Domain            = $SourceDomain
-                            DistinguishedName = $SourceDN
-                            Name              = $Source[$SourceDN].Name
-                            ObjectClass       = $Source[$SourceDN].ObjectClass
-                            ObjectGuid        = $Source[$SourceDN].ObjectGuid.Guid
-                            WhenCreated       = $Source[$SourceDN].WhenCreated
-                            WhenChanged       = $Source[$SourceDN].WhenChanged
-                        }
-                    )
-                    $Summary['Summary'].MissingAtSource++
-                    if (-not $Summary['Summary'].MissingAtSourceDC.Contains($DC.Hostname)) {
-                        $Summary['Summary'].MissingAtSourceDC.Add($DC.Hostname)
-                    }
-                }
-            }
-        }
-        $CacheTarget = $null
+        # foreach ($SourceDN in $Source.Keys) {
+        #     if (-not $CacheTarget[$SourceDN]) {
+        #         if ($Source[$SourceDN].WhenChanged -lt $Today) {
+        #             # the object is missing at the target, but it's too old to be considered as a missing object
+        #             Write-Color -Text "Missing at Target [$Count/$($DomainControllers.Count)][$CountOU/$($ListOU.Count)] ", $DC.HostName, " OU: ", $OU, " object: ", $SourceDN -Color Yellow, White, Yellow, White, Yellow
+        #             $Summary[$DC.Hostname]['MissingAtSource'].Add(
+        #                 [PSCustomObject] @{
+        #                     GlobalCatalog     = $DC.Hostname
+        #                     Type              = 'MissingAtSource'
+        #                     Domain            = $SourceDomain
+        #                     DistinguishedName = $SourceDN
+        #                     Name              = $Source[$SourceDN].Name
+        #                     ObjectClass       = $Source[$SourceDN].ObjectClass
+        #                     ObjectGuid        = $Source[$SourceDN].ObjectGuid.Guid
+        #                     WhenCreated       = $Source[$SourceDN].WhenCreated
+        #                     WhenChanged       = $Source[$SourceDN].WhenChanged
+        #                 }
+        #             )
+        #             $Summary['Summary'].MissingAtSource++
+        #             if (-not $Summary['Summary'].MissingAtSourceDC.Contains($DC.Hostname)) {
+        #                 $Summary['Summary'].MissingAtSourceDC.Add($DC.Hostname)
+        #             }
+        #         }
+        #     }
+        # }
+        # $CacheTarget = $null
         $UsersTarget = $null
     }
     # Clearing the objects to free up memory
