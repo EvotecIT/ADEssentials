@@ -1,4 +1,8 @@
-﻿#### 0.0.207 - 2024.05.09
+﻿#### 0.0.208 - 2024.05.13
+- Improve `Compare-WinADGlobalCatalogObjects` on reporting
+- Improve `Invoke-ADEssentials`: `GlobalCatalogComparison` on reporting
+
+#### 0.0.207 - 2024.05.09
 - Improve `Compare-WinADGlobalCatalogObjects` on reporting
 - Improve `Invoke-ADEssentials`: `GlobalCatalogComparison` on reporting
 - Removed reverse search and made it ignore objects updated lass than 24 hours ago

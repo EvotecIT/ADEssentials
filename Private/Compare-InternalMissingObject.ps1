@@ -11,6 +11,7 @@
     $Port = "3268"
     $Summary = [ordered] @{
         'Summary' = [PSCustomObject] @{
+            SourceServer    = $Server
             Domain          = $SourceDomain
             MissingObject   = 0
             WrongGuid       = 0
@@ -61,7 +62,7 @@
             MissingAtSource = [System.Collections.Generic.List[Object]]::new()
             WrongGuid       = [System.Collections.Generic.List[Object]]::new()
             # Ignored         = [System.Collections.Generic.List[Object]]::new()
-            Errors          = [System.Collections.Generic.List[string]]::new()
+            Errors          = [System.Collections.Generic.List[Object]]::new()
         }
         if ($DC.HostName -eq $Server) {
             Write-Color -Text "Skipping [$Count/$($DomainControllers.Count)] ", $DC.HostName, " [Same as Source]" -Color Yellow, White, Green

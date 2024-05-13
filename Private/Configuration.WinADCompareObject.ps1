@@ -30,9 +30,9 @@
 
         New-HTMLText -Text @(
             "While it's possible to have some missing objects, it should be investigated why that is. ",
-            "We also ignore objects that were modified in the last 6 hours to avoid false positives, and that don't exists in the Global Catalog on any given domain controller.",
-            "Those objects are shown in the Ignored Objects section, but they are not considered as missing or wrong GUID objects."
-            "However you can investigate them further if needed."
+            "We also ignore objects that were modified in the last 24 hours to avoid false positives, and that don't exists in the Global Catalog on any given domain controller."
+            #"Those objects are shown in the Ignored Objects section, but they are not considered as missing or wrong GUID objects."
+            #"However you can investigate them further if needed."
         ) -FontSize 10pt
     }
     Variables  = @{
@@ -51,6 +51,12 @@
                 foreach ($Domain in $Script:Reporting['GlobalCatalogComparison']['Data'].Keys) {
 
                     New-HTMLTab -Name $Domain {
+                        New-HTMLSection -HeaderText "Domain details" {
+                            New-HTMLPanel {
+                                New-HTMLText -Text "Domain: ", $Domain -FontWeight normal, bold
+                                New-HTMLText -Text "Source Domain Controller: ", $Script:Reporting['GlobalCatalogComparison']['Data'][$Domain]['Summary'].'SourceServer' -FontWeight normal, bold
+                            } -Invisible
+                        }
                         New-HTMLSection -HeaderText "Missing Objects in $Domain per Domain Controller" {
                             $Data = foreach ($Key in  $Script:Reporting['GlobalCatalogComparison']['Data'][$Domain].Keys) {
                                 if ($Key -eq 'Summary') {
@@ -60,7 +66,7 @@
                             }
                             New-HTMLTable -DataTable $Data -Filtering {
 
-                            } -IncludeProperty 'GlobalCatalog', 'Domain', 'Type', 'DistinguishedName', 'Name', 'ObjectClass', 'WhenCreated', 'WhenChanged'
+                            } -IncludeProperty 'GlobalCatalog', 'Domain', 'Type', 'DistinguishedName', 'Name', 'ObjectClass', 'WhenCreated', 'WhenChanged' -ScrollX
                         }
                         # New-HTMLSection -HeaderText "Missing Objects in $Domain per Global Catalog (Reverse Lookup)" {
                         #     $Data = foreach ($Key in  $Script:Reporting['GlobalCatalogComparison']['Data'][$Domain].Keys) {
@@ -91,7 +97,7 @@
                                 }
                                 $Script:Reporting['GlobalCatalogComparison']['Data'][$Domain][$Key].Errors
                             }
-                            New-HTMLTable -DataTable $Data -Filtering {
+                            New-HTMLTable -DataTable $Data -Filtering -ScrollX {
 
                             } -IncludeProperty 'GlobalCatalog', 'Domain', 'Object', 'Error'
                         }
