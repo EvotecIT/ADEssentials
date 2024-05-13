@@ -1,4 +1,8 @@
-﻿#### 0.0.208 - 2024.05.13
+﻿#### 0.0.209 - 2024.05.13
+- Improve `Compare-WinADGlobalCatalogObjects` on reporting
+- Improve `Invoke-ADEssentials`: `GlobalCatalogComparison` on reporting
+
+#### 0.0.208 - 2024.05.13
 - Improve `Compare-WinADGlobalCatalogObjects` on reporting
 - Improve `Invoke-ADEssentials`: `GlobalCatalogComparison` on reporting
 

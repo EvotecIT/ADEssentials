@@ -164,7 +164,9 @@
                         Write-Color -Text "[*] FoundGuid: ", $TryToFind.ObjectGuid.Guid, " FoundWhenCreated: ", $TryToFind.WhenCreated, " FoundWhenChanged: ", $TryToFind.WhenChanged -Color Yellow, White, Yellow, White, Yellow, White
                     }
 
-                    if ($null -eq $TryToFind -or $TryToFind.WhenCreated -lt $Today) {
+                    if ($U.WhenCreated -lt $Today) {
+                        # the object is too new to try and compare, as it could be it was just created/moved
+                    } else {
                         $Summary[$DC.Hostname]['WrongGuid'].Add(
                             [PSCustomObject] @{
                                 GlobalCatalog           = $DC.Hostname
@@ -188,8 +190,6 @@
                         if (-not $Summary['Summary'].WrongGuidDC.Contains($DC.Hostname)) {
                             $Summary['Summary'].WrongGuidDC.Add($DC.Hostname)
                         }
-                    } else {
-                        # the object is too new to try and compare, as it could be just recreated object
                     }
                 }
             }
@@ -226,4 +226,3 @@
     $Source = $null
     $Summary
 }
-
