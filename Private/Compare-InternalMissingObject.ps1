@@ -17,6 +17,8 @@
             WrongGuid       = 0
             MissingObjectDC = [System.Collections.Generic.List[string]]::new()
             WrongGuidDC     = [System.Collections.Generic.List[string]]::new()
+            UniqueMissing   = [System.Collections.Generic.List[string]]::new()
+            UniqueWrongGuid = [System.Collections.Generic.List[string]]::new()
             #Ignored         = 0
             #IgnoredDC       = [System.Collections.Generic.List[string]]::new()
             #MissingAtSource   = 0
@@ -126,6 +128,9 @@
                     if (-not $Summary['Summary'].MissingObjectDC.Contains($DC.Hostname)) {
                         $Summary['Summary'].MissingObjectDC.Add($DC.Hostname)
                     }
+                    if (-not $Summary['Summary'].UniqueMissing.Contains($U.DistinguishedName)) {
+                        $Summary['Summary'].UniqueMissing.Add($U.DistinguishedName)
+                    }
                 } else {
                     # the object is too new to try and compare, as it could be it was just created/moved
                     # $Summary[$DC.Hostname]['Ignored'].Add(
@@ -164,7 +169,7 @@
                         Write-Color -Text "[*] FoundGuid: ", $TryToFind.ObjectGuid.Guid, " FoundWhenCreated: ", $TryToFind.WhenCreated, " FoundWhenChanged: ", $TryToFind.WhenChanged -Color Yellow, White, Yellow, White, Yellow, White
                     }
 
-                    if ($U.WhenCreated -lt $Today) {
+                    if ($U.WhenCreated -gt $Today) {
                         # the object is too new to try and compare, as it could be it was just created/moved
                     } else {
                         $Summary[$DC.Hostname]['WrongGuid'].Add(
@@ -189,6 +194,9 @@
                         $Summary['Summary'].WrongGuid++
                         if (-not $Summary['Summary'].WrongGuidDC.Contains($DC.Hostname)) {
                             $Summary['Summary'].WrongGuidDC.Add($DC.Hostname)
+                        }
+                        if (-not $Summary['Summary'].UniqueWrongGuid.Contains($U.DistinguishedName)) {
+                            $Summary['Summary'].UniqueWrongGuid.Add($U.DistinguishedName)
                         }
                     }
                 }

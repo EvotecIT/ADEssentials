@@ -56,6 +56,22 @@
                                 New-HTMLText -Text "Domain: ", $Domain -FontWeight normal, bold
                                 New-HTMLText -Text "Source Domain Controller: ", $Script:Reporting['GlobalCatalogComparison']['Data'][$Domain]['Summary'].'SourceServer' -FontWeight normal, bold
                             } -Invisible
+                            New-HTMLPanel {
+                                New-HTMLText -Text "Missing Unique Objects: " -Color Black -FontWeight bold
+                                New-HTMLList {
+                                    foreach ($Unique in $Script:Reporting['GlobalCatalogComparison']['Data'][$Domain].Summary.UniqueMissing) {
+                                        New-HTMLListItem -Text $Unique -Color Black, Red -FontWeight normal, bold
+                                    }
+                                }
+                            } -Invisible
+                            New-HTMLPanel {
+                                New-HTMLText -Text "Wrong GUID Unique Objects: " -Color Black -FontWeight bold
+                                New-HTMLList {
+                                    foreach ($Unique in $Script:Reporting['GlobalCatalogComparison']['Data'][$Domain].Summary.UniqueWrongGuid) {
+                                        New-HTMLListItem -Text $Unique -Color Black, Red -FontWeight normal, bold
+                                    }
+                                }
+                            } -Invisible
                         }
                         New-HTMLSection -HeaderText "Missing Objects in $Domain per Domain Controller" {
                             $Data = foreach ($Key in  $Script:Reporting['GlobalCatalogComparison']['Data'][$Domain].Keys) {
