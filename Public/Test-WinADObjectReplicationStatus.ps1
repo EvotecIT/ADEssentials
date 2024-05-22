@@ -23,6 +23,7 @@
         return
     }
     $DomainFromIdentity = $ObjectInformation.Domain
+    $DistinguishedName = $ObjectInformation.DistinguishedName
 
     $ForestInformation = Get-WinADForestDetails -Extended -PreferWritable
     if ($GlobalCatalog) {
@@ -43,11 +44,11 @@
         # Query the specific object on each GC
         Try {
             if ($GlobalCatalog) {
-                Write-Verbose -Message "Test-WinADObjectReplicationStatus - Querying $($GC.HostName) on port 3268 for $Identity"
-                $ObjectInfo = Get-ADObject -Identity $Identity -Server "$($GC.HostName):3268" -Properties * -ErrorAction Stop
+                Write-Verbose -Message "Test-WinADObjectReplicationStatus - Querying $($GC.HostName) on port 3268 for $DistinguishedName"
+                $ObjectInfo = Get-ADObject -Identity $DistinguishedName -Server "$($GC.HostName):3268" -Properties * -ErrorAction Stop
             } else {
-                Write-Verbose -Message "Test-WinADObjectReplicationStatus - Querying $($GC.HostName) for $Identity"
-                $ObjectInfo = Get-ADObject -Identity $Identity -Server $GC.HostName -Properties * -ErrorAction Stop
+                Write-Verbose -Message "Test-WinADObjectReplicationStatus - Querying $($GC.HostName) for $DistinguishedName"
+                $ObjectInfo = Get-ADObject -Identity $DistinguishedName -Server $GC.HostName -Properties * -ErrorAction Stop
             }
             $ErrorValue = $null
         } catch {
