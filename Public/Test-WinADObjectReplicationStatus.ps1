@@ -2,46 +2,27 @@
     [CmdletBinding(DefaultParameterSetName = 'Standard')]
     param(
         [Parameter(ParameterSetName = 'Standard')]
-        [Parameter(ParameterSetName = 'Analysis')]
         [string] $Identity,
 
         [Parameter(ParameterSetName = 'Standard')]
-        [Parameter(ParameterSetName = 'Analysis')]
         [alias('ForestName')][string] $Forest,
 
         [Parameter(ParameterSetName = 'Standard')]
-        [Parameter(ParameterSetName = 'Analysis')]
         [string[]] $ExcludeDomains,
 
         [Parameter(ParameterSetName = 'Standard')]
-        [Parameter(ParameterSetName = 'Analysis')]
         [alias('Domain', 'Domains')][string[]] $IncludeDomains,
 
-        # [Parameter(ParameterSetName = 'Standard')]
-        # [Parameter(ParameterSetName = 'Analysis', Mandatory)]
-        #[string] $SourceServer,
-
         [Parameter(ParameterSetName = 'Standard')]
-        [Parameter(ParameterSetName = 'Analysis')]
-        [switch] $GlobalCatalog,
-
-        [Parameter(ParameterSetName = 'Analysis')]
-        [string] $SnapshotPath,
-
-        [Parameter(ParameterSetName = 'Standard')]
-        [switch] $Sorted,
-
-        [switch] $ClearSnapshot
+        [switch] $GlobalCatalog
     )
 
-    if ($SnapshotPath -and $ClearSnapshot) {
-        if (Test-Path -LiteralPath $SnapshotPath) {
-            Remove-Item -LiteralPath $SnapshotPath -Force -ErrorAction Stop
-        }
+    $ObjectInformation = Get-WinADObject -Identity $Identity
+    if ($null -eq $ObjectInformation) {
+        Write-Warning "Test-WinADObjectReplicationStatus - Object not found. Try again later or check the object does exists."
+        return
     }
-
-    $DistinguishedName = $Identity
-    $DomainFromIdentity = ConvertFrom-DistinguishedName -DistinguishedName $Identity -ToDomainCN
+    $DomainFromIdentity = $ObjectInformation.Domain
 
     $ForestInformation = Get-WinADForestDetails -Extended -PreferWritable
     if ($GlobalCatalog) {
@@ -59,7 +40,6 @@
     }
     $ResultsCached = [ordered] @{}
     $Results = foreach ($GC in $GCs) {
-
         # Query the specific object on each GC
         Try {
             if ($GlobalCatalog) {
@@ -106,61 +86,18 @@
         }
     }
 
-    if ($SnapshotPath) {
-        $Date = Get-Date
-        $DateText = $Date.ToString('yyyy-MM-dd HH:mm:ss')
-        if (Test-Path -LiteralPath $SnapshotPath) {
-            $Output = Import-Clixml -Path $SnapshotPath
-        } else {
-            $Output = [ordered] @{
-                $DistinguishedName = [ordered] @{}
-            }
-        }
-        $Output[$DistinguishedName][$DateText] = [ordered] @{}
-        foreach ($GC in $GCs) {
-            $Output[$DistinguishedName][$DateText][$GC.Hostname] = [ordered] @{
-                Date        = $Date
-                USNChanged  = $ResultsCached[$GC.Hostname].USNChanged
-                WhenChanged = $ResultsCached[$GC.Hostname].WhenChanged
-            }
-        }
-        foreach ($Key in [string[]] $Output.Keys | Where-Object { $_.Name -ne 'Summary' }) {
-            if (-not $Output['Summary']) {
-                $Output['Summary'] = [ordered] @{}
-            }
-            if ($Output[$DistinguishedName].Count -gt 1) {
-                $Output['Summary'][$Key] = [ordered] @{}
-
-                foreach ($TextDate in [string[]] $Output[$DistinguishedName].Keys | Select-Object -First 1) {
-                    $Output['Summary'][$Key][$TextDate] = [ordered] @{}
-                    foreach ($GC in $GCs) {
-                        $Output['Summary'][$Key][$GC.Hostname] = [ordered] @{
-                            'Name'        = $GC.HostName
-                            'Query'       = if ($GlobalCatalog) { 'Global Catalog' } else { 'Domain Based' }
-                            'WhenChanged' = $Output[$DistinguishedName][$TextDate][$GC.Hostname].WhenChanged
-                            'USNChanged'  = $Output[$DistinguishedName][$TextDate][$GC.Hostname].USNChanged
-                        }
-                    }
-                }
-                foreach ($TextDate in [string[]] $Output[$DistinguishedName].Keys | Select-Object -Skip 1) {
-                    foreach ($GC in $GCs) {
-                        if ($Output[$DistinguishedName][$TextDate][$GC.Hostname].USNChanged -ne $Output['Summary'][$Key][$GC.Hostname].UsnChanged) {
-                            $Status = 'Changed'
-                        } else {
-                            $Status = 'Not changed'
-                        }
-                        $Output['Summary'][$Key][$GC.Hostname][$TextDate] = $Status
-                    }
-                }
-            }
-        }
-        $Output | Export-Clixml -Path $SnapshotPath
-        $Output
-    } else {
-        if ($Sorted) {
-            $Results | Sort-Object -Property WhenChanged
-        } else {
-            $Results
+    $SortedResults = $Results | Sort-Object -Property WhenChanged
+    $FistResult = $SortedResults | Where-Object { $null -ne $_.WhenChanged } | Select-Object -First 1
+    $Output = foreach ($Result in $SortedResults) {
+        [PSCustomObject] @{
+            SamAccountName   = $ObjectInformation.SamAccountName
+            DomainController = $Result.DomainController
+            Domain           = $Result.Domain
+            WhenCreated      = $Result.whenCreated
+            WhenChanged      = $Result.WhenChanged
+            TimeSinceFirst   = if ($Result.WhenChanged) { $Result.WhenChanged - $FistResult.WhenChanged } else { $null }
+            Error            = $Result.Error
         }
     }
+    $Output | Sort-Object -Property WhenChanged -Descending
 }
