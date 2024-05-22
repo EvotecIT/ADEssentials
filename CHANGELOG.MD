@@ -1,4 +1,7 @@
-﻿#### 0.0.211 - 2024.05.22
+﻿#### 0.0.212 - 2024.05.22
+- Fix for `Test-WinADObjectReplicationStatus`
+
+#### 0.0.211 - 2024.05.22
 - Improve and simplify `Test-WinADObjectReplicationStatus`
 
 #### 0.0.210 - 2024.05.21
