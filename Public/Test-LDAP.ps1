@@ -57,6 +57,9 @@
     .PARAMETER SkipCheckGC
     Skips querying GC ports
 
+    .PARAMETER RetryCount
+    Number of retries to perform in case of failure
+
     .EXAMPLE
     Test-LDAP -ComputerName 'AD1' -VerifyCertificate | Format-Table *
 
@@ -106,7 +109,11 @@
         [switch] $Extended,
 
         [Parameter(ParameterSetName = 'Computer')]
-        [switch] $SkipCheckGC
+        [switch] $SkipCheckGC,
+
+        [Parameter(ParameterSetName = 'Computer')]
+        [Parameter(ParameterSetName = 'Forest')]
+        [int] $RetryCount
     )
     begin {
         Add-Type -Assembly System.DirectoryServices.Protocols
@@ -143,6 +150,7 @@
                     VerifyCertificate = $VerifyCertificate.IsPresent
                     Identity          = $Identity
                     SkipCheckGC       = $SkipCheckGC
+                    RetryCount        = $RetryCount
                 }
                 if ($PSBoundParameters.ContainsKey('Credential')) {
                     $testLdapServerSplat.Credential = $Credential
@@ -162,6 +170,7 @@
                     PortLDAPS         = $PortLDAPS
                     VerifyCertificate = $VerifyCertificate.IsPresent
                     Identity          = $Identity
+                    RetryCount        = $RetryCount
                 }
                 if ($PSBoundParameters.ContainsKey('Credential')) {
                     $testLdapServerSplat.Credential = $Credential

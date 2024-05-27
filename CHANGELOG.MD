@@ -1,4 +1,8 @@
-﻿#### 0.0.212 - 2024.05.22
+﻿#### 0.0.213
+- Improve & Simplify `Test-LDAP` logic
+- Add few fields in `Test-LDAP` for easier assesment
+
+#### 0.0.212 - 2024.05.22
 - Fix for `Test-WinADObjectReplicationStatus`
 
 #### 0.0.211 - 2024.05.22
