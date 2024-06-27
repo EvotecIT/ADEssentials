@@ -1,0 +1,7 @@
+﻿Ignore/*
+.vs/*
+.vscode/*
+Releases/*
+ReleasesUnpacked/*
+Examples/Reports/*
+Artefacts/*
