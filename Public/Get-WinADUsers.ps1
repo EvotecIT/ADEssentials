@@ -1,0 +1,299 @@
+﻿function Get-WinADUsers {
+    <#
+    .SYNOPSIS
+    Get-WinADUsers is a function that retrieves all users from Active Directory.
+    It can be used to retrieve users from a single domain or from all domains in the forest.
+
+    .DESCRIPTION
+    Get-WinADUsers is a function that retrieves all users from Active Directory.
+    It can be used to retrieve users from a single domain or from all domains in the forest.
+
+    .PARAMETER Forest
+    Target different Forest, by default current forest is used
+
+    .PARAMETER ExcludeDomains
+    Exclude domain from search, by default whole forest is scanned
+
+    .PARAMETER IncludeDomains
+    Include only specific domains, by default whole forest is scanned
+
+    .PARAMETER PerDomain
+    Return results per domain
+
+    .PARAMETER AddOwner
+    Add Owner information to the output
+
+    .EXAMPLE
+    An example
+
+    .NOTES
+    General notes
+    #>
+    [cmdletBinding()]
+    param(
+        [alias('ForestName')][string] $Forest,
+        [string[]] $ExcludeDomains,
+        [alias('Domain', 'Domains')][string[]] $IncludeDomains,
+        [switch] $PerDomain,
+        [switch] $AddOwner
+    )
+    $AllUsers = [ordered] @{}
+    $AllContacts = [ordered] @{}
+    $AllGroups = [ordered] @{}
+    $CacheUsersReport = [ordered] @{}
+    $Today = Get-Date
+    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation
+    $ErrorCount = 0
+    foreach ($Domain in $ForestInformation.Domains) {
+        $QueryServer = $ForestInformation['QueryServers']["$Domain"].HostName[0]
+
+        $Properties = @(
+            'DistinguishedName', 'mail', 'LastLogonDate', 'PasswordLastSet', 'DisplayName', 'Manager', 'Description',
+            'PasswordNeverExpires', 'PasswordNotRequired', 'PasswordExpired', 'UserPrincipalName', 'SamAccountName', 'CannotChangePassword',
+            'TrustedForDelegation', 'TrustedToAuthForDelegation', 'msExchMailboxGuid', 'msExchRemoteRecipientType', 'msExchRecipientTypeDetails',
+            'msExchRecipientDisplayType', 'pwdLastSet', "msDS-UserPasswordExpiryTimeComputed",
+            'WhenCreated', 'WhenChanged'
+            'nTSecurityDescriptor',
+            'Country', 'Title', 'Department'
+            'msds-resultantpso'
+        )
+        try {
+            $AllUsers[$Domain] = Get-ADUser -Filter "*" -Properties $Properties -Server $QueryServer #$ForestInformation['QueryServers'][$Domain].HostName[0]
+        } catch {
+            $ErrorCount++
+            Write-Warning -Message "Get-WinADUsers - Failed to get users from $Domain using $($QueryServer). Error: $($_.Exception.Message)"
+        }
+        try {
+            $AllContacts[$Domain] = Get-ADObject -Filter 'objectClass -eq "contact"' -Properties SamAccountName, Mail, Name, DistinguishedName, WhenChanged, Whencreated, DisplayName -Server $QueryServer
+        } catch {
+            $ErrorCount++
+            Write-Warning -Message "Get-WinADUsers - Failed to get contacts from $Domain using $($QueryServer). Error: $($_.Exception.Message)"
+        }
+        $Properties = @(
+            'SamAccountName', 'CanonicalName', 'Mail', 'Name', 'DistinguishedName', 'isCriticalSystemObject', 'ObjectSID'
+        )
+        try {
+            $AllGroups[$Domain] = Get-ADGroup -Filter "*" -Properties $Properties -Server $QueryServer
+        } catch {
+            $ErrorCount++
+            Write-Warning -Message "Get-WinADUsers - Failed to get groups from $Domain using $($QueryServer). Error: $($_.Exception.Message)"
+        }
+    }
+    if ($ErrorCount -gt 0) {
+        Write-Warning -Message "Get-WinADUsers - Failed to get data from domains. Found $ErrorCount errors. Please check the error messages above."
+        return
+    }
+
+    foreach ($Domain in $AllUsers.Keys) {
+        foreach ($U in $AllUsers[$Domain]) {
+            $CacheUsersReport[$U.DistinguishedName] = $U
+        }
+    }
+    foreach ($Domain in $AllContacts.Keys) {
+        foreach ($C in $AllContacts[$Domain]) {
+            $CacheUsersReport[$C.DistinguishedName] = $C
+        }
+    }
+    foreach ($Domain in $AllGroups.Keys) {
+        foreach ($G in $AllGroups[$Domain]) {
+            $CacheUsersReport[$G.DistinguishedName] = $G
+        }
+    }
+
+    $PasswordPolicies = Get-WinADPasswordPolicy -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ReturnHashtable
+
+    $Output = [ordered] @{}
+    foreach ($Domain in $ForestInformation.Domains) {
+        $Output[$Domain] = foreach ($User in $AllUsers[$Domain]) {
+            $UserLocation = ($User.DistinguishedName -split ',').Replace('OU=', '').Replace('CN=', '').Replace('DC=', '')
+            $Region = $UserLocation[-4]
+            $Country = $UserLocation[-5]
+
+            if ($User.LastLogonDate) {
+                $LastLogonDays = $( - $($User.LastLogonDate - $Today).Days)
+            } else {
+                $LastLogonDays = $null
+            }
+            if ($User.PasswordLastSet) {
+                $PasswordLastDays = $( - $($User.PasswordLastSet - $Today).Days)
+            } else {
+                $PasswordLastDays = $null
+            }
+            if ($User.Manager) {
+                $Manager = $CacheUsersReport[$User.Manager].Name
+                $ManagerSamAccountName = $CacheUsersReport[$User.Manager].SamAccountName
+                $ManagerEmail = $CacheUsersReport[$User.Manager].Mail
+                $ManagerEnabled = $CacheUsersReport[$User.Manager].Enabled
+                $ManagerLastLogon = $CacheUsersReport[$User.Manager].LastLogonDate
+                if ($ManagerLastLogon) {
+                    $ManagerLastLogonDays = $( - $($ManagerLastLogon - $Today).Days)
+                } else {
+                    $ManagerLastLogonDays = $null
+                }
+                $ManagerStatus = if ($ManagerEnabled -eq $true) { 'Enabled' } elseif ($ManagerEnabled -eq $false) { 'Disabled' } else { 'Not available' }
+            } else {
+                if ($User.ObjectClass -eq 'user') {
+                    $ManagerStatus = 'Missing'
+                } else {
+                    $ManagerStatus = 'Not available'
+                }
+                $Manager = $null
+                $ManagerSamAccountName = $null
+                $ManagerEmail = $null
+                $ManagerEnabled = $null
+                $ManagerLastLogon = $null
+                $ManagerLastLogonDays = $null
+            }
+
+            if ($User."msDS-UserPasswordExpiryTimeComputed" -ne 9223372036854775807) {
+                # This is standard situation where users password is expiring as needed
+                try {
+                    $DateExpiry = ([datetime]::FromFileTime($User."msDS-UserPasswordExpiryTimeComputed"))
+                } catch {
+                    $DateExpiry = $User."msDS-UserPasswordExpiryTimeComputed"
+                }
+                try {
+                    $DaysToExpire = (New-TimeSpan -Start (Get-Date) -End ([datetime]::FromFileTime($User."msDS-UserPasswordExpiryTimeComputed"))).Days
+                } catch {
+                    $DaysToExpire = $null
+                }
+                $PasswordNeverExpires = $User.PasswordNeverExpires
+            } else {
+                # This is non-standard situation. This basically means most likely Fine Grained Group Policy is in action where it makes PasswordNeverExpires $true
+                # Since FGP policies are a bit special they do not tick the PasswordNeverExpires box, but at the same time value for "msDS-UserPasswordExpiryTimeComputed" is set to 9223372036854775807
+                $PasswordNeverExpires = $true
+            }
+            if ($PasswordNeverExpires -or $null -eq $User.PasswordLastSet) {
+                $DateExpiry = $null
+                $DaysToExpire = $null
+            }
+
+            if ($User.'msExchMailboxGuid') {
+                $HasMailbox = $true
+            } else {
+                $HasMailbox = $false
+            }
+            $msExchRecipientTypeDetails = Convert-ExchangeRecipient -msExchRecipientTypeDetails $User.msExchRecipientTypeDetails
+            $msExchRecipientDisplayType = Convert-ExchangeRecipient -msExchRecipientDisplayType $User.msExchRecipientDisplayType
+            $msExchRemoteRecipientType = Convert-ExchangeRecipient -msExchRemoteRecipientType $User.msExchRemoteRecipientType
+
+            if ($User.'msds-resultantpso') {
+                # $PasswordPolicy = 'FineGrained'
+                if ($PasswordPolicies[$User.'msds-resultantpso']) {
+                    $PasswordPolicyName = $PasswordPolicies[$User.'msds-resultantpso'].Name
+                    $PasswordPolicyLength = $PasswordPolicies[$User.'msds-resultantpso'].MinPasswordLength
+                } else {
+                    $PasswordPolicyName = ConvertFrom-DistinguishedName -DistinguishedName $User.'msds-resultantpso'
+                    $PasswordPolicyLength = 'No permission'
+                }
+            } else {
+                # $PasswordPolicy = 'Default'
+                $PasswordPolicyName = 'Default Password Policy'
+                $PasswordPolicyLength = $PasswordPolicies[$Domain].MinPasswordLength
+            }
+
+            if ($AddOwner) {
+                $Owner = Get-ADACLOwner -ADObject $User -Verbose -Resolve
+                [PSCustomObject] @{
+                    Name                      = $User.Name
+                    SamAccountName            = $User.SamAccountName
+                    Domain                    = $Domain
+                    WhenChanged               = $User.WhenChanged
+                    Enabled                   = $User.Enabled
+                    ObjectClass               = $User.ObjectClass
+                    #IsMissing                   = if ($Group) { $false } else { $true }
+                    HasMailbox                = $HasMailbox
+                    MustChangePasswordAtLogon = if ($User.pwdLastSet -eq 0 -and $User.PasswordExpired -eq $true) { $true } else { $false }
+                    #PasswordPolicy            = $PasswordPolicy
+                    PasswordPolicyName        = $PasswordPolicyName
+                    PasswordPolicyMinLength   = $PasswordPolicyLength
+                    PasswordNeverExpires      = $PasswordNeverExpires
+                    PasswordNotRequired       = $User.PasswordNotRequired
+                    LastLogonDays             = $LastLogonDays
+                    PasswordLastDays          = $PasswordLastDays
+                    DaysToExpire              = $DaysToExpire
+                    ManagerStatus             = $ManagerStatus
+                    Manager                   = $Manager
+                    ManagerSamAccountName     = $ManagerSamAccountName
+                    ManagerEmail              = $ManagerEmail
+                    ManagerLastLogonDays      = $ManagerLastLogonDays
+                    OwnerName                 = $Owner.OwnerName
+                    OwnerSID                  = $Owner.OwnerSID
+                    OwnerType                 = $Owner.OwnerType
+                    Level0                    = $Region
+                    Level1                    = $Country
+                    Title                     = $User.'Title'
+                    Department                = $User.'Department'
+                    Country                   = Convert-CountryCodeToCountry -CountryCode $User.Country
+                    DistinguishedName         = $User.DistinguishedName
+                    LastLogonDate             = $User.LastLogonDate
+                    PasswordLastSet           = $User.PasswordLastSet
+                    PasswordExpiresOn         = $DateExpiry
+                    PasswordExpired           = $User.PasswordExpired
+                    CannotChangePassword      = $User.CannotChangePassword
+                    TrustedForDelegation      = $User.TrustedForDelegation
+                    ManagerDN                 = $User.Manager
+                    ManagerLastLogon          = $ManagerLastLogon
+                    Group                     = $Group
+                    Description               = $User.Description
+                    UserPrincipalName         = $User.UserPrincipalName
+                    RecipientTypeDetails      = $msExchRecipientTypeDetails
+                    RecipientDisplayType      = $msExchRecipientDisplayType
+                    RemoteRecipientType       = $msExchRemoteRecipientType
+                    WhenCreated               = $User.WhenCreated
+                }
+            } else {
+                [PSCustomObject] @{
+                    Name                      = $User.Name
+                    SamAccountName            = $User.SamAccountName
+                    Domain                    = $Domain
+                    WhenChanged               = $User.WhenChanged
+                    Enabled                   = $User.Enabled
+                    ObjectClass               = $User.ObjectClass
+                    #IsMissing                   = if ($Group) { $false } else { $true }
+                    HasMailbox                = $HasMailbox
+                    MustChangePasswordAtLogon = if ($User.pwdLastSet -eq 0 -and $User.PasswordExpired -eq $true) { $true } else { $false }
+                    #PasswordPolicy            = $PasswordPolicy
+                    PasswordPolicyName        = $PasswordPolicyName
+                    PasswordPolicyMinLength   = $PasswordPolicyLength
+                    PasswordNeverExpires      = $PasswordNeverExpires
+                    PasswordNotRequired       = $User.PasswordNotRequired
+                    LastLogonDays             = $LastLogonDays
+                    PasswordLastDays          = $PasswordLastDays
+                    DaysToExpire              = $DaysToExpire
+                    ManagerStatus             = $ManagerStatus
+                    Manager                   = $Manager
+                    ManagerSamAccountName     = $ManagerSamAccountName
+                    ManagerEmail              = $ManagerEmail
+                    ManagerLastLogonDays      = $ManagerLastLogonDays
+                    Level0                    = $Region
+                    Level1                    = $Country
+                    Title                     = $User.'Title'
+                    Department                = $User.'Department'
+                    Country                   = Convert-CountryCodeToCountry -CountryCode $User.Country
+                    DistinguishedName         = $User.DistinguishedName
+                    LastLogonDate             = $User.LastLogonDate
+                    PasswordLastSet           = $User.PasswordLastSet
+                    PasswordExpiresOn         = $DateExpiry
+                    PasswordExpired           = $User.PasswordExpired
+                    CannotChangePassword      = $User.CannotChangePassword
+                    TrustedForDelegation      = $User.TrustedForDelegation
+                    ManagerDN                 = $User.Manager
+                    ManagerLastLogon          = $ManagerLastLogon
+                    Group                     = $Group
+                    Description               = $User.Description
+                    UserPrincipalName         = $User.UserPrincipalName
+                    RecipientTypeDetails      = $msExchRecipientTypeDetails
+                    RecipientDisplayType      = $msExchRecipientDisplayType
+                    RemoteRecipientType       = $msExchRemoteRecipientType
+                    WhenCreated               = $User.WhenCreated
+                }
+            }
+        }
+    }
+    if ($PerDomain) {
+        $Output
+    } else {
+        $Output.Values
+    }
+}
