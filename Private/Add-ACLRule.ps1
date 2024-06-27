@@ -20,12 +20,6 @@
     } catch {
         if ($_.Exception.Message -like "*Some or all identity references could not be translated.*") {
             Write-Warning "Add-ADACL - Error adding permissions for $($AccessRuleToAdd.IdentityReference) / $($AccessRuleToAdd.ActiveDirectoryRights) due to error: $($_.Exception.Message). Retrying with SID"
-            # $SplittedName = $Principal -split '/'
-            # [System.Security.Principal.IdentityReference] $Identity = [System.Security.Principal.SecurityIdentifier]::new($SplittedName[1])
-            # $ResolvedIdenity = Convert-Identity -Identity $Principal
-
-            #$AccessRuleToAdd = [System.DirectoryServices.ActiveDirectoryAccessRule]::new($Identity, $AccessRule, $AccessControlType)
-            #$ntSecurityDescriptor.AddAccessRule($AccessRuleToAdd)
             @{ Success = $false; Reason = "Identity" }
         } else {
             Write-Warning "Add-ADACL - Error adding permissions for $($AccessRuleToAdd.IdentityReference) / $($AccessRuleToAdd.ActiveDirectoryRights) due to error: $($_.Exception.Message)"
