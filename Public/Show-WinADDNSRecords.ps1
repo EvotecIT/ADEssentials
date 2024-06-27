@@ -44,8 +44,6 @@
             $CachedZones[$DnsEntry.Zone].Add($DnsEntry)
         }
     }
-
-    # Create HTML :-)
     New-HTML {
         New-HTMLTab -Name 'DNS Zones' {
             New-HTMLTable -DataTable $DNSZones -DataStore JavaScript -Filtering
