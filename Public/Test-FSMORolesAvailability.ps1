@@ -10,9 +10,7 @@
         } else {
             $Status = $null
         }
-        #$Summary["$($S.HostName)"] = @{ }
         foreach ($_ in $S.OperationMasterRoles) {
-            #$Summary["$_"] = $S.HostName
             [PSCustomObject] @{
                 Role     = $_
                 HostName = $S.HostName
