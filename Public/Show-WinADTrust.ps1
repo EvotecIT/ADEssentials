@@ -19,9 +19,6 @@
         New-HTMLTableOption -DataStore HTML
         New-HTMLTabStyle -BorderRadius 0px -TextTransform capitalize -BackgroundColorActive SlateGrey
 
-
-        #$Messages = $($ADTrusts = Get-WinADTrust -Recursive:$Recursive) 4>&1 3>&1 2>&1
-        #$Messages += Write-Verbose "Show-WinADTrust - Found $($ADTrusts.Count) trusts" 4>&1
         $Script:ADTrusts = Get-WinADTrust -Recursive:$Recursive
         Write-Verbose "Show-WinADTrust - Found $($ADTrusts.Count) trusts"
         New-HTMLTab -TabName 'Summary' {
@@ -33,8 +30,8 @@
                         New-DiagramNode -Label $Node.'Trust'
                     }
                     foreach ($Trust in $ADTrusts) {
-                        New-DiagramNode -Label $Trust.'TrustSource' -IconSolid audio-description #-IconColor LightSteelBlue
-                        New-DiagramNode -Label $Trust.'TrustTarget' -IconSolid audio-description #-IconColor LightSteelBlue
+                        New-DiagramNode -Label $Trust.'TrustSource' -IconSolid audio-description
+                        New-DiagramNode -Label $Trust.'TrustTarget' -IconSolid audio-description
 
                         $newDiagramLinkSplat = @{
                             From         = $Trust.'TrustSource'
@@ -89,10 +86,8 @@
         # Lets try to sort it into source domain per tab
         $TrustCache = [ordered]@{}
         foreach ($Trust in $ADTrusts) {
-            #$Messages += Write-Verbose "Show-WinADTrust - Processing $($Trust.TrustSource) to $($Trust.TrustTarget)" 4>&1
             Write-Verbose "Show-WinADTrust - Processing $($Trust.TrustSource) to $($Trust.TrustTarget)"
             if (-not $TrustCache[$Trust.TrustSource]) {
-                #$Messages += Write-Verbose "Show-WinADTrust - Creating cache for $($Trust.TrustSource)" 4>&1
                 Write-Verbose "Show-WinADTrust - Creating cache for $($Trust.TrustSource)"
                 $TrustCache[$Trust.TrustSource] = [System.Collections.Generic.List[PSCustomObject]]::new()
             }
@@ -148,9 +143,6 @@
                 }
             }
         }
-        #New-HTMLTab -TabName "Logs" {
-        #    New-HTMLTable -DataTable ($Messages.Message)
-        #}
     } -Online:$Online -FilePath $FilePath -ShowHTML:(-not $HideHTML)
     if ($PassThru) {
         $Script:ADTrusts
