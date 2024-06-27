@@ -10,12 +10,7 @@
         [Array] $GPOs,
         [System.Collections.IDictionary] $ExtendedForestInformation
     )
-    #  if ($Domain -and -not $ComputerName) {
-    #     $ComputerName = (Get-ADDomainController -Filter * -Server $Domain).HostName
-    # }
     $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC -ExtendedForestInformation $ExtendedForestInformation
-    #foreach ($Domain in $ForestInformation.ForestDomainControllers) {
-
     foreach ($Computer in $ForestInformation.ForestDomainControllers) {
         try {
             $DnsServerScavenging = Get-DnsServerScavenging -ComputerName $Computer.HostName -ErrorAction Stop
