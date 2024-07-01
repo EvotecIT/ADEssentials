@@ -49,6 +49,15 @@
     .PARAMETER SummaryOnly
     Adds one tab with all groups together on two diagrams
 
+    .PARAMETER EnableDiagramFiltering
+    Enables search in diagrams. It's useful when there are many groups and it's hard to find the one you are looking for.
+
+    .PARAMETER DiagramFilteringMinimumCharacters
+    Minimum characters to start search in diagrams. Default is 3.
+
+    .PARAMETER ScrollX
+    Adds horizontal scroll to the table. Useful when there are many columns.
+
     .EXAMPLE
    Show-WinADGroupMember -GroupName 'Domain Admins' -FilePath $PSScriptRoot\Reports\GroupMembership1.html -Online -Verbose
 
@@ -80,7 +89,10 @@
         [switch] $AdditionalStatistics,
         [switch] $SkipDiagram,
         [Parameter(ParameterSetName = 'Default')][switch] $Summary,
-        [Parameter(ParameterSetName = 'SummaryOnly')][switch] $SummaryOnly
+        [Parameter(ParameterSetName = 'SummaryOnly')][switch] $SummaryOnly,
+        [switch] $EnableDiagramFiltering,
+        [int] $DiagramFilteringMinimumCharacters = 3,
+        [switch] $ScrollX
     )
     $Script:Reporting = [ordered] @{}
     $Script:Reporting['Version'] = Get-GitHubVersion -Cmdlet 'Show-WinADGroupMember' -RepositoryOwner 'evotecit' -RepositoryName 'ADEssentials'
@@ -127,9 +139,9 @@
                 try {
                     Write-Verbose "Show-WinADGroupMember - requesting $Group group nested membership"
                     if ($VisualizeOnly) {
-                        $ADGroup = $GroupMembersCache[$Group]
+                        [Array] $ADGroup = $GroupMembersCache[$Group]
                     } else {
-                        $ADGroup = Get-WinADGroupMember -Group $Group -All -AddSelf -AdditionalStatistics:$AdditionalStatistics
+                        [Array] $ADGroup = Get-WinADGroupMember -Group $Group -All -AddSelf -AdditionalStatistics:$AdditionalStatistics
                     }
                     if ($Summary -or $SummaryOnly) {
                         foreach ($Object in $ADGroup) {
@@ -146,11 +158,12 @@
                         # Means group returned something
                         $GroupName = $ADGroup[0].GroupName
                         $NetBIOSName = Convert-DomainFqdnToNetBIOS -DomainName $ADGroup[0].DomainName
-                        $FullName = "$NetBIOSName\$GroupName"
+                        $ObjectsCount = $ADGroup.Count - 1
+                        $FullName = "$NetBIOSName\$GroupName ($ObjectsCount)"
                     } else {
                         # Means group returned nothing, probably wrong request, but we still need to show something
                         $GroupName = $Group
-                        $FullName = $Group
+                        $FullName = "$Group (0)"
                     }
                     $DataStoreID = -join ('table', (Get-RandomStringName -Size 10 -ToLower))
                     $DataTableID = -join ('table', (Get-RandomStringName -Size 10 -ToLower))
@@ -171,7 +184,7 @@
                                 if ($Conditions) {
                                     & $Conditions
                                 }
-                            }
+                            } -ScrollX:$ScrollX.IsPresent
                         }
                         if (-not $SkipDiagram.IsPresent) {
                             New-HTMLTab -TabName 'Information' {
@@ -184,13 +197,13 @@
                             Write-Verbose -Message "Show-WinADGroupMember - processing HTML generation for $Group group - Diagram"
                             New-HTMLTab -TabName 'Diagram Basic' {
                                 New-HTMLSection -Title "Diagram for $GroupName" {
-                                    New-HTMLGroupDiagramDefault -ADGroup $ADGroup -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -DataTableID $DataTableID -ColumnID 1 -Online:$Online
+                                    New-HTMLGroupDiagramDefault -ADGroup $ADGroup -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -DataTableID $DataTableID -ColumnID 1 -Online:$Online -EnableDiagramFiltering:$EnableDiagramFiltering.IsPresent -DiagramFilteringMinimumCharacters $DiagramFilteringMinimumCharacters
                                 }
                             }
                             Write-Verbose -Message "Show-WinADGroupMember - processing HTML generation for $Group group - Diagram Hierarchy"
                             New-HTMLTab -TabName 'Diagram Hierarchy' {
                                 New-HTMLSection -Title "Diagram for $GroupName" {
-                                    New-HTMLGroupDiagramHierachical -ADGroup $ADGroup -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -Online:$Online
+                                    New-HTMLGroupDiagramHierachical -ADGroup $ADGroup -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -Online:$Online -EnableDiagramFiltering:$EnableDiagramFiltering.IsPresent -DiagramFilteringMinimumCharacters $DiagramFilteringMinimumCharacters
                                 }
                             }
                         }
@@ -202,12 +215,12 @@
                 New-HTMLTab -Name 'Summary' {
                     New-HTMLTab -TabName 'Diagram Basic' {
                         New-HTMLSection -Title "Diagram for Summary" {
-                            New-HTMLGroupDiagramSummary -ADGroup $GroupsList -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -DataTableID $DataTableID -ColumnID 1 -Online:$Online
+                            New-HTMLGroupDiagramSummary -ADGroup $GroupsList -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -DataTableID $DataTableID -ColumnID 1 -Online:$Online -EnableDiagramFiltering:$EnableDiagramFiltering.IsPresent -DiagramFilteringMinimumCharacters $DiagramFilteringMinimumCharacters
                         }
                     }
                     New-HTMLTab -TabName 'Diagram Hierarchy' {
                         New-HTMLSection -Title "Diagram for Summary" {
-                            New-HTMLGroupDiagramSummaryHierarchical -ADGroup $GroupsList -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -Online:$Online
+                            New-HTMLGroupDiagramSummaryHierarchical -ADGroup $GroupsList -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -Online:$Online -EnableDiagramFiltering:$EnableDiagramFiltering.IsPresent -DiagramFilteringMinimumCharacters $DiagramFilteringMinimumCharacters
                         }
                     }
                 }

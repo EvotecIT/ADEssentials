@@ -1,4 +1,7 @@
-﻿#### 0.0.214
+﻿#### 0.0.215
+- Add `EnableDiagramFiltering`,`DiagramFilteringMinimumCharacters` and `ScrollX` to `Show-WinADGroupMember` and `Show-WinADGroupMemberOf` and `Show-WinADGroupCritical` to allow better filtering and scrolling
+
+#### 0.0.214
 - Bugfix for `Test-LDAP`
 
 #### 0.0.213
