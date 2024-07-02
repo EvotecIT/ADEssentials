@@ -55,6 +55,9 @@
     .PARAMETER DiagramFilteringMinimumCharacters
     Minimum characters to start search in diagrams. Default is 3.
 
+    .PARAMETER EnableDiagramFilteringButton
+    Adds button to enable/disable filtering in diagrams. It's extension to EnableDiagramFiltering, when you prefer button over automatic filtering.
+
     .PARAMETER ScrollX
     Adds horizontal scroll to the table. Useful when there are many columns.
 
@@ -91,6 +94,7 @@
         [Parameter(ParameterSetName = 'Default')][switch] $Summary,
         [Parameter(ParameterSetName = 'SummaryOnly')][switch] $SummaryOnly,
         [switch] $EnableDiagramFiltering,
+        [switch] $EnableDiagramFilteringButton,
         [int] $DiagramFilteringMinimumCharacters = 3,
         [switch] $ScrollX
     )
@@ -197,13 +201,13 @@
                             Write-Verbose -Message "Show-WinADGroupMember - processing HTML generation for $Group group - Diagram"
                             New-HTMLTab -TabName 'Diagram Basic' {
                                 New-HTMLSection -Title "Diagram for $GroupName" {
-                                    New-HTMLGroupDiagramDefault -ADGroup $ADGroup -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -DataTableID $DataTableID -ColumnID 1 -Online:$Online -EnableDiagramFiltering:$EnableDiagramFiltering.IsPresent -DiagramFilteringMinimumCharacters $DiagramFilteringMinimumCharacters
+                                    New-HTMLGroupDiagramDefault -ADGroup $ADGroup -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -DataTableID $DataTableID -ColumnID 1 -Online:$Online -EnableDiagramFiltering:$EnableDiagramFiltering.IsPresent -DiagramFilteringMinimumCharacters $DiagramFilteringMinimumCharacters -EnableDiagramFilteringButton:$EnableDiagramFilteringButton.IsPresent
                                 }
                             }
                             Write-Verbose -Message "Show-WinADGroupMember - processing HTML generation for $Group group - Diagram Hierarchy"
                             New-HTMLTab -TabName 'Diagram Hierarchy' {
                                 New-HTMLSection -Title "Diagram for $GroupName" {
-                                    New-HTMLGroupDiagramHierachical -ADGroup $ADGroup -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -Online:$Online -EnableDiagramFiltering:$EnableDiagramFiltering.IsPresent -DiagramFilteringMinimumCharacters $DiagramFilteringMinimumCharacters
+                                    New-HTMLGroupDiagramHierachical -ADGroup $ADGroup -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -Online:$Online -EnableDiagramFiltering:$EnableDiagramFiltering.IsPresent -DiagramFilteringMinimumCharacters $DiagramFilteringMinimumCharacters -EnableDiagramFilteringButton:$EnableDiagramFilteringButton.IsPresent
                                 }
                             }
                         }
@@ -215,12 +219,12 @@
                 New-HTMLTab -Name 'Summary' {
                     New-HTMLTab -TabName 'Diagram Basic' {
                         New-HTMLSection -Title "Diagram for Summary" {
-                            New-HTMLGroupDiagramSummary -ADGroup $GroupsList -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -DataTableID $DataTableID -ColumnID 1 -Online:$Online -EnableDiagramFiltering:$EnableDiagramFiltering.IsPresent -DiagramFilteringMinimumCharacters $DiagramFilteringMinimumCharacters
+                            New-HTMLGroupDiagramSummary -ADGroup $GroupsList -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -DataTableID $DataTableID -ColumnID 1 -Online:$Online -EnableDiagramFiltering:$EnableDiagramFiltering.IsPresent -DiagramFilteringMinimumCharacters $DiagramFilteringMinimumCharacters -EnableDiagramFilteringButton:$EnableDiagramFilteringButton.IsPresent
                         }
                     }
                     New-HTMLTab -TabName 'Diagram Hierarchy' {
                         New-HTMLSection -Title "Diagram for Summary" {
-                            New-HTMLGroupDiagramSummaryHierarchical -ADGroup $GroupsList -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -Online:$Online -EnableDiagramFiltering:$EnableDiagramFiltering.IsPresent -DiagramFilteringMinimumCharacters $DiagramFilteringMinimumCharacters
+                            New-HTMLGroupDiagramSummaryHierarchical -ADGroup $GroupsList -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -Online:$Online -EnableDiagramFiltering:$EnableDiagramFiltering.IsPresent -DiagramFilteringMinimumCharacters $DiagramFilteringMinimumCharacters -EnableDiagramFilteringButton:$EnableDiagramFilteringButton.IsPresent
                         }
                     }
                 }
