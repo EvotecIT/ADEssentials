@@ -10,6 +10,7 @@
         [int] $ColumnID,
         [switch] $Online,
         [switch] $EnableDiagramFiltering,
+        [switch] $EnableDiagramFilteringButton,
         [int] $DiagramFilteringMinimumCharacters = 3
     )
     $ConnectionsTracker = @{}
@@ -86,5 +87,5 @@
                 }
             }
         }
-    } -EnableFiltering:$EnableDiagramFiltering.IsPresent -MinimumFilteringChars $DiagramFilteringMinimumCharacters
+    } -EnableFiltering:$EnableDiagramFiltering.IsPresent -MinimumFilteringChars $DiagramFilteringMinimumCharacters -EnableFilteringButton:$EnableDiagramFilteringButton.IsPresent
 }

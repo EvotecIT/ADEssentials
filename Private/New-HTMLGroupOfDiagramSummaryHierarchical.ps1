@@ -8,6 +8,7 @@
         [switch] $HideOther,
         [switch] $Online,
         [switch] $EnableDiagramFiltering,
+        [switch] $EnableDiagramFilteringButton,
         [int] $DiagramFilteringMinimumCharacters = 3
     )
     New-HTMLDiagram -Height 'calc(100vh - 200px)' {
@@ -75,5 +76,5 @@
                 }
             }
         }
-    } -EnableDiagramFiltering:$EnableDiagramFiltering.IsPresent -DiagramFilteringMinimumCharacters $DiagramFilteringMinimumCharacters
+    } -EnableFiltering:$EnableDiagramFiltering.IsPresent -MinimumFilteringChars $DiagramFilteringMinimumCharacters -EnableFilteringButton:$EnableDiagramFilteringButton.IsPresent
 }
