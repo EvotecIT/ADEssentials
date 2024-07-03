@@ -1,4 +1,27 @@
 ﻿function Set-WinADReplicationConnections {
+    <#
+    .SYNOPSIS
+    Modifies the replication connections within an Active Directory forest.
+
+    .DESCRIPTION
+    This cmdlet updates the replication connections within a specified Active Directory forest. It can be used to enable or disable specific connection options for each connection. The cmdlet supports modifying connections that are automatically generated or manually created.
+
+    .PARAMETER Forest
+    Specifies the name of the Active Directory forest for which to modify the replication connections.
+
+    .PARAMETER Force
+    Forces the modification of all replication connections, including those that are automatically generated.
+
+    .PARAMETER ExtendedForestInformation
+    Provides additional information about the forest that can be used to facilitate the operation.
+
+    .EXAMPLE
+    Set-WinADReplicationConnections -Forest 'example.com' -Force
+    This example modifies all replication connections within the 'example.com' forest, including automatically generated ones.
+
+    .NOTES
+    This cmdlet requires the Active Directory PowerShell module to be installed and configured.
+    #>
     [CmdletBinding()]
     param(
         [alias('ForestName')][string] $Forest,

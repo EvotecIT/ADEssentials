@@ -1,4 +1,27 @@
 ﻿function Set-ADACLOwner {
+    <#
+    .SYNOPSIS
+    Sets the owner of the ACLs on specified Active Directory objects to a specified principal.
+
+    .DESCRIPTION
+    This cmdlet sets the owner of the ACLs on specified Active Directory objects to a specified principal. It supports setting the owner on multiple objects at once and can handle both local and remote operations. It also provides verbose and warning messages to facilitate troubleshooting.
+
+    .PARAMETER ADObject
+    Specifies the Active Directory objects on which to set the owner. This can be a list of objects or a list of Distinguished Names of objects.
+
+    .PARAMETER Principal
+    Specifies the principal to set as the owner of the ACLs. This can be a string in the format of 'Domain\Username' or 'Username@Domain'.
+
+    .EXAMPLE
+    Set-ADACLOwner -ADObject 'OU=Users,DC=example,DC=com', 'CN=Computers,DC=example,DC=com' -Principal 'example\DomainAdmins'
+
+    This example sets the owner of the ACLs on the specified OU and CN to 'example\DomainAdmins'.
+
+    .EXAMPLE
+    Set-ADACLOwner -ADObject 'CN=User1,DC=example,DC=com', 'CN=Computer1,DC=example,DC=com' -Principal 'DomainAdmins@example.com'
+
+    This example sets the owner of the ACLs on the specified user and computer to 'DomainAdmins@example.com'.
+    #>
     [cmdletBinding(SupportsShouldProcess)]
     param(
         [parameter(Mandatory)][alias('Identity')][Array] $ADObject,
