@@ -1,4 +1,20 @@
 ﻿function Show-WinADUserSecurity {
+    <#
+    .SYNOPSIS
+    Generates a detailed HTML report on the security settings for a specified Active Directory user.
+
+    .DESCRIPTION
+    This cmdlet creates a comprehensive HTML report that includes the user's properties, access control list (ACL), group memberships, and a diagram of their group hierarchy. The report is designed to provide a clear overview of the user's security settings and relationships within the Active Directory.
+
+    .PARAMETER Identity
+    Specifies the identity of the user for whom to generate the report. This can be a distinguished name, GUID, security identifier (SID), or SAM account name.
+
+    .EXAMPLE
+    Show-WinADUserSecurity -Identity "CN=User1,DC=example,DC=com"
+
+    .NOTES
+    This cmdlet is useful for auditing and analyzing the security settings of Active Directory users, helping administrators to identify potential security risks and ensure compliance with organizational policies.
+    #>
     [cmdletBinding()]
     param(
         [string[]] $Identity

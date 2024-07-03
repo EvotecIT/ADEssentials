@@ -1,4 +1,35 @@
 function New-ADSite {
+    <#
+    .SYNOPSIS
+    Creates a new Active Directory site and configures its properties.
+
+    .DESCRIPTION
+    This cmdlet creates a new Active Directory site with the specified name and description. It also allows for the configuration of subnets, site links, and default sites. The cmdlet supports the use of credentials for authentication.
+
+    .PARAMETER Site
+    Specifies the name of the new Active Directory site to create.
+
+    .PARAMETER Description
+    Specifies the description of the new Active Directory site.
+
+    .PARAMETER SitePartner
+    Specifies the name of the partner site for the new site link.
+
+    .PARAMETER DefaultSite
+    Specifies the default site to which the new site will be added.
+
+    .PARAMETER Subnets
+    Specifies an array of subnet addresses to be associated with the new site.
+
+    .PARAMETER Credential
+    Specifies the credentials to use for authentication.
+
+    .EXAMPLE
+    New-ADSite -Site "NewSite" -Description "Description of the new site" -SitePartner "PartnerSite" -DefaultSite "DefaultSite" -Subnets @("10.0.0.0/8", "192.168.0.0/16") -Credential (Get-Credential)
+
+    .NOTES
+    This cmdlet requires the Active Directory PowerShell module to be installed and imported.
+    #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param(
         [Parameter(Mandatory = $true)][string]$Site,
