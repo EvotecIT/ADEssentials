@@ -1,4 +1,27 @@
 ﻿function Get-WinADForestSubnet {
+    <#
+    .SYNOPSIS
+    Retrieves subnet information for a specified Active Directory forest.
+
+    .DESCRIPTION
+    Retrieves detailed information about subnets within the specified Active Directory forest.
+
+    .PARAMETER Forest
+    Specifies the target forest to retrieve subnet information from.
+
+    .PARAMETER ExtendedForestInformation
+    Specifies additional information about the forest.
+
+    .PARAMETER VerifyOverlap
+    Indicates whether to verify overlapping subnets.
+
+    .EXAMPLE
+    Get-WinADForestSubnet -Forest "example.com" -VerifyOverlap
+    This example retrieves subnet information for the "example.com" forest and verifies overlapping subnets.
+
+    .NOTES
+    This cmdlet requires the Active Directory PowerShell module to be installed and imported. It also requires appropriate permissions to query the Active Directory forest.
+    #>
     [alias('Get-WinADSubnet')]
     [cmdletBinding()]
     param(

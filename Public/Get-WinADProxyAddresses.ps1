@@ -1,25 +1,25 @@
 ﻿function Get-WinADProxyAddresses {
     <#
     .SYNOPSIS
-    Short description
+    Retrieves and organizes proxy addresses for an Active Directory user.
 
     .DESCRIPTION
-    Long description
+    This function retrieves and organizes the proxy addresses associated with an Active Directory user. It categorizes the addresses into primary, secondary, SIP, X500, and other types based on their prefixes. It also provides options to remove prefixes, convert data to lowercase, and format the output for display purposes.
 
     .PARAMETER ADUser
-    ADUser Object
+    Specifies the Active Directory user object for which to retrieve proxy addresses.
 
     .PARAMETER RemovePrefix
-    Removes prefix from proxy address such as SMTP: or smtp:
+    Indicates whether to remove the prefix (e.g., SMTP:, smtp:) from the proxy addresses.
 
     .PARAMETER ToLower
-    Makes sure all returned data is lower case
+    Specifies whether to convert all returned data to lowercase.
 
     .PARAMETER Formatted
-    Makes sure data is formatted for display, rather than for working with objects
+    Indicates whether the data should be formatted for display purposes rather than for working with objects.
 
     .PARAMETER Splitter
-    Splitter or Joiner that connects data together such as an array of 3 aliases
+    Specifies the character used to join multiple data elements together, such as an array of aliases.
 
     .EXAMPLE
     $ADUsers = Get-ADUser -Filter "*" -Properties ProxyAddresses
@@ -34,7 +34,7 @@
     }
 
     .NOTES
-    General notes
+    This function requires the Active Directory module to be available. It provides a structured view of proxy addresses for an AD user.
     #>
     [CmdletBinding()]
     param(

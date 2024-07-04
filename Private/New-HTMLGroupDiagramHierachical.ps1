@@ -1,4 +1,44 @@
 ﻿function New-HTMLGroupDiagramHierachical {
+    <#
+    .SYNOPSIS
+    Creates an HTML diagram representing Active Directory groups and their members in a hierarchical layout.
+
+    .DESCRIPTION
+    The New-HTMLGroupDiagramHierachical function generates an HTML diagram that visually represents Active Directory groups and their members in a hierarchical structure. The diagram includes nodes for users, groups, computers, and other objects, with customizable options for displaying and organizing the information.
+
+    .PARAMETER ADGroup
+    Specifies an array of Active Directory objects (groups) to be included in the diagram.
+
+    .PARAMETER HideAppliesTo
+    Specifies whether to hide specific types of objects in the diagram. Valid values are 'Default', 'Hierarchical', and 'Both'. Default value is 'Both'.
+
+    .PARAMETER HideComputers
+    Indicates whether to hide computer objects in the diagram.
+
+    .PARAMETER HideUsers
+    Indicates whether to hide user objects in the diagram.
+
+    .PARAMETER HideOther
+    Indicates whether to hide other types of objects in the diagram.
+
+    .PARAMETER Online
+    Indicates whether to display online status information in the diagram.
+
+    .EXAMPLE
+    New-HTMLGroupDiagramHierachical -ADGroup $ADGroupArray -HideAppliesTo 'Both' -Online
+    Generates an HTML diagram displaying all objects in the $ADGroupArray with online status information included.
+
+    .EXAMPLE
+    New-HTMLGroupDiagramHierachical -ADGroup $ADGroupArray -HideComputers -HideUsers
+    Generates an HTML diagram excluding computer and user objects from the $ADGroupArray.
+
+    .NOTES
+    File Name      : New-HTMLGroupDiagramHierachical.ps1
+    Author         : Your Name
+    Prerequisite   : PowerShell V5
+    Copyright 2021 - Your Company
+    #>
+
     [cmdletBinding()]
     param(
         [Array] $ADGroup,

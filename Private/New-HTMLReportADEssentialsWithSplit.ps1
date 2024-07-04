@@ -1,4 +1,33 @@
 ﻿function New-HTMLReportADEssentialsWithSplit {
+    <#
+    .SYNOPSIS
+    Generates HTML reports for ADEssentials with the option to split into multiple files.
+
+    .DESCRIPTION
+    This function generates HTML reports for ADEssentials. It provides the flexibility to split the reports into multiple files for easier viewing.
+
+    .PARAMETER Type
+    Specifies the type of report to generate.
+
+    .PARAMETER Online
+    Switch to indicate if the report should be generated online.
+
+    .PARAMETER HideHTML
+    Switch to hide the HTML output.
+
+    .PARAMETER FilePath
+    Specifies the file path where the report will be saved.
+
+    .PARAMETER CurrentReport
+    Specifies the current report to generate.
+
+    .EXAMPLE
+    New-HTMLReportADEssentialsWithSplit -Type @('Type1', 'Type2') -Online -HideHTML -FilePath "C:\Reports\" -CurrentReport "Type1"
+    Generates HTML reports for 'Type1' and 'Type2', hides the HTML output, and saves the reports in the specified file path.
+
+    .NOTES
+    Ensure that the necessary permissions are in place to generate the reports.
+    #>
     [cmdletBinding()]
     param(
         [Array] $Type,

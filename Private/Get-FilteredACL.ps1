@@ -1,4 +1,68 @@
 ﻿function Get-FilteredACL {
+    <#
+    .SYNOPSIS
+    Retrieves filtered Active Directory Access Control List (ACL) details based on specified criteria.
+
+    .DESCRIPTION
+    This function retrieves and filters Active Directory Access Control List (ACL) details based on the provided criteria. It allows for filtering by various parameters such as access control type, inheritance status, active directory rights, and more.
+
+    .PARAMETER ACL
+    Specifies the Active Directory Access Control List (ACL) to filter.
+
+    .PARAMETER Resolve
+    If specified, resolves the identity reference in the ACL.
+
+    .PARAMETER Principal
+    Specifies the principal to filter by.
+
+    .PARAMETER Inherited
+    If specified, includes only inherited ACLs.
+
+    .PARAMETER NotInherited
+    If specified, includes only non-inherited ACLs.
+
+    .PARAMETER AccessControlType
+    Specifies the type of access control to filter by.
+
+    .PARAMETER IncludeObjectTypeName
+    Specifies the object type names to include in the filter.
+
+    .PARAMETER IncludeInheritedObjectTypeName
+    Specifies the inherited object type names to include in the filter.
+
+    .PARAMETER ExcludeObjectTypeName
+    Specifies the object type names to exclude from the filter.
+
+    .PARAMETER ExcludeInheritedObjectTypeName
+    Specifies the inherited object type names to exclude from the filter.
+
+    .PARAMETER IncludeActiveDirectoryRights
+    Specifies the Active Directory rights to include in the filter.
+
+    .PARAMETER ExcludeActiveDirectoryRights
+    Specifies the Active Directory rights to exclude from the filter.
+
+    .PARAMETER IncludeActiveDirectorySecurityInheritance
+    Specifies the Active Directory security inheritance types to include in the filter.
+
+    .PARAMETER ExcludeActiveDirectorySecurityInheritance
+    Specifies the Active Directory security inheritance types to exclude from the filter.
+
+    .PARAMETER PrincipalRequested
+    Specifies the requested principal object.
+
+    .PARAMETER Bundle
+    If specified, bundles the filtered ACL details.
+
+    .EXAMPLE
+    Get-FilteredACL -ACL $ACL -Resolve -Principal "User1" -Inherited -AccessControlType "Allow" -IncludeObjectTypeName "File" -ExcludeInheritedObjectTypeName "Folder" -IncludeActiveDirectoryRights "Read" -ExcludeActiveDirectoryRights "Write" -IncludeActiveDirectorySecurityInheritance "Descendents" -ExcludeActiveDirectorySecurityInheritance "SelfAndChildren" -PrincipalRequested $PrincipalRequested -Bundle
+    Retrieves and filters Active Directory Access Control List (ACL) details based on the specified criteria.
+
+    .NOTES
+    Author: Your Name
+    Date: Current Date
+    Version: 1.0
+    #>
     [cmdletBinding()]
     param(
         [System.DirectoryServices.ActiveDirectoryAccessRule] $ACL,

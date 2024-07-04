@@ -45,14 +45,14 @@
     $QueryServer = $ForestInformation.QueryServers['Forest']['HostName'][0]
 
     $NamingContext = (Get-ADRootDSE -Server $QueryServer).configurationNamingContext
-    $Connections = Get-ADObject –Searchbase $NamingContext -LDAPFilter "(objectCategory=ntDSConnection)" -Properties * -Server $QueryServer
+    $Connections = Get-ADObject -Searchbase $NamingContext -LDAPFilter "(objectCategory=ntDSConnection)" -Properties * -Server $QueryServer
     foreach ($_ in $Connections) {
         $OptionsTranslated = [ConnectionOption] $_.Options
         if ($OptionsTranslated -like '*IsGenerated*' -and -not $Force) {
             Write-Verbose "Set-WinADReplicationConnections - Skipping $($_.CN) automatically generated link"
         } else {
             Write-Verbose "Set-WinADReplicationConnections - Changing $($_.CN)"
-            Set-ADObject $_ –replace @{ options = $($_.options -bor 8) } -Server $QueryServer
+            Set-ADObject $_ -replace @{ options = $($_.options -bor 8) } -Server $QueryServer
         }
     }
 }

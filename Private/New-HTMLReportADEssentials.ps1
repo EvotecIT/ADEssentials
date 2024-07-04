@@ -1,4 +1,30 @@
 ﻿function New-HTMLReportADEssentials {
+    <#
+    .SYNOPSIS
+    Generates an HTML report for ADEssentials.
+
+    .DESCRIPTION
+    This function generates an HTML report for ADEssentials based on the specified type. It provides options to generate the report online and hide the HTML output.
+
+    .PARAMETER Type
+    Specifies the type of report to generate.
+
+    .PARAMETER Online
+    Switch to indicate if the report should be generated online.
+
+    .PARAMETER HideHTML
+    Switch to hide the HTML output.
+
+    .PARAMETER FilePath
+    Specifies the file path where the report will be saved.
+
+    .EXAMPLE
+    New-HTMLReportADEssentials -Type @('Type1') -Online -HideHTML -FilePath "C:\Reports\"
+    Generates an HTML report for 'Type1', hides the HTML output, and saves the report in the specified file path.
+
+    .NOTES
+    Ensure that the necessary permissions are in place to generate the report.
+    #>
     [cmdletBinding()]
     param(
         [Array] $Type,

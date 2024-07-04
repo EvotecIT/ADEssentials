@@ -1,4 +1,47 @@
 ﻿function Get-WinADDFSHealth {
+    <#
+    .SYNOPSIS
+    Retrieves health information for Active Directory Federation Services (AD FS).
+
+    .DESCRIPTION
+    This function retrieves health information for AD FS based on specified parameters.
+
+    .PARAMETER Forest
+    Specifies the name of the forest to retrieve information from.
+
+    .PARAMETER ExcludeDomains
+    Specifies an array of domains to exclude from the health check.
+
+    .PARAMETER ExcludeDomainControllers
+    Specifies an array of domain controllers to exclude from the health check.
+
+    .PARAMETER IncludeDomains
+    Specifies an array of domains to include in the health check.
+
+    .PARAMETER IncludeDomainControllers
+    Specifies an array of domain controllers to include in the health check.
+
+    .PARAMETER SkipRODC
+    Indicates whether to skip read-only domain controllers in the health check.
+
+    .PARAMETER EventDays
+    Specifies the number of days to look back for events. Default is 1 day.
+
+    .PARAMETER SkipGPO
+    Indicates whether to skip checking Group Policy Objects (GPOs).
+
+    .PARAMETER SkipAutodetection
+    Indicates whether to skip automatic detection of domain controllers.
+
+    .PARAMETER ExtendedForestInformation
+    Specifies additional forest information to include in the health check.
+
+    .EXAMPLE
+    Get-WinADDFSHealth -Forest "contoso.com" -IncludeDomains "contoso.com" -SkipGPO
+
+    Retrieves health information for the "contoso.com" forest, including only the "contoso.com" domain and skipping GPO checks.
+
+    #>
     [cmdletBinding()]
     param(
         [alias('ForestName')][string] $Forest,

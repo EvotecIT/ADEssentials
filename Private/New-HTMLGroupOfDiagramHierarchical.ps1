@@ -1,4 +1,37 @@
 ﻿function New-HTMLGroupOfDiagramHierarchical {
+    <#
+    .SYNOPSIS
+    Creates a new HTML group diagram with hierarchical layout and customizable options.
+
+    .DESCRIPTION
+    This function creates a new HTML group diagram with a hierarchical layout and customizable options. It allows for displaying Active Directory groups and their members in a visual diagram format with hierarchical organization.
+
+    .PARAMETER Identity
+    Specifies an array of objects to be included in the diagram.
+
+    .PARAMETER HideAppliesTo
+    Specifies whether to hide elements based on their type. Valid values are 'Default', 'Hierarchical', or 'Both'. Default is 'Both'.
+
+    .PARAMETER HideComputers
+    Indicates whether to hide computer objects in the diagram.
+
+    .PARAMETER HideUsers
+    Indicates whether to hide user objects in the diagram.
+
+    .PARAMETER HideOther
+    Indicates whether to hide other types of objects in the diagram.
+
+    .PARAMETER Online
+    Indicates whether to display objects as online in the diagram.
+
+    .EXAMPLE
+    New-HTMLGroupOfDiagramHierarchical -Identity $ADObjects -HideUsers -Online
+    Creates a new HTML group diagram with hierarchical layout, includes Active Directory objects, hides user objects, and displays objects as online.
+
+    .EXAMPLE
+    New-HTMLGroupOfDiagramHierarchical -Identity $ADObjects -HideComputers -HideAppliesTo 'Hierarchical'
+    Creates a new HTML group diagram with hierarchical layout, includes Active Directory objects, hides computer objects, and only displays elements based on the hierarchical setting.
+    #>
     [cmdletBinding()]
     param(
         [Array] $Identity,

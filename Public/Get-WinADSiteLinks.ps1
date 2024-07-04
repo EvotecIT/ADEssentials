@@ -43,7 +43,7 @@
     $ForestInformation = Get-WinADForestDetails -Forest $Forest -ExtendedForestInformation $ExtendedForestInformation
     $QueryServer = $ForestInformation.QueryServers[$($ForestInformation.Forest.Name)]['HostName'][0]
     $NamingContext = (Get-ADRootDSE -Server $QueryServer).configurationNamingContext
-    $SiteLinks = Get-ADObject -LDAPFilter "(objectCategory=sitelink)" –Searchbase $NamingContext -Properties * -Server $QueryServer
+    $SiteLinks = Get-ADObject -LDAPFilter "(objectCategory=sitelink)" -Searchbase $NamingContext -Properties * -Server $QueryServer
     foreach ($_ in $SiteLinks) {
 
         if ($null -eq $_.Options) {

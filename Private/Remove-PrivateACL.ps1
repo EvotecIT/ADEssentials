@@ -1,4 +1,47 @@
 ﻿function Remove-PrivateACL {
+    <#
+    .SYNOPSIS
+    Removes private ACLs based on specified criteria.
+
+    .DESCRIPTION
+    This function removes private ACLs based on the provided ACL object, principal, access rule, access control type, object type name, inherited object type name, inheritance type, force flag, and NT security descriptor.
+
+    .PARAMETER ACL
+    Specifies the ACL object to be processed.
+
+    .PARAMETER Principal
+    Specifies the principal for which the ACL should be removed.
+
+    .PARAMETER AccessRule
+    Specifies the access rule to be removed.
+
+    .PARAMETER AccessControlType
+    Specifies the type of access control to be removed.
+
+    .PARAMETER IncludeObjectTypeName
+    Specifies the object type names to include.
+
+    .PARAMETER IncludeInheritedObjectTypeName
+    Specifies the inherited object type names to include.
+
+    .PARAMETER InheritanceType
+    Specifies the inheritance type to consider.
+
+    .PARAMETER Force
+    Indicates whether to force the removal of inherited ACLs.
+
+    .PARAMETER NTSecurityDescriptor
+    Specifies the NT security descriptor to be updated.
+
+    .EXAMPLE
+    Remove-PrivateACL -ACL $ACLObject -Principal "User1" -AccessRule "Read" -AccessControlType "Allow" -IncludeObjectTypeName "File" -Force
+
+    Removes the specified ACL for User1 with Read access on files.
+
+    .NOTES
+    Author: Your Name
+    Date: Date
+    #>
     [cmdletBinding(SupportsShouldProcess)]
     param(
         [PSCustomObject] $ACL,

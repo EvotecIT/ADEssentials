@@ -1,4 +1,25 @@
 ﻿function Get-WinDnsRootHint {
+    <#
+    .SYNOPSIS
+    Retrieves DNS root hints from specified computers.
+
+    .DESCRIPTION
+    This function retrieves DNS root hints from the specified computers. If no ComputerName is provided, it uses the default domain controller.
+
+    .PARAMETER ComputerName
+    Specifies an array of computer names from which to retrieve DNS root hints.
+
+    .PARAMETER Domain
+    Specifies the domain to use for retrieving DNS root hints. Defaults to the current user's DNS domain.
+
+    .EXAMPLE
+    Get-WinDnsRootHint -ComputerName "Server01", "Server02" -Domain "contoso.com"
+    Retrieves DNS root hints from Server01 and Server02 in the contoso.com domain.
+
+    .EXAMPLE
+    Get-WinDnsRootHint -Domain "fabrikam.com"
+    Retrieves DNS root hints from the default domain controller in the fabrikam.com domain.
+    #>
     [CmdLetBinding()]
     param(
         [string[]] $ComputerName,

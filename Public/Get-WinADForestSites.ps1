@@ -1,4 +1,44 @@
 ﻿function Get-WinADForestSites {
+    <#
+    .SYNOPSIS
+    Retrieves site information for a specified Active Directory forest.
+
+    .DESCRIPTION
+    Retrieves detailed information about sites within the specified Active Directory forest.
+
+    .PARAMETER Forest
+    Specifies the target forest to retrieve site information from.
+
+    .PARAMETER ExcludeDomains
+    Specifies an array of domain names to exclude from the search.
+
+    .PARAMETER ExcludeDomainControllers
+    Specifies an array of domain controllers to exclude from the search.
+
+    .PARAMETER IncludeDomains
+    Specifies an array of domain names to include in the search.
+
+    .PARAMETER IncludeDomainControllers
+    Specifies an array of domain controllers to include in the search.
+
+    .PARAMETER SkipRODC
+    Indicates whether to skip read-only domain controllers.
+
+    .PARAMETER Formatted
+    Indicates whether to format the output.
+
+    .PARAMETER Splitter
+    Specifies the delimiter to use for splitting values.
+
+    .PARAMETER ExtendedForestInformation
+    Specifies additional information about the forest.
+
+    .EXAMPLE
+    Get-WinADForestSites -Forest "example.com" -IncludeDomains @("example.com") -ExcludeDomains @("test.com") -IncludeDomainControllers @("DC1") -ExcludeDomainControllers @("DC2") -SkipRODC -Formatted -Splitter ","
+
+    .NOTES
+    This cmdlet requires the Active Directory PowerShell module to be installed and imported. It also requires appropriate permissions to query the Active Directory forest.
+    #>
     [CmdletBinding()]
     param(
         [alias('ForestName')][string] $Forest,

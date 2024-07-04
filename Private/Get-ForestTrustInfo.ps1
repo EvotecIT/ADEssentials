@@ -1,16 +1,17 @@
 ﻿function Get-ForestTrustInfo {
     <#
     .SYNOPSIS
-    Short description
+    Retrieves and processes forest trust information from an array of bytes.
 
     .DESCRIPTION
-    Long description
+    This function retrieves and processes forest trust information from the provided array of bytes.
 
     .PARAMETER Byte
-    An array of bytes which describes the forest trust information.
+    An array of bytes containing the forest trust information to be processed.
 
     .EXAMPLE
-    An example
+    Get-ForestTrustInfo -Byte $ByteData
+    Retrieves and processes forest trust information from the specified array of bytes.
 
     .NOTES
     Author: Chris Dent

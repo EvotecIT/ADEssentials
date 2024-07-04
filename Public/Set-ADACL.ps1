@@ -47,7 +47,7 @@
 
     $ExpectedProperties = @('ActiveDirectoryRights', 'AccessControlType', 'ObjectTypeName', 'InheritedObjectTypeName', 'InheritanceType')
 
-    $FoundDisprepancy = $false
+    $FoundDiscrepancy = $false
     $Count = 1
     foreach ($ACL in $ACLSettings) {
         if ($ACL.Action -eq 'Skip') {
@@ -61,12 +61,12 @@
                 if ($Permission -is [System.Collections.IDictionary]) {
                     Compare-Object -ReferenceObject $ExpectedProperties -DifferenceObject @($Permission.Keys) | Where-Object { $_.SideIndicator -in '<=' } | ForEach-Object {
                         Write-Warning -Message "Set-ADACL - Entry $Count - $($ACL.Principal) is missing property $($_.InputObject) - provided only $($Permission.Keys)"
-                        $FoundDisprepancy = $true
+                        $FoundDiscrepancy = $true
                     }
                 } else {
                     Compare-Object -ReferenceObject $ExpectedProperties -DifferenceObject @($Permission.PSObject.Properties.Name) | Where-Object { $_.SideIndicator -in '<=' } | ForEach-Object {
                         Write-Warning -Message "Set-ADACL - Entry $Count - $($ACL.Principal) is missing property $($_.InputObject) - provided only $($Permission.PSObject.Properties.Name)"
-                        $FoundDisprepancy = $true
+                        $FoundDiscrepancy = $true
                     }
                 }
             }
@@ -74,18 +74,18 @@
             if ($ACL -is [System.Collections.IDictionary]) {
                 Compare-Object -ReferenceObject $ExpectedProperties -DifferenceObject @($ACL.Keys) | Where-Object { $_.SideIndicator -in '<=' } | ForEach-Object {
                     Write-Warning -Message "Set-ADACL - Entry $Count - $($ACL.Principal) is missing property $($_.InputObject) - provided only $($ACL.Keys)"
-                    $FoundDisprepancy = $true
+                    $FoundDiscrepancy = $true
                 }
             } else {
                 Compare-Object -ReferenceObject $ExpectedProperties -DifferenceObject @($ACL.PSObject.Properties.Name) | Where-Object { $_.SideIndicator -in '<=' } | ForEach-Object {
                     Write-Warning -Message "Set-ADACL - Entry $Count - $($ACL.Principal) is missing property $($_.InputObject) - provided only $($ACL.PSObject.Properties.Name)"
-                    $FoundDisprepancy = $true
+                    $FoundDiscrepancy = $true
                 }
             }
         }
         $Count++
     }
-    if ($FoundDisprepancy) {
+    if ($FoundDiscrepancy) {
         Write-Warning -Message "Set-ADACL - Please check your ACL configuration is correct. Each entry must have the following properties: $($ExpectedProperties -join ', ')"
         $Results.Warnings.Add("Please check your ACL configuration is correct. Each entry must have the following properties: $($ExpectedProperties -join ', ')")
         if (-not $Suppress) {

@@ -1,4 +1,44 @@
 ﻿function New-HTMLGroupOfDiagramDefault {
+    <#
+    .SYNOPSIS
+    Creates a default HTML group diagram with specified parameters.
+
+    .DESCRIPTION
+    This function creates a default HTML group diagram with the ability to customize various display options.
+
+    .PARAMETER Identity
+    Specifies an array of objects to be included in the diagram.
+
+    .PARAMETER HideAppliesTo
+    Specifies whether to hide elements based on their type. Valid values are 'Default', 'Hierarchical', or 'Both'. Default is 'Both'.
+
+    .PARAMETER HideComputers
+    Indicates whether to hide computer objects in the diagram.
+
+    .PARAMETER HideUsers
+    Indicates whether to hide user objects in the diagram.
+
+    .PARAMETER HideOther
+    Indicates whether to hide other types of objects in the diagram.
+
+    .PARAMETER DataTableID
+    Specifies the ID of the data table associated with the diagram.
+
+    .PARAMETER ColumnID
+    Specifies the ID of the column associated with the data table.
+
+    .PARAMETER Online
+    Indicates whether to display objects as online in the diagram.
+
+    .EXAMPLE
+    New-HTMLGroupOfDiagramDefault -Identity $ADObjects -HideUsers -DataTableID "DataTable1" -ColumnID 1 -Online
+    Creates a default HTML group diagram with Active Directory objects, hides user objects, associates it with DataTable1, and displays objects as online.
+
+    .EXAMPLE
+    New-HTMLGroupOfDiagramDefault -Identity $ADObjects -HideComputers -HideAppliesTo 'Hierarchical'
+    Creates a default HTML group diagram with Active Directory objects, hides computer objects, and only displays elements based on the hierarchical setting.
+
+    #>
     [cmdletBinding()]
     param(
         [Array] $Identity,
