@@ -1,4 +1,27 @@
 ﻿function Get-WinADComputers {
+    <#
+    .SYNOPSIS
+    Retrieves information about computers in Active Directory.
+
+    .DESCRIPTION
+    This function retrieves information about computers in Active Directory based on the specified parameters.
+
+    .PARAMETER Forest
+    Specifies the name of the forest to query for computer information.
+
+    .PARAMETER ExcludeDomains
+    Specifies an array of domains to exclude from the query.
+
+    .PARAMETER IncludeDomains
+    Specifies an array of domains to include in the query.
+
+    .PARAMETER PerDomain
+    Indicates whether to retrieve information per domain.
+
+    .PARAMETER AddOwner
+    Indicates whether to include owner information for the computers.
+
+    #>
     [cmdletBinding()]
     param(
         [alias('ForestName')][string] $Forest,

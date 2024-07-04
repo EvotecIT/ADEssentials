@@ -1,4 +1,21 @@
 ﻿function Test-ADSubnet {
+    <#
+    .SYNOPSIS
+    Tests for overlapping subnets within the provided array of subnets.
+
+    .DESCRIPTION
+    This function checks for overlapping subnets within the array of subnets provided. It specifically focuses on IPv4 subnets.
+
+    .PARAMETER Subnets
+    Specifies an array of subnets to check for overlapping subnets.
+
+    .EXAMPLE
+    Test-ADSubnet -Subnets @($Subnet1, $Subnet2, $Subnet3)
+    Checks for overlapping subnets within the array of subnets provided.
+
+    .NOTES
+    This function only checks for overlapping IPv4 subnets.
+    #>
     [cmdletBinding()]
     param(
         [Array] $Subnets

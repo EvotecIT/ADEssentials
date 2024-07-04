@@ -1,4 +1,54 @@
 ﻿function Add-ADACL {
+    <#
+    .SYNOPSIS
+    Adds an access control entry (ACE) to one or more Active Directory objects or security principals.
+
+    .DESCRIPTION
+    The Add-ADACL function allows you to add an ACE to Active Directory objects or security principals. It provides flexibility to specify the object, ACL, principal, access rule, access control type, object type, inherited object type, inheritance type, and NT security descriptor.
+
+    .PARAMETER ADObject
+    Specifies the Active Directory object to which the ACE will be added.
+
+    .PARAMETER ACL
+    Specifies the access control list (ACL) to be added.
+
+    .PARAMETER Principal
+    Specifies the security principal to which the ACE applies.
+
+    .PARAMETER AccessRule
+    Specifies the access rights granted by the ACE.
+
+    .PARAMETER AccessControlType
+    Specifies whether the ACE allows or denies access.
+
+    .PARAMETER ObjectType
+    Specifies the type of object to which the ACE applies.
+
+    .PARAMETER InheritedObjectType
+    Specifies the type of inherited object to which the ACE applies.
+
+    .PARAMETER InheritanceType
+    Specifies the inheritance type for the ACE.
+
+    .PARAMETER NTSecurityDescriptor
+    Specifies the NT security descriptor for the ACE.
+
+    .PARAMETER ActiveDirectoryAccessRule
+    Specifies the Active Directory access rule to be added.
+
+    .EXAMPLE
+    Add-ADACL -ADObject 'CN=TestUser,OU=Users,DC=contoso,DC=com' -Principal 'Contoso\HRAdmin' -AccessRule 'Read' -AccessControlType 'Allow' -ObjectType 'User' -InheritedObjectType 'Group' -InheritanceType 'All' -NTSecurityDescriptor $NTSecurityDescriptor
+
+    This example adds an ACE to the 'TestUser' object in the 'Users' OU, granting 'Read' access to the 'HRAdmin' security principal.
+
+    .EXAMPLE
+    Add-ADACL -ACL $ACL -Principal 'Contoso\FinanceAdmin' -AccessRule 'Write' -AccessControlType 'Allow' -ObjectType 'Group' -InheritedObjectType 'User' -InheritanceType 'None' -NTSecurityDescriptor $NTSecurityDescriptor
+
+    This example adds an ACE from the specified ACL to the 'FinanceAdmin' security principal, granting 'Write' access.
+
+    .NOTES
+    Ensure that the necessary permissions are in place to modify the security settings of the specified objects or principals.
+    #>
     [cmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'ADObject')]
     param(
         [parameter(Mandatory, ParameterSetName = 'ActiveDirectoryAccessRule')]

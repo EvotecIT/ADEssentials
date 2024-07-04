@@ -1,4 +1,43 @@
 ﻿function Get-WinADDelegatedAccounts {
+    <#
+    .SYNOPSIS
+    Retrieves delegated accounts information from Active Directory.
+
+    .DESCRIPTION
+    This function retrieves delegated accounts information from Active Directory based on the specified parameters.
+
+    .PARAMETER Forest
+    Specifies the name of the forest to retrieve delegated accounts information from.
+
+    .PARAMETER ExcludeDomains
+    Specifies an array of domains to exclude from the search.
+
+    .PARAMETER ExcludeDomainControllers
+    Specifies an array of domain controllers to exclude from the search.
+
+    .PARAMETER IncludeDomains
+    Specifies an array of domains to include in the search.
+
+    .PARAMETER IncludeDomainControllers
+    Specifies an array of domain controllers to include in the search.
+
+    .PARAMETER SkipRODC
+    Indicates whether to skip Read-Only Domain Controllers (RODC) during the search.
+
+    .PARAMETER ExtendedForestInformation
+    Specifies additional forest information to include in the search.
+
+    .NOTES
+    File Name      : Get-WinADDelegatedAccounts.ps1
+    Author         : Your Name
+    Prerequisite   : This function requires the Active Directory module.
+
+    .EXAMPLE
+    Get-WinADDelegatedAccounts -Forest "contoso.com" -IncludeDomains "child1.contoso.com", "child2.contoso.com" -ExcludeDomains "test.contoso.com" -ExtendedForestInformation $ExtendedInfo
+    Retrieves delegated accounts information from the "contoso.com" forest, including child domains "child1.contoso.com" and "child2.contoso.com", excluding the "test.contoso.com" domain, and using extended forest information.
+
+    #>
+
     [CmdletBinding()]
     Param (
         [alias('ForestName')][string] $Forest,

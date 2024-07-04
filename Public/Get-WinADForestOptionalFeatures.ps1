@@ -1,4 +1,26 @@
 ﻿function Get-WinADForestOptionalFeatures {
+    <#
+    .SYNOPSIS
+    Retrieves optional features information for a specified Active Directory forest.
+
+    .DESCRIPTION
+    Retrieves detailed information about optional features within the specified Active Directory forest.
+
+    .PARAMETER Forest
+    Specifies the target forest to retrieve optional features information from.
+
+    .PARAMETER ComputerProperties
+    Specifies an array of computer properties to check for specific features.
+
+    .PARAMETER ExtendedForestInformation
+    Specifies additional information about the forest for retrieving optional features.
+
+    .EXAMPLE
+    Get-WinADForestOptionalFeatures -Forest "example.com" -ComputerProperties @("ms-Mcs-AdmPwd", "msLAPS-Password")
+
+    .NOTES
+    This cmdlet requires the Active Directory PowerShell module to be installed and imported. It also requires appropriate permissions to query the Active Directory forest.
+    #>
     [CmdletBinding()]
     param(
         [alias('ForestName')][string] $Forest,

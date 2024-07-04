@@ -1,4 +1,43 @@
 ﻿function Find-WinADObjectDifference {
+    <#
+    .SYNOPSIS
+    Finds the differences in Active Directory objects between two sets of objects.
+
+    .DESCRIPTION
+    This function compares two sets of Active Directory objects and identifies the differences between them.
+
+    .PARAMETER Standard
+    Specifies the standard parameter set for comparing Active Directory objects.
+
+    .PARAMETER Identity
+    Specifies the identities of the Active Directory objects to compare.
+
+    .PARAMETER Forest
+    Specifies the forest to search for the Active Directory objects.
+
+    .PARAMETER ExcludeDomains
+    Specifies the domains to exclude from the comparison.
+
+    .PARAMETER IncludeDomains
+    Specifies the domains to include in the comparison.
+
+    .PARAMETER GlobalCatalog
+    Indicates whether to use the global catalog for the comparison.
+
+    .PARAMETER Properties
+    Specifies the properties to include in the comparison.
+
+    .PARAMETER AddProperties
+    Specifies additional properties to include in the comparison.
+
+    .EXAMPLE
+    Find-WinADObjectDifference -Identity 'CN=User1,OU=Users,DC=domain,DC=com', 'CN=User2,OU=Users,DC=domain,DC=com' -Forest 'domain.com' -IncludeDomains 'domain.com' -Properties 'Name', 'Description'
+
+    Compares 'User1' and 'User2' objects in the 'domain.com' forest, including only the 'Name' and 'Description' properties.
+
+    .NOTES
+    General notes
+    #>
     [CmdletBinding(DefaultParameterSetName = 'Standard')]
     param(
         [Parameter(ParameterSetName = 'Standard', Mandatory)]

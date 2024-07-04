@@ -1,4 +1,43 @@
 ﻿function New-HTMLGroupDiagramDefault {
+    <#
+    .SYNOPSIS
+    Creates a new HTML group diagram with customizable options.
+
+    .DESCRIPTION
+    This function creates a new HTML group diagram with customizable options. It allows for displaying Active Directory groups and their members in a visual diagram format.
+
+    .PARAMETER ADGroup
+    Specifies an array of Active Directory group objects to be displayed in the diagram.
+
+    .PARAMETER HideAppliesTo
+    Specifies whether to hide groups based on their membership type. Valid values are 'Default', 'Hierarchical', or 'Both'. Default is 'Both'.
+
+    .PARAMETER HideComputers
+    Indicates whether to hide computer objects in the diagram.
+
+    .PARAMETER HideUsers
+    Indicates whether to hide user objects in the diagram.
+
+    .PARAMETER HideOther
+    Indicates whether to hide other types of objects in the diagram.
+
+    .PARAMETER DataTableID
+    Specifies the ID of the data table associated with the diagram.
+
+    .PARAMETER ColumnID
+    Specifies the ID of the column associated with the diagram.
+
+    .PARAMETER Online
+    Indicates whether to display user nodes as online or offline.
+
+    .EXAMPLE
+    New-HTMLGroupDiagramDefault -ADGroup $ADGroupArray -HideAppliesTo 'Default' -HideComputers -DataTableID 'DataTable1' -ColumnID 1 -Online
+    Creates a new HTML group diagram displaying the specified AD groups with default settings, hiding computers, showing online users, and associating with a data table.
+
+    .NOTES
+    Author: Your Name
+    Date: Current Date
+    #>
     [cmdletBinding()]
     param(
         [Array] $ADGroup,

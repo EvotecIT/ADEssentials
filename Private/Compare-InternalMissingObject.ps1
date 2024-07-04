@@ -1,4 +1,33 @@
 ﻿function Compare-InternalMissingObject {
+    <#
+    .SYNOPSIS
+    Compares internal missing objects between domains.
+
+    .DESCRIPTION
+    This function compares internal missing objects between domains based on the provided ForestInformation, server, source domain, target domains, and limit per domain.
+
+    .PARAMETER ForestInformation
+    Specifies the forest information containing domain controllers.
+
+    .PARAMETER Server
+    Specifies the server to retrieve objects from.
+
+    .PARAMETER SourceDomain
+    Specifies the source domain to compare objects from.
+
+    .PARAMETER TargetDomain
+    Specifies the target domains to compare against.
+
+    .PARAMETER LimitPerDomain
+    Specifies the limit of objects to compare per domain.
+
+    .EXAMPLE
+    Compare-InternalMissingObject -ForestInformation $ForestInfo -Server "Server01" -SourceDomain "DomainA" -TargetDomain @("DomainB", "DomainC") -LimitPerDomain 100
+    Compares internal missing objects between DomainA and DomainB, DomainC on Server01 with a limit of 100 objects per domain.
+
+    .NOTES
+    Ensure that the necessary permissions are in place to retrieve objects from the server.
+    #>
     [CmdletBinding()]
     param(
         [System.Collections.IDictionary] $ForestInformation,

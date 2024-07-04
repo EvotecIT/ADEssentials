@@ -1,4 +1,40 @@
 ﻿function Get-WinADDnsInformation {
+    <#
+    .SYNOPSIS
+    Retrieves DNS information for specified forest and domains.
+
+    .DESCRIPTION
+    This function retrieves DNS information for the specified forest and domains. It gathers various DNS server details such as cache, client subnets, diagnostics, directory partitions, DS settings, EDNS, forwarders, global name zones, global query block lists, recursion settings, recursion scopes, response rate limiting, root hints, scavenging details, server settings, virtualization instance, and more.
+
+    .PARAMETER Forest
+    Specifies the name of the forest to retrieve DNS information from.
+
+    .PARAMETER ExcludeDomains
+    Specifies an array of domains to exclude from retrieving DNS information.
+
+    .PARAMETER ExcludeDomainControllers
+    Specifies an array of domain controllers to exclude from retrieving DNS information.
+
+    .PARAMETER IncludeDomains
+    Specifies an array of domains to include for retrieving DNS information.
+
+    .PARAMETER IncludeDomainControllers
+    Specifies an array of domain controllers to include for retrieving DNS information.
+
+    .PARAMETER Splitter
+    Specifies the delimiter to use for joining IP addresses.
+
+    .PARAMETER ExtendedForestInformation
+    Provides additional extended forest information to speed up processing.
+
+    .EXAMPLE
+    Get-WinADDnsInformation -Forest "example.com" -IncludeDomains "domain1.com", "domain2.com" -Splitter ", " -ExtendedForestInformation $ExtendedForestInformation
+
+    Retrieves DNS information for the "example.com" forest, including "domain1.com" and "domain2.com" domains, using ", " as the splitter for IP addresses, and with extended forest information.
+
+    .NOTES
+    This cmdlet requires the Active Directory PowerShell module to be installed and imported. It also requires appropriate permissions to query the Active Directory DNS servers.
+    #>
     [CmdLetBinding()]
     param(
         [alias('ForestName')][string] $Forest,

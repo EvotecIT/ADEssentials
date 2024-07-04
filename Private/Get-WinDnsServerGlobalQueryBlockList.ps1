@@ -1,4 +1,28 @@
 ﻿function Get-WinDnsServerGlobalQueryBlockList {
+    <#
+    .SYNOPSIS
+    Retrieves the global query block list from DNS servers.
+
+    .DESCRIPTION
+    This function retrieves the global query block list from DNS servers specified by the ComputerName parameter.
+
+    .PARAMETER ComputerName
+    Specifies the DNS server(s) from which to retrieve the global query block list.
+
+    .PARAMETER Domain
+    Specifies the domain to query for DNS servers. Defaults to the current user's DNS domain.
+
+    .PARAMETER Formatted
+    Indicates whether the output should be formatted.
+
+    .PARAMETER Splitter
+    Specifies the delimiter to use when formatting the output list.
+
+    .EXAMPLE
+    Get-WinDnsServerGlobalQueryBlockList -ComputerName "dns-server1", "dns-server2" -Formatted -Splitter ";"
+    Retrieves the global query block list from "dns-server1" and "dns-server2" and formats the output with ";" as the delimiter.
+
+    #>
     [CmdLetBinding()]
     param(
         [string[]] $ComputerName,

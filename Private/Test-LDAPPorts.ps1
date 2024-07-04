@@ -1,31 +1,35 @@
 ﻿function Test-LDAPPorts {
     <#
     .SYNOPSIS
-    Short description
+    Tests the connectivity to an LDAP server using the specified parameters.
 
     .DESCRIPTION
-    Long description
+    This function tests the connectivity to an LDAP server by attempting to establish a connection using the provided server name, port, and optional credentials.
 
     .PARAMETER ServerName
-    Parameter description
+    Specifies the name of the LDAP server to test connectivity.
 
     .PARAMETER Port
-    Parameter description
+    Specifies the port number on the LDAP server to test connectivity.
 
     .PARAMETER Credential
-    Parameter description
+    Specifies the credentials to use for authentication when testing the LDAP server. Optional.
 
     .PARAMETER Identity
-    User to search for using LDAP query by objectGUID, objectSID, SamAccountName, UserPrincipalName, Name or DistinguishedName
+    Specifies the user to search for using an LDAP query by objectGUID, objectSID, SamAccountName, UserPrincipalName, Name, or DistinguishedName.
 
     .EXAMPLE
-    Test-LDAPPorts -ServerName 'SomeServer' -port 3269 -Credential (Get-Credential)
+    Test-LDAPPorts -ServerName 'SomeServer' -Port 3269 -Credential (Get-Credential)
+
+    Tests the connectivity to the LDAP server 'SomeServer' on port 3269 using provided credentials.
 
     .EXAMPLE
-    Test-LDAPPorts -ServerName 'SomeServer' -port 3269
+    Test-LDAPPorts -ServerName 'SomeServer' -Port 3269
+
+    Tests the connectivity to the LDAP server 'SomeServer' on port 3269 without specifying credentials.
 
     .NOTES
-    General notes
+    Ensure that the necessary permissions and network access are in place to perform LDAP server connectivity testing.
     #>
     [CmdletBinding()]
     param(

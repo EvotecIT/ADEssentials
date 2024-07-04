@@ -1,4 +1,23 @@
 ﻿function Convert-TrustForestTrustInfo {
+    <#
+    .SYNOPSIS
+    Converts the binary data of forest trust information into a readable format.
+
+    .DESCRIPTION
+    This function takes the binary data of forest trust information and converts it into a readable format, providing details about the trust status, domain names, SIDs, and creation timestamps.
+
+    .PARAMETER msDSTrustForestTrustInfo
+    The binary data containing forest trust information.
+
+    .EXAMPLE
+    Convert-TrustForestTrustInfo -msDSTrustForestTrustInfo $binaryData
+    Converts the binary forest trust information into a readable format.
+
+    .NOTES
+    Author: Your Name
+    Date: Current Date
+    Version: 1.0
+    #>
     [CmdletBinding()]
     param(
         [byte[]] $msDSTrustForestTrustInfo
@@ -9,10 +28,10 @@
         'LsaTlnDisabledNew'      = 'Not yet enabled'
         'LsaTlnDisabledAdmin'    = 'Disabled by administrator'
         'LsaTlnDisabledConflict' = 'Disabled due to a conflict with another trusted domain'
-        'LsaSidDisabledAdmin'    = 'Disabled for SID, NetBIOS, and DNS name–based matches by the administrator'
-        'LsaSidDisabledConflict' = 'Disabled for SID, NetBIOS, and DNS name–based matches due to a SID or DNS name–based conflict with another trusted domain'
-        'LsaNBDisabledAdmin'     = 'Disabled for NetBIOS name–based matches by the administrator'
-        'LsaNBDisabledConflict'  = 'Disabled for NetBIOS name–based matches due to a NetBIOS domain name conflict with another trusted domain'
+        'LsaSidDisabledAdmin'    = 'Disabled for SID, NetBIOS, and DNS name-based matches by the administrator'
+        'LsaSidDisabledConflict' = 'Disabled for SID, NetBIOS, and DNS name-based matches due to a SID or DNS name-based conflict with another trusted domain'
+        'LsaNBDisabledAdmin'     = 'Disabled for NetBIOS name-based matches by the administrator'
+        'LsaNBDisabledConflict'  = 'Disabled for NetBIOS name-based matches due to a NetBIOS domain name conflict with another trusted domain'
     }
 
     if ($msDSTrustForestTrustInfo) {
