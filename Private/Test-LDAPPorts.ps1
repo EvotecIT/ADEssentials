@@ -85,7 +85,7 @@
                     $Searcher = [System.DirectoryServices.DirectorySearcher]$Connection
                     $Searcher.Filter = "(|(DistinguishedName=$Identity)(Name=$Identity)(SamAccountName=$Identity)(UserPrincipalName=$Identity)(objectGUID=$Identity)(objectSid=$Identity))"
                     $SearchResult = $Searcher.FindOne()
-                    $SearchResult
+                    #$SearchResult
 
                     if ($SearchResult) {
                         $UserFound = $true
@@ -96,7 +96,7 @@
                     $ReturnData['Identity'] = $Identity
                     $ReturnData['IdentityStatus'] = $UserFound
                     $ReturnData['IdentityData'] = $SearchResult
-                    $ReturnData['IdentityErrorMessage'] = ""
+                    $ReturnData['IdentityErrorMessage'] = if ($UserFound) { '' } else { "Connection succeeded, but user not found" }
 
                     $Connection.Close()
                 } catch {

@@ -47,7 +47,10 @@
         [switch] $HideOther,
         [string] $DataTableID,
         [int] $ColumnID,
-        [switch] $Online
+        [switch] $Online,
+        [switch] $EnableDiagramFiltering,
+        [switch] $EnableDiagramFilteringButton,
+        [int] $DiagramFilteringMinimumCharacters = 3
     )
     New-HTMLDiagram -Height 'calc(100vh - 200px)' {
         #if ($DataTableID) {
@@ -114,5 +117,5 @@
                 }
             }
         }
-    }
+    } -EnableFiltering:$EnableDiagramFiltering.IsPresent -MinimumFilteringChars $DiagramFilteringMinimumCharacters -EnableFilteringButton:$EnableDiagramFilteringButton.IsPresent
 }

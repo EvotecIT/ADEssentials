@@ -84,36 +84,32 @@
             $RetryCount = $ScriptRetryCount
             Do {
                 $GlobalCatalogNonSSL = Test-LDAPPorts @testLDAPPortsSplat
-                if ($GlobalCatalogNonSSL.Status -eq $false) {
-                    $RetryCount--
+                if ($GlobalCatalogNonSSL.Status -eq $false -or $GlobalCatalogNonSSL.IdentityStatus -eq $false) {
                     if ($RetryCount -le 0) {
                         break
                     }
+                    $RetryCount--
                 }
-            } until ($GlobalCatalogNonSSL.Status -eq $true)
+            } until ($GlobalCatalogNonSSL.Status -eq $true -and ($GlobalCatalogNonSSL.IdentityStatus -eq $true -or $null -eq $GlobalCatalogNonSSL.IdentityStatus))
             $RetryCountList.Add($ScriptRetryCount - $RetryCount)
-            #$GlobalCatalogNonSSL = Test-LDAPPorts @testLDAPPortsSplat
             # # Test GC LDAPS Port
             if ($ServerName -notlike '*.*') {
                 # querying SSL won't work for non-fqdn, we check if after all our checks it's string with dot.
                 $GlobalCatalogSSL = [PSCustomObject] @{ Status = $false; ErrorMessage = 'No FQDN' }
             } else {
-
                 $testLDAPPortsSplat['Port'] = $GCPortLDAPSSL
                 # Reset RetryCount
                 $RetryCount = $ScriptRetryCount
                 Do {
                     $GlobalCatalogSSL = Test-LDAPPorts @testLDAPPortsSplat
-                    if ($GlobalCatalogSSL.Status -eq $false) {
-                        $RetryCount--
+                    if ($GlobalCatalogSSL.Status -eq $false -or $GlobalCatalogSSL.IdentityStatus -eq $false) {
                         if ($RetryCount -le 0) {
                             break
                         }
+                        $RetryCount--
                     }
-                } until ($GlobalCatalogSSL.Status -eq $true)
+                } until ($GlobalCatalogSSL.Status -eq $true -and ($GlobalCatalogSSL.IdentityStatus -eq $true -or $null -eq $GlobalCatalogSSL.IdentityStatus))
                 $RetryCountList.Add($ScriptRetryCount - $RetryCount)
-                #$GlobalCatalogSSL = Test-LDAPPorts @testLDAPPortsSplat
-
             }
         } else {
             $GlobalCatalogSSL = [PSCustomObject] @{ Status = $null; ErrorMessage = 'Not Global Catalog' }
@@ -129,16 +125,16 @@
     $RetryCount = $ScriptRetryCount
     Do {
         $ConnectionLDAP = Test-LDAPPorts @testLDAPPortsSplat
-        if ($ConnectionLDAP.Status -eq $false) {
+        if ($ConnectionLDAP.Status -eq $false -or $ConnectionLDAP.IdentityStatus -eq $false) {
             $RetryCount--
             if ($RetryCount -le 0) {
                 break
             }
         }
-    } until ($ConnectionLDAP.Status -eq $true)
+    } until ($ConnectionLDAP.Status -eq $true -and ($ConnectionLDAP.IdentityStatus -eq $true -or $null -eq $ConnectionLDAP.IdentityStatus))
     $RetryCountList.Add($ScriptRetryCount - $RetryCount)
-    #$ConnectionLDAP = Test-LDAPPorts @testLDAPPortsSplat
 
+    $RetryCount = $ScriptRetryCount
     if ($ServerName -notlike '*.*') {
         # querying SSL won't work for non-fqdn, we check if after all our checks it's string with dot.
         $ConnectionLDAPS = [PSCustomObject] @{ Status = $false; ErrorMessage = 'No FQDN' }
@@ -146,15 +142,14 @@
         $testLDAPPortsSplat['Port'] = $PortLDAPS
         Do {
             $ConnectionLDAPS = Test-LDAPPorts @testLDAPPortsSplat
-            if ($ConnectionLDAPS.Status -eq $false) {
-                $RetryCount--
+            if ($ConnectionLDAPS.Status -eq $false -or $ConnectionLDAPS.IdentityStatus -eq $false) {
                 if ($RetryCount -le 0) {
                     break
                 }
+                $RetryCount--
             }
-        } until ($ConnectionLDAPS.Status -eq $true)
+        } until ($ConnectionLDAPS.Status -eq $true -and ($ConnectionLDAPS.IdentityStatus -eq $true -or $null -eq $ConnectionLDAPS.IdentityStatus))
         $RetryCountList.Add($ScriptRetryCount - $RetryCount)
-        # $ConnectionLDAPS = Test-LDAPPorts @testLDAPPortsSplat
     }
 
     $PortsThatWork = @(
@@ -177,6 +172,7 @@
         $ConnectionLDAP.IdentityStatus
         $ConnectionLDAPS.IdentityStatus
     )
+
     if ($ListIdentityStatus -contains $false) {
         $IsIdentical = $false
     } else {
@@ -196,10 +192,10 @@
         Do {
             $Certificate = Test-LDAPCertificate @testLDAPCertificateSplat
             if ($Certificate.State -eq $false) {
-                $RetryCount--
                 if ($RetryCount -le 0) {
                     break
                 }
+                $RetryCount--
             }
         } until ($Certificate.State -eq $true)
         $RetryCountList.Add($ScriptRetryCount - $RetryCount)
@@ -212,10 +208,10 @@
                 Do {
                     $CertificateGC = Test-LDAPCertificate @testLDAPCertificateSplat
                     if ($CertificateGC.State -eq $false) {
-                        $RetryCount--
                         if ($RetryCount -le 0) {
                             break
                         }
+                        $RetryCount--
                     }
                 } until ($CertificateGC.State -eq $true)
                 $RetryCountList.Add($ScriptRetryCount - $RetryCount)
@@ -305,6 +301,8 @@
             OperatingSystem        = $Advanced.OperatingSystem
             IPV4Address            = $Advanced.IPV4Address
             IPV6Address            = $Advanced.IPV6Address
+
+            ErrorMessage           = $null
             RetryCount             = $RetryCountList -join ','
         }
     }
@@ -332,14 +330,35 @@
         $Output['HashStrength'] = $Certificate['HashStrength']
         $Output['KeyExchangeAlgorithm'] = $Certificate['KeyExchangeAlgorithm']
         $Output['ExchangeStrength'] = $Certificate['ExchangeStrength']
-        $Output['ErrorMessage'] = $Certificate['ErrorMessage']
+        # $Output['ErrorMessage'] = $Certificate['ErrorMessage']
     } else {
         $Output.Remove('LDAPSBind')
         $Output.Remove('GlobalCatalogLDAPSBind')
     }
+
+    $GlobalErrorMessage = @(
+        if ($GlobalCatalogNonSSL.ErrorMessage) { $GlobalCatalogNonSSL.ErrorMessage }
+        if ($GlobalCatalogSSL.ErrorMessage) { $GlobalCatalogSSL.ErrorMessage }
+        if ($ConnectionLDAP.ErrorMessage) { $ConnectionLDAP.ErrorMessage }
+        if ($ConnectionLDAPS.ErrorMessage) { $ConnectionLDAPS.ErrorMessage }
+        if ($Certificate.ErrorMessage) { $Certificate.ErrorMessage }
+        if ($CertificateGC.ErrorMessage) { $CertificateGC.ErrorMessage }
+    )
+    if ($GlobalErrorMessage.Count -gt 0) {
+        $Output['ErrorMessage'] = ($GlobalErrorMessage | Sort-Object -Unique) -join ', '
+    }
+
     if ($Identity) {
         $Output['IdentityData'] = $ConnectionLDAP.IdentityData
-        $Output['IdentityErrorMessage'] = $ConnectionLDAP.IdentityErrorMessage
+        $IdentityErrorMessages = @(
+            if ($GlobalCatalogNonSSL.IdentityErrorMessage) { $GlobalCatalogNonSSL.IdentityErrorMessage }
+            if ($GlobalCatalogSSL.IdentityErrorMessage) { $GlobalCatalogSSL.IdentityErrorMessage }
+            if ($ConnectionLDAP.IdentityErrorMessage) { $ConnectionLDAP.IdentityErrorMessage }
+            if ($ConnectionLDAPS.IdentityErrorMessage) { $ConnectionLDAPS.IdentityErrorMessage }
+        )
+        if ($IdentityErrorMessages.Count -gt 0) {
+            $Output['IdentityErrorMessage'] = ($IdentityErrorMessages | Sort-Object -Unique) -join ', '
+        }
     } else {
         $Output.Remove('Identity')
         $Output.Remove('IdentityStatus')

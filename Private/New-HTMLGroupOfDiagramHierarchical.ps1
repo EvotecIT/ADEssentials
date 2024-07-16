@@ -39,7 +39,10 @@
         [switch] $HideComputers,
         [switch] $HideUsers,
         [switch] $HideOther,
-        [switch] $Online
+        [switch] $Online,
+        [switch] $EnableDiagramFiltering,
+        [switch] $EnableDiagramFilteringButton,
+        [int] $DiagramFilteringMinimumCharacters = 3
     )
     New-HTMLDiagram -Height 'calc(100vh - 200px)' {
         New-DiagramOptionsLayout -HierarchicalEnabled $true #-HierarchicalDirection FromLeftToRight #-HierarchicalSortMethod directed
@@ -104,5 +107,5 @@
                 }
             }
         }
-    }
+    } -EnableFiltering:$EnableDiagramFiltering.IsPresent -MinimumFilteringChars $DiagramFilteringMinimumCharacters -EnableFilteringButton:$EnableDiagramFilteringButton.IsPresent
 }
