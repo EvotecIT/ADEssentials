@@ -43,6 +43,18 @@
     .PARAMETER Summary
     Adds additional tab with all groups together on two diagrams
 
+    .PARAMETER EnableDiagramFiltering
+    Enables search in diagrams. It's useful when there are many groups and it's hard to find the one you are looking for.
+
+    .PARAMETER DiagramFilteringMinimumCharacters
+    Minimum characters to start search in diagrams. Default is 3.
+
+    .PARAMETER EnableDiagramFilteringButton
+    Adds button to enable/disable filtering in diagrams. It's extension to EnableDiagramFiltering, when you prefer button over automatic filtering.
+
+    .PARAMETER ScrollX
+    Adds horizontal scroll to the table. Useful when there are many columns.
+
     .EXAMPLE
     Show-WinADGroupCritical
 
@@ -92,7 +104,11 @@
         [switch] $DisableBuiltinConditions,
         [switch] $AdditionalStatistics,
         [switch] $SkipDiagram,
-        [switch] $Summary
+        [switch] $Summary,
+        [switch] $EnableDiagramFiltering,
+        [switch] $EnableDiagramFilteringButton,
+        [int] $DiagramFilteringMinimumCharacters = 3,
+        [switch] $ScrollX
     )
 
     $ForestInformation = Get-WinADForestDetails -Extended
@@ -139,7 +155,7 @@
         }
     }
     if ($ListGroups.Count -gt 0) {
-        Show-WinADGroupMember -Identity $ListGroups -HideHTML:$HideHTML.IsPresent -FilePath $FilePath -DisableBuiltinConditions:$DisableBuiltinConditions.IsPresent -Online:$Online.IsPresent -HideUsers:$HideUsers.IsPresent -HideComputers:$HideComputers.IsPresent -AdditionalStatistics:$AdditionalStatistics.IsPresent -Summary:$Summary.IsPresent -SkipDiagram:$SkipDiagram.IsPresent
+        Show-WinADGroupMember -Identity $ListGroups -HideHTML:$HideHTML.IsPresent -FilePath $FilePath -DisableBuiltinConditions:$DisableBuiltinConditions.IsPresent -Online:$Online.IsPresent -HideUsers:$HideUsers.IsPresent -HideComputers:$HideComputers.IsPresent -AdditionalStatistics:$AdditionalStatistics.IsPresent -Summary:$Summary.IsPresent -SkipDiagram:$SkipDiagram.IsPresent -EnableDiagramFiltering:$EnableDiagramFiltering.IsPresent -DiagramFilteringMinimumCharacters $DiagramFilteringMinimumCharacters -ScrollX:$ScrollX.IsPresent -EnableDiagramFilteringButton:$EnableDiagramFilteringButton.IsPresent
     } else {
         Write-Warning -Message "Show-WinADGroupCritical - Requested group(s) not found."
     }
