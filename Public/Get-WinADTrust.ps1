@@ -1,28 +1,29 @@
 ﻿function Get-WinADTrust {
     <#
     .SYNOPSIS
-    Short description
+    Retrieves trust relationships within an Active Directory forest.
 
     .DESCRIPTION
-    Long description
+    This cmdlet retrieves and displays trust relationships within an Active Directory forest. It can be used to identify the trust relationships between domains and forests, including the type of trust, direction, and other properties. The cmdlet can also recursively explore trust relationships across multiple forests.
 
     .PARAMETER Forest
-    Target different Forest, by default current forest is used
+    Specifies the target forest to retrieve trust relationships from. If not specified, the current forest is used.
 
     .PARAMETER Recursive
-    Parameter description
+    Indicates that the cmdlet should recursively explore trust relationships across multiple forests.
 
     .PARAMETER Nesting
-    Parameter description
+    This parameter is used internally to track the nesting level of recursive calls. It should not be used directly.
 
     .PARAMETER UniqueTrusts
-    Parameter description
+    This parameter is used internally to keep track of unique trust relationships encountered during recursive exploration. It should not be used directly.
 
     .EXAMPLE
-    An example
+    Get-WinADTrust -Recursive
+    This example retrieves all trust relationships within the current forest and recursively explores trust relationships across multiple forests.
 
     .NOTES
-    General notes
+    This cmdlet is designed to provide detailed information about trust relationships within an Active Directory environment. It can be used for auditing, troubleshooting, and planning purposes.
     #>
     [alias('Get-WinADTrusts')]
     [cmdletBinding()]

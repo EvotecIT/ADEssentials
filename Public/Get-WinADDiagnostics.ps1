@@ -1,37 +1,37 @@
 ﻿function Get-WinADDiagnostics {
     <#
     .SYNOPSIS
-    Short description
+    Retrieves diagnostic information for Active Directory.
 
     .DESCRIPTION
-    Long description
+    This function retrieves diagnostic information for Active Directory based on specified parameters.
 
     .PARAMETER Forest
-    Target different Forest, by default current forest is used
+    Specifies the target forest to retrieve diagnostic information from. By default, the current forest is used.
 
     .PARAMETER ExcludeDomains
-    Exclude domain from search, by default whole forest is scanned
+    Specifies the domains to exclude from the search. By default, the entire forest is scanned.
 
     .PARAMETER IncludeDomains
-    Include only specific domains, by default whole forest is scanned
+    Specifies the specific domains to include in the search. By default, the entire forest is scanned.
 
     .PARAMETER ExcludeDomainControllers
-    Exclude specific domain controllers, by default there are no exclusions, as long as VerifyDomainControllers switch is enabled. Otherwise this parameter is ignored.
+    Specifies the domain controllers to exclude. By default, no exclusions are applied unless the VerifyDomainControllers switch is enabled.
 
     .PARAMETER IncludeDomainControllers
-    Include only specific domain controllers, by default all domain controllers are included, as long as VerifyDomainControllers switch is enabled. Otherwise this parameter is ignored.
+    Specifies the domain controllers to include. By default, all domain controllers are included unless the VerifyDomainControllers switch is enabled.
 
     .PARAMETER SkipRODC
-    Skip Read-Only Domain Controllers. By default all domain controllers are included.
+    Skips Read-Only Domain Controllers. By default, all domain controllers are included.
 
     .PARAMETER ExtendedForestInformation
-    Ability to provide Forest Information from another command to speed up processing
+    Allows providing Forest Information from another command to speed up processing.
 
     .EXAMPLE
-    An example
+    Get-WinADDiagnostics -Forest "example.com" -IncludeDomains "domain1", "domain2" -ExcludeDomains "domain3" -SkipRODC
 
     .NOTES
-    General notes
+    This function is designed to provide diagnostic information for troubleshooting Active Directory issues.
     #>
     [CmdletBinding()]
     param(

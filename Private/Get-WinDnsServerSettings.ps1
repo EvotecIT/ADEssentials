@@ -1,4 +1,19 @@
 ﻿function Get-WinDnsServerSettings {
+    <#
+    .SYNOPSIS
+    Retrieves DNS server settings for a specified computer.
+
+    .DESCRIPTION
+    This function retrieves various DNS server settings for a specified computer.
+
+    .PARAMETER ComputerName
+    Specifies the name of the computer for which to retrieve DNS server settings.
+
+    .EXAMPLE
+    Get-WinDnsServerSettings -ComputerName "AD1.ad.evotec.xyz"
+    Retrieves DNS server settings for the computer "AD1.ad.evotec.xyz".
+
+    #>
     [CmdLetBinding()]
     param(
         [string] $ComputerName

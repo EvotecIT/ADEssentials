@@ -1,4 +1,23 @@
 ﻿function Show-WinADObjectDifference {
+    <#
+    .SYNOPSIS
+    This function shows the differences between Active Directory objects.
+    .DESCRIPTION
+    The function takes an array of Identity, a switch for Global Catalog, an array of Properties, a string for FilePath, and a switch to hide HTML.
+    It then generates an HTML report using the Find-WinADObjectDifference function and displays it.
+    .PARAMETER Identity
+    An array of Identity to compare.
+    .PARAMETER GlobalCatalog
+    A switch to specify if the comparison should be done in the Global Catalog.
+    .PARAMETER Properties
+    An array of Properties to compare.
+    .PARAMETER FilePath
+    A string specifying the file path to save the HTML report.
+    .PARAMETER HideHTML
+    A switch to hide the HTML report.
+    .EXAMPLE
+    Show-WinADObjectDifference -Identity "user1", "user2" -GlobalCatalog -Properties "Name", "Email" -FilePath "C:\ADReport.html" -HideHTML
+    #>
     [CmdletBinding()]
     param(
         [Array] $Identity,

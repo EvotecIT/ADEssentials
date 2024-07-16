@@ -1,4 +1,30 @@
 ﻿function Get-WinADKerberosAccount {
+    <#
+    .SYNOPSIS
+    Retrieves Kerberos account information for Active Directory.
+
+    .DESCRIPTION
+    Retrieves Kerberos account information for Active Directory based on specified parameters.
+
+    .PARAMETER Forest
+    Specifies the target forest to retrieve Kerberos account information from.
+
+    .PARAMETER ExcludeDomains
+    Specifies an array of domain names to exclude from the search.
+
+    .PARAMETER IncludeDomains
+    Specifies an array of domain names to include in the search.
+
+    .PARAMETER IncludeCriticalAccounts
+    Indicates whether to include critical Kerberos accounts in the retrieval.
+
+    .EXAMPLE
+    Get-WinADKerberosAccount -Forest "example.com" -IncludeDomains "example.com" -IncludeCriticalAccounts
+    This example retrieves Kerberos account information for the "example.com" forest, including only the specified domains and critical accounts.
+
+    .NOTES
+    This cmdlet requires the Active Directory PowerShell module to be installed and imported. It also requires appropriate permissions to query the Active Directory forest.
+    #>
     [CmdletBinding()]
     param(
         [alias('ForestName')][string] $Forest,

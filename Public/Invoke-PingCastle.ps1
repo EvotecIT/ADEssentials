@@ -1,4 +1,25 @@
 ﻿function Invoke-PingCastle {
+    <#
+    .SYNOPSIS
+    Executes PingCastle to perform a health check on specified domains and saves the reports.
+
+    .DESCRIPTION
+    This cmdlet runs PingCastle to perform a health check on the specified domains and saves the generated reports to a specified location. It supports the option to include specific domains for the health check.
+
+    .PARAMETER FolderPath
+    Specifies the path to the folder containing the PingCastle executable.
+
+    .PARAMETER ReportPath
+    Specifies the path where the generated reports will be saved.
+
+    .PARAMETER IncludeDomain
+    Specifies an array of domain names to include in the health check. If not specified, all domains will be checked.
+
+    .EXAMPLE
+    Invoke-PingCastle -FolderPath "C:\PingCastle" -ReportPath "C:\Reports" -IncludeDomain "example.local", "subdomain.example.local"
+
+    This example runs PingCastle to perform a health check on the "example.local" and "subdomain.example.local" domains and saves the reports to "C:\Reports".
+    #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string] $FolderPath,

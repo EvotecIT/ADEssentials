@@ -1,4 +1,36 @@
 ﻿function Show-WinADKerberosAccount {
+    <#
+    .SYNOPSIS
+    This function generates an HTML report for Kerberos accounts in Active Directory.
+
+    .DESCRIPTION
+    The Show-WinADKerberosAccount function generates an HTML report for Kerberos accounts in Active Directory. 
+    It includes information about the account, domain controllers, global catalogs, and critical accounts.
+
+    .PARAMETER Forest
+    The name of the forest to generate the report for.
+
+    .PARAMETER ExcludeDomains
+    An array of domain names to exclude from the report.
+
+    .PARAMETER IncludeDomains
+    An array of domain names to include in the report.
+
+    .PARAMETER Online
+    A switch parameter to indicate if the report should be generated online.
+
+    .PARAMETER HideHTML
+    A switch parameter to indicate if the HTML report should be hidden.
+
+    .PARAMETER FilePath
+    The path to save the HTML report.
+
+    .PARAMETER PassThru
+    A switch parameter to indicate if the function should return the account data.
+
+    .EXAMPLE
+    Show-WinADKerberosAccount -Forest 'example.com' -ExcludeDomains @('test.com') -IncludeDomains @('example.com') -Online -HideHTML -FilePath 'C:\Reports\KerberosReport.html' -PassThru
+    #>
     [CmdletBinding()]
     param(
         [alias('ForestName')][string] $Forest,

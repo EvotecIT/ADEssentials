@@ -1,4 +1,26 @@
 ﻿function Test-ADSiteLinks {
+    <#
+    .SYNOPSIS
+    Tests the Active Directory site links for a specified forest.
+
+    .DESCRIPTION
+    This cmdlet queries the specified forest to check the status of its site links. It returns a custom object with details about the site links, their status, and any errors encountered during the query.
+
+    .PARAMETER Forest
+    The name of the forest to query. If not specified, the current user's forest is used.
+
+    .PARAMETER Splitter
+    The character to use for splitting the site links. If not specified, the default is used.
+
+    .PARAMETER ExtendedForestInformation
+    Ability to provide Forest Information from another command to speed up processing.
+
+    .EXAMPLE
+    Test-ADSiteLinks -Forest "example.com"
+
+    .NOTES
+    This cmdlet is useful for monitoring the status of site links in a forest.
+    #>
     [cmdletBinding()]
     param(
         [alias('ForestName')][string] $Forest,

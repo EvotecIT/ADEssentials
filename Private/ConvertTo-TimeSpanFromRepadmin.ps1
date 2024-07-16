@@ -1,4 +1,23 @@
 ﻿function ConvertTo-TimeSpanFromRepadmin {
+    <#
+    .SYNOPSIS
+    Converts a string representation of time from Repadmin into a TimeSpan object.
+
+    .DESCRIPTION
+    This function takes a string representation of time from Repadmin and converts it into a TimeSpan object.
+
+    .PARAMETER timeString
+    The string representation of time from Repadmin to convert.
+
+    .EXAMPLE
+    ConvertTo-TimeSpanFromRepadmin -timeString "3d.5h:30m:15s"
+    Converts the string representation of time from Repadmin into a TimeSpan object.
+
+    .NOTES
+    Author: Your Name
+    Date: Current Date
+    Version: 1.0
+    #>
     [cmdletBinding()]
     param (
         [Parameter(Mandatory)][string]$timeString

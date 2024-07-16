@@ -1,4 +1,30 @@
 function Get-WinADForestControllerInformation {
+    <#
+    .SYNOPSIS
+    Retrieves information about domain controllers in a specified Active Directory forest.
+
+    .DESCRIPTION
+    This function retrieves detailed information about domain controllers within the specified Active Directory forest.
+    It queries the forest for domain controller properties such as PrimaryGroupID, OperatingSystem, LastLogonDate, etc.
+
+    .PARAMETER Forest
+    Specifies the target forest to retrieve domain controller information from.
+
+    .PARAMETER ExcludeDomains
+    Specifies an array of domain names to exclude from the search.
+
+    .PARAMETER IncludeDomains
+    Specifies an array of domain names to include in the search.
+
+    .PARAMETER ExtendedForestInformation
+    Specifies additional information about the forest for retrieving domain controller details.
+
+    .EXAMPLE
+    Get-WinADForestControllerInformation -Forest "example.com" -IncludeDomains @("example.com") -ExcludeDomains @("test.com")
+
+    .NOTES
+    This cmdlet requires the Active Directory PowerShell module to be installed and imported. It also requires appropriate permissions to query the Active Directory forest.
+    #>
     [cmdletBinding()]
     param(
         [alias('ForestName')][string] $Forest,

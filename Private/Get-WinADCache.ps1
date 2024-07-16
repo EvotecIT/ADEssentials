@@ -1,4 +1,32 @@
 ﻿function Get-WinADCache {
+    <#
+    .SYNOPSIS
+    Retrieves Windows Active Directory cache information.
+
+    .DESCRIPTION
+    This function retrieves Windows Active Directory cache information based on specified parameters.
+
+    .PARAMETER ByDN
+    Specifies to retrieve AD cache information by DistinguishedName.
+
+    .PARAMETER ByNetBiosName
+    Specifies to retrieve AD cache information by NetBIOSName.
+
+    .EXAMPLE
+    Get-WinADCache -ByDN
+    Retrieves AD cache information by DistinguishedName.
+
+    .EXAMPLE
+    Get-WinADCache -ByNetBiosName
+    Retrieves AD cache information by NetBIOSName.
+
+    .NOTES
+    This cmdlet retrieves and organizes Active Directory cache information for specified parameters.
+
+    Author: Your Name
+    Date: Current Date
+    Version: 1.0
+    #>
     [alias('Get-ADCache')]
     [cmdletbinding()]
     param(

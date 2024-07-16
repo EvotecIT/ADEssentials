@@ -1,4 +1,40 @@
 ﻿function New-HTMLGroupDiagramSummary {
+    <#
+    .SYNOPSIS
+    Creates an HTML group diagram summary based on the provided Active Directory group information.
+
+    .DESCRIPTION
+    The New-HTMLGroupDiagramSummary function generates an HTML diagram summary representing the relationships between Active Directory groups and their members. It allows customization of the diagram layout and appearance based on the input parameters.
+
+    .PARAMETER ADGroup
+    Specifies an array of Active Directory group objects to be included in the diagram.
+
+    .PARAMETER HideAppliesTo
+    Specifies whether to hide specific types of objects in the diagram. Valid values are 'Default', 'Hierarchical', and 'Both'.
+
+    .PARAMETER HideComputers
+    Indicates whether to hide computer objects in the diagram.
+
+    .PARAMETER HideUsers
+    Indicates whether to hide user objects in the diagram.
+
+    .PARAMETER HideOther
+    Indicates whether to hide other types of objects in the diagram.
+
+    .PARAMETER DataTableID
+    Specifies the ID of the data table associated with the diagram.
+
+    .PARAMETER ColumnID
+    Specifies the ID of the column associated with the diagram.
+
+    .PARAMETER Online
+    Indicates whether to display online status information in the diagram.
+
+    .EXAMPLE
+    New-HTMLGroupDiagramSummary -ADGroup $ADGroupArray -HideAppliesTo 'Default' -HideComputers -Online
+    Generates an HTML group diagram summary for the specified AD groups, hiding computers and displaying only default objects with online status.
+
+    #>
     [cmdletBinding()]
     param(
         [Array] $ADGroup,

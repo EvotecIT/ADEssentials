@@ -1,4 +1,41 @@
 ﻿function Test-ADDomainController {
+    <#
+    .SYNOPSIS
+    Tests the domain controllers in a specified forest for various aspects of their functionality.
+
+    .DESCRIPTION
+    This cmdlet tests the domain controllers in a specified forest for various aspects of their functionality, including DNS resolution, LDAP connectivity, and FSMO role availability. It returns a custom object with detailed information about the domain controllers, their status, and any errors encountered during the test.
+
+    .PARAMETER Forest
+    The name of the forest to test domain controllers for. If not specified, the current user's forest is used.
+
+    .PARAMETER ExcludeDomains
+    An array of domain names to exclude from the test.
+
+    .PARAMETER ExcludeDomainControllers
+    An array of domain controller names to exclude from the test.
+
+    .PARAMETER IncludeDomains
+    An array of domain names to include in the test. If specified, only these domains will be tested.
+
+    .PARAMETER IncludeDomainControllers
+    An array of domain controller names to include in the test. If specified, only these domain controllers will be tested.
+
+    .PARAMETER SkipRODC
+    A switch to skip Read-Only Domain Controllers (RODCs) during the test.
+
+    .PARAMETER Credential
+    A PSCredential object to use for authentication when connecting to domain controllers.
+
+    .PARAMETER ExtendedForestInformation
+    A dictionary containing extended information about the forest, which can be used to speed up processing.
+
+    .EXAMPLE
+    Test-ADDomainController -Forest "example.com"
+
+    .NOTES
+    This cmdlet is useful for monitoring the health and functionality of domain controllers in a forest.
+    #>
     [CmdletBinding()]
     param(
         [alias('ForestName')][string] $Forest,

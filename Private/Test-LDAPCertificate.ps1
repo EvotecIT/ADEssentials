@@ -1,4 +1,27 @@
 ﻿function Test-LDAPCertificate {
+    <#
+    .SYNOPSIS
+    Test-LDAPCertificate function to verify LDAP certificate on a specified computer and port.
+
+    .DESCRIPTION
+    This function tests the LDAP certificate on a specified computer and port using either Basic or Kerberos authentication.
+
+    .PARAMETER Computer
+    Specifies the name of the computer to test the LDAP certificate.
+
+    .PARAMETER Port
+    Specifies the port number to test the LDAP certificate.
+
+    .PARAMETER Credential
+    Specifies the credentials to use for authentication.
+
+    .EXAMPLE
+    Test-LDAPCertificate -Computer "ldap.example.com" -Port 636 -Credential $Credential
+    Tests the LDAP certificate on the computer "ldap.example.com" using port 636 with specified credentials.
+
+    .NOTES
+    This function is based on code by ChrisDent.
+    #>
     [CmdletBinding()]
     param(
         [string] $Computer,

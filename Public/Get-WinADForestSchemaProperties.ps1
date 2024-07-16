@@ -1,4 +1,26 @@
 ﻿function Get-WinADForestSchemaProperties {
+    <#
+    .SYNOPSIS
+    Retrieves schema properties for a specified Active Directory forest.
+
+    .DESCRIPTION
+    Retrieves detailed information about schema properties within the specified Active Directory forest.
+
+    .PARAMETER Forest
+    Specifies the target forest to retrieve schema properties from.
+
+    .PARAMETER Schema
+    Specifies the type of schema properties to retrieve. Valid values are 'Computers' and 'Users'.
+
+    .PARAMETER ExtendedForestInformation
+    Specifies additional information about the forest.
+
+    .EXAMPLE
+    Get-WinADForestSchemaProperties -Forest "example.com" -Schema @('Computers', 'Users')
+
+    .NOTES
+    This cmdlet requires the Active Directory PowerShell module to be installed and imported. It also requires appropriate permissions to query the Active Directory forest.
+    #>
     [cmdletBinding()]
     param(
         [alias('ForestName')][string] $Forest,

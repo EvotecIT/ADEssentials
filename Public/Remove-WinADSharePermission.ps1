@@ -1,4 +1,28 @@
 ﻿function Remove-WinADSharePermission {
+    <#
+    .SYNOPSIS
+    Removes permissions from a specified path or recursively from all items within a specified path.
+
+    .DESCRIPTION
+    This cmdlet removes permissions from a specified path or recursively from all items within a specified path. It targets permissions of a specific type, defaulting to 'Unknown'. The cmdlet also allows for limiting the number of processing operations.
+
+    .PARAMETER Path
+    Specifies the path from which to remove permissions. This parameter is mandatory and can be a file or a directory.
+
+    .PARAMETER Type
+    Specifies the type of permissions to remove. The default value is 'Unknown'. This parameter is validated to only accept 'Unknown'.
+
+    .PARAMETER LimitProcessing
+    Specifies the maximum number of processing operations to perform. This parameter is optional.
+
+    .EXAMPLE
+    Remove-WinADSharePermission -Path 'C:\Example\Path' -Type 'Unknown' -LimitProcessing 100
+
+    This example removes 'Unknown' type permissions from 'C:\Example\Path' and all items within it, limiting the processing to 100 operations.
+
+    .NOTES
+    This cmdlet requires the Get-FilePermission and Set-Acl cmdlets to function properly.
+    #>
     [cmdletBinding(DefaultParameterSetName = 'Path', SupportsShouldProcess)]
     param(
         [Parameter(ParameterSetName = 'Path', Mandatory)][string] $Path,

@@ -1,4 +1,24 @@
 ﻿function Repair-WinADEmailAddress {
+    <#
+    .SYNOPSIS
+    Repairs and updates the email address and proxy addresses for a given Active Directory user.
+
+    .DESCRIPTION
+    This cmdlet updates the primary email address and proxy addresses for an Active Directory user. It ensures the primary email address is correctly set and adds or removes secondary email addresses as needed. It also updates the proxy addresses to include the primary email address and any additional secondary email addresses specified.
+
+    .PARAMETER ADUser
+    The Active Directory user object to update.
+
+    .PARAMETER ToEmail
+    The new primary email address to set for the user.
+
+    .PARAMETER Display
+    If specified, displays the summary of the operations performed without making any changes.
+
+    .PARAMETER AddSecondary
+    An array of secondary email addresses to add to the user's proxy addresses.
+
+    #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [Microsoft.ActiveDirectory.Management.ADAccount] $ADUser,

@@ -1,4 +1,50 @@
 ﻿function Add-PrivateACL {
+    <#
+    .SYNOPSIS
+    Adds a new access control rule to a security descriptor.
+
+    .DESCRIPTION
+    This function adds a new access control rule to a security descriptor. It allows specifying various parameters such as the ACL, principal, access rule, access control type, object type name, inherited object type name, inheritance type, and NT security descriptor.
+
+    .PARAMETER ACL
+    Specifies the ACL object to be processed.
+
+    .PARAMETER ADObject
+    Specifies the Active Directory object to which the ACL belongs.
+
+    .PARAMETER Principal
+    Specifies the principal for which the access control rule is added.
+
+    .PARAMETER AccessRule
+    Specifies the access rule to be added.
+
+    .PARAMETER AccessControlType
+    Specifies the type of access control to be added.
+
+    .PARAMETER ObjectType
+    Specifies the object type name.
+
+    .PARAMETER InheritedObjectType
+    Specifies the inherited object type name.
+
+    .PARAMETER InheritanceType
+    Specifies the inheritance type to consider.
+
+    .PARAMETER NTSecurityDescriptor
+    Specifies the NT security descriptor to be updated.
+
+    .PARAMETER ActiveDirectoryAccessRule
+    Specifies the Active Directory access rule to be added.
+
+    .EXAMPLE
+    Add-PrivateACL -ACL $ACLObject -ADObject "CN=Example,DC=Domain,DC=com" -Principal "User1" -AccessRule "Read" -AccessControlType "Allow" -ObjectType "File" -InheritedObjectType "Folder" -InheritanceType All -NTSecurityDescriptor $SecurityDescriptor -ActiveDirectoryAccessRule $ADAccessRule
+
+    Adds a new access control rule for User1 with Read access on files within folders with inheritance for all objects.
+
+    .NOTES
+    Author: Your Name
+    Date: Date
+    #>
     [cmdletBinding(SupportsShouldProcess)]
     param(
         [PSCustomObject] $ACL,

@@ -1,4 +1,22 @@
 ﻿function Get-WinADTrustObject {
+    <#
+    .SYNOPSIS
+    Retrieves trust relationship information for a specified domain in Active Directory.
+
+    .DESCRIPTION
+    This function retrieves trust relationship information for the specified domain in Active Directory. It provides details about the trust type, trust direction, trust attributes, and security identifier.
+
+    .PARAMETER Identity
+    Specifies the domain identity for which trust relationship information is to be retrieved.
+
+    .PARAMETER AsHashTable
+    Indicates whether the output should be returned as a hashtable.
+
+    .NOTES
+    Author: Your Name
+    Date: Current Date
+    Version: 1.0
+    #>
     [cmdletBinding()]
     param(
         [Parameter(Mandatory, Position = 0)][alias('Domain')][string] $Identity,

@@ -1,4 +1,29 @@
 ﻿function Get-DNSServerIP {
+    <#
+    .SYNOPSIS
+    Retrieves DNS server IP information for specified computers.
+
+    .DESCRIPTION
+    This function retrieves DNS server IP information for the specified computers. It checks if the DNS servers are in the approved list and if at least two DNS servers are configured.
+
+    .PARAMETER ComputerName
+    Specifies the names of the computers to retrieve DNS server information from.
+
+    .PARAMETER ApprovedList
+    Specifies the list of approved DNS server IP addresses.
+
+    .PARAMETER Credential
+    Specifies a credential object to use for accessing the computers.
+
+    .EXAMPLE
+    Get-DNSServerIP -ComputerName "Computer01" -ApprovedList "192.168.1.1", "192.168.1.2"
+
+    .NOTES
+    File: Get-DNSServerIP.ps1
+    Author: [Your Name]
+    Version: 1.0
+    Date: [Current Date]
+    #>
     [alias('Get-WinDNSServerIP')]
     param(
         [string[]] $ComputerName,

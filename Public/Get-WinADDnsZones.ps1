@@ -1,4 +1,21 @@
 ﻿function Get-WinADDNSZones {
+    <#
+    .SYNOPSIS
+    Retrieves DNS zone information from the Active Directory DNS server.
+
+    .DESCRIPTION
+    This function retrieves detailed information about DNS zones from the Active Directory DNS server.
+    It queries the DNS server to gather information such as zone name, type, dynamic update settings, replication scope, and other zone-related details.
+
+    .PARAMETER None
+    This cmdlet does not require any parameters.
+
+    .EXAMPLE
+    Get-WinDNSZones
+
+    .NOTES
+    This cmdlet requires the Active Directory PowerShell module to be installed and imported. It also requires appropriate permissions to query the Active Directory DNS server.
+    #>
     [alias('Get-WinDNSZones')]
     [CmdletBinding()]
     param(

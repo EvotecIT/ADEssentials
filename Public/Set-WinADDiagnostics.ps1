@@ -1,4 +1,79 @@
 ﻿function Set-WinADDiagnostics {
+    <#
+    .SYNOPSIS
+    Sets the diagnostics level for various Active Directory components on specified domain controllers.
+
+    .DESCRIPTION
+    This cmdlet sets the diagnostics level for various Active Directory components on specified domain controllers. It allows you to specify the forest name, domains, domain controllers, and diagnostics components to target. Additionally, it provides options to exclude certain domains and domain controllers, as well as skip read-only domain controllers.
+
+    .PARAMETER Forest
+    Specifies the name of the forest for which to set the diagnostics.
+
+    .PARAMETER ExcludeDomains
+    Specifies an array of domain names to exclude from the operation.
+
+    .PARAMETER ExcludeDomainControllers
+    Specifies an array of domain controller names to exclude from the operation.
+
+    .PARAMETER IncludeDomains
+    Specifies an array of domain names to include in the operation.
+
+    .PARAMETER IncludeDomainControllers
+    Specifies an array of domain controller names to include in the operation.
+
+    .PARAMETER SkipRODC
+    Specifies whether to skip read-only domain controllers.
+
+    .PARAMETER Diagnostics
+    Specifies an array of diagnostics components to set. Valid values include:
+    - Knowledge Consistency Checker (KCC)
+    - Security Events
+    - ExDS Interface Events
+    - MAPI Interface Events
+    - Replication Events
+    - Garbage Collection
+    - Internal Configuration
+    - Directory Access
+    - Internal Processing
+    - Performance Counters
+    - Initialization / Termination
+    - Service Control
+    - Name Resolution
+    - Backup
+    - Field Engineering
+    - LDAP Interface Events
+    - Setup
+    - Global Catalog
+    - Inter-site Messaging
+    - Group Caching
+    - Linked-Value Replication
+    - DS RPC Client
+    - DS RPC Server
+    - DS Schema
+    - Transformation Engine
+    - Claims-Based Access Control
+    - Netlogon
+
+    .PARAMETER Level
+    Specifies the level of diagnostics to set. Valid values include:
+    - None: Only critical events and error events are logged.
+    - Minimal: Very high-level events are recorded.
+    - Basic: More detailed information is recorded.
+    - Extensive: Detailed information, including steps performed to complete tasks, is recorded.
+    - Verbose: All events, including debug strings and configuration changes, are logged.
+    - Internal: A complete log of the service is recorded.
+
+    .PARAMETER ExtendedForestInformation
+    Specifies additional information about the forest.
+
+    .EXAMPLE
+    Set-WinADDiagnostics -Forest 'example.local' -Diagnostics 'Security Events', 'Replication Events' -Level 'Basic'
+    Sets the diagnostics level for Security Events and Replication Events to Basic on all domain controllers in the example.local forest.
+
+    .EXAMPLE
+    Set-WinADDiagnostics -Forest 'example.local' -IncludeDomainControllers 'dc1.example.local', 'dc2.example.local' -Diagnostics 'Netlogon' -Level 'Verbose'
+    Sets the diagnostics level for Netlogon to Verbose on the specified domain controllers in the example.local forest.
+    #>
     [CmdletBinding()]
     param(
         [alias('ForestName')][string] $Forest,

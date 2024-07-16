@@ -1,4 +1,38 @@
 ﻿function Get-WinADServiceAccount {
+    <#
+    .SYNOPSIS
+    Retrieves detailed information about service accounts across domains in a forest.
+
+    .DESCRIPTION
+    This cmdlet queries Active Directory for service accounts across specified domains within a forest. It provides detailed information about each account, including its properties, last logon date, password last set date, and other security-related attributes.
+
+    .PARAMETER Forest
+    Specifies the name of the forest to query. This parameter is required.
+
+    .PARAMETER ExcludeDomains
+    Specifies an array of domain names to exclude from the query.
+
+    .PARAMETER IncludeDomains
+    Specifies an array of domain names to include in the query. If not specified, all domains in the forest are queried.
+
+    .PARAMETER PerDomain
+    If specified, the cmdlet returns a hash table with domain names as keys and arrays of service account objects as values. Otherwise, it returns a flat array of service account objects.
+
+    .EXAMPLE
+    Get-WinADServiceAccount -Forest "example.local" -IncludeDomains "example.local", "child.example.local"
+
+    This example queries the "example.local" forest, including only the "example.local" and "child.example.local" domains.
+
+    .EXAMPLE
+    Get-WinADServiceAccount -Forest "example.local" -ExcludeDomains "child.example.local"
+
+    This example queries the "example.local" forest, excluding the "child.example.local" domain.
+
+    .EXAMPLE
+    Get-WinADServiceAccount -Forest "example.local" -PerDomain
+
+    This example queries the "example.local" forest and returns the results per domain.
+    #>
     [cmdletBinding()]
     param(
         [alias('ForestName')][string] $Forest,

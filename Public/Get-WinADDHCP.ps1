@@ -1,4 +1,21 @@
 ﻿function Get-WinADDHCP {
+    <#
+    .SYNOPSIS
+    Retrieves DHCP information from Active Directory forest domain controllers.
+
+    .DESCRIPTION
+    This function retrieves DHCP information from Active Directory forest domain controllers. It collects DHCP server details such as DNS name, IP address, whether it is a domain controller, read-only domain controller, global catalog, and the associated IPv4 and IPv6 addresses.
+
+    .PARAMETER None
+    No parameters are required for this function.
+
+    .EXAMPLE
+    Get-WinADDHCP
+    Retrieves DHCP information from all Active Directory forest domain controllers.
+
+    .NOTES
+    This function requires the Active Directory PowerShell module to be installed and imported. It also requires appropriate permissions to query the Active Directory DHCP servers.
+    #>
     [cmdletBinding()]
     param(
 

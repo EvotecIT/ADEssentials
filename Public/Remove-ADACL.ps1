@@ -1,43 +1,45 @@
 ﻿function Remove-ADACL {
     <#
     .SYNOPSIS
-    Short description
+    Removes an Access Control List (ACL) entry from an Active Directory object or an NTSecurityDescriptor.
 
     .DESCRIPTION
-    Long description
+    This cmdlet is designed to remove a specific ACL entry from an Active Directory object or an NTSecurityDescriptor. It allows for granular control over the removal process by specifying the object, ACL, principal, access rule, access control type, and inheritance settings. Additionally, it provides options to include or exclude specific object types and their inherited types.
 
     .PARAMETER ADObject
-    Parameter description
+    Specifies the Active Directory object from which to remove the ACL entry. This can be a single object or an array of objects.
 
     .PARAMETER ACL
-    Parameter description
+    Specifies the ACL from which to remove the entry. This parameter is mandatory when using the ACL or NTSecurityDescriptor parameter sets.
 
     .PARAMETER Principal
-    Parameter description
+    Specifies the principal (user, group, or computer) for whom the ACL entry is being removed.
 
     .PARAMETER AccessRule
-    Parameter description
+    Specifies the access rule to remove. This can be a specific right or a combination of rights.
 
     .PARAMETER AccessControlType
-    Parameter description
+    Specifies the type of access control to apply. The default is Allow.
 
     .PARAMETER IncludeObjectTypeName
-    Parameter description
+    Specifies the object types to include in the removal process.
 
     .PARAMETER IncludeInheritedObjectTypeName
-    Parameter description
+    Specifies the inherited object types to include in the removal process.
 
     .PARAMETER InheritanceType
-    Parameter description
+    Specifies the inheritance type for the ACL entry.
 
     .PARAMETER Force
-    Breaks inheritance on the ACL when the rule has IsInherited set to $true. By default it will skip inherited rules
+    Forces the removal of inherited ACL entries. By default, inherited entries are skipped.
 
     .EXAMPLE
-    An example
+    Remove-ADACL -ADObject "CN=User1,DC=example,DC=com" -Principal "CN=User2,DC=example,DC=com" -AccessRule "ReadProperty, WriteProperty" -AccessControlType Allow
+
+    This example removes the ACL entry for User2 to read and write properties on User1's object in the example.com domain.
 
     .NOTES
-    General notes
+    This cmdlet requires the Active Directory PowerShell module to be installed and imported.
     #>
     [cmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'ADObject')]
     param(

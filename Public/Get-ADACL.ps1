@@ -1,4 +1,70 @@
 ﻿function Get-ADACL {
+    <#
+    .SYNOPSIS
+    Retrieves and filters access control list (ACL) information for Active Directory objects.
+
+    .DESCRIPTION
+    This function retrieves and filters access control list (ACL) information for specified Active Directory objects. It allows for detailed filtering based on various criteria such as principal, access control type, object type, inheritance type, and more.
+
+    .PARAMETER ADObject
+    Specifies the Active Directory object or objects to retrieve ACL information from.
+
+    .PARAMETER Extended
+    Indicates whether to retrieve extended ACL information.
+
+    .PARAMETER ResolveTypes
+    Indicates whether to resolve principal types for ACL filtering.
+
+    .PARAMETER Principal
+    Specifies the principal to filter ACL information for.
+
+    .PARAMETER Inherited
+    Indicates to include only inherited ACLs.
+
+    .PARAMETER NotInherited
+    Indicates to include only non-inherited ACLs.
+
+    .PARAMETER Bundle
+    Indicates whether to bundle ACL information for each object.
+
+    .PARAMETER AccessControlType
+    Specifies the access control type to filter ACL information for.
+
+    .PARAMETER IncludeObjectTypeName
+    Specifies the object types to include in ACL filtering.
+
+    .PARAMETER IncludeInheritedObjectTypeName
+    Specifies the inherited object types to include in ACL filtering.
+
+    .PARAMETER ExcludeObjectTypeName
+    Specifies the object types to exclude in ACL filtering.
+
+    .PARAMETER ExcludeInheritedObjectTypeName
+    Specifies the inherited object types to exclude in ACL filtering.
+
+    .PARAMETER IncludeActiveDirectoryRights
+    Specifies the Active Directory rights to include in ACL filtering.
+
+    .PARAMETER ExcludeActiveDirectoryRights
+    Specifies the Active Directory rights to exclude in ACL filtering.
+
+    .PARAMETER IncludeActiveDirectorySecurityInheritance
+    Specifies the inheritance types to include in ACL filtering.
+
+    .PARAMETER ExcludeActiveDirectorySecurityInheritance
+    Specifies the inheritance types to exclude in ACL filtering.
+
+    .PARAMETER ADRightsAsArray
+    Indicates to return Active Directory rights as an array.
+
+    .EXAMPLE
+    Get-ADACL -ADObject 'CN=Users,DC=contoso,DC=com' -ResolveTypes -Principal 'Domain Admins' -Bundle
+
+    Retrieves and bundles ACL information for the 'Domain Admins' principal in the 'Users' container.
+
+    .NOTES
+    General notes
+    #>
     [cmdletbinding()]
     param(
         [Parameter(Mandatory, Position = 0, ValueFromPipeline, ValueFromPipelineByPropertyName)]

@@ -1,4 +1,29 @@
 ﻿function Get-GitHubVersion {
+    <#
+    .SYNOPSIS
+    Retrieves the latest version information from GitHub for a specified cmdlet.
+
+    .DESCRIPTION
+    This function retrieves the latest version information from GitHub for a specified cmdlet and compares it with the current version.
+
+    .PARAMETER Cmdlet
+    Specifies the name of the cmdlet to check for the latest version.
+
+    .PARAMETER RepositoryOwner
+    Specifies the owner of the GitHub repository.
+
+    .PARAMETER RepositoryName
+    Specifies the name of the GitHub repository.
+
+    .EXAMPLE
+    Get-GitHubVersion -Cmdlet "YourCmdlet" -RepositoryOwner "OwnerName" -RepositoryName "RepoName"
+    Retrieves and compares the latest version information for the specified cmdlet from the GitHub repository.
+
+    .NOTES
+    Author: Your Name
+    Date: Current Date
+    Version: 1.0
+    #>
     [cmdletBinding()]
     param(
         [Parameter(Mandatory)][string] $Cmdlet,
