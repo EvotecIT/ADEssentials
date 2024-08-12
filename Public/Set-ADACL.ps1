@@ -1,4 +1,33 @@
 ﻿function Set-ADACL {
+    <#
+    .SYNOPSIS
+    Sets the access control list (ACL) for a specified Active Directory object.
+
+    .DESCRIPTION
+    This cmdlet sets the ACL for a specified Active Directory object. It supports both local and remote operations. 
+    It can use a credential for remote connections. It filters out adapters that are DHCP enabled or do not have a DNS server search order set.
+    It then sets the DNS server IP addresses for the remaining adapters. If the operation is successful, it retrieves the current DNS server IP addresses.
+
+    .PARAMETER ADObject
+    Specifies the Active Directory object on which to set the ACL.
+
+    .PARAMETER ACLSettings
+    Specifies the ACL settings to apply to the ADObject.
+
+    .PARAMETER Inheritance
+    Specifies whether to enable or disable inheritance of ACEs from parent objects.
+
+    .PARAMETER Suppress
+    Indicates whether to suppress the operation.
+
+    .EXAMPLE
+    Set-ADACL -ADObject 'CN=TestOU,DC=contoso,DC=com' -ACLSettings @($ACL1, $ACL2) -Inheritance 'Disabled' -Suppress
+
+    This example sets the ACL for the specified Active Directory object with the provided ACL settings and inheritance, and suppresses the operation.
+
+    .NOTES
+    General notes
+    #>
     [cmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory, Position = 0, ValueFromPipeline, ValueFromPipelineByPropertyName)]
@@ -18,7 +47,7 @@
 
     $ExpectedProperties = @('ActiveDirectoryRights', 'AccessControlType', 'ObjectTypeName', 'InheritedObjectTypeName', 'InheritanceType')
 
-    $FoundDisprepancy = $false
+    $FoundDiscrepancy = $false
     $Count = 1
     foreach ($ACL in $ACLSettings) {
         if ($ACL.Action -eq 'Skip') {
@@ -32,12 +61,12 @@
                 if ($Permission -is [System.Collections.IDictionary]) {
                     Compare-Object -ReferenceObject $ExpectedProperties -DifferenceObject @($Permission.Keys) | Where-Object { $_.SideIndicator -in '<=' } | ForEach-Object {
                         Write-Warning -Message "Set-ADACL - Entry $Count - $($ACL.Principal) is missing property $($_.InputObject) - provided only $($Permission.Keys)"
-                        $FoundDisprepancy = $true
+                        $FoundDiscrepancy = $true
                     }
                 } else {
                     Compare-Object -ReferenceObject $ExpectedProperties -DifferenceObject @($Permission.PSObject.Properties.Name) | Where-Object { $_.SideIndicator -in '<=' } | ForEach-Object {
                         Write-Warning -Message "Set-ADACL - Entry $Count - $($ACL.Principal) is missing property $($_.InputObject) - provided only $($Permission.PSObject.Properties.Name)"
-                        $FoundDisprepancy = $true
+                        $FoundDiscrepancy = $true
                     }
                 }
             }
@@ -45,18 +74,18 @@
             if ($ACL -is [System.Collections.IDictionary]) {
                 Compare-Object -ReferenceObject $ExpectedProperties -DifferenceObject @($ACL.Keys) | Where-Object { $_.SideIndicator -in '<=' } | ForEach-Object {
                     Write-Warning -Message "Set-ADACL - Entry $Count - $($ACL.Principal) is missing property $($_.InputObject) - provided only $($ACL.Keys)"
-                    $FoundDisprepancy = $true
+                    $FoundDiscrepancy = $true
                 }
             } else {
                 Compare-Object -ReferenceObject $ExpectedProperties -DifferenceObject @($ACL.PSObject.Properties.Name) | Where-Object { $_.SideIndicator -in '<=' } | ForEach-Object {
                     Write-Warning -Message "Set-ADACL - Entry $Count - $($ACL.Principal) is missing property $($_.InputObject) - provided only $($ACL.PSObject.Properties.Name)"
-                    $FoundDisprepancy = $true
+                    $FoundDiscrepancy = $true
                 }
             }
         }
         $Count++
     }
-    if ($FoundDisprepancy) {
+    if ($FoundDiscrepancy) {
         Write-Warning -Message "Set-ADACL - Please check your ACL configuration is correct. Each entry must have the following properties: $($ExpectedProperties -join ', ')"
         $Results.Warnings.Add("Please check your ACL configuration is correct. Each entry must have the following properties: $($ExpectedProperties -join ', ')")
         if (-not $Suppress) {

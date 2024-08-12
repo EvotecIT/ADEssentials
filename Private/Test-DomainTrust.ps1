@@ -1,4 +1,26 @@
 ﻿function Test-DomainTrust {
+    <#
+    .SYNOPSIS
+    Test the trust relationship between two domains.
+
+    .DESCRIPTION
+    This function tests the trust relationship between the specified domain and a trusted domain.
+
+    .PARAMETER Domain
+    Specifies the domain to test the trust relationship for.
+
+    .PARAMETER TrustedDomain
+    Specifies the trusted domain to test the trust relationship against.
+
+    .EXAMPLE
+    Test-DomainTrust -Domain "contoso.com" -TrustedDomain "fabrikam.com"
+    Tests the trust relationship between the "contoso.com" domain and the "fabrikam.com" trusted domain.
+
+    .NOTES
+    Author: Your Name
+    Date: Date
+    Version: 1.0
+    #>
     [cmdletBinding()]
     param(
         [string] $Domain,

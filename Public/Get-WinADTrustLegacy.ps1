@@ -1,34 +1,36 @@
 ﻿function Get-WinADTrustLegacy {
     <#
     .SYNOPSIS
-    Short description
+    Retrieves trust relationships within a specified Active Directory forest, including legacy trusts.
 
     .DESCRIPTION
-    Long description
+    This cmdlet is designed to gather detailed information about trust relationships within an Active Directory forest. It can target a specific forest, include or exclude specific domains, and display the results in a detailed or concise format. Additionally, it can filter out duplicate trusts and provide extended forest information.
 
     .PARAMETER Forest
-    Target different Forest, by default current forest is used
+    Specifies the target forest to query. If not provided, the current forest is used by default.
 
     .PARAMETER ExcludeDomains
-    Exclude domain from search, by default whole forest is scanned
+    Specifies an array of domain names to exclude from the search. This parameter is optional and can be used to narrow down the search scope.
 
     .PARAMETER IncludeDomains
-    Include only specific domains, by default whole forest is scanned
+    Specifies an array of domain names to include in the search. This parameter is optional and can be used to limit the search scope to specific domains.
 
     .PARAMETER Display
-    Parameter description
+    A switch parameter that controls the level of detail in the output. If set, the output includes all available trust properties. If not set, the output is more concise.
 
     .PARAMETER ExtendedForestInformation
-    Parameter description
+    A dictionary object that contains additional information about the forest. This parameter is optional and can be used to provide more context about the forest.
 
     .PARAMETER Unique
-    Parameter description
+    A switch parameter that filters out duplicate trusts based on the source and target domains. If set, only unique trusts are returned.
 
     .EXAMPLE
-    An example
+    Get-WinADTrustLegacy -Display -Unique
+
+    This example retrieves all trust relationships within the current forest, displaying detailed information and filtering out duplicate trusts.
 
     .NOTES
-    General notes
+    This cmdlet requires the Active Directory PowerShell module to be installed and imported. It also requires access to the target forest and domains.
     #>
     [CmdletBinding()]
     param(

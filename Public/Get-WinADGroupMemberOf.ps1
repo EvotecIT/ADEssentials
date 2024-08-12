@@ -1,5 +1,28 @@
 ﻿function Get-WinADGroupMemberOf {
-    [cmdletBinding()]
+    <#
+    .SYNOPSIS
+    Retrieves group membership information for Active Directory groups.
+
+    .DESCRIPTION
+    Retrieves detailed information about group membership for specified Active Directory groups.
+
+    .PARAMETER Identity
+    Specifies the group identities for which to retrieve membership information.
+
+    .PARAMETER AddSelf
+    Indicates whether to include the group itself in the membership results.
+
+    .PARAMETER ClearCache
+    Indicates whether to clear the group object cache before processing.
+
+    .EXAMPLE
+    Get-WinADGroupMemberOf -Identity "Group1", "Group2" -AddSelf
+    This example retrieves membership information for "Group1" and "Group2", including the groups themselves.
+
+    .NOTES
+    This cmdlet requires the Active Directory PowerShell module to be installed and imported. It also requires appropriate permissions to query the Active Directory forest.
+    #>
+    [CmdletBinding()]
     param(
         [parameter(Position = 0, Mandatory)][Array] $Identity,
         [switch] $AddSelf,

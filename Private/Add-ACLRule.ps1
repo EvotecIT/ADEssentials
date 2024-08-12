@@ -1,4 +1,29 @@
 ﻿function Add-ACLRule {
+    <#
+    .SYNOPSIS
+    Adds an access control rule to a security descriptor.
+
+    .DESCRIPTION
+    The Add-ACLRule function adds an access control rule to a security descriptor. It allows specifying the access rule to add, the security descriptor, and the ACL.
+
+    .PARAMETER AccessRuleToAdd
+    Specifies the access rule to add.
+
+    .PARAMETER ntSecurityDescriptor
+    Specifies the security descriptor to which the access rule will be added.
+
+    .PARAMETER ACL
+    Specifies the ACL to which the access rule will be added.
+
+    .EXAMPLE
+    Add-ACLRule -AccessRuleToAdd $rule -ntSecurityDescriptor $securityDescriptor -ACL $acl
+
+    This example adds the access rule $rule to the security descriptor $securityDescriptor and the ACL $acl.
+
+    .NOTES
+    This function is designed to handle errors related to identity references that could not be translated.
+
+    #>
     [CmdletBinding()]
     param(
         $AccessRuleToAdd,

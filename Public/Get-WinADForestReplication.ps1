@@ -1,4 +1,41 @@
 ﻿function Get-WinADForestReplication {
+    <#
+    .SYNOPSIS
+    Retrieves replication information for a specified Active Directory forest.
+
+    .DESCRIPTION
+    Retrieves detailed information about replication within the specified Active Directory forest.
+
+    .PARAMETER Forest
+    Specifies the target forest to retrieve replication information from.
+
+    .PARAMETER ExcludeDomains
+    Specifies an array of domain names to exclude from the replication search.
+
+    .PARAMETER ExcludeDomainControllers
+    Specifies an array of domain controllers to exclude from the replication search.
+
+    .PARAMETER IncludeDomains
+    Specifies an array of domain names to include in the replication search.
+
+    .PARAMETER IncludeDomainControllers
+    Specifies an array of domain controllers to include in the replication search.
+
+    .PARAMETER SkipRODC
+    Indicates whether to skip read-only domain controllers during replication.
+
+    .PARAMETER Extended
+    Indicates whether to include extended replication information.
+
+    .PARAMETER ExtendedForestInformation
+    Specifies additional information about the forest for replication.
+
+    .EXAMPLE
+    Get-WinADForestReplication -Forest "example.com" -IncludeDomains @("example.com") -ExcludeDomains @("test.com") -IncludeDomainControllers @("DC1") -ExcludeDomainControllers @("DC2") -SkipRODC -Extended -ExtendedForestInformation $ExtendedForestInfo
+
+    .NOTES
+    This cmdlet requires the Active Directory PowerShell module to be installed and imported. It also requires appropriate permissions to query the Active Directory forest.
+    #>
     [CmdletBinding()]
     param(
         [alias('ForestName')][string] $Forest,

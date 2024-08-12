@@ -1,4 +1,49 @@
 ﻿function Get-WinADBitlockerLapsSummary {
+    <#
+    .SYNOPSIS
+    Retrieves BitLocker and LAPS information for computers in Active Directory.
+
+    .DESCRIPTION
+    This function retrieves BitLocker and LAPS information for computers in Active Directory based on the specified parameters.
+
+    .PARAMETER Forest
+    Specifies the name of the forest to query for computer information.
+
+    .PARAMETER IncludeDomains
+    Specifies an array of domains to include in the query.
+
+    .PARAMETER ExcludeDomains
+    Specifies an array of domains to exclude from the query.
+
+    .PARAMETER Filter
+    Specifies the filter to apply when querying for computers.
+
+    .PARAMETER SearchBase
+    Specifies the search base for the query.
+
+    .PARAMETER SearchScope
+    Specifies the scope of the search (Base, OneLevel, SubTree, None).
+
+    .PARAMETER LapsOnly
+    Switch to retrieve only LAPS information.
+
+    .PARAMETER BitlockerOnly
+    Switch to retrieve only BitLocker information.
+
+    .PARAMETER ExtendedForestInformation
+    Specifies additional forest information to include in the query.
+
+    .EXAMPLE
+    Get-WinADBitlockerLapsSummary -Forest "contoso.com" -IncludeDomains "child1.contoso.com", "child2.contoso.com" -ExcludeDomains "test.contoso.com" -LapsOnly
+    Retrieves LAPS information for computers in the specified domains of the "contoso.com" forest, excluding "test.contoso.com".
+
+    .EXAMPLE
+    Get-WinADBitlockerLapsSummary -Forest "contoso.com" -IncludeDomains "child1.contoso.com", "child2.contoso.com" -ExcludeDomains "test.contoso.com" -BitlockerOnly
+    Retrieves BitLocker information for computers in the specified domains of the "contoso.com" forest, excluding "test.contoso.com".
+
+    .NOTES
+    General notes
+    #>
     [CmdletBinding(DefaultParameterSetName = 'Default')]
     param(
         [Parameter(ParameterSetName = 'Default')]

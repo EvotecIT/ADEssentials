@@ -1,4 +1,29 @@
 ﻿function Get-WinADGroups {
+    <#
+    .SYNOPSIS
+    Retrieves Active Directory groups information for a specified forest.
+
+    .DESCRIPTION
+    Retrieves detailed information about Active Directory groups within the specified forest.
+
+    .PARAMETER Forest
+    Specifies the target forest to retrieve group information from.
+
+    .PARAMETER ExcludeDomains
+    Specifies an array of domain names to exclude from the search.
+
+    .PARAMETER IncludeDomains
+    Specifies an array of domain names to include in the search.
+
+    .PARAMETER PerDomain
+    Indicates whether to retrieve group information per domain.
+
+    .PARAMETER AddOwner
+    Indicates whether to include group owner information in the retrieval.
+
+    .NOTES
+    This cmdlet requires the Active Directory PowerShell module to be installed and imported. It also requires appropriate permissions to query the Active Directory forest.
+    #>
     [cmdletBinding()]
     param(
         [alias('ForestName')][string] $Forest,

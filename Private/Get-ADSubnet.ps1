@@ -1,4 +1,26 @@
 ﻿function Get-ADSubnet {
+    <#
+    .SYNOPSIS
+    Retrieve Active Directory subnet details.
+
+    .DESCRIPTION
+    Retrieves subnet information from Active Directory. This function processes the provided subnet objects and provides details such as IP address, network length, site information, and more.
+
+    .PARAMETER Subnets
+    Specifies an array of subnet objects for which information needs to be retrieved.
+
+    .PARAMETER AsHashTable
+    If specified, the subnet information is returned as a hashtable.
+
+    .EXAMPLE
+    Get-ADSubnet -Subnets $SubnetArray -AsHashTable
+    Retrieves subnet details for the specified subnet array and returns the information as a hashtable.
+
+    .NOTES
+    Author: Your Name
+    Date: Current Date
+    Version: 1.0
+    #>
     [cmdletBinding()]
     param(
         [Array] $Subnets,

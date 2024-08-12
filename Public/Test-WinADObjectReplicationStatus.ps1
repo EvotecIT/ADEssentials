@@ -1,4 +1,35 @@
 ﻿function Test-WinADObjectReplicationStatus {
+    <#
+    .SYNOPSIS
+    Tests the replication status of a Windows Active Directory object across domain controllers.
+
+    .DESCRIPTION
+    This cmdlet queries the specified object across all domain controllers in the forest, including global catalogs if specified, to check its replication status. It returns a custom object with details about the object's properties and any errors encountered during the query.
+
+    .PARAMETER Identity
+    The identity of the object to test. This can be a distinguished name, GUID, or SAM account name.
+
+    .PARAMETER Forest
+    The name of the forest to query. If not specified, the current forest is used.
+
+    .PARAMETER ExcludeDomains
+    An array of domain names to exclude from the query.
+
+    .PARAMETER IncludeDomains
+    An array of domain names to include in the query. If not specified, all domains in the forest are queried.
+
+    .PARAMETER GlobalCatalog
+    A switch parameter to include global catalogs in the query.
+
+    .EXAMPLE
+    Test-WinADObjectReplicationStatus -Identity "CN=User,DC=example,DC=com"
+
+    .EXAMPLE
+    Test-WinADObjectReplicationStatus -Identity "CN=User,DC=example,DC=com" -GlobalCatalog
+
+    .NOTES
+    This cmdlet is useful for monitoring the replication status of critical objects across the domain controllers in a forest.
+    #>
     [CmdletBinding(DefaultParameterSetName = 'Standard')]
     param(
         [Parameter(ParameterSetName = 'Standard')]

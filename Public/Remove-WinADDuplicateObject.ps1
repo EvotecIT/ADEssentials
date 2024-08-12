@@ -1,4 +1,45 @@
 ﻿function Remove-WinADDuplicateObject {
+    <#
+    .SYNOPSIS
+    Removes duplicate objects from Active Directory based on specified criteria.
+
+    .DESCRIPTION
+    This cmdlet identifies and removes duplicate objects from Active Directory based on the provided parameters. It first retrieves a list of duplicate objects using Get-WinADDuplicateObject, then iterates through the list to remove each object. If an object is protected from accidental deletion, it attempts to remove the protection before deletion.
+
+    .PARAMETER Forest
+    Specifies the name of the forest to search for duplicate objects. This parameter is optional.
+
+    .PARAMETER ExcludeDomains
+    Specifies an array of domain names to exclude from the search for duplicate objects.
+
+    .PARAMETER IncludeDomains
+    Specifies an array of domain names to include in the search for duplicate objects.
+
+    .PARAMETER ExtendedForestInformation
+    Specifies additional information about the forest, such as domain controllers or other forest-specific details.
+
+    .PARAMETER PartialMatchDistinguishedName
+    Specifies a partial distinguished name to match when searching for duplicate objects.
+
+    .PARAMETER IncludeObjectClass
+    Specifies an array of object classes to include in the search for duplicate objects.
+
+    .PARAMETER ExcludeObjectClass
+    Specifies an array of object classes to exclude from the search for duplicate objects.
+
+    .PARAMETER LimitProcessing
+    Specifies the maximum number of duplicate objects to process for removal. The default is to process all found duplicates.
+
+    .EXAMPLE
+    Remove-WinADDuplicateObject -Forest "example.local" -IncludeDomains "example.local", "subdomain.example.local" -IncludeObjectClass "User", "Group" -LimitProcessing 10
+
+    This example removes up to 10 duplicate user and group objects from the "example.local" and "subdomain.example.local" domains in the "example.local" forest.
+
+    .EXAMPLE
+    Remove-WinADDuplicateObject -ExcludeDomains "example.local" -PartialMatchDistinguishedName "OU=Finance,"
+
+    This example removes duplicate objects with a distinguished name containing "OU=Finance," from all domains except "example.local".
+    #>
     [cmdletBinding(SupportsShouldProcess)]
     param(
         [alias('ForestName')][string] $Forest,

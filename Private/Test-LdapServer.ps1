@@ -1,4 +1,55 @@
 ﻿function Test-LdapServer {
+    <#
+    .SYNOPSIS
+    Test the LDAP server ports for connectivity.
+
+    .DESCRIPTION
+    This function tests the LDAP server ports for connectivity using specified parameters.
+
+    .PARAMETER ServerName
+    The name of the LDAP server to test.
+
+    .PARAMETER Computer
+    The computer name.
+
+    .PARAMETER Advanced
+    An advanced object.
+
+    .PARAMETER GCPortLDAP
+    The port number for Global Catalog LDAP (default: 3268).
+
+    .PARAMETER GCPortLDAPSSL
+    The port number for Global Catalog LDAP SSL (default: 3269).
+
+    .PARAMETER PortLDAP
+    The LDAP port number (default: 389).
+
+    .PARAMETER PortLDAPS
+    The LDAPS port number (default: 636).
+
+    .PARAMETER VerifyCertificate
+    Switch to verify the certificate.
+
+    .PARAMETER Credential
+    The credential to use for testing.
+
+    .PARAMETER Identity
+    The identity for testing.
+
+    .PARAMETER SkipCheckGC
+    Switch to skip checking Global Catalog.
+
+    .PARAMETER RetryCount
+    The number of retries for testing.
+
+    .EXAMPLE
+    Test-LdapServer -ServerName "ldap.contoso.com" -Computer "MyComputer" -GCPortLDAP 3268 -GCPortLDAPSSL 3269 -PortLDAP 389 -PortLDAPS 636 -VerifyCertificate -Credential $cred -Identity "TestUser" -SkipCheckGC -RetryCount 3
+    Tests the LDAP server ports for connectivity with specified parameters.
+
+    .NOTES
+    Ensure that the necessary permissions are in place to perform the LDAP server port testing.
+    #>
+
     [cmdletBinding()]
     param(
         [string] $ServerName,

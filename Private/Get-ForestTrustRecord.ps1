@@ -1,16 +1,17 @@
 ﻿function Get-ForestTrustRecord {
     <#
     .SYNOPSIS
-    Short description
+    Retrieves and processes forest trust record information.
 
     .DESCRIPTION
-    Long description
+    This function retrieves and processes forest trust record information from the provided BinaryReader.
 
     .PARAMETER BinaryReader
-    Parameter description
+    Specifies the BinaryReader object containing the forest trust record information.
 
     .EXAMPLE
-    An example
+    Get-ForestTrustRecord -BinaryReader $BinaryReader
+    Retrieves and processes forest trust record information from the BinaryReader object.
 
     .NOTES
     Author: Chris Dent

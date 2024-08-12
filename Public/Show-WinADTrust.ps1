@@ -1,4 +1,38 @@
 ﻿function Show-WinADTrust {
+    <#
+    .SYNOPSIS
+    Generates a detailed HTML report on the trust relationships in a specified Active Directory forest.
+
+    .DESCRIPTION
+    This cmdlet creates a comprehensive HTML report that includes the trust relationships, their properties, and a diagram of their relationships. The report is designed to provide a clear overview of the trust relationships within the Active Directory.
+
+    .PARAMETER Conditions
+    Specifies the conditions to filter the trust relationships. This can be a script block that returns a boolean value.
+
+    .PARAMETER Recursive
+    A switch to include all trust relationships in the report, including those that are not direct.
+
+    .PARAMETER FilePath
+    The path to save the HTML report. If not specified, a temporary file is used.
+
+    .PARAMETER Online
+    A switch to display the HTML report in the default web browser.
+
+    .PARAMETER HideHTML
+    A switch to hide the HTML report after it is generated.
+
+    .PARAMETER DisableBuiltinConditions
+    A switch to disable the built-in conditions for filtering the trust relationships.
+
+    .PARAMETER PassThru
+    A switch to return the trust relationships as objects.
+
+    .EXAMPLE
+    Show-WinADTrust -Recursive -Online
+
+    .NOTES
+    This cmdlet is useful for auditing and analyzing the trust relationships in Active Directory, helping administrators to identify potential security risks and ensure compliance with organizational policies.
+    #>
     [alias('Show-ADTrust', 'Show-ADTrusts', 'Show-WinADTrusts')]
     [cmdletBinding()]
     param(

@@ -1,4 +1,27 @@
 ﻿function New-ADForestDrives {
+    <#
+    .SYNOPSIS
+    Maps network drives for all domains in a specified Active Directory forest.
+
+    .DESCRIPTION
+    The New-ADForestDrives function maps network drives for all domains in a specified Active Directory forest. It retrieves domain information and maps drives accordingly.
+
+    .PARAMETER ForestName
+    Specifies the name of the Active Directory forest to map drives for.
+
+    .PARAMETER ObjectDN
+    Specifies the distinguished name of the object to map drives for.
+
+    .EXAMPLE
+    New-ADForestDrives -ForestName "example.com" -ObjectDN "CN=Users,DC=example,DC=com"
+    This example maps network drives for the specified forest and object distinguished name.
+
+    .NOTES
+    File Name      : New-ADForestDrives.ps1
+    Author         : Your Name
+    Prerequisite   : This function requires the Active Directory module.
+
+    #>
     [cmdletbinding()]
     param(
         [string] $ForestName,
