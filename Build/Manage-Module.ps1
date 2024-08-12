@@ -163,6 +163,7 @@ Invoke-ModuleBuild -ModuleName 'ADEssentials' {
         'Get-WinADDomainControllerGenerationId'
         'Compare-WinADGlobalCatalogObjects'
         'Test-WinADObjectReplicationStatus'
+        'Get-WinADSiteCoverage'
     )
     New-ConfigurationCommand -ModuleName 'DHCPServer' -CommandName @(
         'Get-WinADDHCP'
