@@ -1,4 +1,23 @@
 ﻿function Show-WinADOrganization {
+    <#
+    .SYNOPSIS
+    Generates a detailed HTML report on the organizational units and their relationships within a specified Active Directory forest.
+
+    .DESCRIPTION
+    This cmdlet creates a comprehensive HTML report that includes a diagram of the organizational units and their relationships, as well as a table with detailed information about the organizational units. The report is designed to provide a clear overview of the organizational structure within the Active Directory.
+
+    .PARAMETER Conditions
+    Specifies the conditions to filter the organizational units and their relationships. This can be a script block that returns a boolean value.
+
+    .PARAMETER FilePath
+    The path to save the HTML report. If not specified, a temporary file is used.
+
+    .EXAMPLE
+    Show-WinADOrganization -FilePath "C:\Reports\AD Organization Report.html"
+
+    .NOTES
+    This cmdlet is useful for administrators to visualize and analyze the organizational structure within Active Directory, helping to identify potential issues and ensure efficient management of resources.
+    #>
     [cmdletBinding()]
     param(
         [ScriptBlock] $Conditions,

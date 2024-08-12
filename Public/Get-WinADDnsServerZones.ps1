@@ -1,4 +1,50 @@
 ﻿function Get-ADWinDnsServerZones {
+    <#
+    .SYNOPSIS
+    Retrieves detailed information about DNS zones from Active Directory DNS servers.
+
+    .DESCRIPTION
+    This function retrieves detailed information about DNS zones from Active Directory DNS servers. It queries the DNS servers to gather information such as zone name, type, dynamic update settings, replication scope, and other zone-related details.
+
+    .PARAMETER Forest
+    Specifies the target forest to retrieve DNS zone information from.
+
+    .PARAMETER ExcludeDomains
+    Specifies the domains to exclude from the search.
+
+    .PARAMETER ExcludeDomainControllers
+    Specifies the domain controllers to exclude from the search.
+
+    .PARAMETER IncludeDomains
+    Specifies the domains to include in the search.
+
+    .PARAMETER IncludeDomainControllers
+    Specifies the domain controllers to include in the search.
+
+    .PARAMETER SkipRODC
+    Skips Read-Only Domain Controllers when querying for information.
+
+    .PARAMETER ExtendedForestInformation
+    Provides forest information from another command to speed up processing.
+
+    .PARAMETER ReverseLookupZone
+    Indicates whether to retrieve reverse lookup zones.
+
+    .PARAMETER PrimaryZone
+    Indicates whether to retrieve primary zones.
+
+    .PARAMETER Forwarder
+    Indicates whether to retrieve forwarder zones.
+
+    .PARAMETER ZoneName
+    Specifies the name of the zone to retrieve information for.
+
+    .EXAMPLE
+    Get-ADWinDnsServerZones -Forest "example.com" -IncludeDomains "domain1.com", "domain2.com" -PrimaryZone -ZoneName "example.com" | Format-Table
+
+    .NOTES
+    This cmdlet requires the Active Directory PowerShell module to be installed and imported. It also requires appropriate permissions to query the Active Directory DNS servers.
+    #>
     [alias('Get-WinDnsServerZones')]
     [CmdLetBinding()]
     param(

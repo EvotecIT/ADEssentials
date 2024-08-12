@@ -1,4 +1,42 @@
 ﻿function Get-WinADLMSettings {
+    <#
+    .SYNOPSIS
+    Retrieves and displays Active Directory LM settings for Windows Clients and Servers.
+
+    .DESCRIPTION
+    Retrieves and displays Active Directory LM settings for Windows Clients and Servers. By default, it scans all Domain Controllers in a forest.
+
+    .PARAMETER ForestName
+    Specifies the target forest to retrieve LM settings from.
+
+    .PARAMETER ExcludeDomains
+    Specifies an array of domain names to exclude from the search.
+
+    .PARAMETER ExcludeDomainControllers
+    Specifies an array of domain controllers to exclude from the search.
+
+    .PARAMETER IncludeDomains
+    Specifies an array of domain names to include in the search.
+
+    .PARAMETER IncludeDomainControllers
+    Specifies an array of domain controllers to include in the search.
+
+    .PARAMETER SkipRODC
+    Skips Read-Only Domain Controllers. By default, all domain controllers are included.
+
+    .PARAMETER Days
+    Specifies the number of days to consider for retrieving LM settings.
+
+    .PARAMETER ExtendedForestInformation
+    A dictionary object that contains additional information about the forest. This parameter is optional and can be used to provide more context about the forest.
+
+    .EXAMPLE
+    Get-WinADLMSettings -ForestName "example.com" -IncludeDomains "example.com" -Days 7
+    This example retrieves LM settings for the "example.com" forest, including only the specified domains and considering the last 7 days.
+
+    .NOTES
+    This cmdlet requires the Active Directory PowerShell module to be installed and imported. It also requires appropriate permissions to query the Active Directory forest.
+    #>
     [CmdletBinding()]
     param(
         [alias('ForestName')][string] $Forest,

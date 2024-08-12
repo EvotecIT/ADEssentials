@@ -1,4 +1,37 @@
 function Repair-WinADForestControllerInformation {
+    <#
+    .SYNOPSIS
+    Repairs the Active Directory forest controller information by fixing ownership and management settings for domain controllers.
+
+    .DESCRIPTION
+    This cmdlet repairs the Active Directory forest controller information by ensuring that domain controllers are properly owned and managed. It can fix the ownership and management settings for domain controllers based on the specified type of repair. The cmdlet supports processing a limited number of domain controllers at a time.
+
+    .PARAMETER Type
+    Specifies the type of repair to perform on the domain controllers. The valid types are 'Owner' and 'Manager'. 'Owner' repairs the ownership settings, and 'Manager' repairs the management settings.
+
+    .PARAMETER ForestName
+    Specifies the name of the forest to repair.
+
+    .PARAMETER ExcludeDomains
+    Specifies the domains to exclude from the repair process.
+
+    .PARAMETER IncludeDomains
+    Specifies the domains to include in the repair process.
+
+    .PARAMETER ExtendedForestInformation
+    Specifies the extended information about the forest to use for the repair process.
+
+    .PARAMETER LimitProcessing
+    Specifies the maximum number of domain controllers to process in a single run.
+
+    .EXAMPLE
+    Repair-WinADForestControllerInformation -Type Owner, Manager -ForestName example.com -IncludeDomains example.com, sub.example.com -LimitProcessing 10
+
+    This example repairs the ownership and management settings for up to 10 domain controllers in the example.com and sub.example.com domains within the example.com forest.
+
+    .NOTES
+    This cmdlet requires the Active Directory PowerShell module to be installed and imported.
+    #>
     [cmdletBinding(SupportsShouldProcess)]
     param(
         [parameter(Mandatory)][validateSet('Owner', 'Manager')][string[]] $Type,

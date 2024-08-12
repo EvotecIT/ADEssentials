@@ -1,4 +1,55 @@
 ﻿function Invoke-ADEssentials {
+    <#
+    .SYNOPSIS
+    This command invokes ADEssentials to perform essential Active Directory operations and generates reports.
+
+    .DESCRIPTION
+    This command runs ADEssentials to perform essential Active Directory operations and generates reports. It supports the option to include specific domains for the operations.
+
+    .PARAMETER FilePath
+    Specifies the path to the folder where the generated reports will be saved.
+
+    .PARAMETER Type
+    Specifies the type of operations to perform. If not specified, all supported types will be performed.
+
+    .PARAMETER PassThru
+    If specified, the command returns the generated reports.
+
+    .PARAMETER HideHTML
+    If specified, the HTML report will not be displayed.
+
+    .PARAMETER HideSteps
+    If specified, the steps of the operations will not be displayed.
+
+    .PARAMETER ShowError
+    If specified, any errors during the operations will be displayed.
+
+    .PARAMETER ShowWarning
+    If specified, any warnings during the operations will be displayed.
+
+    .PARAMETER Forest
+    Specifies the name of the forest to perform the operations. If not specified, the current forest will be used.
+
+    .PARAMETER ExcludeDomains
+    Specifies an array of domain names to exclude from the operations.
+
+    .PARAMETER IncludeDomains
+    Specifies an array of domain names to include in the operations. If not specified, all domains will be included.
+
+    .PARAMETER Online
+    If specified, the command will perform the operations online.
+
+    .PARAMETER SplitReports
+    If specified, the command will generate separate reports for each type of operation.
+
+    .EXAMPLE
+    Invoke-ADEssentials -FilePath "C:\Reports" -Type "UserManagement" -PassThru -HideHTML -HideSteps -ShowError -ShowWarning -Forest "example.com" -ExcludeDomains "subdomain.example.com" -IncludeDomains "example.com" -Online -SplitReports
+
+    This example runs ADEssentials to perform user management operations on the "example.com" domain and generates separate reports for each operation type. The reports are saved to "C:\Reports" and the HTML report is not displayed.
+
+    .NOTES
+    This cmdlet requires the ADEssentials PowerShell module to be installed and imported.
+    #>
     [cmdletBinding()]
     param(
         [string] $FilePath,

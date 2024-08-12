@@ -1,4 +1,18 @@
 ﻿Function Get-WinADSiteOptions {
+    <#
+    .SYNOPSIS
+    This function retrieves the site options for each Active Directory site.
+
+    .DESCRIPTION
+    The Get-WinADSiteOptions function retrieves the site options for each Active Directory site.
+    It uses the nTDSSiteSettingsFlags enumeration to decode the site options.
+
+    .PARAMETER None
+    This function does not accept any parameters.
+
+    .EXAMPLE
+    Get-WinADSiteOptions
+    #>
     [CmdletBinding()]
     Param(
 

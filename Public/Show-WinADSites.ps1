@@ -1,4 +1,23 @@
 ﻿function Show-WinADSites {
+    <#
+    .SYNOPSIS
+    Generates a detailed HTML report on the sites and replication in a specified Active Directory forest.
+
+    .DESCRIPTION
+    This cmdlet creates a comprehensive HTML report that includes a diagram of the sites and their relationships, as well as a table with detailed information about the sites and their replication status. The report is designed to provide a clear overview of the site structure and replication health within the Active Directory.
+
+    .PARAMETER Conditions
+    Specifies the conditions to filter the sites and replication information. This can be a script block that returns a boolean value.
+
+    .PARAMETER FilePath
+    The path to save the HTML report. If not specified, a temporary file is used.
+
+    .EXAMPLE
+    Show-WinADSites -FilePath "C:\Reports\AD Sites Report.html"
+
+    .NOTES
+    This cmdlet is useful for administrators to visualize and analyze the site structure and replication health in Active Directory, helping to identify potential issues and ensure efficient domain controller communication.
+    #>
     [cmdletBinding()]
     param(
         [ScriptBlock] $Conditions,
