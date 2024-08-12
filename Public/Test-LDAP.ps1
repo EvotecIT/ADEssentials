@@ -16,10 +16,10 @@
     Include only specific domains, by default whole forest is scanned
 
     .PARAMETER ExcludeDomainControllers
-    Exclude specific domain controllers, by default there are no exclusions, as long as VerifyDomainControllers switch is enabled. Otherwise this parameter is ignored.
+    Exclude specific domain controllers, by default there are no exclusions
 
     .PARAMETER IncludeDomainControllers
-    Include only specific domain controllers, by default all domain controllers are included, as long as VerifyDomainControllers switch is enabled. Otherwise this parameter is ignored.
+    Include only specific domain controllers, by default all domain controllers are included
 
     .PARAMETER SkipRODC
     Skip Read-Only Domain Controllers. By default all domain controllers are included.
