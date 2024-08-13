@@ -1,4 +1,5 @@
 ﻿function Show-WinADSitesCoverage {
+    [alias('Show-WinADSiteCoverage')]
     [CmdletBinding()]
     param(
         [string] $Forest,
