@@ -96,9 +96,9 @@
             }
             # If there are no non-existing sites, we are good
             if ($Data.NonExistingSiteCoverageCount -eq 0 -and $Data.NonExistingGCSiteCoverageCount -eq 0 -and $false -eq $Data.Error) {
-                $Data.HasIssues = $true
-            } else {
                 $Data.HasIssues = $false
+            } else {
+                $Data.HasIssues = $true
             }
             $Data
         }
