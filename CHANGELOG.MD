@@ -1,8 +1,15 @@
 ﻿#### 0.0.217 - 2024.08.12
+##### What's new
 - Added `Get-WinADDomainControllerNetLogonSettings`
 - Added `Set-WinADDomainControllerNetLogonSettings`
 - Added `Get-WinADDomainControllerNTDSSettings`
 - Added `Get-WinADSiteCoverage`
+
+##### What's Changed
+* Help created by @neztach in https://github.com/EvotecIT/ADEssentials/pull/47
+
+##### New Contributors
+* @neztach made their first contribution in https://github.com/EvotecIT/ADEssentials/pull/47
 
 #### 0.0.216
 - Improves `Test-Ldap` to handle error reporting properly in some cases and retry count as expected
