@@ -1,5 +1,5 @@
 ﻿@{
-    AliasesToExport      = @('Get-WinDNSServerIP', 'Get-WinDnsIPAddresses', 'Get-WinDNSRecords', 'Get-WinDnsServerZones', 'Get-WinDNSZones', 'Get-WinADForestObjectsConflict', 'Get-WinADRoles', 'Get-WinADDomainRoles', 'Get-WinADSubnet', 'Get-WinADPriviligedObjects', 'Get-WinADForestTombstoneLifetime', 'Get-WinADTrusts', 'Get-WinADUsersFP', 'Set-WinDNSServerIP', 'Show-WinADCriticalGroups', 'Show-ADGroupMember', 'Show-ADGroupMemberOf', 'Show-ADTrust', 'Show-ADTrusts', 'Show-WinADTrusts', 'Sync-DomainController')
+    AliasesToExport      = @('Get-WinDNSServerIP', 'Get-WinDnsIPAddresses', 'Get-WinDNSRecords', 'Get-WinDnsServerZones', 'Get-WinDNSZones', 'Get-WinADForestObjectsConflict', 'Get-WinADRoles', 'Get-WinADDomainRoles', 'Get-WinADSubnet', 'Get-WinADPriviligedObjects', 'Get-WinADForestTombstoneLifetime', 'Get-WinADTrusts', 'Get-WinADUsersFP', 'Set-WinDNSServerIP', 'Show-WinADCriticalGroups', 'Show-ADGroupMember', 'Show-ADGroupMemberOf', 'Show-WinADSiteCoverage', 'Show-ADTrust', 'Show-ADTrusts', 'Show-WinADTrusts', 'Sync-DomainController')
     Author               = 'Przemyslaw Klys'
     CmdletsToExport      = @()
     CompanyName          = 'Evotec'

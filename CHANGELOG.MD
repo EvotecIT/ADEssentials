@@ -1,4 +1,8 @@
-﻿#### 0.0.218 - 2024.08.13
+﻿#### 0.0.219 - 2024.08.23
+- Improve `Get-WinADSiteCoverage`
+- Added `Show-WinADSitesCoverage`
+
+#### 0.0.218 - 2024.08.13
 - Improve `Get-WinADSiteCoverage` by adding verbose messages on count
 
 #### 0.0.217 - 2024.08.12
