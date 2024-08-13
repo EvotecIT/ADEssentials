@@ -1,4 +1,7 @@
-﻿#### 0.0.217 - 2024.08.12
+﻿#### 0.0.218 - 2024.08.13
+- Improve `Get-WinADSiteCoverage` by adding verbose messages on count
+
+#### 0.0.217 - 2024.08.12
 ##### What's new
 - Added `Get-WinADDomainControllerNetLogonSettings`
 - Added `Set-WinADDomainControllerNetLogonSettings`
