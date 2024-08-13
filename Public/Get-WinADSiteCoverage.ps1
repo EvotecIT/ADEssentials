@@ -59,8 +59,12 @@
         return
     }
 
+    $Count = 0
     foreach ($Domain in $ForestInformation.Domains) {
+        $Count++
+        $CountDC = 0
         foreach ($DC in $ForestInformation.DomainDomainControllers[$Domain]) {
+            $CountDC++
             $DCSettings = Get-WinADDomainControllerNetLogonSettings -DomainController $DC.HostName
             [Array] $WrongSiteCoverage = foreach ($Site in $DCSettings.SiteCoverage) {
                 if (-not $AllSitesCache[$Site]) {
@@ -72,6 +76,8 @@
                     $Site
                 }
             }
+
+            Write-Verbose -Message "Get-WinADSiteCoverage - Processing Domain $Domain [$Count/$($ForestInformation.Domains.Count)] - DC $($DC.HostName) [$CountDC/$($ForestInformation.DomainDomainControllers[$Domain].Count)]"
             $Data = [PSCustomObject] @{
                 'Domain'                         = $Domain
                 'DomainController'               = $DC.HostName
