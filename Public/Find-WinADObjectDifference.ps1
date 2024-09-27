@@ -76,8 +76,8 @@
     }
 
     $ExcludeProperties = @(
-        'MemberOf'
-        'servicePrincipalName'
+        #'MemberOf'
+        #'servicePrincipalName'
         'WhenChanged'
         'DistinguishedName'
         'uSNChanged'
@@ -322,8 +322,25 @@
                             $ADObjectDetailedDifferences[$PropertyNameDiff] = [System.Collections.Generic.List[Object]]::new()
                         }
                         if ($Property -in 'MemberOf', 'servicePrincipalName') {
-                            # this requires complicated logic for comparison
-
+                            $PrimaryObjectMemberOf = $PrimaryObject.$Property | Sort-Object
+                            $ObjectInfoMemberOf = $ObjectInfo.$Property | Sort-Object
+                            if ($PrimaryObjectMemberOf -join ',' -eq $ObjectInfoMemberOf -join ',') {
+                                $ADObjectDetailedDifferences[$PropertyNameSame].Add($GC.HostName)
+                                if ($Property -notin $ADObjectSummary.SameProperties) {
+                                    $ADObjectSummary.SameProperties.Add($Property)
+                                }
+                                if ($GC.HostName -notin $ADObjectSummary.SameServers) {
+                                    $ADObjectSummary.SameServers.Add($GC.HostName)
+                                }
+                            } else {
+                                $ADObjectDetailedDifferences[$PropertyNameDiff].Add($GC.HostName)
+                                if ($Property -notin $ADObjectSummary.DifferentProperties) {
+                                    $ADObjectSummary.DifferentProperties.Add($Property)
+                                }
+                                if ($GC.HostName -notin $ADObjectSummary.DifferentServers) {
+                                    $ADObjectSummary.DifferentServers.Add($GC.HostName)
+                                }
+                            }
                         } elseif ($null -eq $($PrimaryObject.$Property) -and $null -eq ($ObjectInfo.$Property)) {
                             # Both are null, so it's the same
                             $ADObjectDetailedDifferences[$PropertyNameSame].Add($GC.HostName)
