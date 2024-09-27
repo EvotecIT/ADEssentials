@@ -1,4 +1,8 @@
-﻿#### 0.0.219 - 2024.08.23
+﻿#### 0.0.220 - 2024.09.27
+- Improves `Find-WinADObjectDifference` support for MemberOf/SPN
+- Improves `Show-WinADObjectDifference` support for MemberOf/SPN
+
+#### 0.0.219 - 2024.08.23
 - Improve `Get-WinADSiteCoverage`
 - Added `Show-WinADSitesCoverage`
 
