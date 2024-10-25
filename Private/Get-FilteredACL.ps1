@@ -54,14 +54,19 @@
     .PARAMETER Bundle
     If specified, bundles the filtered ACL details.
 
+    .PARAMETER DistinguishedName
+    Specifies the distinguished name of the ACL.
+    This parameter is used only to display the distinguished name in the output.
+
+    .PARAMETER SkipDistinguishedName
+    If specified, skips the distinguished name in the output.
+
     .EXAMPLE
     Get-FilteredACL -ACL $ACL -Resolve -Principal "User1" -Inherited -AccessControlType "Allow" -IncludeObjectTypeName "File" -ExcludeInheritedObjectTypeName "Folder" -IncludeActiveDirectoryRights "Read" -ExcludeActiveDirectoryRights "Write" -IncludeActiveDirectorySecurityInheritance "Descendents" -ExcludeActiveDirectorySecurityInheritance "SelfAndChildren" -PrincipalRequested $PrincipalRequested -Bundle
     Retrieves and filters Active Directory Access Control List (ACL) details based on the specified criteria.
 
     .NOTES
-    Author: Your Name
-    Date: Current Date
-    Version: 1.0
+    Additional information about the function.
     #>
     [cmdletBinding()]
     param(
@@ -80,8 +85,19 @@
         [Alias('InheritanceType', 'IncludeInheritanceType')][System.DirectoryServices.ActiveDirectorySecurityInheritance[]] $IncludeActiveDirectorySecurityInheritance,
         [Alias('ExcludeInheritanceType')][System.DirectoryServices.ActiveDirectorySecurityInheritance[]] $ExcludeActiveDirectorySecurityInheritance,
         [PSCustomObject] $PrincipalRequested,
-        [switch] $Bundle
+        [switch] $Bundle,
+        [string] $DistinguishedName,
+        [switch] $SkipDistinguishedName
     )
+    # Let's make sure we have all the required data
+    if (-not $Script:ForestGUIDs) {
+        Write-Verbose "Get-ADACL - Gathering Forest GUIDS"
+        $Script:ForestGUIDs = Get-WinADForestGUIDs
+    }
+    if (-not $Script:ForestDetails) {
+        Write-Verbose "Get-ADACL - Gathering Forest Details"
+        $Script:ForestDetails = Get-WinADForestDetails
+    }
     [Array] $ADRights = $ACL.ActiveDirectoryRights -split ', '
     if ($AccessControlType) {
         if ($ACL.AccessControlType -ne $AccessControlType) {
@@ -137,7 +153,9 @@
 
 
     $ReturnObject = [ordered] @{ }
-    $ReturnObject['DistinguishedName' ] = $DistinguishedName
+    if (-not $SkipDistinguishedName) {
+        $ReturnObject['DistinguishedName' ] = $DistinguishedName
+    }
     if ($CanonicalName) {
         $ReturnObject['CanonicalName'] = $CanonicalName
     }
