@@ -1,6 +1,7 @@
 ﻿#### 0.0.221
 - Added `Convert-ADSecurityDescriptor` to convert SDDL to SecurityDescriptor
-- Added `Get-WinADSchemaDefaultPermission` to review default permissions on Schema objects
+- Added `Get-WinADForestSchemaDetails` to review permissions and default permissions on Schema objects
+- Improve `Get-ADACL` for custom objects
 
 #### 0.0.220 - 2024.09.27
 - Improves `Find-WinADObjectDifference` support for MemberOf/SPN
