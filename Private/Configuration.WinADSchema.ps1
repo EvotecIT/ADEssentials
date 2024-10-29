@@ -67,7 +67,9 @@
                 New-HTMLTab -Name "Schema Permissions" {
                     New-HTMLSection -HeaderText 'Summary' {
                         New-HTMLTable -DataTable $Script:Reporting['Schema']['Data'].SchemaSummaryPermissions.Values -Filtering {
-                            New-TableEvent -ID 'SchemaPermissions' -SourceColumnID 15 -TargetColumnID 0
+                            New-TableEvent -ID 'SchemaPermissions' -SourceColumnID 16 -TargetColumnID 0
+                            New-HTMLTableCondition -Name 'PermissionsChanged' -ComparisonType string -Operator eq -Value $true -BackgroundColor Salmon -FailBackgroundColor LightGreen
+                            New-HTMLTableCondition -Name 'DefaultPermissionsAvailable' -ComparisonType string -Operator eq -Value $true -BackgroundColor MoonYellow
                         } -ScrollX -PagingLength 7 -DataTableID 'SchemaSummaryPermission'
                     }
                     New-HTMLSection -HeaderText 'Details' {
@@ -81,7 +83,7 @@
                 New-HTMLTab -Name "Schema Default Permissions" {
                     New-HTMLSection -HeaderText 'Summary' {
                         New-HTMLTable -DataTable $Script:Reporting['Schema']['Data'].SchemaSummaryDefaultPermissions.Values -Filtering {
-                            New-TableEvent -ID 'SchemaDefaultPermissions' -SourceColumnID 16 -TargetColumnID 0
+                            New-TableEvent -ID 'SchemaDefaultPermissions' -SourceColumnID 15 -TargetColumnID 0
                             New-HTMLTableCondition -Name 'PermissionsAvailable' -ComparisonType string -Operator eq -Value $true -BackgroundColor MoonYellow
                         } -ScrollX -PagingLength 7 -DataTableID 'SchemaSummary'
                     }
