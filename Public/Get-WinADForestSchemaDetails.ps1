@@ -127,13 +127,19 @@
                     }
                 }
             }
+            $SchemaAdminsList = $Output.SchemaSummaryPermissions[$Object.Name].'Schema Admins' -split ", "
+            $SchemaAdminsExpected = 'CreateChild', 'Self', 'WriteProperty', 'ExtendedRight', 'GenericRead', 'WriteDacl', 'WriteOwner'
+
+            $Compare = Compare-Object -ReferenceObject $SchemaAdminsList -DifferenceObject $SchemaAdminsExpected
+            $CompareResult = $Compare.SideIndicator -contains '=>' -or $Compare.SideIndicator -contains '<='
+            $CompareCount = $SchemaAdminsExpected.Count -eq $SchemaAdminsList.Count
             if ($Output.SchemaSummaryPermissions[$Object.Name].'Account Operators'.Count -eq 0 -and
                 $Output.SchemaSummaryPermissions[$Object.Name].'Administrators'.Count -eq 0 -and
-                $Output.SchemaSummaryPermissions[$Object.Name].'System'.Count -eq 0 -and
-                $Output.SchemaSummaryPermissions[$Object.Name].'Authenticated Users'.Count -eq 0 -and
+                $Output.SchemaSummaryPermissions[$Object.Name].'System'.Count -gt 0 -and $Output.SchemaSummaryPermissions[$Object.Name].'System'[0] -eq 'GenericAll' -and
+                $Output.SchemaSummaryPermissions[$Object.Name].'Authenticated Users'.Count -gt 0 -and $Output.SchemaSummaryPermissions[$Object.Name].'Authenticated Users'[0] -eq 'GenericRead' -and
                 $Output.SchemaSummaryPermissions[$Object.Name].'Domain Admins'.Count -eq 0 -and
                 $Output.SchemaSummaryPermissions[$Object.Name].'Enterprise Admins'.Count -eq 0 -and
-                $Output.SchemaSummaryPermissions[$Object.Name].'Schema Admins'.Count -eq 0 -and
+                $CompareResult -eq $false -and $CompareCount -eq $true -and
                 $Output.SchemaSummaryPermissions[$Object.Name].'Creator Owner'.Count -eq 0 -and
                 $Output.SchemaSummaryPermissions[$Object.Name].'Cert Publishers'.Count -eq 0 -and
                 $Output.SchemaSummaryPermissions[$Object.Name].'Other'.Count -eq 0) {
