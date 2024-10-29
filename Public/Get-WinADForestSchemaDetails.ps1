@@ -149,6 +149,8 @@
             }
         }
         if ($Object.defaultSecurityDescriptor -and $Object.defaultSecurityDescriptor -ne "D:S:") {
+            $Output.SchemaSummaryPermissions[$Object.Name].'DefaultPermissionsAvailable' = $true
+
             $SecurityDescriptor = Convert-ADSecurityDescriptor -SDDL $Object.defaultSecurityDescriptor -Resolve -DistinguishedName $Object.DistinguishedName
             $Output['SchemaDefaultPermissions'][$Object.Name] = $SecurityDescriptor
             foreach ($Permission in $SecurityDescriptor) {
