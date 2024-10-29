@@ -118,8 +118,18 @@
                 [string] $CanonicalName = ''
                 [string] $ObjectClass = ''
             } else {
-                Write-Warning "Get-ADACL - Object not recognized. Skipping..."
-                continue
+                if ($Object.ntSecurityDescriptor) {
+                    $ADObjectData = $Object
+                    [string] $DistinguishedName = $Object.DistinguishedName
+                    [string] $CanonicalName = $Object.CanonicalName
+                    if ($CanonicalName) {
+                        $CanonicalName = $CanonicalName.TrimEnd('/')
+                    }
+                    [string] $ObjectClass = $Object.ObjectClass
+                } else {
+                    Write-Warning "Get-ADACL - Object not recognized. Skipping..."
+                    continue
+                }
             }
             if (-not $ADObjectData) {
                 $DomainName = ConvertFrom-DistinguishedName -ToDomainCN -DistinguishedName $DistinguishedName
@@ -156,6 +166,7 @@
                     IncludeActiveDirectorySecurityInheritance = $IncludeActiveDirectorySecurityInheritance
                     ExcludeActiveDirectorySecurityInheritance = $ExcludeActiveDirectorySecurityInheritance
                     PrincipalRequested                        = $PrincipalRequested
+                    DistinguishedName                         = $DistinguishedName
                     Bundle                                    = $Bundle
                 }
                 Remove-EmptyValue -Hashtable $SplatFilteredACL
