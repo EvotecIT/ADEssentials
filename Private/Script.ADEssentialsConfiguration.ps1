@@ -2,8 +2,8 @@
     AccountDelegation       = $Script:ShowWinADAccountDelegation
     Users                   = $Script:ShowWinADUser
     Computers               = $Script:ShowWinADComputer
-    DefaultSchemaPermission = $Script:ConfigurationSchemaDefaultPermission
     Groups                  = $Script:ShowWinADGroup
+    Schema                  = $Script:ConfigurationSchema
     Laps                    = $Script:ConfigurationLAPS
     LapsACL                 = $Script:ConfigurationLAPSACL
     LapsAndBitLocker        = $Script:ConfigurationLAPSAndBitlocker
