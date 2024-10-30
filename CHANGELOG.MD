@@ -1,4 +1,8 @@
-﻿#### 0.0.221
+﻿#### 0.0.222 - 2024.10.30
+- Improved `Get-WinADForestSchemaDetails`
+- Improved `Invoke-ADEssentials -Type Schema` html
+
+#### 0.0.221 - 2024.10.29
 - Added `Convert-ADSecurityDescriptor` to convert SDDL to SecurityDescriptor
 - Added `Get-WinADForestSchemaDetails` to review permissions and default permissions on Schema objects
 - Improve `Get-ADACL` for custom objects
