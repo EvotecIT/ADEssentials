@@ -14,7 +14,7 @@
         SchemaSummaryDefaultPermissions = [ordered] @{}
         SchemaSummaryPermissions        = [ordered] @{}
     }
-
+    $Today = Get-Date
     $Properties = @(
         "Name"
         "DistinguishedName"
@@ -33,7 +33,27 @@
     $ForestDN = $ForestInformation['DomainsExtended'][$ForestInformation['Forest'].RootDomain].DistinguishedName
     $FindDN = "CN=Schema,CN=Configuration,$ForestDN"
     $SchemaObject = Get-ADObject -Filter * -SearchBase $FindDN -Properties $Properties -ErrorAction SilentlyContinue
-    $SchemaFilteredObject = $SchemaObject | Select-Object -Property $Properties -Skip 1
+    $Count = 0
+    $SchemaFilteredObject = $SchemaObject | ForEach-Object {
+        # Skip the first object as it is the schema object itself
+        if ($Count -eq 0) { $Count++; return }
+        [PSCustomObject] @{
+            "Name"                            = $_."Name"
+            "DistinguishedName"               = $_."DistinguishedName"
+            "CanonicalName"                   = $_."CanonicalName"
+            "adminDisplayName"                = $_."adminDisplayName"
+            "lDAPDisplayName"                 = $_."lDAPDisplayName"
+            "Created"                         = $_."Created"
+            "CreatedDaysAgo"                  = if ($_.Created) { (New-TimeSpan -Start $_."Created" -End $Today).Days } else { $null }
+            "Modified"                        = $_."Modified"
+            "ModifiedDaysAgo"                 = if ($_.Modified) { (New-TimeSpan -Start $_."Modified" -End $Today).Days } else { $null }
+            "objectClass"                     = $_."objectClass"
+            "ObjectGUID"                      = $_."ObjectGUID"
+            "ProtectedFromAccidentalDeletion" = $_."ProtectedFromAccidentalDeletion"
+            "defaultSecurityDescriptor"       = $_."defaultSecurityDescriptor"
+            "NTSecurityDescriptor"            = $_."NTSecurityDescriptor"
+        }
+    }
     $Output['SchemaObject'] = $SchemaObject[0]
     $Output['SchemaList'] = $SchemaFilteredObject
     $Output['SchemaMaster'] = $ForestInformation.Forest.SchemaMaster
@@ -43,42 +63,44 @@
         $Count++
         Write-Verbose "Get-WinADForestSchemaDetails - Processing [$Count/$($SchemaFilteredObject.Count)] $($Object.DistinguishedName)"
         $Output.SchemaSummaryDefaultPermissions[$Object.Name] = [PSCustomObject] @{
-            Name                   = $Object.Name
-            CanonicalName          = $Object.CanonicalName
-            AdminDisplayName       = $Object.adminDisplayName
-            LdapDisplayName        = $Object.lDAPDisplayName
-            'PermissionsAvailable' = $false
-            'Account Operators'    = @()
-            'Administrators'       = @()
-            'System'               = @()
-            'Authenticated Users'  = @()
-            'Domain Admins'        = @()
-            'Enterprise Admins'    = @()
-            'Schema Admins'        = @()
-            'Creator Owner'        = @()
-            'Cert Publishers'      = @()
-            'Other'                = @()
-            DistinguishedName      = $Object.DistinguishedName
+            Name                            = $Object.Name
+            CanonicalName                   = $Object.CanonicalName
+            AdminDisplayName                = $Object.adminDisplayName
+            LdapDisplayName                 = $Object.lDAPDisplayName
+            'PermissionsAvailable'          = $false
+            'Account Operators'             = @()
+            'Administrators'                = @()
+            'System'                        = @()
+            'Authenticated Users'           = @()
+            'Domain Admins'                 = @()
+            'Enterprise Admins'             = @()
+            'Enterprise Domain Controllers' = @()
+            'Schema Admins'                 = @()
+            'Creator Owner'                 = @()
+            'Cert Publishers'               = @()
+            'Other'                         = @()
+            DistinguishedName               = $Object.DistinguishedName
         }
 
         $Output.SchemaSummaryPermissions[$Object.Name] = [PSCustomObject] @{
-            Name                          = $Object.Name
-            CanonicalName                 = $Object.CanonicalName
-            AdminDisplayName              = $Object.adminDisplayName
-            LdapDisplayName               = $Object.lDAPDisplayName
-            'PermissionsChanged'          = $null
-            'DefaultPermissionsAvailable' = $false
-            'Account Operators'           = @()
-            'Administrators'              = @()
-            'System'                      = @()
-            'Authenticated Users'         = @()
-            'Domain Admins'               = @()
-            'Enterprise Admins'           = @()
-            'Schema Admins'               = @()
-            'Creator Owner'               = @()
-            'Cert Publishers'             = @()
-            'Other'                       = @()
-            DistinguishedName             = $Object.DistinguishedName
+            Name                            = $Object.Name
+            CanonicalName                   = $Object.CanonicalName
+            AdminDisplayName                = $Object.adminDisplayName
+            LdapDisplayName                 = $Object.lDAPDisplayName
+            'PermissionsChanged'            = $null
+            'DefaultPermissionsAvailable'   = $false
+            'Account Operators'             = @()
+            'Administrators'                = @()
+            'System'                        = @()
+            'Authenticated Users'           = @()
+            'Domain Admins'                 = @()
+            'Enterprise Admins'             = @()
+            'Enterprise Domain Controllers' = @()
+            'Schema Admins'                 = @()
+            'Creator Owner'                 = @()
+            'Cert Publishers'               = @()
+            'Other'                         = @()
+            DistinguishedName               = $Object.DistinguishedName
         }
 
         if ($Object.NTSecurityDescriptor) {
@@ -116,6 +138,10 @@
                 } elseif ($Permission.Principal -eq 'Enterprise Admins') {
                     if ($Output.SchemaSummaryPermissions[$Object.Name].'Enterprise Admins' -notcontains $Permission.ActiveDirectoryRights) {
                         $Output.SchemaSummaryPermissions[$Object.Name].'Enterprise Admins' += $Permission.ActiveDirectoryRights
+                    }
+                } elseif ($Permission.Principal -eq 'Enterprise Domain Controllers') {
+                    if ($Output.SchemaSummaryPermissions[$Object.Name].'Enterprise Domain Controllers' -notcontains $Permission.ActiveDirectoryRights) {
+                        $Output.SchemaSummaryPermissions[$Object.Name].'Enterprise Domain Controllers' += $Permission.ActiveDirectoryRights
                     }
                 } elseif ($Permission.Principal -eq 'Schema Admins') {
                     if ($Output.SchemaSummaryPermissions[$Object.Name].'Schema Admins' -notcontains $Permission.ActiveDirectoryRights) {
@@ -185,6 +211,10 @@
                 } elseif ($Permission.Principal -eq 'Enterprise Admins') {
                     if ($Output.SchemaSummaryDefaultPermissions[$Object.Name].'Enterprise Admins' -notcontains $Permission.ActiveDirectoryRights) {
                         $Output.SchemaSummaryDefaultPermissions[$Object.Name].'Enterprise Admins' += $Permission.ActiveDirectoryRights
+                    }
+                } elseif ($Permission.Principal -eq 'Enterprise Domain Controllers') {
+                    if ($Output.SchemaSummaryDefaultPermissions[$Object.Name].'Enterprise Domain Controllers' -notcontains $Permission.ActiveDirectoryRights) {
+                        $Output.SchemaSummaryDefaultPermissions[$Object.Name].'Enterprise Domain Controllers' += $Permission.ActiveDirectoryRights
                     }
                 } elseif ($Permission.Principal -eq 'Schema Admins') {
                     if ($Output.SchemaSummaryDefaultPermissions[$Object.Name].'Schema Admins' -notcontains $Permission.ActiveDirectoryRights) {
