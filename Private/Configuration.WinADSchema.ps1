@@ -54,45 +54,39 @@
             New-HTMLTabPanel {
                 New-HTMLTab -Name "Schema List" {
                     New-HTMLTable -DataTable $Script:Reporting['Schema']['Data'].SchemaList -Filtering {
-                        # New-HTMLTableCondition -Name 'MinPasswordLength' -ComparisonType number -Operator le -Value 8 -BackgroundColor Salmon
-                        # New-HTMLTableCondition -Name 'MinPasswordLength' -ComparisonType number -Operator le -Value 4 -BackgroundColor Red
-                        # New-HTMLTableCondition -Name 'MinPasswordLength' -ComparisonType number -Operator between -Value 8, 16 -BackgroundColor Yellow
-                        # New-HTMLTableCondition -Name 'MinPasswordLength' -ComparisonType number -Operator between -Value 16, 20 -BackgroundColor LightGreen
-                        # New-HTMLTableCondition -Name 'MinPasswordLength' -ComparisonType number -Operator ge -Value 20 -BackgroundColor Green
-                        # New-HTMLTableCondition -Name 'ComplexityEnabled' -ComparisonType string -Operator eq -Value $false -BackgroundColor Salmon -FailBackgroundColor LightGreen
-                        # New-HTMLTableCondition -Name 'ReversibleEncryptionEnabled' -ComparisonType string -Operator eq -Value $true -BackgroundColor Salmon -FailBackgroundColor LightGreen
-                    } -ScrollX -PagingLength 7 -DataTableID 'SchemaList' -ExcludeProperty NTSecurityDescriptor
+
+                    } -ScrollX -PagingLength 7 -DataTableID 'SchemaList' -ExcludeProperty NTSecurityDescriptor -PagingOptions 5, 7, 10, 15, 20, 25, 50, 100
 
                 }
                 New-HTMLTab -Name "Schema Permissions" {
                     New-HTMLSection -HeaderText 'Summary' {
                         New-HTMLTable -DataTable $Script:Reporting['Schema']['Data'].SchemaSummaryPermissions.Values -Filtering {
-                            New-TableEvent -ID 'SchemaPermissions' -SourceColumnID 16 -TargetColumnID 0
+                            New-TableEvent -ID 'SchemaPermissions' -SourceColumnID 17 -TargetColumnID 0
                             New-HTMLTableCondition -Name 'PermissionsChanged' -ComparisonType string -Operator eq -Value $true -BackgroundColor Salmon -FailBackgroundColor LightGreen
                             New-HTMLTableCondition -Name 'DefaultPermissionsAvailable' -ComparisonType string -Operator eq -Value $true -BackgroundColor MoonYellow
-                        } -ScrollX -PagingLength 7 -DataTableID 'SchemaSummaryPermission'
+                        } -ScrollX -PagingLength 7 -DataTableID 'SchemaSummaryPermission' -PagingOptions 5, 7, 10, 15, 20, 25, 50, 100
                     }
                     New-HTMLSection -HeaderText 'Details' {
                         # Remove empty values
                         $FilteredData = $Script:Reporting['Schema']['Data'].SchemaPermissions.Values | ForEach-Object { if ($_) { $_ } }
                         New-HTMLTable -DataTable $FilteredData -Filtering {
                             New-HTMLTableCondition -Name 'AccessControlType' -ComparisonType string -Operator eq -Value 'Allow' -BackgroundColor LightGreen -FailBackgroundColor Salmon
-                        } -ScrollX -PagingLength 7 -DataTableID 'SchemaPermissions'
+                        } -ScrollX -PagingLength 7 -DataTableID 'SchemaPermissions' -PagingOptions 5, 7, 10, 15, 20, 25, 50, 100
                     }
                 }
                 New-HTMLTab -Name "Schema Default Permissions" {
                     New-HTMLSection -HeaderText 'Summary' {
                         New-HTMLTable -DataTable $Script:Reporting['Schema']['Data'].SchemaSummaryDefaultPermissions.Values -Filtering {
-                            New-TableEvent -ID 'SchemaDefaultPermissions' -SourceColumnID 15 -TargetColumnID 0
+                            New-TableEvent -ID 'SchemaDefaultPermissions' -SourceColumnID 16 -TargetColumnID 0
                             New-HTMLTableCondition -Name 'PermissionsAvailable' -ComparisonType string -Operator eq -Value $true -BackgroundColor MoonYellow
-                        } -ScrollX -PagingLength 7 -DataTableID 'SchemaSummary'
+                        } -ScrollX -PagingLength 7 -DataTableID 'SchemaSummary' -PagingOptions 5, 7, 10, 15, 20, 25, 50, 100
                     }
                     New-HTMLSection -HeaderText 'Details' {
                         # Remove empty values
                         $FilteredData = $Script:Reporting['Schema']['Data'].SchemaDefaultPermissions.Values | ForEach-Object { if ($_) { $_ } }
                         New-HTMLTable -DataTable $FilteredData -Filtering {
                             New-HTMLTableCondition -Name 'AccessControlType' -ComparisonType string -Operator eq -Value 'Allow' -BackgroundColor LightGreen -FailBackgroundColor Salmon
-                        } -ScrollX -PagingLength 7 -DataTableID 'SchemaDefaultPermissions'
+                        } -ScrollX -PagingLength 7 -DataTableID 'SchemaDefaultPermissions' -PagingOptions 5, 7, 10, 15, 20, 25, 50, 100
                     }
                 }
             }
