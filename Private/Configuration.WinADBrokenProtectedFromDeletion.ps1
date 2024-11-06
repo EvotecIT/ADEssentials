@@ -15,7 +15,7 @@
                     $Script:Reporting['BrokenProtectedFromDeletion']['Variables'].ObjectsBrokenPerOU[$Object.ParentContainer] = $true
                     $Script:Reporting['BrokenProtectedFromDeletion']['Variables'].ObjectsBrokenPerOUTotal++
                 }
-                $Script:Reporting['BrokenProtectedFromDeletion']['Variables'].ObjectsBroken.Add($Object)
+                $null = $Script:Reporting['BrokenProtectedFromDeletion']['Variables'].ObjectsBroken.Add($Object)
             }
             $Script:Reporting['BrokenProtectedFromDeletion']['Variables']['ObjectsTotal']++
             $Script:Reporting['BrokenProtectedFromDeletion']['Variables']['ObjectsByClass'][$Object.ObjectClass]++
