@@ -1,4 +1,10 @@
-﻿#### 0.0.222 - 2024.10.30
+﻿#### 0.0.223
+- Improve `Get-ADACL`
+- Added `Get-WinADBrokenProtectedFromDeletion`
+- Added `Repair-WinADBrokenProtectedFromDeletion`
+- Added `Invoke-ADEssentials -Type BrokenProtectedFromDeletion`
+
+#### 0.0.222 - 2024.10.30
 - Improved `Get-WinADForestSchemaDetails`
 - Improved `Invoke-ADEssentials -Type Schema` html
 
