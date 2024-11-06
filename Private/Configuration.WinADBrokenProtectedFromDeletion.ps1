@@ -1,5 +1,5 @@
 ﻿$Script:ShowWinADBrokenProtectedFromDeletion = [ordered] @{
-    Name       = 'Protected From Deletion Status'
+    Name       = 'Protected From Accidental Deletion Status'
     Enabled    = $true
     Execute    = {
         Get-WinADBrokenProtectedFromDeletion -Type All
@@ -10,6 +10,12 @@
                 $Script:Reporting['BrokenProtectedFromDeletion']['Variables']['ObjectsBrokenTotal']++
                 $Script:Reporting['BrokenProtectedFromDeletion']['Variables']['ObjectsBrokenByClass'][$Object.ObjectClass]++
                 $Script:Reporting['BrokenProtectedFromDeletion']['Variables']['ObjectsBrokenByDomain'][$Object.Domain]++
+
+                if (-not $Script:Reporting['BrokenProtectedFromDeletion']['Variables'].ObjectsBrokenPerOU[$Object.ParentContainer]) {
+                    $Script:Reporting['BrokenProtectedFromDeletion']['Variables'].ObjectsBrokenPerOU[$Object.ParentContainer] = $true
+                    $Script:Reporting['BrokenProtectedFromDeletion']['Variables'].ObjectsBrokenPerOUTotal++
+                }
+                $Script:Reporting['BrokenProtectedFromDeletion']['Variables'].ObjectsBroken.Add($Object)
             }
             $Script:Reporting['BrokenProtectedFromDeletion']['Variables']['ObjectsTotal']++
             $Script:Reporting['BrokenProtectedFromDeletion']['Variables']['ObjectsByClass'][$Object.ObjectClass]++
@@ -30,30 +36,36 @@
         New-HTMLList -Type Unordered {
             New-HTMLListItem -Text "Total objects scanned: ", $($Script:Reporting['BrokenProtectedFromDeletion']['Variables'].ObjectsTotal) -FontWeight normal, bold
             New-HTMLListItem -Text "Objects with broken protection: ", $($Script:Reporting['BrokenProtectedFromDeletion']['Variables'].ObjectsBrokenTotal) -FontWeight normal, bold -Color None, Red
+            New-HTMLListItem -Text "Objects with broken protection per OU: ", $($Script:Reporting['BrokenProtectedFromDeletion']['Variables'].ObjectsBrokenPerOUTotal) -FontWeight normal, bold -Color None, Red
 
-            New-HTMLListItem -Text "Broken objects by type:" -FontWeight bold {
-                New-HTMLList -Type Unordered {
-                    foreach ($Class in $Script:Reporting['BrokenProtectedFromDeletion']['Variables'].ObjectsBrokenByClass.Keys) {
-                        New-HTMLListItem -Text "$Class objects: ", $($Script:Reporting['BrokenProtectedFromDeletion']['Variables'].ObjectsBrokenByClass[$Class]) -FontWeight normal, bold
+            if ($($Script:Reporting['BrokenProtectedFromDeletion']['Variables'].ObjectsBrokenTotal -gt 0)) {
+                New-HTMLListItem -Text "Broken objects by type:" -FontWeight bold {
+                    New-HTMLList -Type Unordered {
+                        foreach ($Class in $Script:Reporting['BrokenProtectedFromDeletion']['Variables'].ObjectsBrokenByClass.Keys) {
+                            New-HTMLListItem -Text "$Class objects: ", $($Script:Reporting['BrokenProtectedFromDeletion']['Variables'].ObjectsBrokenByClass[$Class]) -FontWeight normal, bold
+                        }
                     }
                 }
-            }
-            New-HTMLListItem -Text "Broken objects by domain:" -FontWeight bold {
-                New-HTMLList -Type Unordered {
-                    foreach ($Domain in $Script:Reporting['BrokenProtectedFromDeletion']['Variables'].ObjectsBrokenByDomain.Keys) {
-                        New-HTMLListItem -Text "$($Domain): ", $($Script:Reporting['BrokenProtectedFromDeletion']['Variables'].ObjectsBrokenByDomain[$Domain]) -FontWeight normal, bold
+                New-HTMLListItem -Text "Broken objects by domain:" -FontWeight bold {
+                    New-HTMLList -Type Unordered {
+                        foreach ($Domain in $Script:Reporting['BrokenProtectedFromDeletion']['Variables'].ObjectsBrokenByDomain.Keys) {
+                            New-HTMLListItem -Text "$($Domain): ", $($Script:Reporting['BrokenProtectedFromDeletion']['Variables'].ObjectsBrokenByDomain[$Domain]) -FontWeight normal, bold
+                        }
                     }
                 }
             }
         } -FontSize 10pt
     }
     Variables  = @{
-        ObjectsTotal          = 0
-        ObjectsBrokenTotal    = 0
-        ObjectsByClass        = @{}
-        ObjectsBrokenByClass  = @{}
-        ObjectsByDomain       = @{}
-        ObjectsBrokenByDomain = @{}
+        ObjectsTotal            = 0
+        ObjectsBrokenTotal      = 0
+        ObjectsByClass          = @{}
+        ObjectsBrokenByClass    = @{}
+        ObjectsByDomain         = @{}
+        ObjectsBrokenByDomain   = @{}
+        ObjectsBrokenPerOU      = @{}
+        ObjectsBrokenPerOUTotal = 0
+        ObjectsBroken           = [System.Collections.Generic.List[PSCustomObject]]::new()
     }
     Solution   = {
         New-HTMLSection -Invisible {
@@ -74,9 +86,9 @@
             }
         }
         New-HTMLSection -Name 'Objects with Broken Protection' {
-            New-HTMLTable -DataTable $Script:Reporting['BrokenProtectedFromDeletion']['Data'] -Filtering {
-                New-HTMLTableCondition -Name 'HasBrokenPermissions' -Value $true -Operator eq -BackgroundColor Salmon -FailBackgroundColor MintCream
-            } -PagingOptions 7, 15, 30, 45, 60
+            New-HTMLTable -DataTable $Script:Reporting['BrokenProtectedFromDeletion']['Variables'].ObjectsBroken -Filtering {
+                New-HTMLTableCondition -Name 'HasBrokenPermissions' -Value $true -Operator eq -BackgroundColor Salmon #-FailBackgroundColor MintGreen
+            } -PagingOptions 7, 15, 30, 45, 60 -ScrollX
         }
         New-HTMLSection -Name 'Steps to fix - Protected From Deletion' {
             New-HTMLContainer {
