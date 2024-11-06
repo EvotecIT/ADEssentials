@@ -45,6 +45,9 @@
     .PARAMETER IncludeActiveDirectoryRights
     Specifies the Active Directory rights to include in ACL filtering.
 
+    .PARAMETER IncludeActiveDirectoryRightsExactMatch
+    Specifies the Active Directory rights to include in the filter as an exact match (all rights must be present).
+
     .PARAMETER ExcludeActiveDirectoryRights
     Specifies the Active Directory rights to exclude in ACL filtering.
 
@@ -81,6 +84,7 @@
         [string[]] $ExcludeObjectTypeName,
         [string[]] $ExcludeInheritedObjectTypeName,
         [Alias('ActiveDirectoryRights')][System.DirectoryServices.ActiveDirectoryRights[]] $IncludeActiveDirectoryRights,
+        [System.DirectoryServices.ActiveDirectoryRights[]] $IncludeActiveDirectoryRightsExactMatch,
         [System.DirectoryServices.ActiveDirectoryRights[]] $ExcludeActiveDirectoryRights,
         [Alias('InheritanceType', 'IncludeInheritanceType')][System.DirectoryServices.ActiveDirectorySecurityInheritance[]] $IncludeActiveDirectorySecurityInheritance,
         [Alias('ExcludeInheritanceType')][System.DirectoryServices.ActiveDirectorySecurityInheritance[]] $ExcludeActiveDirectorySecurityInheritance,
@@ -162,6 +166,7 @@
                     ExcludeObjectTypeName                     = $ExcludeObjectTypeName
                     ExcludeInheritedObjectTypeName            = $ExcludeInheritedObjectTypeName
                     IncludeActiveDirectoryRights              = $IncludeActiveDirectoryRights
+                    IncludeActiveDirectoryRightsExactMatch    = $IncludeActiveDirectoryRightsExactMatch
                     ExcludeActiveDirectoryRights              = $ExcludeActiveDirectoryRights
                     IncludeActiveDirectorySecurityInheritance = $IncludeActiveDirectorySecurityInheritance
                     ExcludeActiveDirectorySecurityInheritance = $ExcludeActiveDirectorySecurityInheritance

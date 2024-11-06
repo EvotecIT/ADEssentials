@@ -39,6 +39,9 @@
     .PARAMETER IncludeActiveDirectoryRights
     Specifies the Active Directory rights to include in the filter.
 
+    .PARAMETER IncludeActiveDirectoryRightsExactMatch
+    Specifies the Active Directory rights to include in the filter as an exact match (all rights must be present).
+
     .PARAMETER ExcludeActiveDirectoryRights
     Specifies the Active Directory rights to exclude from the filter.
 
@@ -81,6 +84,7 @@
         [string[]] $ExcludeObjectTypeName,
         [string[]] $ExcludeInheritedObjectTypeName,
         [Alias('ActiveDirectoryRights')][System.DirectoryServices.ActiveDirectoryRights[]] $IncludeActiveDirectoryRights,
+        [System.DirectoryServices.ActiveDirectoryRights[]] $IncludeActiveDirectoryRightsExactMatch,
         [System.DirectoryServices.ActiveDirectoryRights[]] $ExcludeActiveDirectoryRights,
         [Alias('InheritanceType', 'IncludeInheritanceType')][System.DirectoryServices.ActiveDirectorySecurityInheritance[]] $IncludeActiveDirectorySecurityInheritance,
         [Alias('ExcludeInheritanceType')][System.DirectoryServices.ActiveDirectorySecurityInheritance[]] $ExcludeActiveDirectorySecurityInheritance,
@@ -112,6 +116,17 @@
     }
     if ($NotInherited) {
         if ($ACL.IsInherited -eq $true) {
+            continue
+        }
+    }
+    if ($IncludeActiveDirectoryRightsExactMatch) {
+        # We expect all rights to be found in the ACL (could be more rights than specified, but all of them have to be there)
+        [Array] $FoundIncludeList = foreach ($Right in $IncludeActiveDirectoryRightsExactMatch) {
+            if ($ADRights -eq $Right) {
+                $true
+            }
+        }
+        if ($FoundIncludeList.Count -ne $IncludeActiveDirectoryRightsExactMatch.Count) {
             continue
         }
     }
