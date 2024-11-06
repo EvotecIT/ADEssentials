@@ -34,7 +34,8 @@
     This is only nessecary if you have non-english AD, as Everyone is not Everyone in all languages.
 
     .PARAMETER LimitProcessing
-    Limits the number of objects to process.
+    Limits the number of objects to process. While this parameter may cause the cmdlet to return X number of objects, it may not match the actual number of fixes applied.
+    This is because the fix is per OU, not per object. If there are multiple objects in the same OU, only one fix is applied.
 
     .EXAMPLE
     Repair-WinADBrokenProtectedFromDeletion -Type User -WhatIf -LimitProcessing 5
