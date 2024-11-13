@@ -55,7 +55,7 @@
                 New-HTMLTab -Name "Schema List" {
                     New-HTMLTable -DataTable $Script:Reporting['Schema']['Data'].SchemaList -Filtering {
 
-                    } -ScrollX -PagingLength 7 -DataTableID 'SchemaList' -ExcludeProperty NTSecurityDescriptor -PagingOptions 5, 7, 10, 15, 20, 25, 50, 100
+                    } -ScrollX -PagingLength 15 -DataTableID 'SchemaList' -ExcludeProperty NTSecurityDescriptor -PagingOptions 5, 7, 10, 15, 20, 25, 50, 100
 
                 }
                 New-HTMLTab -Name "Schema Permissions" {
