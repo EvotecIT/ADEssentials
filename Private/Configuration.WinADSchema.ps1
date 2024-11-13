@@ -58,6 +58,11 @@
                     } -ScrollX -PagingLength 15 -DataTableID 'SchemaList' -ExcludeProperty NTSecurityDescriptor -PagingOptions 5, 7, 10, 15, 20, 25, 50, 100
 
                 }
+                New-HTMLTab -Name "Schema Owners" {
+                    New-HTMLTable -DataTable $Script:Reporting['Schema']['Data'].SchemaOwners.Values -Filtering {
+
+                    } -ScrollX -PagingLength 15 -DataTableID 'SchemaOwners' -PagingOptions 5, 7, 10, 15, 20, 25, 50, 100
+                }
                 New-HTMLTab -Name "Schema Permissions" {
                     New-HTMLSection -HeaderText 'Summary' {
                         New-HTMLTable -DataTable $Script:Reporting['Schema']['Data'].SchemaSummaryPermissions.Values -Filtering {
