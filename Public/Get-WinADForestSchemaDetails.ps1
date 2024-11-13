@@ -184,7 +184,6 @@
                 Owner             = $Owner.Owner
                 OwnerType         = $Owner.OwnerType
                 OwnerSID          = $Owner.OwnerSID
-                OwnerResolved     = $Owner.OwnerResolved
                 Error             = $Owner.Error
                 DistinguishedName = $Object.DistinguishedName
             }
