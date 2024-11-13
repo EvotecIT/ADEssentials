@@ -10,6 +10,7 @@
     - Schema attributes and their properties
     - Security permissions (both current and default) for schema objects
     - Permission differences from default settings
+    - Schema object owners
 
     .PARAMETER None
     This function does not accept any parameters.
@@ -24,6 +25,7 @@
     - SchemaPermissions: Current security permissions for schema objects
     - SchemaSummaryDefaultPermissions: Summarized default permissions by principal
     - SchemaSummaryPermissions: Summarized current permissions by principal
+    - SchemaOwners: Owners of schema objects
 
     .EXAMPLE
     $SchemaDetails = Get-WinADForestSchemaDetails
