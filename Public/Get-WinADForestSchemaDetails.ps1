@@ -1,9 +1,47 @@
 ﻿function Get-WinADForestSchemaDetails {
+    <#
+    .SYNOPSIS
+    Gets detailed information about Active Directory forest schema including security permissions.
+
+    .DESCRIPTION
+    This function retrieves comprehensive information about the Active Directory forest schema, including:
+    - Schema master information
+    - Schema object details
+    - Schema attributes and their properties
+    - Security permissions (both current and default) for schema objects
+    - Permission differences from default settings
+
+    .PARAMETER None
+    This function does not accept any parameters.
+
+    .OUTPUTS
+    Returns a hashtable containing:
+    - SchemaMaster: The domain controller that holds the Schema Master FSMO role
+    - SchemaObject: Details of the Schema container object
+    - SchemaList: List of all schema objects and their attributes
+    - ForestInformation: General forest details
+    - SchemaDefaultPermissions: Default security permissions for schema objects
+    - SchemaPermissions: Current security permissions for schema objects
+    - SchemaSummaryDefaultPermissions: Summarized default permissions by principal
+    - SchemaSummaryPermissions: Summarized current permissions by principal
+
+    .EXAMPLE
+    $SchemaDetails = Get-WinADForestSchemaDetails
+    Gets all schema details and permissions for the current forest
+
+    .EXAMPLE
+    $SchemaDetails = Get-WinADForestSchemaDetails | Select-Object -ExpandProperty SchemaList
+    Gets just the list of schema objects and their attributes
+
+    .NOTES
+    Requires Active Directory PowerShell module
+    Requires Schema Admin permissions to view some details
+    Can be resource intensive in large environments
+    #>
     [CmdletBinding()]
     param(
 
     )
-
     $Output = [ordered] @{
         SchemaMaster                    = $null
         SchemaObject                    = $null
@@ -28,6 +66,17 @@
         "ProtectedFromAccidentalDeletion"
         "defaultSecurityDescriptor"
         "NTSecurityDescriptor"
+        "attributeID"
+        "attributeSyntax"
+        "isSingleValued"
+        "adminDescription"
+        "omSyntax"
+        "searchFlags"
+        "systemOnly"
+        "showInAdvancedViewOnly"
+        "schemaIDGUID"
+        "attributeSecurityGUID"
+        "CN"
     )
     $ForestInformation = Get-WinADForestDetails -Extended
     $ForestDN = $ForestInformation['DomainsExtended'][$ForestInformation['Forest'].RootDomain].DistinguishedName
@@ -37,12 +86,16 @@
     $SchemaFilteredObject = $SchemaObject | ForEach-Object {
         # Skip the first object as it is the schema object itself
         if ($Count -eq 0) { $Count++; return }
+
+        # Convert GUIDs from byte arrays
+        $SchemaIdGuid = if ($_."schemaIDGUID") { [System.Guid]::new($_."schemaIDGUID").ToString() } else { $null } # ConvertFrom-ADSchemaGUID
+        $AttributeSecurityGuid = if ($_."attributeSecurityGUID") { [System.Guid]::new($_."attributeSecurityGUID").ToString() } else { $null } # ConvertFrom-ADSchemaGUID
+        $AttributeSecurityGuidBase64 = if ($_."attributeSecurityGUID") { [Convert]::ToBase64String($_."attributeSecurityGUID") } else { $null } # ConvertTo-Base64
+
         [PSCustomObject] @{
             "Name"                            = $_."Name"
             "DistinguishedName"               = $_."DistinguishedName"
             "CanonicalName"                   = $_."CanonicalName"
-            "adminDisplayName"                = $_."adminDisplayName"
-            "lDAPDisplayName"                 = $_."lDAPDisplayName"
             "Created"                         = $_."Created"
             "CreatedDaysAgo"                  = if ($_.Created) { (New-TimeSpan -Start $_."Created" -End $Today).Days } else { $null }
             "Modified"                        = $_."Modified"
@@ -52,6 +105,20 @@
             "ProtectedFromAccidentalDeletion" = $_."ProtectedFromAccidentalDeletion"
             "defaultSecurityDescriptor"       = $_."defaultSecurityDescriptor"
             "NTSecurityDescriptor"            = $_."NTSecurityDescriptor"
+            "CN"                              = $_."CN"
+            "attributeID"                     = $_."attributeID"
+            "attributeSyntax"                 = $_."attributeSyntax"
+            "isSingleValued"                  = $_."isSingleValued"
+            "adminDisplayName"                = $_."adminDisplayName"
+            "lDAPDisplayName"                 = $_."lDAPDisplayName"
+            "adminDescription"                = $_."adminDescription"
+            "omSyntax"                        = $_."omSyntax"
+            "searchFlags"                     = $_."searchFlags"
+            "systemOnly"                      = $_."systemOnly"
+            "showInAdvancedViewOnly"          = $_."showInAdvancedViewOnly"
+            "attributeSecurityGUID"           = $AttributeSecurityGuid
+            "attributeSecurityGUIDBase64"     = $AttributeSecurityGuidBase64
+            "schemaIDGUID"                    = $SchemaIdGuid
         }
     }
     $Output['SchemaObject'] = $SchemaObject[0]
