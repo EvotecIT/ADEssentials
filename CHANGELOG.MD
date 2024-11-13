@@ -1,4 +1,8 @@
-﻿#### 0.0.224
+﻿#### 0.0.225
+- Improve `Get-WinADForestSchemaDetails`
+- Improve `Invoke-ADEssentials -Type Schema`
+
+#### 0.0.224
 - Improve `Get-WinADForestSchemaDetails`
 - Improve `Invoke-ADEssentials -Type Schema`
 - Small typo and docs fixes
