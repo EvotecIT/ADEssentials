@@ -51,6 +51,7 @@
         SchemaPermissions               = [ordered] @{}
         SchemaSummaryDefaultPermissions = [ordered] @{}
         SchemaSummaryPermissions        = [ordered] @{}
+        SchemaOwners                    = [ordered] @{}
     }
     $Today = Get-Date
     $Properties = @(
@@ -172,6 +173,19 @@
 
         if ($Object.NTSecurityDescriptor) {
             $SecurityDescriptor = Get-ADACL -ADObject $Object -Resolve
+            $Owner = Get-ADACLOwner -ADObject $Object.DistinguishedName -Resolve
+            $Output['SchemaOwners'][$Object.Name] = [PSCustomObject] @{
+                Name              = $Object.Name
+                CanonicalName     = $Object.CanonicalName
+                AdminDisplayName  = $Object.adminDisplayName
+                LdapDisplayName   = $Object.lDAPDisplayName
+                Owner             = $Owner.Owner
+                OwnerType         = $Owner.OwnerType
+                OwnerSID          = $Owner.OwnerSID
+                OwnerResolved     = $Owner.OwnerResolved
+                Error             = $Owner.Error
+                DistinguishedName = $Object.DistinguishedName
+            }
             $Output['SchemaPermissions'][$Object.Name] = $SecurityDescriptor
             foreach ($Permission in $SecurityDescriptor) {
                 if ($Permission.Principal -eq 'Account Operators') {
