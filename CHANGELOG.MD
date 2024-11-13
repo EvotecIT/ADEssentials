@@ -1,4 +1,9 @@
-﻿#### 0.0.223
+﻿#### 0.0.224
+- Improve `Get-WinADForestSchemaDetails`
+- Improve `Invoke-ADEssentials -Type Schema`
+- Small typo and docs fixes
+
+#### 0.0.223
 - Improve `Get-ADACL`
 - Added `Get-WinADBrokenProtectedFromDeletion`
 - Added `Repair-WinADBrokenProtectedFromDeletion`
