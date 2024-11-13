@@ -85,7 +85,7 @@
         'whenCreated'
     )
     $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation
-    $CoungGlobalBroken = 0
+    $CountGlobalBroken = 0
     $CountDomain = 0
     :fullBreak foreach ($Domain in $ForestInformation.Domains) {
         $CountDomain++
@@ -151,7 +151,7 @@
                     continue
                 }
                 if ($HasBrokenPermissions) {
-                    $CoungGlobalBroken++
+                    $CountGlobalBroken++
                 }
 
                 [PSCustomObject] @{
@@ -170,7 +170,7 @@
                     WhenCreatedDays                 = if ($Object.Whencreated) { (($Today) - $Object.whenCreated).Days } else { $null }
                     WhenChangedDays                 = if ($Object.WhenChanged) { (($Today) - $Object.whenChanged).Days } else { $null }
                 }
-                if ($ReturnBrokenOnly -and $LimitProcessing -and $CoungGlobalBroken -ge $LimitProcessing) {
+                if ($ReturnBrokenOnly -and $LimitProcessing -and $CountGlobalBroken -ge $LimitProcessing) {
                     break fullBreak
                 }
             }
