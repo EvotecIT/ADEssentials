@@ -113,7 +113,11 @@
 
         [Parameter(ParameterSetName = 'Computer')]
         [Parameter(ParameterSetName = 'Forest')]
-        [int] $RetryCount
+        [int] $RetryCount,
+
+        [Parameter(ParameterSetName = 'Computer')]
+        [Parameter(ParameterSetName = 'Forest')]
+        [string] $CertificateIncludeDomainName
     )
     begin {
         Add-Type -Assembly System.DirectoryServices.Protocols
@@ -152,6 +156,9 @@
                     SkipCheckGC       = $SkipCheckGC
                     RetryCount        = $RetryCount
                 }
+                if ($CertificateIncludeDomainName) {
+                    $testLdapServerSplat.CertificateIncludeDomainName = $CertificateIncludeDomainName
+                }
                 if ($PSBoundParameters.ContainsKey('Credential')) {
                     $testLdapServerSplat.Credential = $Credential
                 }
@@ -172,6 +179,20 @@
                     Identity          = $Identity
                     RetryCount        = $RetryCount
                 }
+
+                $IncludeCertificateIncludeDomainName = @(
+                    if ($CertificateIncludeDomainName) {
+                        $CertificateIncludeDomainName
+                    }
+                    if ($Computer.Domain) {
+                        $Computer.Domain
+                    }
+                )
+
+                if ($IncludeCertificateIncludeDomainName) {
+                    $testLdapServerSplat.CertificateIncludeDomainName = $IncludeCertificateIncludeDomainName
+                }
+
                 if ($PSBoundParameters.ContainsKey('Credential')) {
                     $testLdapServerSplat.Credential = $Credential
                 }
