@@ -106,15 +106,23 @@
             New-HTMLSection -Title "Information about Trusts" {
                 New-HTMLTable -DataTable $ADTrusts -Filtering {
                     if (-not $DisableBuiltinConditions) {
-                        New-TableCondition -BackgroundColor MediumSeaGreen -ComparisonType string -Value 'OK' -Name TrustStatus -Operator eq
-                        New-TableCondition -BackgroundColor MediumSeaGreen -ComparisonType string -Value 'OK' -Name QueryStatus -Operator eq
+                        New-TableCondition -BackgroundColor LimeGreen -ComparisonType string -Value 'OK' -Name TrustStatus -Operator eq
+                        New-TableCondition -BackgroundColor LimeGreen -ComparisonType string -Value 'OK' -Name QueryStatus -Operator eq
                         New-TableCondition -BackgroundColor CoralRed -ComparisonType string -Value 'NOT OK' -Name QueryStatus -Operator eq
                         New-TableCondition -BackgroundColor CoralRed -ComparisonType bool -Value $true -Name IsTGTDelegationEnabled -Operator eq
+                        New-TableCondition -ComparisonType number -Name 'ModifiedDaysAgo' -Operator gt -Value 15 -BackgroundColor MediumSeaGreen
+                        New-TableCondition -ComparisonType number -Name 'ModifiedDaysAgo' -Operator gt -Value 30 -BackgroundColor GoldenFizz
+                        New-TableCondition -ComparisonType number -Name 'ModifiedDaysAgo' -Operator gt -Value 90 -BackgroundColor CoralRed
+                        New-TableCondition -ComparisonType number -Name 'ModifiedDaysAgo' -Operator le -Value 15 -BackgroundColor LimeGreen
+
+                        New-TableCondition -ComparisonType string -Name 'Status' -Operator eq -Value 'Enabled' -BackgroundColor LimeGreen
+                        New-TableCondition -ComparisonType string -Name 'Status' -Operator eq -Value 'Internal' -BackgroundColor LightBlue
+                        New-TableCondition -ComparisonType string -Name 'Status' -Operator notin -Value 'Internal', 'Enabled' -BackgroundColor LightCoral
                     }
                     if ($Conditions) {
                         & $Conditions
                     }
-                } -DataTableID 'DT-TrustsInformation'
+                } -DataTableID 'DT-TrustsInformation' -ScrollX -ExcludeProperty 'AdditionalInformation'
             }
         }
         # Lets try to sort it into source domain per tab
@@ -142,8 +150,8 @@
                         New-HTMLSection -Invisible {
                             New-HTMLSection -Title "Trust Information" {
                                 New-HTMLTable -DataTable $Trust {
-                                    New-TableHeader -Names Name, Value -Title 'Trust Information'
-                                } -Transpose -HideFooter -DisablePaging -Buttons copyHtml5, excelHtml5, pdfHtml5
+
+                                } -Transpose -TransposeName 'Setting' -HideFooter -DisablePaging -Buttons copyHtml5, excelHtml5, pdfHtml5 -ExcludeProperty AdditionalInformation
                             }
                             New-HTMLSection -Invisible -Wrap wrap {
                                 New-HTMLSection -Title "Name suffix status" {
