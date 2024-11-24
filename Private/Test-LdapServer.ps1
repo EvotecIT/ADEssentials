@@ -42,6 +42,9 @@
     .PARAMETER RetryCount
     The number of retries for testing.
 
+    .PARAMETER CertificateIncludeDomainName
+    The certificate must include the specified domain name.
+
     .EXAMPLE
     Test-LdapServer -ServerName "ldap.contoso.com" -Computer "MyComputer" -GCPortLDAP 3268 -GCPortLDAPSSL 3269 -PortLDAP 389 -PortLDAPS 636 -VerifyCertificate -Credential $cred -Identity "TestUser" -SkipCheckGC -RetryCount 3
     Tests the LDAP server ports for connectivity with specified parameters.
@@ -63,7 +66,8 @@
         [PSCredential] $Credential,
         [string] $Identity,
         [switch] $SkipCheckGC,
-        [int] $RetryCount
+        [int] $RetryCount,
+        [Array] $CertificateIncludeDomainName
     )
     $RetryCountList = [System.Collections.Generic.List[int]]::new()
     $ScriptRetryCount = $RetryCount
@@ -233,6 +237,7 @@
             AvailablePorts          = $PortsThatWork -join ','
             X509NotBeforeDays       = $null
             X509NotAfterDays        = $null
+            X509DnsNameStatus       = $null
             X509DnsNameList         = $null
             GlobalCatalogLDAP       = $GlobalCatalogNonSSL.Status
             GlobalCatalogLDAPS      = $GlobalCatalogSSL.Status
@@ -330,7 +335,14 @@
         $Output['HashStrength'] = $Certificate['HashStrength']
         $Output['KeyExchangeAlgorithm'] = $Certificate['KeyExchangeAlgorithm']
         $Output['ExchangeStrength'] = $Certificate['ExchangeStrength']
-        # $Output['ErrorMessage'] = $Certificate['ErrorMessage']
+        [Array] $X509DnsNameStatus = foreach ($Name in $CertificateIncludeDomainName) {
+            if ($Output['X509DnsNameList'] -contains $Name) {
+                $true
+            } else {
+                $false
+            }
+        }
+        $Output['X509DnsNameStatus'] = if ($X509DnsNameStatus -notcontains $false) { "OK" } else { "Failed" }
     } else {
         $Output.Remove('LDAPSBind')
         $Output.Remove('GlobalCatalogLDAPSBind')
@@ -362,6 +374,7 @@
     } else {
         $Output.Remove('Identity')
         $Output.Remove('IdentityStatus')
+        $Output.Remove("StatusIdentity")
         $Output.Remove('IdentityAvailablePorts')
         $Output.Remove('IdentityData')
         $Output.Remove('IdentityErrorMessage')
@@ -425,16 +438,17 @@
             $StatusPorts = 'Failed'
         }
     }
-    if ($null -eq $Output.IdentityStatus) {
-        $StatusIdentity = 'Not available'
-    } elseif ($Output.IdentityStatus -eq $true) {
-        $StatusIdentity = 'OK'
-    } else {
-        $StatusIdentity = 'Failed'
+    if ($Identity) {
+        if ($null -eq $Output.IdentityStatus) {
+            $StatusIdentity = 'Not available'
+        } elseif ($Output.IdentityStatus -eq $true) {
+            $StatusIdentity = 'OK'
+        } else {
+            $StatusIdentity = 'Failed'
+        }
+        $Output['StatusIdentity'] = $StatusIdentity
     }
     $Output['StatusDate'] = $StatusDate
     $Output['StatusPorts'] = $StatusPorts
-    $Output['StatusIdentity'] = $StatusIdentity
-
     [PSCustomObject] $Output
 }
