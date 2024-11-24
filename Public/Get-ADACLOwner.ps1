@@ -35,22 +35,10 @@
         [alias('AddACL')][switch] $IncludeACL,
         [validateSet('WellKnownAdministrative', 'Administrative', 'NotAdministrative', 'Unknown')][string[]] $IncludeOwnerType,
         [validateSet('WellKnownAdministrative', 'Administrative', 'NotAdministrative', 'Unknown')][string[]] $ExcludeOwnerType
-        #,
-        # [System.Collections.IDictionary] $ADAdministrativeGroups,
-
-        # [alias('ForestName')][string] $Forest,
-        # [string[]] $ExcludeDomains,
-        # [alias('Domain', 'Domains')][string[]] $IncludeDomains,
-        # [System.Collections.IDictionary] $ExtendedForestInformation
     )
     Begin {
-        #if (-not $Script:ADAdministrativeGroups -and $Resolve) {
-        #Write-Verbose "Get-GPOZaurrOwner - Getting ADAdministrativeGroups"
-        #$ForestInformation = Get-WinADForestDetails -Extended -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation
-        #$ADAdministrativeGroups = Get-ADADministrativeGroups -Type DomainAdmins, EnterpriseAdmins -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ForestInformation
-        #}
         if (-not $Script:ForestDetails) {
-            Write-Verbose "Get-ADACL - Gathering Forest Details"
+            Write-Verbose "Get-ADACLOwner - Gathering Forest Details"
             $Script:ForestDetails = Get-WinADForestDetails
         }
     }
@@ -70,24 +58,20 @@
                 [string] $CanonicalName = ''
                 [string] $ObjectClass = ''
             } else {
-                Write-Warning "Get-ADACLOwner - Object not recognized. Skipping..."
-                continue
-            }
-            <#
-            $DNConverted = (ConvertFrom-DistinguishedName -DistinguishedName $DistinguishedName -ToDC) -replace '=' -replace ','
-            if (-not (Get-PSDrive -Name $DNConverted -ErrorAction SilentlyContinue)) {
-                Write-Verbose "Get-ADACLOwner - Enabling PSDrives for $DistinguishedName to $DNConverted"
-                New-ADForestDrives -ForestName $ForestName # -ObjectDN $DistinguishedName
-                if (-not (Get-PSDrive -Name $DNConverted -ErrorAction SilentlyContinue)) {
-                    Write-Warning "Set-ADACLOwner - Drive $DNConverted not mapped. Terminating..."
-                    return
+                if ($Object.ntSecurityDescriptor) {
+                    $ADObjectData = $Object
+                    [string] $DistinguishedName = $Object.DistinguishedName
+                    [string] $CanonicalName = $Object.CanonicalName
+                    if ($CanonicalName) {
+                        $CanonicalName = $CanonicalName.TrimEnd('/')
+                    }
+                    [string] $ObjectClass = $Object.ObjectClass
+                } else {
+                    Write-Warning "Get-ADACLOwner - Object not recognized. Skipping..."
+                    continue
                 }
             }
-            $PathACL = "$DNConverted`:\$($DistinguishedName)"
-            #>
-
             try {
-                #$ACLs = Get-Acl -Path $PathACL -ErrorAction Stop
                 if (-not $ADObjectData) {
                     $DomainName = ConvertFrom-DistinguishedName -ToDomainCN -DistinguishedName $DistinguishedName
                     $QueryServer = $Script:ForestDetails['QueryServers'][$DomainName].HostName[0]
@@ -99,7 +83,7 @@
                         # Real ACL
                         $ACLs = $ADObjectData.ntSecurityDescriptor
                     } catch {
-                        Write-Warning "Get-ADACL - Path $PathACL - Error: $($_.Exception.Message)"
+                        Write-Warning "Get-ADACLOwner - Path $PathACL - Error: $($_.Exception.Message)"
                         continue
                     }
                 } else {
@@ -127,7 +111,6 @@
                 $Hash['ACLs'] = $ACLs
             }
             if ($Resolve) {
-                #$Identity = ConvertTo-Identity -Identity $Hash.Owner -ExtendedForestInformation $ForestInformation -ADAdministrativeGroups $ADAdministrativeGroups
                 if ($null -eq $Hash.Owner) {
                     $Identity = $null
                 } else {
