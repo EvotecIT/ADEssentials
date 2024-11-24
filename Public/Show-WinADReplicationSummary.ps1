@@ -1,4 +1,35 @@
 ﻿function Show-WinADReplicationSummary {
+    <#
+    .SYNOPSIS
+    Generates an HTML report for Active Directory replication summary.
+
+    .DESCRIPTION
+    This function generates an HTML report for Active Directory replication summary using the Get-WinADForestReplicationSummary function.
+    The report includes statistics and detailed replication information.
+
+    .PARAMETER FilePath
+    The path where the HTML report will be saved.
+
+    .PARAMETER Online
+    Switch to indicate if the report should be generated with online resources.
+
+    .PARAMETER HideHTML
+    Switch to indicate if the HTML report should be hidden after generation.
+
+    .PARAMETER PassThru
+    Switch to return the replication summary and statistics as output.
+
+    .EXAMPLE
+    Show-WinADReplicationSummary -FilePath "C:\Reports\ReplicationSummary.html"
+
+    .EXAMPLE
+    Show-WinADReplicationSummary -Online -HideHTML
+
+    .EXAMPLE
+    Show-WinADReplicationSummary -PassThru
+
+    .NOTES
+    #>
     [CmdletBinding()]
     param(
         [string] $FilePath,
