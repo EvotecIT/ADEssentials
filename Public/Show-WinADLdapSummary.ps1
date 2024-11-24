@@ -1,4 +1,59 @@
 ﻿function Show-WinADLdapSummary {
+    <#
+    .SYNOPSIS
+    Generates an HTML report for LDAP summary.
+
+    .DESCRIPTION
+    This function generates an HTML report for LDAP summary using the Get-WinADLDAPSummary function.
+    The report includes statistics and detailed LDAP server information.
+
+    .PARAMETER Forest
+    The name of the Active Directory forest.
+
+    .PARAMETER ExcludeDomains
+    Domains to exclude from the summary.
+
+    .PARAMETER ExcludeDomainControllers
+    Domain controllers to exclude from the summary.
+
+    .PARAMETER IncludeDomains
+    Domains to include in the summary.
+
+    .PARAMETER IncludeDomainControllers
+    Domain controllers to include in the summary.
+
+    .PARAMETER SkipRODC
+    Switch to skip read-only domain controllers.
+
+    .PARAMETER Identity
+    The identity to use for the summary.
+
+    .PARAMETER RetryCount
+    The number of retries for testing.
+
+    .PARAMETER FilePath
+    The path where the HTML report will be saved.
+
+    .PARAMETER Online
+    Switch to indicate if the report should be generated with online resources.
+
+    .PARAMETER HideHTML
+    Switch to indicate if the HTML report should be hidden after generation.
+
+    .PARAMETER PassThru
+    Switch to return the LDAP summary as output.
+
+    .EXAMPLE
+    Show-WinADLdapSummary -Forest "ad.evotec.xyz" -FilePath "C:\Reports\LDAPSummary.html"
+
+    .EXAMPLE
+    Show-WinADLdapSummary -IncludeDomains "domain1", "domain2" -HideHTML
+
+    .EXAMPLE
+    Show-WinADLdapSummary -PassThru
+
+    .NOTES
+    #>
     [CmdletBinding()]
     param(
         [alias('ForestName')][string] $Forest,
