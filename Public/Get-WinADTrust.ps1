@@ -106,6 +106,11 @@
                 'TrustBase'               = $Trust.Type
                 'TrustType'               = $Trust.Details.TrustType.ToString()
                 'TrustTypeAD'             = $TrustObject[$Trust.Details.TargetName].TrustType
+                'CreatedDaysAgo'          = ((Get-Date) - $TrustObject[$Trust.Details.TargetName].WhenCreated).Days
+                'ModifiedDaysAgo'         = ((Get-Date) - $TrustObject[$Trust.Details.TargetName].WhenChanged).Days
+                'NetBiosName'             = if ($Trust.Details.TrustedDomainInformation.NetBiosName) { $Trust.Details.TrustedDomainInformation.NetBiosName } else { $TrustObject[$Trust.Details.TargetName].TrustPartnerNetBios }
+                'DomainSID'               = if ($Trust.Details.TrustedDomainInformation.DomainSid) { $Trust.Details.TrustedDomainInformation.DomainSid } else { $TrustObject[$Trust.Details.TargetName].ObjectSID }
+                'Status'                  = if ($null -ne $Trust.Details.TrustedDomainInformation.Status) { $Trust.Details.TrustedDomainInformation.Status.ToString() } else { 'Internal' }
                 'Level'                   = $Nesting
                 'SuffixesIncluded'        = (($Trust.Details.TopLevelNames | Where-Object { $_.Status -eq 'Enabled' }).Name) -join ', '
                 'SuffixesExcluded'        = $Trust.Details.ExcludedTopLevelNames.Name
@@ -130,7 +135,7 @@
                 'TrustSourceDC'           = $TrustStatus.TrustSourceDC
                 'TrustTargetDC'           = $TrustStatus.TrustTargetDC
                 'ObjectGUID'              = $TrustObject[$Trust.Details.TargetName].ObjectGuid
-                'ObjectSID'               = $TrustObject[$Trust.Details.TargetName].ObjectSID
+                #'ObjectSID'               = $TrustObject[$Trust.Details.TargetName].ObjectSID
                 'Created'                 = $TrustObject[$Trust.Details.TargetName].WhenCreated
                 'Modified'                = $TrustObject[$Trust.Details.TargetName].WhenChanged
                 'TrustDirectionText'      = $TrustObject[$Trust.Details.TargetName].TrustDirectionText
