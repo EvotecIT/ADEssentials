@@ -2,8 +2,8 @@
 - Improve `Get-WinADTrust` to show more information
 - Improve `Show-WinADTrust` to show more information
 - Improve `Test-LDAP`
-- Add `Show-WinADReplicationSummary`
-- Add `Get-WinADReplicationSummary`
+- Add `Show-WinADForestReplicationSummary`
+- Add `Get-WinADForestReplicationSummary`
 - Add `Show-WinADLdapSummary`
 - Add `Get-WinADLdapSummary`
 
