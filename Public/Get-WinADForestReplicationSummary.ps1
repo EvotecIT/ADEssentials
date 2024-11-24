@@ -67,7 +67,7 @@
         }
         if ($line -match '\S' -and $line -notmatch '^\s*largest') {
             if ($line -match "^\s*(?<DSA>\S+)\s+(?<Rest>.*)$") {
-                Write-Verbose -Message "Processing line: $line"
+                #Write-Verbose -Message "Processing line: $line"
                 $DSA = $Matches.DSA
                 # $rest = $Matches.Rest -split "\s+", 4 # split into 4 parts: LargestDelta, Fails, Total, Percentage and the rest
                 $Rest = $Matches.Rest
@@ -116,7 +116,7 @@
         }
         if ($line -match '\S' -and $line -notmatch '^\s*largest') {
             if ($line -match "^\s*(?<DSA>\S+)\s+(?<Rest>.*)$") {
-                Write-Verbose -Message "Processing line: $line"
+                # Write-Verbose -Message "Processing line: $line"
                 $DSA = $Matches.DSA
                 $Rest = $Matches.Rest
                 if ($rest -match ">60 days") {
@@ -163,7 +163,7 @@
         }
         if ($processingErrors) {
             if ($line -match "^\s*(?<ErrorCode>\d+)\s+-\s+(?<ServerName>.*)$") {
-                Write-Verbose -Message "Processing error line: $line"
+                # Write-Verbose -Message "Processing error line: $line"
                 $ErrorCode = $Matches.ErrorCode
                 $ServerName = $Matches.ServerName
                 if ($ServerName -match "\.") {
