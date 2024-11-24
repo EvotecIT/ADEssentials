@@ -1,4 +1,4 @@
-﻿function Show-WinADReplicationSummary {
+﻿function Show-WinADForestReplicationSummary {
     <#
     .SYNOPSIS
     Generates an HTML report for Active Directory replication summary.
@@ -20,13 +20,13 @@
     Switch to return the replication summary and statistics as output.
 
     .EXAMPLE
-    Show-WinADReplicationSummary -FilePath "C:\Reports\ReplicationSummary.html"
+    Show-WinADForestReplicationSummary -FilePath "C:\Reports\ReplicationSummary.html"
 
     .EXAMPLE
-    Show-WinADReplicationSummary -Online -HideHTML
+    Show-WinADForestReplicationSummary -Online -HideHTML
 
     .EXAMPLE
-    Show-WinADReplicationSummary -PassThru
+    Show-WinADForestReplicationSummary -PassThru
 
     .NOTES
     #>
