@@ -1,4 +1,47 @@
 ﻿function Get-WinADLDAPSummary {
+    <#
+    .SYNOPSIS
+    Tests LDAP on all specified servers and provides a summary of the results.
+
+    .DESCRIPTION
+    The Get-WinADLDAPSummary function tests LDAP on all specified servers within a forest or domain.
+    It provides a summary of the results, including the status of the servers, certificate expiration details,
+    and any failed servers.
+
+    .PARAMETER Forest
+    The name of the forest to test.
+
+    .PARAMETER ExcludeDomains
+    An array of domains to exclude from the test.
+
+    .PARAMETER ExcludeDomainControllers
+    An array of domain controllers to exclude from the test.
+
+    .PARAMETER IncludeDomains
+    An array of domains to include in the test.
+
+    .PARAMETER IncludeDomainControllers
+    An array of domain controllers to include in the test.
+
+    .PARAMETER SkipRODC
+    A switch to skip read-only domain controllers.
+
+    .PARAMETER Identity
+    The identity to use for the test.
+
+    .PARAMETER RetryCount
+    The number of times to retry the test in case of failure. Default is 3.
+
+    .PARAMETER Extended
+    A switch to return extended output.
+
+    .OUTPUTS
+    If the Extended switch is specified, returns an ordered hashtable with detailed results.
+    Otherwise, returns a list of all tested servers.
+
+    .EXAMPLE
+    Get-WinADLDAPSummary -Forest "example.com" -IncludeDomains "domain1", "domain2" -SkipRODC
+    #>
     [CmdletBinding()]
     param(
         [alias('ForestName')][string] $Forest,
