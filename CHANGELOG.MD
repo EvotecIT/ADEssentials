@@ -1,4 +1,8 @@
-﻿#### 0.0.227 - 2024.11.24
+﻿#### 0.0.227 - 2024.12.21
+- Improved `Get-WinADLMSettings` adding `DsrmAdminLogonBehavior` behavior check
+- Removed some old docs
+
+#### 0.0.226 - 2024.11.24
 - Improve `Get-WinADTrust` to show more information
 - Improve `Show-WinADTrust` to show more information
 - Improve `Test-LDAP`
@@ -6,8 +10,6 @@
 - Add `Get-WinADForestReplicationSummary`
 - Add `Show-WinADLdapSummary`
 - Add `Get-WinADLdapSummary`
-
-#### 0.0.226 - 2024.11.24
 - Improve `Get-ADACLOwner` for custom objects
 
 #### 0.0.225 - 2024.11.13
