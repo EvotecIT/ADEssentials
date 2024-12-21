@@ -24,9 +24,6 @@
     .PARAMETER SkipRODC
     Skips Read-Only Domain Controllers. By default, all domain controllers are included.
 
-    .PARAMETER Days
-    Specifies the number of days to consider for retrieving LM settings.
-
     .PARAMETER ExtendedForestInformation
     A dictionary object that contains additional information about the forest. This parameter is optional and can be used to provide more context about the forest.
 
@@ -45,7 +42,6 @@
         [alias('Domain', 'Domains')][string[]] $IncludeDomains,
         [alias('DomainControllers', 'DomainController')][string[]] $IncludeDomainControllers,
         [switch] $SkipRODC,
-        [int] $Days = 1,
         [System.Collections.IDictionary] $ExtendedForestInformation
     )
     $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC -ExtendedForestInformation $ExtendedForestInformation
@@ -78,9 +74,7 @@
                 $LMCompatibilityLevel = $LSA.lmcompatibilitylevel
             } else {
                 $LMCompatibilityLevel = 3
-
             }
-
 
             $LM = @{
                 0 = 'Server sends LM and NTLM response and never uses extended session security. Clients use LM and NTLM authentication, and never use extended session security. DCs accept LM, NTLM, and NTLM v2 authentication.'
@@ -108,6 +102,7 @@
                 AuditBaseDirectories      = [bool] $LSA.auditbasedirectories
                 AuditBaseObjects          = [bool] $LSA.auditbaseobjects # https://www.stigviewer.com/stig/windows_server_2012_member_server/2014-01-07/finding/V-14228 | Should be false
                 CrashOnAuditFail          = $LSA.CrashOnAuditFail # http://systemmanager.ru/win2k_regestry.en/46686.htm | Should be 0
+                DsrmAdminLogonBehavior    = $LSA.DsrmAdminLogonBehavior # Should be empty or 0. # https://www.sentinelone.com/blog/detecting-dsrm-account-misconfigurations/
             }
         } else {
             [PSCustomObject] @{
@@ -128,6 +123,7 @@
                 AuditBaseDirectories      = $null
                 AuditBaseObjects          = $null
                 CrashOnAuditFail          = $null
+                DsrmAdminLogonBehavior    = $null
             }
         }
     }
