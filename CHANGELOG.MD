@@ -1,4 +1,7 @@
-﻿#### 0.0.227 - 2024.12.21
+﻿#### 0.0.228 - 2025.01.23
+- Improvements to `Get-WinADLdapSummary` and `Show-WinADLdapSummary`
+
+#### 0.0.227 - 2024.12.21
 - Improved `Get-WinADLMSettings` adding `DsrmAdminLogonBehavior` behavior check
 - Removed some old docs
 
