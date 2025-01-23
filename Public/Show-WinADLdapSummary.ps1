@@ -40,6 +40,9 @@
     .PARAMETER HideHTML
     Switch to indicate if the HTML report should be hidden after generation.
 
+    .PARAMETER FailIfDomainNameNotInCertificate
+    A switch to fail if the domain name is not in the certificate.
+
     .PARAMETER PassThru
     Switch to return the LDAP summary as output.
 
@@ -67,6 +70,7 @@
         [string] $FilePath,
         [switch] $Online,
         [switch] $HideHTML,
+        [switch] $FailIfDomainNameNotInCertificate,
         [switch] $PassThru
     )
 
@@ -78,15 +82,16 @@
     }
 
     $getWinADLDAPSummarySplat = @{
-        IncludeDomains           = $IncludeDomains
-        ExcludeDomains           = $ExcludeDomains
-        IncludeDomainControllers = $IncludeDomainControllers
-        ExcludeDomainControllers = $ExcludeDomainControllers
-        SkipRODC                 = $SkipRODC
-        Identity                 = $Identity
-        RetryCount               = $RetryCount
-        Forest                   = $Forest
-        Extended                 = $true
+        IncludeDomains                   = $IncludeDomains
+        ExcludeDomains                   = $ExcludeDomains
+        IncludeDomainControllers         = $IncludeDomainControllers
+        ExcludeDomainControllers         = $ExcludeDomainControllers
+        SkipRODC                         = $SkipRODC
+        Identity                         = $Identity
+        RetryCount                       = $RetryCount
+        Forest                           = $Forest
+        Extended                         = $true
+        FailIfDomainNameNotInCertificate = $FailIfDomainNameNotInCertificate
     }
 
     $Output = Get-WinADLDAPSummary @getWinADLDAPSummarySplat
