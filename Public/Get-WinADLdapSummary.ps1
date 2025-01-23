@@ -32,6 +32,9 @@
     .PARAMETER RetryCount
     The number of times to retry the test in case of failure. Default is 3.
 
+    .PARAMETER FailIfDomainNameNotInCertificate
+    A switch to fail if the domain name is not in the certificate.
+
     .PARAMETER Extended
     A switch to return extended output.
 
@@ -52,6 +55,7 @@
         [switch] $SkipRODC,
         $Identity,
         [int] $RetryCount = 3,
+        [switch] $FailIfDomainNameNotInCertificate,
         [switch] $Extended
     )
 
@@ -133,10 +137,16 @@
                 $Output.ServersExpiringMoreThan30Days.Add($Server.Computer)
             }
         }
-        if ($Server.StatusDate -eq 'Failed' -or $Server.StatusPorts -eq 'Failed' -or $Server.StatusIdentity -eq 'Failed') {
+        if ($FailIfDomainNameNotInCertificate -and ($Server.StatusDate -eq 'Failed' -or $Server.StatusPorts -eq 'Failed' -or $Server.StatusIdentity -eq 'Failed' -or $Server.X509DnsNameStatus -eq 'Failed')) {
             $Output.FailedServers.Add($Server)
             $Output.Status = $false
+            $Output.FailedServersCount++
+        } elseif ($Server.StatusDate -eq 'Failed' -or $Server.StatusPorts -eq 'Failed' -or $Server.StatusIdentity -eq 'Failed') {
+            $Output.FailedServers.Add($Server)
+            $Output.Status = $false
+            $Output.FailedServersCount++
         } else {
+            $Output.GoodServersCount++
             $Output.GoodServers.Add($Server)
         }
     }
