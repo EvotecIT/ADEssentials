@@ -1,4 +1,8 @@
-﻿#### 0.0.228 - 2025.01.23
+﻿#### 0.0.229 - 2025.01.28
+- Improvement `Show-WinADLdapSummary` to HTML
+- Impeovement `Show-WinADForestReplicationSummary` to HTML
+
+#### 0.0.228 - 2025.01.23
 - Improvements to `Get-WinADLdapSummary` and `Show-WinADLdapSummary`
 
 #### 0.0.227 - 2024.12.21
