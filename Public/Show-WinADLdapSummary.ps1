@@ -133,12 +133,10 @@
                 }
             }
             New-HTMLPanel {
-                New-HTMLPanel {
-                    New-HTMLChart {
-                        New-ChartPie -Name 'Servers with no issues' -Value $($Output.GoodServers.Count) -Color LightGreen
-                        New-ChartPie -Name 'Servers with issues' -Value $($Output.FailedServersCount) -Color Salmon
-                    } -Title 'Servers status' -TitleColor Dandelion
-                }
+                New-HTMLChart {
+                    New-ChartPie -Name 'Servers with no issues' -Value $($Output.GoodServers.Count) -Color LightGreen
+                    New-ChartPie -Name 'Servers with issues' -Value $($Output.FailedServersCount) -Color Salmon
+                } -Title 'Servers status' -TitleColor Dandelion
             }
         }
 
