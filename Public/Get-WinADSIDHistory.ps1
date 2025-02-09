@@ -1,4 +1,51 @@
 ﻿function Get-WinADSIDHistory {
+    <#
+    .SYNOPSIS
+    Retrieves SID History information for objects in Active Directory forest.
+
+    .DESCRIPTION
+    This function collects and analyzes SID History information for all objects in the Active Directory forest.
+    It provides detailed information about internal and external SID history values, including statistics about
+    users, groups, and computers that have SID history attributes.
+
+    .PARAMETER Forest
+    The name of the Active Directory forest to analyze. If not specified, uses the current forest.
+
+    .PARAMETER ExcludeDomains
+    An array of domain names to exclude from the analysis.
+
+    .PARAMETER IncludeDomains
+    An array of domain names to include in the analysis. Also aliased as 'Domain' or 'Domains'.
+
+    .PARAMETER ExtendedForestInformation
+    A hashtable containing extended forest information. Usually provided by Get-WinADForestDetails.
+
+    .PARAMETER All
+    Switch to return all information including domain SIDs and statistics. If not specified, returns only object information.
+
+    .EXAMPLE
+    Get-WinADSIDHistory -Forest "contoso.com"
+
+    Returns a list of all objects with SID history in the specified forest.
+
+    .EXAMPLE
+    Get-WinADSIDHistory -IncludeDomains "domain1.local","domain2.local" -All
+
+    Returns detailed SID history information including statistics for specified domains.
+
+    .EXAMPLE
+    Get-WinADSIDHistory -ExcludeDomains "legacy.local" -All
+
+    Returns detailed SID history information for all domains except the specified excluded domain.
+
+    .NOTES
+    The function returns:
+    - Object details (Name, Domain, Enabled status, etc.)
+    - SID History count and values
+    - Internal vs External SID information
+    - Domain translation for SID values
+    - Statistics about object types and status
+    #>
     [CmdletBinding()]
     param (
         [alias('ForestName')][string] $Forest,
