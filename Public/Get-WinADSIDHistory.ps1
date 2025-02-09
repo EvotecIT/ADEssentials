@@ -107,7 +107,7 @@
         $QueryServer = $ForestInformation['QueryServers'][$Domain].HostName[0]
         $getADObjectSplat = @{
             LDAPFilter = "(sidHistory=*)"
-            Properties = 'sidHistory', 'userPrincipalName', 'WhenCreated', 'WhenChanged', 'userAccountControl', 'mail', 'sAMAccountName'
+            Properties = 'sidHistory', 'userPrincipalName', 'WhenCreated', 'WhenChanged', 'userAccountControl', 'mail', 'sAMAccountName', 'lastLogonTimestamp', 'objectClass', 'distinguishedName', 'name', 'pwdLastSet'
             Server     = $QueryServer
         }
 
@@ -142,14 +142,38 @@
 
             $UAC = Convert-UserAccountControl -UserAccountControl $Object.UserAccountControl
 
+            $LastLogonTime = if ($Object.lastLogonTimestamp) {
+                [datetime]::FromFileTime($Object.lastLogonTimestamp)
+            } else {
+                $null
+            }
+            $LastLogonTimeDays = if ($LastLogonTime) {
+                [math]::Round((New-TimeSpan -Start $LastLogonTime -End (Get-Date)).TotalDays, 0)
+            } else {
+                $null
+            }
+
+            $PasswordLastSet = if ($Object.pwdLastSet) {
+                [datetime]::FromFileTime($Object.pwdLastSet)
+            } else {
+                $null
+            }
+
+            $PasswordLastSetDays = if ($PasswordLastSet) {
+                [math]::Round((New-TimeSpan -Start $PasswordLastSet -End (Get-Date)).TotalDays, 0)
+            } else {
+                $null
+            }
+
             $O = [PSCustomObject] @{
                 Name               = $Object.Name
                 UserPrincipalName  = $Object.UserPrincipalName
                 Domain             = $Domain
-                Enabled            = if ($UAC -contains 'ACCOUNTDISABLE') { $false } else { $true }
                 SamAccountName     = $Object.sAMAccountName
                 ObjectClass        = $Object.ObjectClass
-                #sidHistory        = $Object.sidHistory
+                Enabled            = if ($UAC -contains 'ACCOUNTDISABLE') { $false } else { $true }
+                PasswordDays       = $PasswordLastSetDays
+                LogonDays          = $LastLogonTimeDays
                 Count              = $SidHistoryValues.Count
                 SIDHistory         = $SidHistoryValues
                 Domains            = $SidDomains
@@ -160,6 +184,8 @@
                 InternalCount      = $SIDHistoryInternal.Count
                 WhenCreated        = $Object.WhenCreated
                 WhenChanged        = $Object.WhenChanged
+                LastLogon          = $LastLogonTime
+                PasswordLastSet    = $PasswordLastSet
                 OrganizationalUnit = ConvertFrom-DistinguishedName -DistinguishedName $Object.DistinguishedName -ToOrganizationalUnit
                 DistinguishedName  = $Object.DistinguishedName
             }
