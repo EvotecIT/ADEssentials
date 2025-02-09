@@ -1,6 +1,10 @@
-﻿#### 0.0.229 - 2025.01.28
+﻿#### 0.0.330 - 2025.02.09
+- Added `Get-WinADSidHistory` to get all users with SIDHistory
+- Added `Show-WinADSidHistory` to show all users with SIDHistory in HTML report
+
+#### 0.0.229 - 2025.01.28
 - Improvement `Show-WinADLdapSummary` to HTML
-- Impeovement `Show-WinADForestReplicationSummary` to HTML
+- Improvement `Show-WinADForestReplicationSummary` to HTML
 
 #### 0.0.228 - 2025.01.23
 - Improvements to `Get-WinADLdapSummary` and `Show-WinADLdapSummary`
