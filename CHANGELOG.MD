@@ -1,4 +1,8 @@
-﻿#### 0.0.330 - 2025.02.09
+﻿#### 0.0.331 - 2025.02.09
+- Improved `Get-WinADSidHistory` to show more information
+- Improved `Show-WinADSidHistory` to show more information
+
+#### 0.0.330 - 2025.02.09
 - Added `Get-WinADSidHistory` to get all users with SIDHistory
 - Added `Show-WinADSidHistory` to show all users with SIDHistory in HTML report
 
