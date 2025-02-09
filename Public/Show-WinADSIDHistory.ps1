@@ -1,4 +1,60 @@
 ﻿function Show-WinADSIDHistory {
+    <#
+    .SYNOPSIS
+    Generates an HTML report for SID History across the Active Directory forest.
+
+    .DESCRIPTION
+    This function generates a comprehensive HTML report showing SID History information for objects in the Active Directory forest.
+    It displays statistics about objects with SID history values, including users, groups, and computers, as well as their enabled/disabled status.
+    The report also includes information about internal and external SID history values and their respective domains.
+
+    .PARAMETER Forest
+    The name of the Active Directory forest to analyze.
+
+    .PARAMETER ExcludeDomains
+    An array of domain names to exclude from the analysis.
+
+    .PARAMETER IncludeDomains
+    An array of domain names to include in the analysis. Also aliased as 'Domain' or 'Domains'.
+
+    .PARAMETER ExtendedForestInformation
+    A hashtable containing extended forest information. Usually provided by Get-WinADForestDetails.
+
+    .PARAMETER PassThru
+    Switch to return the SID history data as output in addition to generating the HTML report.
+
+    .PARAMETER FilePath
+    The path where the HTML report will be saved.
+
+    .PARAMETER HideHTML
+    Switch to prevent the automatic display of the HTML report after generation.
+
+    .PARAMETER Online
+    Switch to indicate if the report should be generated with online resources.
+
+    .EXAMPLE
+    Show-WinADSIDHistory -Online
+
+    Generates and displays an HTML report of SID History for the current forest using online resources.
+
+    .EXAMPLE
+    Show-WinADSIDHistory -Forest "contoso.com" -FilePath "C:\Reports\SIDHistory.html"
+
+    Generates an HTML report for the specified forest and saves it to the specified file path.
+
+    .EXAMPLE
+    Show-WinADSIDHistory -IncludeDomains "domain1.local","domain2.local" -PassThru
+
+    Generates a report for specific domains and returns the data structure for further processing.
+
+    .NOTES
+    The report includes:
+    - Total count of objects with SID history
+    - Breakdown by object type (users, groups, computers)
+    - Enabled vs disabled objects statistics
+    - Domain SID information
+    - Detailed per-domain analysis
+    #>
     [CmdletBinding()]
     param(
         [alias('ForestName')][string] $Forest,
