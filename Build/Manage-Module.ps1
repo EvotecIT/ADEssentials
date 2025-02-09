@@ -167,6 +167,8 @@ Invoke-ModuleBuild -ModuleName 'ADEssentials' {
         'Get-WinADForestReplicationSummary'
         'Show-WinADLdapSummary'
         'Show-WinADReplicationSummary'
+        'Get-WinADSidHistory'
+        'Show-WinADSidHistory'
     )
     New-ConfigurationCommand -ModuleName 'DHCPServer' -CommandName @(
         'Get-WinADDHCP'
