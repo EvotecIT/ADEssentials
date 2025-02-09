@@ -81,14 +81,14 @@
                     New-HTMLText -Text "Report generated on $(Get-Date)" -Color Blue
                 } -JustifyContent flex-start -Invisible
                 New-HTMLSection {
-                    #New-HTMLText -Text "ADEssentials - $($Script:Reporting['Version'])" -Color Blue
+                    New-HTMLText -Text "ADEssentials - $($Script:Reporting['Version'])" -Color Blue
                 } -JustifyContent flex-end -Invisible
             }
 
+            New-HTMLText -Text "Overview of SID History in the forest ", $($ForestInformation.Forest) -Color None, None -FontSize 14pt -FontWeight normal, bold -Alignment center
+
             New-HTMLSection -HeaderText "SID History Report for $($ForestInformation.Forest)" {
                 New-HTMLPanel {
-                    New-HTMLText -Text "Overview of SID History in the forest ", $($ForestInformation.Forest) -Color Blue, BattleshipGrey -FontSize 14pt
-
                     New-HTMLText -Text @(
                         "The following table lists all objects in the forest that have SID history values. ",
                         "The table is grouped by domain and shows the number of objects in each domain that have SID history values."
@@ -109,7 +109,7 @@
                     New-HTMLList {
                         foreach ($SID in $Output.DomainSIDs.Keys) {
                             $DomainSID = $Output.DomainSIDs[$SID]
-                            New-HTMLListItem -Text "Domain ", $($DomainSID.Domain), ", SID: ", $($DomainSID.SID), ", Type: ", $($DomainSID.Type) -Color None, BlueViolet, None, BlueViolet, None, BlueViolet -FontWeight bold, normal
+                            New-HTMLListItem -Text "Domain ", $($DomainSID.Domain), ", SID: ", $($DomainSID.SID), ", Type: ", $($DomainSID.Type) -Color None, BlueViolet, None, BlueViolet, None, BlueViolet -FontWeight normal, bold, normal, bold, normal, bold
                         }
                     } -FontSize 10pt
                 }
@@ -123,12 +123,24 @@
         }
         foreach ($Domain in $DomainNames) {
             [Array] $Objects = $Output[$Domain]
+            $EnabledObjects = $Objects | Where-Object { $_.Enabled }
+            $DisabledObjects = $Objects | Where-Object { -not $_.Enabled }
+            $Types = $Objects | Group-Object -Property ObjectClass -NoElement
             New-HTMLTab -Name "$Domain ($($Objects.Count))" {
                 New-HTMLSection -HeaderText "Domain $Domain" {
                     New-HTMLPanel -Invisible {
-                        New-HTMLText -Text "Overview of SID History in the domain ", $Domain -Color Blue, BattleshipGrey -FontSize 14pt
+                        New-HTMLText -Text "Overview for ", $Domain -Color Blue, BattleshipGrey -FontSize 10pt
                         New-HTMLList {
                             New-HTMLListItem -Text "$($Objects.Count)", " objects with SID history values" -Color BlueViolet, None -FontWeight bold, normal
+                            New-HTMLListItem -Text "$($EnabledObjects.Count)", " enabled objects with SID history values" -Color Green, None -FontWeight bold, normal
+                            New-HTMLListItem -Text "$($DisabledObjects.Count)", " disabled objects with SID history values" -Color Salmon, None -FontWeight bold, normal
+                            New-HTMLListItem -Text "Object types:" {
+                                New-HTMLList {
+                                    foreach ($Type in $Types) {
+                                        New-HTMLListItem -Text "$($Type.Count)", " ", $Type.Name, " objects with SID history values" -Color BlueViolet, None, BlueViolet, None -FontWeight bold, normal, bold, normal
+                                    }
+                                }
+                            } -FontSize 10pt
                         } -FontSize 10pt
                     }
                 }
