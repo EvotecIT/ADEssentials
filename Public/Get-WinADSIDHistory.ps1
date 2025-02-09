@@ -1,0 +1,161 @@
+﻿function Get-WinADSIDHistory {
+    [CmdletBinding()]
+    param (
+        [alias('ForestName')][string] $Forest,
+        [string[]] $ExcludeDomains,
+        [alias('Domain', 'Domains')][string[]] $IncludeDomains,
+        [System.Collections.IDictionary] $ExtendedForestInformation,
+        [switch] $All
+    )
+
+    $Script:Reporting = [ordered] @{}
+    $Script:Reporting['Version'] = Get-GitHubVersion -Cmdlet 'Invoke-ADEssentials' -RepositoryOwner 'evotecit' -RepositoryName 'ADEssentials'
+
+    # Lets get all information about the forest
+    $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC -ExtendedForestInformation $ExtendedForestInformation -Extended
+
+    # Lets create an output object
+    $Output = [ordered] @{
+        'All'           = [System.Collections.Generic.List[PSCustomObject]]::new()
+        'DomainSIDs'    = $null
+        'Statistics'    = [ordered] @{
+            'TotalObjects'    = 0
+            'TotalUsers'      = 0
+            'TotalGroups'     = 0
+            'TotalComputers'  = 0
+            'EnabledObjects'  = 0
+            'DisabledObjects' = 0
+        }
+        'Trusts'        = [System.Collections.Generic.List[PSCustomObject]]::new()
+        'DuplicateSIDs' = [System.Collections.Generic.List[PSCustomObject]]::new()
+    }
+
+    # Lets find out all trusts in the forest
+    $Output['Trusts'] = Get-WinADTrusts -Forest $Forest -Recursive
+
+    # Lets find out all SIDs that are in the forest and in trusts
+    $DomainSIDs = [ordered]@{}
+    foreach ($Domain in $ForestInformation.DomainsExtended.Keys) {
+        $SID = $ForestInformation.DomainsExtended[$Domain].DomainSID
+        $DomainSIDs[$SID] = [PSCustomObject] @{
+            Domain = $Domain
+            Type   = 'Domain'
+            SID    = $SID
+        }
+    }
+    foreach ($Trust in $Output['Trusts']) {
+        if ($Trust.TrustTarget -in $ForestInformation.DomainsExtended.Keys) {
+            continue
+        }
+        $SID = $Trust.DomainSID
+        $DomainSIDs[$SID] = [PSCustomObject] @{
+            Domain = $Trust.TrustTarget
+            Type   = 'Trust'
+            SID    = $SID
+        }
+    }
+
+    # Lets get all objects with SIDHistory
+    $AllUsers = foreach ($Domain in $ForestInformation.Domains) {
+        $QueryServer = $ForestInformation['QueryServers'][$Domain].HostName[0]
+        $getADObjectSplat = @{
+            LDAPFilter = "(sidHistory=*)"
+            Properties = 'sidHistory', 'userPrincipalName', 'WhenCreated', 'WhenChanged', 'userAccountControl', 'mail', 'sAMAccountName'
+            Server     = $QueryServer
+        }
+
+        $Objects = Get-ADObject @getADObjectSplat
+        foreach ($Object in $Objects) {
+            $SidDomains = [System.Collections.Generic.List[string]]::new()
+            $SidHistoryValues = [System.Collections.Generic.List[string]]::new()
+            $SidHistoryDomainsTranslated = [System.Collections.Generic.List[string]]::new()
+            $SidHistoryInternal = [System.Collections.Generic.List[PSCustomObject]]::new()
+            $SIDHistoryExternal = [System.Collections.Generic.List[string]]::new()
+            foreach ($Sid in $Object.sidHistory) {
+                $SidHistoryValues.Add($Sid.Value)
+                if ($DomainSIDs[$Sid.AccountDomainSid.Value]) {
+                    $SIDHistoryInternal.Add($Sid.Value)
+                } else {
+                    $SIDHistoryExternal.Add($Sid.Value)
+                }
+                if (-not $SidDomains.Contains($Sid.AccountDomainSid.Value)) {
+                    $SidDomains.Add($Sid.AccountDomainSid.Value)
+                }
+                $DomainInternal = $DomainSIDs[$Sid.AccountDomainSid.Value].Domain
+                if ($DomainInternal) {
+                    if (-not $SidHistoryDomainsTranslated.Contains($DomainInternal)) {
+                        $SidHistoryDomainsTranslated.Add($DomainInternal)
+                    }
+                } else {
+                    if (-not $SidHistoryDomainsTranslated.Contains($Sid.AccountDomainSid.Value)) {
+                        $SidHistoryDomainsTranslated.Add($Sid.AccountDomainSid.Value)
+                    }
+                }
+            }
+
+            $UAC = Convert-UserAccountControl -UserAccountControl $Object.UserAccountControl
+
+            $O = [PSCustomObject] @{
+                Name               = $Object.Name
+                UserPrincipalName  = $Object.UserPrincipalName
+                Domain             = $Domain
+                Enabled            = if ($UAC -contains 'ACCOUNTDISABLE') { $false } else { $true }
+                SamAccountName     = $Object.sAMAccountName
+                ObjectClass        = $Object.ObjectClass
+                #sidHistory        = $Object.sidHistory
+                Count              = $SidHistoryValues.Count
+                SIDHistory         = $SidHistoryValues
+                Domains            = $SidDomains
+                DomainsExpanded    = $SidHistoryDomainsTranslated
+                External           = $SIDHistoryExternal
+                ExternalCount      = $SIDHistoryExternal.Count
+                Internal           = $SIDHistoryInternal
+                InternalCount      = $SIDHistoryInternal.Count
+                WhenCreated        = $Object.WhenCreated
+                WhenChanged        = $Object.WhenChanged
+                OrganizationalUnit = ConvertFrom-DistinguishedName -DistinguishedName $Object.DistinguishedName -ToOrganizationalUnit
+                DistinguishedName  = $Object.DistinguishedName
+            }
+            if ($O.Enabled) {
+                $Output['Statistics']['EnabledObjects']++
+            } else {
+                $Output['Statistics']['DisabledObjects']++
+            }
+            $Output['Statistics']['TotalObjects']++
+            switch ($O.ObjectClass) {
+                'user' {
+                    $Output['Statistics']['TotalUsers']++
+                }
+                'group' {
+                    $Output['Statistics']['TotalGroups']++
+                }
+                'computer' {
+                    $Output['Statistics']['TotalComputers']++
+                }
+            }
+            $O
+            if ($All) {
+                foreach ($Sid in $SidDomains) {
+                    $TranslatedDomain = $DomainSIDs[$Sid]
+                    if ($TranslatedDomain) {
+                        $FoundSid = $TranslatedDomain.Domain
+                    } else {
+                        $FoundSid = $Sid
+                    }
+                    if (-not $Output[$FoundSid]) {
+                        $Output[$FoundSid] = [System.Collections.Generic.List[PSCustomObject]]::new()
+                    }
+                    $Output[$FoundSid].Add($O)
+                }
+            }
+        }
+    }
+    if ($All) {
+        $Output['DomainSIDs'] = $DomainSIDs
+        $Output['Statistics'] = $Output['Statistics']
+        $Output['All'] = $AllUsers
+        $Output
+    } else {
+        $AllUsers
+    }
+}
