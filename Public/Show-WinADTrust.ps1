@@ -27,6 +27,9 @@
     .PARAMETER PassThru
     A switch to return the trust relationships as objects.
 
+    .PARAMETER SkipValidation
+    A switch to skip the validation of the trust relationships.
+
     .EXAMPLE
     Show-WinADTrust -Recursive -Online
 
@@ -42,7 +45,8 @@
         [switch] $Online,
         [switch] $HideHTML,
         [switch] $DisableBuiltinConditions,
-        [switch] $PassThru
+        [switch] $PassThru,
+        [switch] $SkipValidation
     )
     if ($FilePath -eq '') {
         $FilePath = Get-FileName -Extension 'html' -Temporary
@@ -53,7 +57,7 @@
         New-HTMLTableOption -DataStore HTML
         New-HTMLTabStyle -BorderRadius 0px -TextTransform capitalize -BackgroundColorActive SlateGrey
 
-        $Script:ADTrusts = Get-WinADTrust -Recursive:$Recursive
+        $Script:ADTrusts = Get-WinADTrust -Recursive:$Recursive -SkipValidation:$SkipValidation.IsPresent
         Write-Verbose "Show-WinADTrust - Found $($ADTrusts.Count) trusts"
         New-HTMLTab -TabName 'Summary' {
             New-HTMLSection -HeaderText 'Trusts Diagram' {
