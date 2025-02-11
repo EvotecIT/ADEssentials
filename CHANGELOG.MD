@@ -1,4 +1,8 @@
-﻿#### 0.0.331 - 2025.02.09
+﻿#### 0.0.332
+- Improved `Show-WinADTrust` to allow `SkipValidation` parameter
+- Improved `Get-WinADTrust` to allow `SkipValidation` parameter
+
+#### 0.0.331 - 2025.02.09
 - Improved `Get-WinADSidHistory` to show more information
 - Improved `Show-WinADSidHistory` to show more information
 
