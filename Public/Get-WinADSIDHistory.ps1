@@ -78,7 +78,7 @@
     }
 
     # Lets find out all trusts in the forest
-    $Output['Trusts'] = Get-WinADTrust -Forest $Forest -Recursive
+    $Output['Trusts'] = Get-WinADTrust -Forest $Forest -Recursive -SkipValidation
 
     # Lets find out all SIDs that are in the forest and in trusts
     $DomainSIDs = [ordered]@{}
