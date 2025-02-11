@@ -18,6 +18,9 @@
     .PARAMETER UniqueTrusts
     This parameter is used internally to keep track of unique trust relationships encountered during recursive exploration. It should not be used directly.
 
+    .PARAMETER SkipValidation
+    Indicates that the cmdlet should skip the validation of trust relationships. By default, the cmdlet validates trust relationships by checking the existence of the "Domain Admins" group in the trusted domain.
+
     .EXAMPLE
     Get-WinADTrust -Recursive
     This example retrieves all trust relationships within the current forest and recursively explores trust relationships across multiple forests.
@@ -31,7 +34,8 @@
         [string] $Forest,
         [switch] $Recursive,
         [Parameter(DontShow)][int] $Nesting = -1,
-        [Parameter(DontShow)][System.Collections.IDictionary] $UniqueTrusts
+        [Parameter(DontShow)][System.Collections.IDictionary] $UniqueTrusts,
+        [switch] $SkipValidation
     )
     Begin {
         if ($Nesting -eq -1) {
@@ -96,9 +100,17 @@
                 # Assuming all patches are installed (past July 2019)
                 $TGTDelegation = $false
             }
-
-            $TrustStatus = Test-DomainTrust -Domain $Trust.Details.SourceName -TrustedDomain $Trust.Details.TargetName
-            $GroupExists = Get-WinADObject -Identity 'S-1-5-32-544' -DomainName $Trust.Details.TargetName
+            if (-not $SkipValidation) {
+                $TrustStatus = Test-DomainTrust -Domain $Trust.Details.SourceName -TrustedDomain $Trust.Details.TargetName
+                $GroupExists = Get-WinADObject -Identity 'S-1-5-32-544' -DomainName $Trust.Details.TargetName
+            } else {
+                $TrustStatus = [PSCustomObject] @{
+                    TrustStatus   = 'Validation skipped'
+                    TrustSourceDC = ''
+                    TrustTargetDC = ''
+                }
+                $GroupExists = $null
+            }
             [PsCustomObject] @{
                 'TrustSource'             = $Trust.Details.SourceName #$Domain
                 'TrustTarget'             = $Trust.Details.TargetName #$Trust.Target
@@ -116,7 +128,7 @@
                 'SuffixesExcluded'        = $Trust.Details.ExcludedTopLevelNames.Name
                 'TrustAttributes'         = $TrustObject[$Trust.Details.TargetName].TrustAttributes -join ', '
                 'TrustStatus'             = $TrustStatus.TrustStatus
-                'QueryStatus'             = if ($GroupExists) { 'OK' } else { 'NOT OK' }
+                'QueryStatus'             = if ($null -eq $GroupExists) { 'Skipped' } elseif ($GroupExists) { 'OK' } else { 'NOT OK' }
                 'ForestTransitive'        = $TrustObject[$Trust.Details.TargetName].TrustAttributes -contains "Forest Transitive"
                 'SelectiveAuthentication' = $TrustObject[$Trust.Details.TargetName].TrustAttributes -contains "Cross Organization"
                 #'SIDFilteringForestAware' = $null
@@ -156,7 +168,7 @@
         if ($Recursive) {
             foreach ($Trust in $Output) {
                 if ($Trust.TrustType -notin 'TreeRoot', 'ParentChild') {
-                    Get-WinADTrust -Forest $Trust.TrustTarget -Recursive -Nesting $Nesting -UniqueTrusts $UniqueTrusts
+                    Get-WinADTrust -Forest $Trust.TrustTarget -Recursive -Nesting $Nesting -UniqueTrusts $UniqueTrusts -SkipValidation:$SkipValidation.IsPresent
                 }
             }
         }
