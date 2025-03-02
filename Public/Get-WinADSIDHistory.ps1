@@ -42,7 +42,7 @@
     The function returns:
     - Object details (Name, Domain, Enabled status, etc.)
     - SID History count and values
-    - Internal vs External SID information
+    - Internal vs External vs Unknown SID information
     - Domain translation for SID values
     - Statistics about object types and status
     #>
@@ -72,6 +72,9 @@
             'TotalComputers'  = 0
             'EnabledObjects'  = 0
             'DisabledObjects' = 0
+            'InternalSIDs'    = 0
+            'ExternalSIDs'    = 0
+            'UnknownSIDs'     = 0
         }
         'Trusts'        = [System.Collections.Generic.List[PSCustomObject]]::new()
         'DuplicateSIDs' = [System.Collections.Generic.List[PSCustomObject]]::new()
@@ -82,6 +85,10 @@
 
     # Lets find out all SIDs that are in the forest and in trusts
     $DomainSIDs = [ordered]@{}
+    $ForestDomainSIDs = [ordered]@{}
+    $TrustDomainSIDs = [ordered]@{}
+
+    # Add forest domains
     foreach ($Domain in $ForestInformation.DomainsExtended.Keys) {
         $SID = $ForestInformation.DomainsExtended[$Domain].DomainSID
         $DomainSIDs[$SID] = [PSCustomObject] @{
@@ -89,7 +96,10 @@
             Type   = 'Domain'
             SID    = $SID
         }
+        $ForestDomainSIDs[$SID] = $Domain
     }
+
+    # Add trusted domains
     foreach ($Trust in $Output['Trusts']) {
         if ($Trust.TrustTarget -in $ForestInformation.DomainsExtended.Keys) {
             continue
@@ -100,6 +110,7 @@
             Type   = 'Trust'
             SID    = $SID
         }
+        $TrustDomainSIDs[$SID] = $Trust.TrustTarget
     }
 
     # Lets get all objects with SIDHistory
@@ -116,26 +127,42 @@
             $SidDomains = [System.Collections.Generic.List[string]]::new()
             $SidHistoryValues = [System.Collections.Generic.List[string]]::new()
             $SidHistoryDomainsTranslated = [System.Collections.Generic.List[string]]::new()
-            $SidHistoryInternal = [System.Collections.Generic.List[PSCustomObject]]::new()
+            $SidHistoryInternal = [System.Collections.Generic.List[string]]::new()
             $SIDHistoryExternal = [System.Collections.Generic.List[string]]::new()
+            $SIDHistoryUnknown = [System.Collections.Generic.List[string]]::new()
+
             foreach ($Sid in $Object.sidHistory) {
                 $SidHistoryValues.Add($Sid.Value)
-                if ($DomainSIDs[$Sid.AccountDomainSid.Value]) {
+                $DomainSID = $Sid.AccountDomainSid.Value
+
+                # Check if this is from an internal forest domain
+                if ($ForestDomainSIDs.Contains($DomainSID)) {
                     $SIDHistoryInternal.Add($Sid.Value)
-                } else {
+                    $Output['Statistics']['InternalSIDs']++
+                }
+                # Check if this is from a known trust
+                elseif ($TrustDomainSIDs.Contains($DomainSID)) {
                     $SIDHistoryExternal.Add($Sid.Value)
+                    $Output['Statistics']['ExternalSIDs']++
                 }
-                if (-not $SidDomains.Contains($Sid.AccountDomainSid.Value)) {
-                    $SidDomains.Add($Sid.AccountDomainSid.Value)
+                # Otherwise it's unknown
+                else {
+                    $SIDHistoryUnknown.Add($Sid.Value)
+                    $Output['Statistics']['UnknownSIDs']++
                 }
-                $DomainInternal = $DomainSIDs[$Sid.AccountDomainSid.Value].Domain
+
+                if (-not $SidDomains.Contains($DomainSID)) {
+                    $SidDomains.Add($DomainSID)
+                }
+
+                $DomainInternal = $DomainSIDs[$DomainSID].Domain
                 if ($DomainInternal) {
                     if (-not $SidHistoryDomainsTranslated.Contains($DomainInternal)) {
                         $SidHistoryDomainsTranslated.Add($DomainInternal)
                     }
                 } else {
-                    if (-not $SidHistoryDomainsTranslated.Contains($Sid.AccountDomainSid.Value)) {
-                        $SidHistoryDomainsTranslated.Add($Sid.AccountDomainSid.Value)
+                    if (-not $SidHistoryDomainsTranslated.Contains($DomainSID)) {
+                        $SidHistoryDomainsTranslated.Add($DomainSID)
                     }
                 }
             }
@@ -178,10 +205,12 @@
                 SIDHistory         = $SidHistoryValues
                 Domains            = $SidDomains
                 DomainsExpanded    = $SidHistoryDomainsTranslated
-                External           = $SIDHistoryExternal
-                ExternalCount      = $SIDHistoryExternal.Count
                 Internal           = $SIDHistoryInternal
                 InternalCount      = $SIDHistoryInternal.Count
+                External           = $SIDHistoryExternal
+                ExternalCount      = $SIDHistoryExternal.Count
+                Unknown            = $SIDHistoryUnknown
+                UnknownCount       = $SIDHistoryUnknown.Count
                 WhenCreated        = $Object.WhenCreated
                 WhenChanged        = $Object.WhenChanged
                 LastLogon          = $LastLogonTime
@@ -209,16 +238,10 @@
             $O
             if ($All) {
                 foreach ($Sid in $SidDomains) {
-                    $TranslatedDomain = $DomainSIDs[$Sid]
-                    if ($TranslatedDomain) {
-                        $FoundSid = $TranslatedDomain.Domain
-                    } else {
-                        $FoundSid = $Sid
+                    if (-not $Output[$Sid]) {
+                        $Output[$Sid] = [System.Collections.Generic.List[PSCustomObject]]::new()
                     }
-                    if (-not $Output[$FoundSid]) {
-                        $Output[$FoundSid] = [System.Collections.Generic.List[PSCustomObject]]::new()
-                    }
-                    $Output[$FoundSid].Add($O)
+                    $Output[$Sid].Add($O)
                 }
             }
         }
