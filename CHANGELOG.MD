@@ -1,12 +1,10 @@
-﻿#### 0.0.332
+﻿#### 0.0.231 - 2025.03.02
+- Improve `Get-WinADSIDHistory`
+- Improve `Show-WinADSIDHistory`
+
+#### 0.0.230 - 2025.02.09
 - Improved `Show-WinADTrust` to allow `SkipValidation` parameter
 - Improved `Get-WinADTrust` to allow `SkipValidation` parameter
-
-#### 0.0.331 - 2025.02.09
-- Improved `Get-WinADSidHistory` to show more information
-- Improved `Show-WinADSidHistory` to show more information
-
-#### 0.0.330 - 2025.02.09
 - Added `Get-WinADSidHistory` to get all users with SIDHistory
 - Added `Show-WinADSidHistory` to show all users with SIDHistory in HTML report
 
