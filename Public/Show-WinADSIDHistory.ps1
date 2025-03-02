@@ -6,7 +6,7 @@
     .DESCRIPTION
     This function generates a comprehensive HTML report showing SID History information for objects in the Active Directory forest.
     It displays statistics about objects with SID history values, including users, groups, and computers, as well as their enabled/disabled status.
-    The report also includes information about internal and external SID history values and their respective domains.
+    The report also includes information about internal, external, and unknown SID history values and their respective domains.
 
     .PARAMETER Forest
     The name of the Active Directory forest to analyze.
@@ -102,6 +102,20 @@
                         New-HTMLListItem -Text "$($Output.Statistics.EnabledObjects)", "  enabled objects with SID history values" -Color BlueViolet, None -FontWeight bold, normal
                         New-HTMLListItem -Text "$($Output.Statistics.DisabledObjects)", "  disabled objects with SID history values" -Color Salmon, None -FontWeight bold, normal
                         New-HTMLListItem -Text "$($Output.Keys.Count - 2)", "  different domains with SID history values" -Color BlueViolet, None -FontWeight bold, normal
+                    } -LineBreak -FontSize 10pt
+
+                    New-HTMLText -Text @(
+                        "The following table lists all trusts in the forest and their respective trust type.",
+                        "The trust type can be either external or forest trust."
+                    ) -FontSize 10pt
+
+                    New-HTMLText -Text "The following statistics provide insights into the SID history categories:" -FontSize 10pt
+
+                    New-HTMLList {
+                        # Add statistics for the three SID history categories
+                        New-HTMLListItem -Text "$($Output.Statistics.InternalSIDs)", " SID history values from internal forest domains" -Color ForestGreen, None -FontWeight bold, normal
+                        New-HTMLListItem -Text "$($Output.Statistics.ExternalSIDs)", " SID history values from external trusted domains" -Color DodgerBlue, None -FontWeight bold, normal
+                        New-HTMLListItem -Text "$($Output.Statistics.UnknownSIDs)", " SID history values from unknown domains (deleted or broken trusts)" -Color Crimson, None -FontWeight bold, normal
                     } -FontSize 10pt
                 }
                 New-HTMLPanel {
@@ -126,7 +140,22 @@
             $EnabledObjects = $Objects | Where-Object { $_.Enabled }
             $DisabledObjects = $Objects | Where-Object { -not $_.Enabled }
             $Types = $Objects | Group-Object -Property ObjectClass -NoElement
-            New-HTMLTab -Name "$Domain ($($Objects.Count))" {
+
+
+            if ($Domain -eq 'All') {
+                $Name = 'All'
+            } else {
+                if ($Output.DomainSIDs[$Domain]) {
+                    $DomainName = $Output.DomainSIDs[$Domain].Domain
+                    $DomainType = $Output.DomainSIDs[$Domain].Type
+                    #$Name = "$Domain [$DomainName] ($($Objects.Count))"
+                    $Name = "$DomainName ($($Objects.Count))"
+                } else {
+                    $Name = "$Domain ($($Objects.Count))"
+                }
+            }
+
+            New-HTMLTab -Name $Name {
                 New-HTMLSection -HeaderText "Domain $Domain" {
                     New-HTMLPanel -Invisible {
                         New-HTMLText -Text "Overview for ", $Domain -Color Blue, BattleshipGrey -FontSize 10pt
@@ -134,6 +163,16 @@
                             New-HTMLListItem -Text "$($Objects.Count)", " objects with SID history values" -Color BlueViolet, None -FontWeight bold, normal
                             New-HTMLListItem -Text "$($EnabledObjects.Count)", " enabled objects with SID history values" -Color Green, None -FontWeight bold, normal
                             New-HTMLListItem -Text "$($DisabledObjects.Count)", " disabled objects with SID history values" -Color Salmon, None -FontWeight bold, normal
+
+                            # Calculate SID history categories for this domain
+                            $InternalSIDsForDomain = ($Objects | ForEach-Object { $_.InternalCount }) | Measure-Object -Sum | Select-Object -ExpandProperty Sum
+                            $ExternalSIDsForDomain = ($Objects | ForEach-Object { $_.ExternalCount }) | Measure-Object -Sum | Select-Object -ExpandProperty Sum
+                            $UnknownSIDsForDomain = ($Objects | ForEach-Object { $_.UnknownCount }) | Measure-Object -Sum | Select-Object -ExpandProperty Sum
+
+                            New-HTMLListItem -Text "$InternalSIDsForDomain", " SID history values from internal forest domains" -Color ForestGreen, None -FontWeight bold, normal
+                            New-HTMLListItem -Text "$ExternalSIDsForDomain", " SID history values from external trusted domains" -Color DodgerBlue, None -FontWeight bold, normal
+                            New-HTMLListItem -Text "$UnknownSIDsForDomain", " SID history values from unknown domains" -Color Crimson, None -FontWeight bold, normal
+
                             New-HTMLListItem -Text "Object types:" {
                                 New-HTMLList {
                                     foreach ($Type in $Types) {
@@ -146,6 +185,9 @@
                 }
                 New-HTMLTable -DataTable $Objects -Filtering {
                     New-HTMLTableCondition -Name 'Enabled' -ComparisonType bool -Operator eq -Value $true -BackgroundColor MintGreen -FailBackgroundColor Salmon
+                    New-HTMLTableCondition -Name 'InternalCount' -ComparisonType number -Operator gt -Value 0 -BackgroundColor ForestGreen
+                    New-HTMLTableCondition -Name 'ExternalCount' -ComparisonType number -Operator gt -Value 0 -BackgroundColor DodgerBlue
+                    New-HTMLTableCondition -Name 'UnknownCount' -ComparisonType number -Operator gt -Value 0 -BackgroundColor Crimson
                 } -ScrollX
             } -TextTransform uppercase
         }
@@ -154,8 +196,9 @@
             New-HTMLList {
                 New-HTMLListItem -Text "Domain", " - ", "this column shows the domain of the object" -FontWeight bold, normal, normal
                 New-HTMLListItem -Text "ObjectClass", " - ", "this column shows the object class of the object (user, device, group)" -FontWeight bold, normal, normal
-                New-HTMLListItem -Text "Internal", " - ", "this column shows if the object is from the same forest (internal migration)" -FontWeight bold, normal, normal
-                New-HTMLListItem -Text "External", " - ", "this column shows if the object is from a different forest" -FontWeight bold, normal, normal
+                New-HTMLListItem -Text "Internal", " - ", "this column shows SIDs from domains within the current forest" -FontWeight bold, normal, normal
+                New-HTMLListItem -Text "External", " - ", "this column shows SIDs from domains that are trusted by the current forest" -FontWeight bold, normal, normal
+                New-HTMLListItem -Text "Unknown", " - ", "this column shows SIDs from domains that no longer exist or have broken trusts" -FontWeight bold, normal, normal
                 New-HTMLListItem -Text "Enabled", " - ", "this column shows if the object is enabled" -FontWeight bold, normal, normal
                 New-HTMLListItem -Text "SIDHistory", " - ", "this column shows the SID history values of the object" -FontWeight bold, normal, normal
                 New-HTMLListItem -Text "Domains", " - ", "this column shows the domains of the SID history values" -FontWeight bold, normal, normal
