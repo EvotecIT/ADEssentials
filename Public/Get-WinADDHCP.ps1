@@ -24,8 +24,20 @@
     try {
         $DHCPs = Get-DhcpServerInDC -Verbose
     } catch {
-        Write-Warning -Message "Get-WinADDHCP - Couldn't get DHCP data from AD: $($_.Exception.Message)"
-        return
+        $DnsNames = Get-ADObject -SearchBase ( Get-ADRootDSE ).ConfigurationNamingContext -Filter "ObjectClass -eq 'DhcpClass' -AND Name -ne 'DhcpRoot'" |
+            Select-Object -ExpandProperty Name
+        $DHCPs = ForEach ( $DnsName in $DnsNames ) {
+            $Identity = $DnsName -replace ( Get-ADDomain ).DNSRoot -replace '\.'
+            $IPAddress = Get-AdComputer -Identity $Identity -Property IPv4Address | Select-Object -ExpandProperty IPv4Address
+            [PSCustomObject]@{
+                IPAddress = $IPAddress
+                DnsName   = $DnsName
+            }
+        }
+        if ( -not $DHCPs ) {
+            Write-Warning -Message "Get-WinAdDhcp - Couldn't get DHCP data from AD: $($_.Exception.Message)"
+            return
+        }
     }
     $CacheDHCP = @{}
     $CacheAD = [ordered] @{}
