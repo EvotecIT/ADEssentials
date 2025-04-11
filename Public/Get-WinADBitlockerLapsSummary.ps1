@@ -163,17 +163,23 @@
                     $WindowsLapsExpirationDays = Convert-TimeToDays -StartTime ($CurrentDate) -EndTime (Convert-ToDateTime -Timestring ($C.'msLAPS-PasswordExpirationTime'))
                     $WindowsLapsExpirationTime = Convert-ToDateTime -Timestring ($C.'msLAPS-PasswordExpirationTime')
                     $WindowsLapsHistoryCount = $C.'msLAPS-EncryptedPasswordHistory'.Count
+                    $WindowsLapsSetTime = Get-LAPSADUpdateTimeComputer -ADComputer $C
+                    $WindowsLapsSetTimeDays = - (Convert-TimeToDays -StartTime ($CurrentDate) -EndTime $WindowsLapsSetTime)
                 } else {
                     $WindowsLaps = $false
                     $WindowsLapsExpirationDays = $null
                     $WindowsLapsExpirationTime = $null
                     $WindowsLapsHistoryCount = 0
+                    $WindowsLapsSetTime = $null
+                    $WindowsLapsSetTimeDays = $null
                 }
             } else {
                 $WindowsLaps = $null
                 $WindowsLapsExpirationDays = $null
                 $WindowsLapsExpirationTime = $null
                 $WindowsLapsHistoryCount = 0
+                $WindowsLapsSetTime = $null
+                $WindowsLapsSetTimeDays = $null
             }
 
             if (-not $LapsOnly -or $BitlockerOnly) {
@@ -213,6 +219,8 @@
                     WindowsLapsExpirationDays = $WindowsLapsExpirationDays
                     WindowsLapsExpirationTime = $WindowsLapsExpirationTime
                     WindowsLapsHistoryCount   = $WindowsLapsHistoryCount
+                    WindowsLapsSetTime        = $WindowsLapsSetTime
+                    WindowsLapsSetTimeDays    = $WindowsLapsSetTimeDays
                     System                    = ConvertTo-OperatingSystem -OperatingSystem $C.OperatingSystem -OperatingSystemVersion $C.OperatingSystemVersion
                     LastLogonDate             = $C.LastLogonDate
                     LastLogonDays             = $LastLogonDays
@@ -256,6 +264,8 @@
                     WindowsLapsExpirationDays = $WindowsLapsExpirationDays
                     WindowsLapsExpirationTime = $WindowsLapsExpirationTime
                     WindowsLapsHistoryCount   = $WindowsLapsHistoryCount
+                    WindowsLapsSetTime        = $WindowsLapsSetTime
+                    WindowsLapsSetTimeDays    = $WindowsLapsSetTimeDays
                     System                    = ConvertTo-OperatingSystem -OperatingSystem $C.OperatingSystem -OperatingSystemVersion $C.OperatingSystemVersion
                     LastLogonDate             = $C.LastLogonDate
                     LastLogonDays             = $LastLogonDays
