@@ -140,13 +140,13 @@
             Write-Warning "Get-WinADBitlockerLapsSummary - Error getting computers $($_.Exception.Message)"
         }
 
-        foreach ($_ in $Computers) {
+        foreach ($C in $Computers) {
             if ($LapsOnly -or -not $BitlockerOnly) {
                 if ($LapsAvailable) {
-                    if ($_.'ms-Mcs-AdmPwdExpirationTime') {
+                    if ($C.'ms-Mcs-AdmPwdExpirationTime') {
                         $Laps = $true
-                        $LapsExpirationDays = Convert-TimeToDays -StartTime ($CurrentDate) -EndTime (Convert-ToDateTime -Timestring ($_.'ms-Mcs-AdmPwdExpirationTime'))
-                        $LapsExpirationTime = Convert-ToDateTime -Timestring ($_.'ms-Mcs-AdmPwdExpirationTime')
+                        $LapsExpirationDays = Convert-TimeToDays -StartTime ($CurrentDate) -EndTime (Convert-ToDateTime -Timestring ($C.'ms-Mcs-AdmPwdExpirationTime'))
+                        $LapsExpirationTime = Convert-ToDateTime -Timestring ($C.'ms-Mcs-AdmPwdExpirationTime')
                     } else {
                         $Laps = $false
                         $LapsExpirationDays = $null
@@ -158,11 +158,11 @@
             }
 
             if ($WindowsLapsAvailable) {
-                if ($_.'msLAPS-PasswordExpirationTime') {
+                if ($C.'msLAPS-PasswordExpirationTime') {
                     $WindowsLaps = $true
-                    $WindowsLapsExpirationDays = Convert-TimeToDays -StartTime ($CurrentDate) -EndTime (Convert-ToDateTime -Timestring ($_.'msLAPS-PasswordExpirationTime'))
-                    $WindowsLapsExpirationTime = Convert-ToDateTime -Timestring ($_.'msLAPS-PasswordExpirationTime')
-                    $WindowsLapsHistoryCount = $_.'msLAPS-EncryptedPasswordHistory'.Count
+                    $WindowsLapsExpirationDays = Convert-TimeToDays -StartTime ($CurrentDate) -EndTime (Convert-ToDateTime -Timestring ($C.'msLAPS-PasswordExpirationTime'))
+                    $WindowsLapsExpirationTime = Convert-ToDateTime -Timestring ($C.'msLAPS-PasswordExpirationTime')
+                    $WindowsLapsHistoryCount = $C.'msLAPS-EncryptedPasswordHistory'.Count
                 } else {
                     $WindowsLaps = $false
                     $WindowsLapsExpirationDays = $null
@@ -177,33 +177,35 @@
             }
 
             if (-not $LapsOnly -or $BitlockerOnly) {
-                [Array] $Bitlockers = Get-ADObject -Server $QueryServer -Filter 'objectClass -eq "msFVE-RecoveryInformation"' -SearchBase $_.DistinguishedName -Properties 'WhenCreated', 'msFVE-RecoveryPassword' | Sort-Object -Descending
+                [Array] $Bitlockers = Get-ADObject -Server $QueryServer -Filter 'objectClass -eq "msFVE-RecoveryInformation"' -SearchBase $C.DistinguishedName -Properties 'WhenCreated', 'msFVE-RecoveryPassword' | Sort-Object -Descending
                 if ($Bitlockers) {
                     $Encrypted = $true
                     $EncryptedTime = $Bitlockers[0].WhenCreated
+                    $EncryptedDays = Convert-TimeToDays -StartTime ($CurrentDate) -EndTime ($Bitlockers[0].WhenCreated)
                 } else {
                     $Encrypted = $false
                     $EncryptedTime = $null
+                    $EncryptedDays = $null
                 }
             }
-            if ($null -ne $_.LastLogonDate) {
-                [int] $LastLogonDays = "$(-$($_.LastLogonDate - $Today).Days)"
+            if ($null -ne $C.LastLogonDate) {
+                [int] $LastLogonDays = "$(-$($C.LastLogonDate - $Today).Days)"
             } else {
                 $LastLogonDays = $null
             }
-            if ($null -ne $_.PasswordLastSet) {
-                [int] $PasswordLastChangedDays = "$(-$($_.PasswordLastSet - $Today).Days)"
+            if ($null -ne $C.PasswordLastSet) {
+                [int] $PasswordLastChangedDays = "$(-$($C.PasswordLastSet - $Today).Days)"
             } else {
                 $PasswordLastChangedDays = $null
             }
 
             if ($LapsOnly) {
                 [PSCustomObject] @{
-                    Name                      = $_.Name
-                    Enabled                   = $_.Enabled
+                    Name                      = $C.Name
+                    Enabled                   = $C.Enabled
                     Domain                    = $Domain
-                    DNSHostName               = $_.DNSHostName
-                    IsDC                      = if ($_.PrimaryGroupID -in 516, 521) { $true } else { $false }
+                    DNSHostName               = $C.DNSHostName
+                    IsDC                      = if ($C.PrimaryGroupID -in 516, 521) { $true } else { $false }
                     Laps                      = $Laps
                     LapsExpirationDays        = $LapsExpirationDays
                     LapsExpirationTime        = $LapsExpirationTime
@@ -211,40 +213,42 @@
                     WindowsLapsExpirationDays = $WindowsLapsExpirationDays
                     WindowsLapsExpirationTime = $WindowsLapsExpirationTime
                     WindowsLapsHistoryCount   = $WindowsLapsHistoryCount
-                    System                    = ConvertTo-OperatingSystem -OperatingSystem $_.OperatingSystem -OperatingSystemVersion $_.OperatingSystemVersion
-                    LastLogonDate             = $_.LastLogonDate
+                    System                    = ConvertTo-OperatingSystem -OperatingSystem $C.OperatingSystem -OperatingSystemVersion $C.OperatingSystemVersion
+                    LastLogonDate             = $C.LastLogonDate
                     LastLogonDays             = $LastLogonDays
-                    PasswordLastSet           = $_.PasswordLastSet
+                    PasswordLastSet           = $C.PasswordLastSet
                     PasswordLastChangedDays   = $PasswordLastChangedDays
-                    OrganizationalUnit        = ConvertFrom-DistinguishedName -DistinguishedName $_.DistinguishedName -ToOrganizationalUnit
-                    DistinguishedName         = $_.DistinguishedName
+                    OrganizationalUnit        = ConvertFrom-DistinguishedName -DistinguishedName $C.DistinguishedName -ToOrganizationalUnit
+                    DistinguishedName         = $C.DistinguishedName
                 }
             } elseif ($BitlockerOnly) {
                 [PSCustomObject] @{
-                    Name                    = $_.Name
-                    Enabled                 = $_.Enabled
+                    Name                    = $C.Name
+                    Enabled                 = $C.Enabled
                     Domain                  = $Domain
-                    DNSHostName             = $_.DNSHostName
-                    IsDC                    = if ($_.PrimaryGroupID -in 516, 521) { $true } else { $false }
+                    DNSHostName             = $C.DNSHostName
+                    IsDC                    = if ($C.PrimaryGroupID -in 516, 521) { $true } else { $false }
                     Encrypted               = $Encrypted
                     EncryptedTime           = $EncryptedTime
-                    System                  = ConvertTo-OperatingSystem -OperatingSystem $_.OperatingSystem -OperatingSystemVersion $_.OperatingSystemVersion
-                    LastLogonDate           = $_.LastLogonDate
+                    EncryptedDays           = $EncryptedDays
+                    System                  = ConvertTo-OperatingSystem -OperatingSystem $C.OperatingSystem -OperatingSystemVersion $C.OperatingSystemVersion
+                    LastLogonDate           = $C.LastLogonDate
                     LastLogonDays           = $LastLogonDays
-                    PasswordLastSet         = $_.PasswordLastSet
+                    PasswordLastSet         = $C.PasswordLastSet
                     PasswordLastChangedDays = $PasswordLastChangedDays
-                    OrganizationalUnit      = ConvertFrom-DistinguishedName -DistinguishedName $_.DistinguishedName -ToOrganizationalUnit
-                    DistinguishedName       = $_.DistinguishedName
+                    OrganizationalUnit      = ConvertFrom-DistinguishedName -DistinguishedName $C.DistinguishedName -ToOrganizationalUnit
+                    DistinguishedName       = $C.DistinguishedName
                 }
             } else {
                 [PSCustomObject] @{
-                    Name                      = $_.Name
-                    Enabled                   = $_.Enabled
+                    Name                      = $C.Name
+                    Enabled                   = $C.Enabled
                     Domain                    = $Domain
-                    DNSHostName               = $_.DNSHostName
-                    IsDC                      = if ($_.PrimaryGroupID -in 516, 521) { $true } else { $false }
+                    DNSHostName               = $C.DNSHostName
+                    IsDC                      = if ($C.PrimaryGroupID -in 516, 521) { $true } else { $false }
                     Encrypted                 = $Encrypted
                     EncryptedTime             = $EncryptedTime
+                    EncryptedDays             = $EncryptedDays
                     Laps                      = $Laps
                     LapsExpirationDays        = $LapsExpirationDays
                     LapsExpirationTime        = $LapsExpirationTime
@@ -252,13 +256,13 @@
                     WindowsLapsExpirationDays = $WindowsLapsExpirationDays
                     WindowsLapsExpirationTime = $WindowsLapsExpirationTime
                     WindowsLapsHistoryCount   = $WindowsLapsHistoryCount
-                    System                    = ConvertTo-OperatingSystem -OperatingSystem $_.OperatingSystem -OperatingSystemVersion $_.OperatingSystemVersion
-                    LastLogonDate             = $_.LastLogonDate
+                    System                    = ConvertTo-OperatingSystem -OperatingSystem $C.OperatingSystem -OperatingSystemVersion $C.OperatingSystemVersion
+                    LastLogonDate             = $C.LastLogonDate
                     LastLogonDays             = $LastLogonDays
-                    PasswordLastSet           = $_.PasswordLastSet
+                    PasswordLastSet           = $C.PasswordLastSet
                     PasswordLastChangedDays   = $PasswordLastChangedDays
-                    OrganizationalUnit        = ConvertFrom-DistinguishedName -DistinguishedName $_.DistinguishedName -ToOrganizationalUnit
-                    DistinguishedName         = $_.DistinguishedName
+                    OrganizationalUnit        = ConvertFrom-DistinguishedName -DistinguishedName $C.DistinguishedName -ToOrganizationalUnit
+                    DistinguishedName         = $C.DistinguishedName
                 }
             }
         }
