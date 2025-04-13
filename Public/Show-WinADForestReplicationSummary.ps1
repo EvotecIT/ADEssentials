@@ -129,7 +129,7 @@
                             New-HTMLTableHeader -Names $MatrixHeaders -Title "Domain Controllers Replication Matrix"
                             New-HTMLTableContent -ColumnName "✓" -BackGroundColor "#c5e8cd" # Light green for successful replication
                             New-HTMLTableContent -ColumnName "✗" -BackGroundColor "#f7bec3" # Light red for failed replication
-                        }
+                        } -ScrollX
                     }
                 }
 
