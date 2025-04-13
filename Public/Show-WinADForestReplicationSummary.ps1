@@ -200,6 +200,16 @@
                         New-TableCondition -BackgroundColor MediumSeaGreen -ComparisonType string -Value $false -Name Overlap -FailBackgroundColor CoralRed
                     }
                 }
+                New-HTMLSection -HeaderText 'Site Links' {
+                    New-HTMLTable -DataTable $SiteLinks -DataTableID 'DT-SiteLinks' -Filtering -ScrollX {
+
+                    }
+                }
+                New-HTMLSection -HeaderText 'Site Options' {
+                    New-HTMLTable -DataTable $SiteOptions -DataTableID 'DT-SiteOptions' -Filtering -ScrollX {
+
+                    }
+                }
             }
             New-HTMLTab -TabName 'Errors & Warnings' {
                 New-HTMLSection -HeaderText 'Errors and Warnings During Data Collection' {
