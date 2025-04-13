@@ -22,7 +22,7 @@
     .NOTES
     This cmdlet requires the Active Directory PowerShell module to be installed and imported. It also requires appropriate permissions to query the Active Directory forest.
     #>
-    [alias('Get-WinADSubnet')]
+    [alias('Get-WinADSubnet', 'Get-WinADForestSubnets')]
     [cmdletBinding()]
     param(
         [string] $Forest,
