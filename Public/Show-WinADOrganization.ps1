@@ -25,10 +25,12 @@
     )
 
     $Organization = Get-WinADOrganization
+    $Subnets = Get-WinADForestSubnet
+    $Sites = Get-WinADForestSites
 
     New-HTML -TitleText "Visual Active Directory Organization" {
         New-HTMLSectionStyle -BorderRadius 0px -HeaderBackGroundColor Grey -RemoveShadow
-        New-HTMLTableOption -DataStore HTML
+        New-HTMLTableOption -DataStore JavaScript -ArrayJoin -ArrayJoinString ", "
         New-HTMLTabStyle -BorderRadius 0px -TextTransform capitalize -BackgroundColorActive SlateGrey
         New-HTMLTabPanel {
             New-HTMLTab -TabName 'Standard' {
@@ -69,7 +71,7 @@
                         New-DiagramEvent -ID 'DT-OrganizationalUnits' -ColumnID 2
                         #New-DiagramOptionsPhysics -RepulsionNodeDistance 200 -Solver repulsion
                         #New-DiagramOptionsPhysics -Enabled $true -HierarchicalRepulsionAvoidOverlap 1.00
-                        New-DiagramOptionsLayout -ImprovedLayout $true -HierarchicalEnabled $true -HierarchicalDirection FromUpToDown -HierarchicalNodeSpacing 280 -HierarchicalSortMethod directed -HierarchicalShakeTowards leaves
+                        New-DiagramOptionsLayout -ImprovedLayout $true -HierarchicalEnabled $true -HierarchicalDirection FromUpToDown -HierarchicalNodeSpacing 280 #-HierarchicalSortMethod directed -HierarchicalShakeTowards leaves
                         New-DiagramOptionsPhysics -Enabled $false
 
                         New-DiagramNode -Label 'Active Directory Forest' -Id 'Forest' -Image 'https://cdn-icons-png.flaticon.com/512/6329/6329785.png' -Leve 0
@@ -79,7 +81,7 @@
                         }
                         foreach ($Domain in $Organization.OrganizationalUnits.Keys) {
                             foreach ($OU in $Organization.OrganizationalUnits[$Domain]) {
-                                New-DiagramNode -Id $OU.DistinguishedName -Label $OU.Name -Image 'https://cdn-icons-png.flaticon.com/512/3767/3767084.png' -Level ($OU.SubOUsCount + 2)
+                                New-DiagramNode -Id $OU.DistinguishedName -Label $OU.Name -Image 'https://cdn-icons-png.flaticon.com/512/3767/3767084.png' -Level ($OU.OrganizationalUnitsCount + 2)
                                 if ($OU.OrganizationalUnits.Count -gt 0) {
                                     $TopOU = $OU.DistinguishedName
                                     foreach ($Sub in $OU.OrganizationalUnits) {
@@ -109,17 +111,31 @@
             }
         }
 
-        New-HTMLSection -Title "Organizational Units Table" {
-            New-HTMLTableOption -DataStore JavaScript -ArrayJoin -ArrayJoinString ", "
-            $OrganizationalUnits = @(
-                foreach ($Domain in $Organization.Domains) {
-                    $Domain
+        New-HTMLTabPanel {
+            New-HTMLTab -Name "💡Organizational Units" {
+                New-HTMLSection -Title "Organizational Units" {
+
+                    $OrganizationalUnits = @(
+                        foreach ($Domain in $Organization.Domains) {
+                            $Domain
+                        }
+                        foreach ($Domain in $Organization.OrganizationalUnits.Keys) {
+                            $Organization.OrganizationalUnits[$Domain]
+                        }
+                    )
+                    New-HTMLTable -DataTable $OrganizationalUnits -DataTableID 'DT-OrganizationalUnits' -Filtering -ScrollX
                 }
-                foreach ($Domain in $Organization.OrganizationalUnits.Keys) {
-                    $Organization.OrganizationalUnits[$Domain]
+            }
+            New-HTMLTab -Name "Subnets" {
+                New-HTMLSection -Title "Subnets" {
+                    New-HTMLTable -DataTable $Subnets -Filtering -ScrollX
                 }
-            )
-            New-HTMLTable -DataTable $OrganizationalUnits -DataTableID 'DT-OrganizationalUnits' -Filtering
+            }
+            New-HTMLTab -Name "Sites" {
+                New-HTMLSection -Title "Sites" {
+                    New-HTMLTable -DataTable $Sites -DataTableID 'DT-Sites' -Filtering -ScrollX
+                }
+            }
         }
     } -ShowHTML -FilePath $FilePath -Online
 }
