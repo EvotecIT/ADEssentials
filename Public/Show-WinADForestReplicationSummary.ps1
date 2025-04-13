@@ -79,7 +79,7 @@
             New-HTMLTab -TabName 'Replication Summary' {
                 New-HTMLSection -HeaderText "Summary" {
                     New-HTMLList {
-                        New-HTMLListItem -Text "Servers with good replication: ", $($Statistics.Good) -Color Black, SpringGreen -FontWeight normal, bold
+                        New-HTMLListItem -Text "Servers with good replication: ", $($Statistics.Good) -Color Black, LightGreen -FontWeight normal, bold
                         New-HTMLListItem -Text "Servers with replication failures: ", $($Statistics.Failures) -Color Black, Red -FontWeight normal, bold
                         New-HTMLListItem -Text "Servers with replication delta over 24 hours: ", $($Statistics.DeltaOver24Hours) -Color Black, Red -FontWeight normal, bold
                         New-HTMLListItem -Text "Servers with replication delta over 12 hours: ", $($Statistics.DeltaOver12Hours) -Color Black, Red -FontWeight normal, bold
@@ -92,7 +92,7 @@
                 }
                 New-HTMLSection -HeaderText "Replication Summary" {
                     New-HTMLTable -DataTable $ReplicationSummary -DataTableID 'DT-ReplicationSummary' -ScrollX {
-                        New-HTMLTableCondition -Inline -Name "Fail" -HighlightHeaders 'Fails', 'Total', 'PercentageError' -ComparisonType number -Operator gt 0 -BackgroundColor Salmon -FailBackgroundColor SpringGreen
+                        New-HTMLTableCondition -Name "Fails" -HighlightHeaders 'Fails', 'Total', 'PercentageError' -ComparisonType number -Operator gt 0 -BackgroundColor Salmon -FailBackgroundColor LightGreen
                     } -Filtering -PagingLength 50 -PagingOptions @(5, 10, 15, 25, 50, 100)
                 }
             }
