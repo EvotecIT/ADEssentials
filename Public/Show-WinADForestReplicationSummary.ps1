@@ -54,12 +54,32 @@
     foreach ($RepLink in $ReplicationData) {
         # Ensure Server and Partner are added as nodes
         if ($RepLink.Server -and -not $DCs.ContainsKey($RepLink.Server)) {
-            $DCs[$RepLink.Server] = @{ Label = $RepLink.Server; IP = $RepLink.ServerIPV4 }
+            $DCs[$RepLink.Server] = @{
+                Label    = $RepLink.Server
+                IP       = $RepLink.ServerIPV4
+                Partners = [System.Collections.Generic.HashSet[string]]::new()
+                Status   = $true  # Will be set to false if any replication link fails
+            }
         }
         if ($RepLink.ServerPartner -and -not $DCs.ContainsKey($RepLink.ServerPartner)) {
             # Attempt to resolve partner IP if not directly available (may require another lookup or be less reliable)
             $PartnerIP = $RepLink.ServerPartnerIPV4 # Use the IP already resolved by Get-WinADForestReplication
-            $DCs[$RepLink.ServerPartner] = @{ Label = $RepLink.ServerPartner; IP = $PartnerIP }
+            $DCs[$RepLink.ServerPartner] = @{
+                Label    = $RepLink.ServerPartner
+                IP       = $PartnerIP
+                Partners = [System.Collections.Generic.HashSet[string]]::new()
+                Status   = $true
+            }
+        }
+
+        # Add partner to the server's partner list (using HashSet to avoid duplicates)
+        if ($RepLink.Server -and $RepLink.ServerPartner) {
+            $null = $DCs[$RepLink.Server].Partners.Add($RepLink.ServerPartner)
+
+            # Update status if there's any failure
+            if (-not $RepLink.Status) {
+                $DCs[$RepLink.Server].Status = $false
+            }
         }
 
         # Add the link (handle potential duplicates if needed, maybe group by Server/Partner/Partition?)
@@ -75,6 +95,56 @@
                 })
         }
     }
+
+    # Create consolidated view of DC replication partnerships
+    $DCPartnerSummary = foreach ($DCName in $DCs.Keys) {
+        $DC = $DCs[$DCName]
+        [PSCustomObject]@{
+            DomainController = $DCName
+            IPAddress        = $DC.IP
+            Partners         = $DC.Partners -join ', '
+            PartnerCount     = $DC.Partners.Count
+            Status           = if ($DC.Status) { "Healthy" } else { "Issues Detected" }
+        }
+    }
+
+    # Create a matrix-style mapping of DCs to their replication partners
+    $DCNames = $DCs.Keys | Sort-Object
+    $MatrixHeaders = @('Source DC') + $DCNames
+    $ReplicationMatrix = [System.Collections.Generic.List[PSCustomObject]]::new()
+
+    foreach ($SourceDC in $DCNames) {
+        $Row = [ordered]@{
+            'Source DC' = $SourceDC
+        }
+
+        foreach ($TargetDC in $DCNames) {
+            if ($SourceDC -eq $TargetDC) {
+                # A DC doesn't replicate with itself
+                $Row[$TargetDC] = "-"
+            } else {
+                # Check if there are any replication links from Source to Target
+                $ReplicationLinks = $Links | Where-Object { $_.From -eq $SourceDC -and $_.To -eq $TargetDC }
+
+                if ($ReplicationLinks) {
+                    $AllHealthy = $true
+                    foreach ($Link in $ReplicationLinks) {
+                        if (-not $Link.Status) {
+                            $AllHealthy = $false
+                            break
+                        }
+                    }
+
+                    $Row[$TargetDC] = if ($AllHealthy) { "✓" } else { "✗" }
+                } else {
+                    $Row[$TargetDC] = " "  # No direct replication
+                }
+            }
+        }
+
+        $ReplicationMatrix.Add([PSCustomObject]$Row)
+    }
+
     New-HTML {
         New-HTMLSectionStyle -BorderRadius 0px -HeaderBackGroundColor Grey -RemoveShadow
         New-HTMLTableOption -DataStore JavaScript -ArrayJoin -ArrayJoinString "," -BoolAsString
@@ -101,26 +171,49 @@
                         foreach ($DCName in $DCs.Keys) {
                             $DCInfo = $DCs[$DCName]
                             $NodeLabel = "$($DCInfo.Label)`n$($DCInfo.IP)" # Add IP to label
+                            $NodeColor = if ($DCInfo.Status) { "#c5e8cd" } else { "#f7bec3" } # Light green or light red
                             # Consider adding an image based on DC type (RODC/RWDC) if info is available
-                            New-DiagramNode -Id $DCName -Label $NodeLabel -Title "DC: $($DCInfo.Label)" # Tooltip
+                            New-DiagramNode -Id $DCName -Label $NodeLabel -Title "DC: $($DCInfo.Label)" -ColorBackground $NodeColor # Tooltip
                         }
 
                         # Add Edges (Replication Links)
                         foreach ($Link in $Links) {
                             $EdgeColor = if ($Link.Status) { 'Green' } else { 'Red' }
                             #$EdgeTitle = "From: $($Link.From) To: $($Link.To)`nPartition: $($Link.Partition)`nStatus: $($Link.Status)`nFails: $($Link.Fails)`nLast Success: $($Link.LastSuccess)"
-                            $EdgeTitle = ""
                             $EdgeDashes = if (-not $Link.Status) { $true } else { $false } # Dashed line for failures
 
                             New-DiagramEdge -From $Link.From -To $Link.To -Color $EdgeColor -ArrowsToEnabled -Label $EdgeTitle -Dashes $EdgeDashes
                         }
                     } -EnableFiltering -EnableFilteringButton #-PhysicsEnabled # Consider physics options if needed
                 }
+            }
+
+            New-HTMLTab -TabName 'DC Partners' {
+                New-HTMLSection -HeaderText 'Domain Controller Replication Partners' {
+                    New-HTMLTable -DataTable $DCPartnerSummary -DataTableID 'DT-DCPartnerSummary' -Filtering -ScrollX {
+                        New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Issues Detected' -BackgroundColor '#f7bec3' -Row
+                        New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Healthy' -BackgroundColor '#c5e8cd' -Row
+                    }
+                }
+
+                New-HTMLSection -HeaderText 'Replication Matrix' {
+                    New-HTMLPanel {
+                        New-HTMLTable -DataTable $ReplicationMatrix -HideButtons -HideFooter -FixedHeader {
+                            New-HTMLTableHeader -Names $MatrixHeaders -Title "Domain Controllers Replication Matrix"
+                            New-HTMLTableContent -ColumnName "✓" -BackGroundColor "#c5e8cd" # Light green for successful replication
+                            New-HTMLTableContent -ColumnName "✗" -BackGroundColor "#f7bec3" # Light red for failed replication
+                        }
+                    }
+                }
+
                 New-HTMLSection -HeaderText 'Detailed Replication Status' {
-                    # Add conditional formatting for Status column?
-                    New-HTMLTable -DataTable $ReplicationData -DataTableID 'DT-ReplicationDetails' -Filtering -ScrollX -ScrollY
+                    # Add conditional formatting for Status column
+                    New-HTMLTable -DataTable $ReplicationData -DataTableID 'DT-ReplicationDetails' -Filtering -ScrollX -ScrollY {
+                        New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value $false -BackgroundColor '#f7bec3' -Row
+                    }
                 }
             }
+
             New-HTMLTab -TabName 'Replication Summary' {
                 New-HTMLSection -HeaderText "Summary" {
                     New-HTMLList {
@@ -154,7 +247,7 @@
                 }
             }
         }
-    } -FilePath $FilePath -ShowHTML:(-not $HideHTML)
+    } -FilePath $FilePath -ShowHTML:(-not $HideHTML) -Online:$Online
 
 
     if ($PassThru) {
@@ -162,6 +255,8 @@
             ReplicationSummary = $ReplicationSummary
             Statistics         = $Statistics
             ReplicationData    = $ReplicationData
+            DCPartnerSummary   = $DCPartnerSummary
+            ReplicationMatrix  = $ReplicationMatrix
         }
     }
 }
