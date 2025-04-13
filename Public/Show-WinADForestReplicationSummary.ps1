@@ -46,6 +46,9 @@
 
     $ReplicationSummary = Get-WinADForestReplicationSummary -IncludeStatisticsVariable Statistics
 
+    $SiteLinks = Get-WinADSiteLinks
+    $SiteOptions = Get-WinADSiteOptions
+
     $ReplicationOutput = Get-WinADForestReplication -Extended -All
     # Lets build the report using the data from Get-WinADForestReplication
     $ReplicationData = $ReplicationOutput.ReplicationData
@@ -53,10 +56,13 @@
     $Links = $ReplicationOutput.Links
     $DCPartnerSummary = $ReplicationOutput.DCPartnerSummary
     $ReplicationMatrix = $ReplicationOutput.ReplicationMatrix
+    $MatrixHeaders = $ReplicationOutput.MatrixHeaders
+    $Sites = $ReplicationOutput.Sites
+    $Subnets = $ReplicationOutput.Subnets
 
     New-HTML {
         New-HTMLSectionStyle -BorderRadius 0px -HeaderBackGroundColor Grey -RemoveShadow
-        New-HTMLTableOption -DataStore JavaScript -ArrayJoin -ArrayJoinString "," -BoolAsString
+        New-HTMLTableOption -DataStore JavaScript -ArrayJoin -ArrayJoinString ", " -BoolAsString
         New-HTMLTabStyle -BorderRadius 0px -TextTransform capitalize -BackgroundColorActive SlateGrey
 
         New-HTMLHeader {
@@ -94,6 +100,8 @@
                 New-HTMLSection -HeaderText 'Replication Topology' {
                     New-HTMLDiagram -Height 'calc(50vh)' {
                         New-DiagramEvent -ID 'DT-ReplicationDetails' -ColumnID 0
+                        New-DiagramEvent -ID 'DT-ReplicationMatrix' -ColumnID 0
+                        New-DiagramEvent -ID 'DT-DCPartnerSummary' -ColumnID 0
                         New-DiagramOptionsPhysics -RepulsionNodeDistance 150 -Solver repulsion
 
                         # Add Nodes (Domain Controllers)
@@ -126,10 +134,14 @@
                 New-HTMLSection -HeaderText 'Replication Matrix' {
                     New-HTMLPanel {
                         New-HTMLTable -DataTable $ReplicationMatrix -HideButtons -HideFooter -FixedHeader {
-                            New-HTMLTableHeader -Names $MatrixHeaders -Title "Domain Controllers Replication Matrix"
-                            New-HTMLTableContent -ColumnName "✓" -BackGroundColor "#c5e8cd" # Light green for successful replication
-                            New-HTMLTableContent -ColumnName "✗" -BackGroundColor "#f7bec3" # Light red for failed replication
-                        } -ScrollX
+                            New-HTMLTableHeader -Names $MatrixHeaders -Title "Domain Controller Inbound Partners"
+                            foreach ($Header in $MatrixHeaders) {
+                                New-HTMLTableCondition -Value '✓' -ComparisonType string -Operator eq -BackgroundColor LightGreen -Name $Header
+                                New-HTMLTableCondition -Value '✗' -ComparisonType string -Operator eq -BackgroundColor Salmon -Name $Header
+                                New-HTMLTableCondition -Value '-' -ComparisonType string -Operator eq -BackgroundColor LightYellow -Name $Header
+                            }
+
+                        } -ScrollX -DataTableID 'DT-ReplicationMatrix'
                     }
                 }
 
@@ -137,6 +149,55 @@
                     # Add conditional formatting for Status column
                     New-HTMLTable -DataTable $ReplicationData -DataTableID 'DT-ReplicationDetails' -Filtering -ScrollX -ScrollY {
                         New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value $false -BackgroundColor '#f7bec3' -Row
+
+                        New-HTMLTableCondition -Name 'LastReplicationResult' -ComparisonType string -Operator eq -Value "0" -BackgroundColor LightGreen -FailBackgroundColor Salmon
+                        New-HTMLTableCondition -Name 'ConsecutiveReplicationFailures' -ComparisonType string -Operator eq -Value "0" -BackgroundColor LightGreen -FailBackgroundColor Salmon
+
+                        $Properties = @('ScheduledSync', 'SyncOnStartup')
+                        foreach ($Property in $Properties) {
+                            New-HTMLTableCondition -Name $Property -ComparisonType string -Operator eq -Value "True" -BackgroundColor LightGreen -FailBackgroundColor Salmon
+                        }
+                        New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value "True" -BackgroundColor LightGreen -FailBackgroundColor Salmon -HighlightHeaders 'Status', 'StatusMessage'
+                        New-HTMLTableCondition -Name 'Writable' -ComparisonType string -Operator eq -Value "True" -BackgroundColor LightGreen -FailBackgroundColor LightYellow
+                    }
+                }
+            }
+            New-HTMLTab -TabName 'Sites & Subnets' {
+                New-HTMLSection -HeaderText 'Organization Diagram' {
+                    New-HTMLDiagram -Height 'calc(50vh)' {
+                        New-DiagramEvent -ID 'DT-StandardSites' -ColumnID 0
+                        New-DiagramOptionsPhysics -RepulsionNodeDistance 150 -Solver repulsion
+                        foreach ($Site in $Sites) {
+                            New-DiagramNode -Id $Site.DistinguishedName -Label $Site.Name -Image 'https://cdn-icons-png.flaticon.com/512/1104/1104991.png'
+                            foreach ($Subnet in $Site.Subnets) {
+                                New-DiagramNode -Id $Subnet -Label $Subnet -Image 'https://cdn-icons-png.flaticon.com/512/1674/1674968.png'
+                                New-DiagramEdge -From $Subnet -To $Site.DistinguishedName
+                            }
+                            foreach ($DC in $Site.DomainControllers) {
+                                New-DiagramNode -Id $DC -Label $DC -Image 'https://cdn-icons-png.flaticon.com/512/1383/1383395.png'
+                                New-DiagramEdge -From $DC -To $Site.DistinguishedName
+                            }
+                        }
+                        foreach ($R in $CacheReplication.Values) {
+                            if ($R.ConsecutiveReplicationFailures -gt 0) {
+                                $Color = 'CoralRed'
+                            } else {
+                                $Color = 'MediumSeaGreen'
+                            }
+                            New-DiagramEdge -From $R.Server -To $R.ServerPartner -Color $Color -ArrowsToEnabled -ColorOpacity 0.5
+                        }
+                    }
+                }
+                New-HTMLSection -HeaderText 'Sites' {
+                    New-HTMLTable -DataTable $Sites -DataTableID 'DT-Sites' -Filtering -ScrollX {
+                        New-TableCondition -BackgroundColor MediumSeaGreen -ComparisonType number -Value 0 -Name SubnetsCount -Operator gt
+                        New-TableCondition -BackgroundColor CoralRed -ComparisonType number -Value 0 -Name SubnetsCount -Operator eq
+                    }
+                }
+                New-HTMLSection -HeaderText 'Subnets' {
+                    New-HTMLTable -DataTable $Subnets -DataTableID 'DT-Subnets' -Filtering -ScrollX {
+                        New-TableCondition -BackgroundColor MediumSeaGreen -ComparisonType string -Value $true -Name SiteStatus -FailBackgroundColor CoralRed
+                        New-TableCondition -BackgroundColor MediumSeaGreen -ComparisonType string -Value $false -Name Overlap -FailBackgroundColor CoralRed
                     }
                 }
             }
