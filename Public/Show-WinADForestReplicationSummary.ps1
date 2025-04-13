@@ -46,104 +46,13 @@
 
     $ReplicationSummary = Get-WinADForestReplicationSummary -IncludeStatisticsVariable Statistics
 
-    $ReplicationData = Get-WinADForestReplication -Extended
-
-    $DCs = @{}
-    $Links = [System.Collections.Generic.List[object]]::new()
-
-    foreach ($RepLink in $ReplicationData) {
-        # Ensure Server and Partner are added as nodes
-        if ($RepLink.Server -and -not $DCs.ContainsKey($RepLink.Server)) {
-            $DCs[$RepLink.Server] = @{
-                Label    = $RepLink.Server
-                IP       = $RepLink.ServerIPV4
-                Partners = [System.Collections.Generic.HashSet[string]]::new()
-                Status   = $true  # Will be set to false if any replication link fails
-            }
-        }
-        if ($RepLink.ServerPartner -and -not $DCs.ContainsKey($RepLink.ServerPartner)) {
-            # Attempt to resolve partner IP if not directly available (may require another lookup or be less reliable)
-            $PartnerIP = $RepLink.ServerPartnerIPV4 # Use the IP already resolved by Get-WinADForestReplication
-            $DCs[$RepLink.ServerPartner] = @{
-                Label    = $RepLink.ServerPartner
-                IP       = $PartnerIP
-                Partners = [System.Collections.Generic.HashSet[string]]::new()
-                Status   = $true
-            }
-        }
-
-        # Add partner to the server's partner list (using HashSet to avoid duplicates)
-        if ($RepLink.Server -and $RepLink.ServerPartner) {
-            $null = $DCs[$RepLink.Server].Partners.Add($RepLink.ServerPartner)
-
-            # Update status if there's any failure
-            if (-not $RepLink.Status) {
-                $DCs[$RepLink.Server].Status = $false
-            }
-        }
-
-        # Add the link (handle potential duplicates if needed, maybe group by Server/Partner/Partition?)
-        # For simplicity now, add each link found. Diagram might show multiple lines if partitions differ.
-        if ($RepLink.Server -and $RepLink.ServerPartner) {
-            $Links.Add(@{
-                    From        = $RepLink.Server
-                    To          = $RepLink.ServerPartner
-                    Status      = $RepLink.Status
-                    Fails       = $RepLink.ConsecutiveReplicationFailures
-                    LastSuccess = $RepLink.LastReplicationSuccess
-                    Partition   = $RepLink.Partition
-                })
-        }
-    }
-
-    # Create consolidated view of DC replication partnerships
-    $DCPartnerSummary = foreach ($DCName in $DCs.Keys) {
-        $DC = $DCs[$DCName]
-        [PSCustomObject]@{
-            DomainController = $DCName
-            IPAddress        = $DC.IP
-            Partners         = $DC.Partners -join ', '
-            PartnerCount     = $DC.Partners.Count
-            Status           = if ($DC.Status) { "Healthy" } else { "Issues Detected" }
-        }
-    }
-
-    # Create a matrix-style mapping of DCs to their replication partners
-    $DCNames = $DCs.Keys | Sort-Object
-    $MatrixHeaders = @('Source DC') + $DCNames
-    $ReplicationMatrix = [System.Collections.Generic.List[PSCustomObject]]::new()
-
-    foreach ($SourceDC in $DCNames) {
-        $Row = [ordered]@{
-            'Source DC' = $SourceDC
-        }
-
-        foreach ($TargetDC in $DCNames) {
-            if ($SourceDC -eq $TargetDC) {
-                # A DC doesn't replicate with itself
-                $Row[$TargetDC] = "-"
-            } else {
-                # Check if there are any replication links from Source to Target
-                $ReplicationLinks = $Links | Where-Object { $_.From -eq $SourceDC -and $_.To -eq $TargetDC }
-
-                if ($ReplicationLinks) {
-                    $AllHealthy = $true
-                    foreach ($Link in $ReplicationLinks) {
-                        if (-not $Link.Status) {
-                            $AllHealthy = $false
-                            break
-                        }
-                    }
-
-                    $Row[$TargetDC] = if ($AllHealthy) { "✓" } else { "✗" }
-                } else {
-                    $Row[$TargetDC] = " "  # No direct replication
-                }
-            }
-        }
-
-        $ReplicationMatrix.Add([PSCustomObject]$Row)
-    }
+    $ReplicationOutput = Get-WinADForestReplication -Extended -All
+    # Lets build the report using the data from Get-WinADForestReplication
+    $ReplicationData = $ReplicationOutput.ReplicationData
+    $DCs = $ReplicationOutput.DCs
+    $Links = $ReplicationOutput.Links
+    $DCPartnerSummary = $ReplicationOutput.DCPartnerSummary
+    $ReplicationMatrix = $ReplicationOutput.ReplicationMatrix
 
     New-HTML {
         New-HTMLSectionStyle -BorderRadius 0px -HeaderBackGroundColor Grey -RemoveShadow
@@ -161,7 +70,27 @@
             }
         }
         New-HTMLTabPanel {
-            New-HTMLTab -TabName 'Replication Diagram' {
+            New-HTMLTab -TabName 'Replication Summary' {
+                New-HTMLSection -HeaderText "Summary" {
+                    New-HTMLList {
+                        New-HTMLListItem -Text "Servers with good replication: ", $($Statistics.Good) -Color Black, SpringGreen -FontWeight normal, bold
+                        New-HTMLListItem -Text "Servers with replication failures: ", $($Statistics.Failures) -Color Black, Red -FontWeight normal, bold
+                        New-HTMLListItem -Text "Servers with replication delta over 24 hours: ", $($Statistics.DeltaOver24Hours) -Color Black, Red -FontWeight normal, bold
+                        New-HTMLListItem -Text "Servers with replication delta over 12 hours: ", $($Statistics.DeltaOver12Hours) -Color Black, Red -FontWeight normal, bold
+                        New-HTMLListItem -Text "Servers with replication delta over 6 hours: ", $($Statistics.DeltaOver6Hours) -Color Black, Red -FontWeight normal, bold
+                        New-HTMLListItem -Text "Servers with replication delta over 3 hours: ", $($Statistics.DeltaOver3Hours) -Color Black, Red -FontWeight normal, bold
+                        New-HTMLListItem -Text "Servers with replication delta over 1 hour: ", $($Statistics.DeltaOver1Hours) -Color Black, Red -FontWeight normal, bold
+                        New-HTMLListItem -Text "Unique replication errors: ", $($Statistics.UniqueErrors.Count) -Color Black, Red -FontWeight normal, bold
+                        New-HTMLListItem -Text "Unique replication warnings: ", $($Statistics.UniqueWarnings.Count) -Color Black, Yellow -FontWeight normal, bold
+                    }
+                }
+                New-HTMLSection -HeaderText "Replication Summary" {
+                    New-HTMLTable -DataTable $ReplicationSummary -DataTableID 'DT-ReplicationSummary' -ScrollX {
+                        New-HTMLTableCondition -Inline -Name "Fail" -HighlightHeaders 'Fails', 'Total', 'PercentageError' -ComparisonType number -Operator gt 0 -BackgroundColor Salmon -FailBackgroundColor SpringGreen
+                    } -Filtering -PagingLength 50 -PagingOptions @(5, 10, 15, 25, 50, 100)
+                }
+            }
+            New-HTMLTab -TabName 'Replication Topology & Details' {
                 New-HTMLSection -HeaderText 'Replication Topology' {
                     New-HTMLDiagram -Height 'calc(50vh)' {
                         New-DiagramEvent -ID 'DT-ReplicationDetails' -ColumnID 0
@@ -179,6 +108,7 @@
                         # Add Edges (Replication Links)
                         foreach ($Link in $Links) {
                             $EdgeColor = if ($Link.Status) { 'Green' } else { 'Red' }
+                            $EdgeTitle = $($Link.Partition)
                             #$EdgeTitle = "From: $($Link.From) To: $($Link.To)`nPartition: $($Link.Partition)`nStatus: $($Link.Status)`nFails: $($Link.Fails)`nLast Success: $($Link.LastSuccess)"
                             $EdgeDashes = if (-not $Link.Status) { $true } else { $false } # Dashed line for failures
 
@@ -186,9 +116,6 @@
                         }
                     } -EnableFiltering -EnableFilteringButton #-PhysicsEnabled # Consider physics options if needed
                 }
-            }
-
-            New-HTMLTab -TabName 'DC Partners' {
                 New-HTMLSection -HeaderText 'Domain Controller Replication Partners' {
                     New-HTMLTable -DataTable $DCPartnerSummary -DataTableID 'DT-DCPartnerSummary' -Filtering -ScrollX {
                         New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Issues Detected' -BackgroundColor '#f7bec3' -Row
@@ -213,27 +140,6 @@
                     }
                 }
             }
-
-            New-HTMLTab -TabName 'Replication Summary' {
-                New-HTMLSection -HeaderText "Summary" {
-                    New-HTMLList {
-                        New-HTMLListItem -Text "Servers with good replication: ", $($Statistics.Good) -Color Black, SpringGreen -FontWeight normal, bold
-                        New-HTMLListItem -Text "Servers with replication failures: ", $($Statistics.Failures) -Color Black, Red -FontWeight normal, bold
-                        New-HTMLListItem -Text "Servers with replication delta over 24 hours: ", $($Statistics.DeltaOver24Hours) -Color Black, Red -FontWeight normal, bold
-                        New-HTMLListItem -Text "Servers with replication delta over 12 hours: ", $($Statistics.DeltaOver12Hours) -Color Black, Red -FontWeight normal, bold
-                        New-HTMLListItem -Text "Servers with replication delta over 6 hours: ", $($Statistics.DeltaOver6Hours) -Color Black, Red -FontWeight normal, bold
-                        New-HTMLListItem -Text "Servers with replication delta over 3 hours: ", $($Statistics.DeltaOver3Hours) -Color Black, Red -FontWeight normal, bold
-                        New-HTMLListItem -Text "Servers with replication delta over 1 hour: ", $($Statistics.DeltaOver1Hours) -Color Black, Red -FontWeight normal, bold
-                        New-HTMLListItem -Text "Unique replication errors: ", $($Statistics.UniqueErrors.Count) -Color Black, Red -FontWeight normal, bold
-                        New-HTMLListItem -Text "Unique replication warnings: ", $($Statistics.UniqueWarnings.Count) -Color Black, Yellow -FontWeight normal, bold
-                    }
-                }
-                New-HTMLSection -HeaderText "Replication Summary" {
-                    New-HTMLTable -DataTable $ReplicationSummary -DataTableID 'DT-ReplicationSummary' -ScrollX {
-                        New-HTMLTableCondition -Inline -Name "Fail" -HighlightHeaders 'Fails', 'Total', 'PercentageError' -ComparisonType number -Operator gt 0 -BackgroundColor Salmon -FailBackgroundColor SpringGreen
-                    } -Filtering -PagingLength 50 -PagingOptions @(5, 10, 15, 25, 50, 100)
-                }
-            }
             New-HTMLTab -TabName 'Errors & Warnings' {
                 New-HTMLSection -HeaderText 'Errors and Warnings During Data Collection' {
                     # Placeholder: Need to capture errors from Get-WinADForestReplication if possible
@@ -255,6 +161,8 @@
             ReplicationSummary = $ReplicationSummary
             Statistics         = $Statistics
             ReplicationData    = $ReplicationData
+            DCs                = $DCs
+            Links              = $Links
             DCPartnerSummary   = $DCPartnerSummary
             ReplicationMatrix  = $ReplicationMatrix
         }
