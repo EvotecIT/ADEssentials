@@ -123,7 +123,7 @@
                             $Organization.OrganizationalUnits[$Domain]
                         }
                     )
-                    New-HTMLTable -DataTable $OrganizationalUnits -DataTableID 'DT-OrganizationalUnits' -Filtering -ScrollX
+                    New-HTMLTable -DataTable $OrganizationalUnits -DataTableID 'DT-OrganizationalUnits' -Filtering -ScrollX -ExcludeProperty 'Objects', 'OrganizationalUnits', 'OrganizationalUnitsCount'
                 }
             }
             New-HTMLTab -Name "Subnets" {
