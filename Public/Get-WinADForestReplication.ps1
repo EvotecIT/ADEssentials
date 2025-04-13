@@ -45,6 +45,7 @@
         [alias('DomainControllers')][string[]] $IncludeDomainControllers,
         [switch] $SkipRODC,
         [switch] $Extended,
+        [switch] $All,
         [System.Collections.IDictionary] $ExtendedForestInformation
     )
     $ProcessErrors = [System.Collections.Generic.List[PSCustomObject]]::new()
@@ -57,89 +58,200 @@
             $ProcessErrors.Add([PSCustomObject] @{ Server = $_.Exception.ServerName; StatusMessage = $_.Exception.Message })
         }
     }
-    foreach ($R in $Replication) {
-        $ServerPartner = (Resolve-DnsName -Name $R.PartnerAddress -Verbose:$false -ErrorAction SilentlyContinue)
-        $ServerInitiating = (Resolve-DnsName -Name $R.Server -Verbose:$false -ErrorAction SilentlyContinue)
-        $ReplicationObject = [ordered] @{
-            Server                         = $R.Server
-            ServerIPV4                     = $ServerInitiating.IP4Address
-            ServerPartner                  = $ServerPartner.NameHost
-            ServerPartnerIPV4              = $ServerPartner.IP4Address
-            LastReplicationAttempt         = $R.LastReplicationAttempt
-            LastReplicationResult          = $R.LastReplicationResult
-            LastReplicationSuccess         = $R.LastReplicationSuccess
-            ConsecutiveReplicationFailures = $R.ConsecutiveReplicationFailures
-            LastChangeUsn                  = $R.LastChangeUsn
-            PartnerType                    = $R.PartnerType
+    [Array] $ReplicationData = @(
+        foreach ($R in $Replication) {
+            $ServerPartner = (Resolve-DnsName -Name $R.PartnerAddress -Verbose:$false -ErrorAction SilentlyContinue)
+            $ServerInitiating = (Resolve-DnsName -Name $R.Server -Verbose:$false -ErrorAction SilentlyContinue)
+            $ReplicationObject = [ordered] @{
+                Server                         = $R.Server
+                ServerIPV4                     = $ServerInitiating.IP4Address
+                ServerPartner                  = $ServerPartner.NameHost
+                ServerPartnerIPV4              = $ServerPartner.IP4Address
+                LastReplicationAttempt         = $R.LastReplicationAttempt
+                LastReplicationResult          = $R.LastReplicationResult
+                LastReplicationSuccess         = $R.LastReplicationSuccess
+                ConsecutiveReplicationFailures = $R.ConsecutiveReplicationFailures
+                LastChangeUsn                  = $R.LastChangeUsn
+                PartnerType                    = $R.PartnerType
 
-            Partition                      = $R.Partition
-            TwoWaySync                     = $R.TwoWaySync
-            ScheduledSync                  = $R.ScheduledSync
-            SyncOnStartup                  = $R.SyncOnStartup
-            CompressChanges                = $R.CompressChanges
-            DisableScheduledSync           = $R.DisableScheduledSync
-            IgnoreChangeNotifications      = $R.IgnoreChangeNotifications
-            IntersiteTransport             = $R.IntersiteTransport
-            IntersiteTransportGuid         = $R.IntersiteTransportGuid
-            IntersiteTransportType         = $R.IntersiteTransportType
+                Partition                      = $R.Partition
+                TwoWaySync                     = $R.TwoWaySync
+                ScheduledSync                  = $R.ScheduledSync
+                SyncOnStartup                  = $R.SyncOnStartup
+                CompressChanges                = $R.CompressChanges
+                DisableScheduledSync           = $R.DisableScheduledSync
+                IgnoreChangeNotifications      = $R.IgnoreChangeNotifications
+                IntersiteTransport             = $R.IntersiteTransport
+                IntersiteTransportGuid         = $R.IntersiteTransportGuid
+                IntersiteTransportType         = $R.IntersiteTransportType
 
-            UsnFilter                      = $R.UsnFilter
-            Writable                       = $R.Writable
-            Status                         = if ($R.LastReplicationResult -ne 0) { $false } else { $true }
-            StatusMessage                  = "Last successful replication time was $($R.LastReplicationSuccess), Consecutive Failures: $($R.ConsecutiveReplicationFailures)"
+                UsnFilter                      = $R.UsnFilter
+                Writable                       = $R.Writable
+                Status                         = if ($R.LastReplicationResult -ne 0) { $false } else { $true }
+                StatusMessage                  = "Last successful replication time was $($R.LastReplicationSuccess), Consecutive Failures: $($R.ConsecutiveReplicationFailures)"
+            }
+            if ($Extended) {
+                $ReplicationObject.Partner = $R.Partner
+                $ReplicationObject.PartnerAddress = $R.PartnerAddress
+                $ReplicationObject.PartnerGuid = $R.PartnerGuid
+                $ReplicationObject.PartnerInvocationId = $R.PartnerInvocationId
+                $ReplicationObject.PartitionGuid = $R.PartitionGuid
+            }
+            [PSCustomObject] $ReplicationObject
         }
-        if ($Extended) {
-            $ReplicationObject.Partner = $R.Partner
-            $ReplicationObject.PartnerAddress = $R.PartnerAddress
-            $ReplicationObject.PartnerGuid = $R.PartnerGuid
-            $ReplicationObject.PartnerInvocationId = $R.PartnerInvocationId
-            $ReplicationObject.PartitionGuid = $R.PartitionGuid
+
+        foreach ($E in $ProcessErrors) {
+            if ($null -ne $E.Server) {
+                $ServerInitiating = (Resolve-DnsName -Name $E.Server -Verbose:$false -ErrorAction SilentlyContinue)
+            } else {
+                $ServerInitiating = [PSCustomObject] @{ IP4Address = '127.0.0.1' }
+            }
+            $ReplicationObject = [ordered] @{
+                Server                         = $_.Server
+                ServerIPV4                     = $ServerInitiating.IP4Address
+                ServerPartner                  = 'Unknown'
+                ServerPartnerIPV4              = '127.0.0.1'
+                LastReplicationAttempt         = $null
+                LastReplicationResult          = $null
+                LastReplicationSuccess         = $null
+                ConsecutiveReplicationFailures = $null
+                LastChangeUsn                  = $null
+                PartnerType                    = $null
+
+                Partition                      = $null
+                TwoWaySync                     = $null
+                ScheduledSync                  = $null
+                SyncOnStartup                  = $null
+                CompressChanges                = $null
+                DisableScheduledSync           = $null
+                IgnoreChangeNotifications      = $null
+                IntersiteTransport             = $null
+                IntersiteTransportGuid         = $null
+                IntersiteTransportType         = $null
+
+                UsnFilter                      = $null
+                Writable                       = $null
+                Status                         = $false
+                StatusMessage                  = $E.StatusMessage
+            }
+            if ($Extended) {
+                $ReplicationObject.Partner = $null
+                $ReplicationObject.PartnerAddress = $null
+                $ReplicationObject.PartnerGuid = $null
+                $ReplicationObject.PartnerInvocationId = $null
+                $ReplicationObject.PartitionGuid = $null
+            }
+            [PSCustomObject] $ReplicationObject
         }
-        [PSCustomObject] $ReplicationObject
+    )
+
+    if (-not $All) {
+        return $ReplicationData
     }
 
-    foreach ($E in $ProcessErrors) {
-        if ($null -ne $E.Server) {
-            $ServerInitiating = (Resolve-DnsName -Name $E.Server -Verbose:$false -ErrorAction SilentlyContinue)
-        } else {
-            $ServerInitiating = [PSCustomObject] @{ IP4Address = '127.0.0.1' }
-        }
-        $ReplicationObject = [ordered] @{
-            Server                         = $_.Server
-            ServerIPV4                     = $ServerInitiating.IP4Address
-            ServerPartner                  = 'Unknown'
-            ServerPartnerIPV4              = '127.0.0.1'
-            LastReplicationAttempt         = $null
-            LastReplicationResult          = $null
-            LastReplicationSuccess         = $null
-            ConsecutiveReplicationFailures = $null
-            LastChangeUsn                  = $null
-            PartnerType                    = $null
+    $DCs = @{}
+    $Links = [System.Collections.Generic.List[object]]::new()
 
-            Partition                      = $null
-            TwoWaySync                     = $null
-            ScheduledSync                  = $null
-            SyncOnStartup                  = $null
-            CompressChanges                = $null
-            DisableScheduledSync           = $null
-            IgnoreChangeNotifications      = $null
-            IntersiteTransport             = $null
-            IntersiteTransportGuid         = $null
-            IntersiteTransportType         = $null
+    foreach ($RepLink in $ReplicationData) {
+        # Ensure Server and Partner are added as nodes
+        if ($RepLink.Server -and -not $DCs.ContainsKey($RepLink.Server)) {
+            $DCs[$RepLink.Server] = @{
+                Label    = $RepLink.Server
+                IP       = $RepLink.ServerIPV4
+                Partners = [System.Collections.Generic.HashSet[string]]::new()
+                Status   = $true  # Will be set to false if any replication link fails
+            }
+        }
+        if ($RepLink.ServerPartner -and -not $DCs.ContainsKey($RepLink.ServerPartner)) {
+            # Attempt to resolve partner IP if not directly available (may require another lookup or be less reliable)
+            $PartnerIP = $RepLink.ServerPartnerIPV4 # Use the IP already resolved by Get-WinADForestReplication
+            $DCs[$RepLink.ServerPartner] = @{
+                Label    = $RepLink.ServerPartner
+                IP       = $PartnerIP
+                Partners = [System.Collections.Generic.HashSet[string]]::new()
+                Status   = $true
+            }
+        }
 
-            UsnFilter                      = $null
-            Writable                       = $null
-            Status                         = $false
-            StatusMessage                  = $E.StatusMessage
+        # Add partner to the server's partner list (using HashSet to avoid duplicates)
+        if ($RepLink.Server -and $RepLink.ServerPartner) {
+            $null = $DCs[$RepLink.Server].Partners.Add($RepLink.ServerPartner)
+
+            # Update status if there's any failure
+            if (-not $RepLink.Status) {
+                $DCs[$RepLink.Server].Status = $false
+            }
         }
-        if ($Extended) {
-            $ReplicationObject.Partner = $null
-            $ReplicationObject.PartnerAddress = $null
-            $ReplicationObject.PartnerGuid = $null
-            $ReplicationObject.PartnerInvocationId = $null
-            $ReplicationObject.PartitionGuid = $null
+
+        # Add the link (handle potential duplicates if needed, maybe group by Server/Partner/Partition?)
+        # For simplicity now, add each link found. Diagram might show multiple lines if partitions differ.
+        if ($RepLink.Server -and $RepLink.ServerPartner) {
+            $Links.Add(@{
+                    From        = $RepLink.Server
+                    To          = $RepLink.ServerPartner
+                    Status      = $RepLink.Status
+                    Fails       = $RepLink.ConsecutiveReplicationFailures
+                    LastSuccess = $RepLink.LastReplicationSuccess
+                    Partition   = $RepLink.Partition
+                })
         }
-        [PSCustomObject] $ReplicationObject
     }
 
+    # Create consolidated view of DC replication partnerships
+    $DCPartnerSummary = foreach ($DCName in $DCs.Keys) {
+        $DC = $DCs[$DCName]
+        [PSCustomObject]@{
+            DomainController = $DCName
+            IPAddress        = $DC.IP
+            Partners         = $DC.Partners -join ', '
+            PartnerCount     = $DC.Partners.Count
+            Status           = if ($DC.Status) { "Healthy" } else { "Issues Detected" }
+        }
+    }
+
+    # Create a matrix-style mapping of DCs to their replication partners
+    $DCNames = $DCs.Keys | Sort-Object
+    $MatrixHeaders = @('Source DC') + $DCNames
+    $ReplicationMatrix = [System.Collections.Generic.List[PSCustomObject]]::new()
+
+    foreach ($SourceDC in $DCNames) {
+        $Row = [ordered]@{
+            'Source DC' = $SourceDC
+        }
+
+        foreach ($TargetDC in $DCNames) {
+            if ($SourceDC -eq $TargetDC) {
+                # A DC doesn't replicate with itself
+                $Row[$TargetDC] = "-"
+            } else {
+                # Check if there are any replication links from Source to Target
+                $ReplicationLinks = $Links | Where-Object { $_.From -eq $SourceDC -and $_.To -eq $TargetDC }
+
+                if ($ReplicationLinks) {
+                    $AllHealthy = $true
+                    foreach ($Link in $ReplicationLinks) {
+                        if (-not $Link.Status) {
+                            $AllHealthy = $false
+                            break
+                        }
+                    }
+
+                    $Row[$TargetDC] = if ($AllHealthy) { "✓" } else { "✗" }
+                } else {
+                    $Row[$TargetDC] = " "  # No direct replication
+                }
+            }
+        }
+
+        $ReplicationMatrix.Add([PSCustomObject]$Row)
+    }
+
+    [ordered] @{
+        ReplicationData   = $ReplicationData
+        DCs               = $DCs
+        Links             = $Links
+        DCPartnerSummary  = $DCPartnerSummary
+        ReplicationMatrix = $ReplicationMatrix
+        MatrixHeaders     = $MatrixHeaders
+    }
 }
