@@ -109,20 +109,62 @@
                             $DCInfo = $DCs[$DCName]
                             $NodeLabel = "$($DCInfo.Label)`n$($DCInfo.IP)" # Add IP to label
                             $NodeColor = if ($DCInfo.Status) { "#c5e8cd" } else { "#f7bec3" } # Light green or light red
-                            # Consider adding an image based on DC type (RODC/RWDC) if info is available
-                            New-DiagramNode -Id $DCName -Label $NodeLabel -Title "DC: $($DCInfo.Label)" -ColorBackground $NodeColor # Tooltip
+                            $SiteName = ""
+                            # Add site information if available
+                            foreach ($DCPartner in $DCPartnerSummary) {
+                                if ($DCPartner.DomainController -eq $DCName -and $DCPartner.Site) {
+                                    $SiteName = $DCPartner.Site
+                                    break
+                                }
+                            }
+                            $NodeTitle = "DC: $($DCInfo.Label)"
+                            if ($SiteName) {
+                                $NodeTitle += " (Site: $SiteName)"
+                            }
+                            #New-DiagramNode -Id $DCName -Label $NodeLabel -Title $NodeTitle -ColorBackground $NodeColor
+                            New-DiagramNode -Id $DCName -Label $DCInfo.Label -ColorBackground $NodeColor -Shape box
                         }
 
-                        # Add Edges (Replication Links)
+                        # Track which connections we've already processed to avoid duplicates
+                        $ProcessedLinks = @{}
+
+                        # Directly use the Links collection to create edges between DCs
                         foreach ($Link in $Links) {
-                            $EdgeColor = if ($Link.Status) { 'Green' } else { 'Red' }
-                            $EdgeTitle = $($Link.Partition)
-                            #$EdgeTitle = "From: $($Link.From) To: $($Link.To)`nPartition: $($Link.Partition)`nStatus: $($Link.Status)`nFails: $($Link.Fails)`nLast Success: $($Link.LastSuccess)"
-                            $EdgeDashes = if (-not $Link.Status) { $true } else { $false } # Dashed line for failures
+                            $FromDC = $Link.From
+                            $ToDC = $Link.To
+                            $LinkKey = "$FromDC-$ToDC"
+                            $ReverseKey = "$ToDC-$FromDC"
 
-                            New-DiagramEdge -From $Link.From -To $Link.To -Color $EdgeColor -ArrowsToEnabled -Label $EdgeTitle -Dashes $EdgeDashes
+                            # Skip if we've already processed this link
+                            if ($ProcessedLinks.ContainsKey($LinkKey) -or $ProcessedLinks.ContainsKey($ReverseKey)) {
+                                continue
+                            }
+
+                            # Mark as processed
+                            $ProcessedLinks[$LinkKey] = $true
+
+                            # Determine if it's bidirectional
+                            $Bidirectional = $false
+                            $ReverseLink = $Links | Where-Object { $_.From -eq $ToDC -and $_.To -eq $FromDC } | Select-Object -First 1
+                            if ($ReverseLink) {
+                                $Bidirectional = $true
+                                # Mark reverse link as processed too
+                                $ProcessedLinks[$ReverseKey] = $true
+                            }
+
+                            # Determine status and color
+                            $EdgeColor = if ($Link.Status) { 'Green' } else { 'Red' }
+                            $EdgeDashes = -not $Link.Status # Dashed line for failures
+
+                            if ($Bidirectional) {
+                                # Create bidirectional edge
+                                New-DiagramEdge -From $FromDC -To $ToDC -Color $EdgeColor -ArrowsToEnabled -ArrowsFromEnabled -Dashes $EdgeDashes -Label "Both" -FontAlign middle
+                            } else {
+                                # Create directional edge
+                                New-DiagramEdge -From $ToDC -To $FromDC -Color $EdgeColor -ArrowsToEnabled -Dashes $EdgeDashes -Label "One-way" -FontAlign middle
+                            }
                         }
-                    } -EnableFiltering -EnableFilteringButton #-PhysicsEnabled # Consider physics options if needed
+                    } -EnableFiltering -EnableFilteringButton
                 }
                 New-HTMLSection -HeaderText 'Domain Controller Replication Partners' {
                     New-HTMLTable -DataTable $DCPartnerSummary -DataTableID 'DT-DCPartnerSummary' -Filtering -ScrollX {
@@ -211,18 +253,18 @@
                     }
                 }
             }
-            New-HTMLTab -TabName 'Errors & Warnings' {
-                New-HTMLSection -HeaderText 'Errors and Warnings During Data Collection' {
-                    # Placeholder: Need to capture errors from Get-WinADForestReplication if possible
-                    # For now, display errors captured by the original function's try/catch
-                    $Errors = $ReplicationData | Where-Object { $_.StatusMessage -like '*Error*' -or $_.Status -eq $false } | Select-Object Server, ServerPartner, StatusMessage, LastReplicationAttempt, ConsecutiveReplicationFailures
-                    if ($Errors) {
-                        New-HTMLTable -DataTable $Errors -DataTableID 'DT-ReplicationErrors' -Filtering -ScrollX
-                    } else {
-                        New-HTMLText -Text "No significant errors detected or reported by Get-WinADForestReplication."
-                    }
-                }
-            }
+            # New-HTMLTab -TabName 'Errors & Warnings' {
+            #     New-HTMLSection -HeaderText 'Errors and Warnings During Data Collection' {
+            #         # Placeholder: Need to capture errors from Get-WinADForestReplication if possible
+            #         # For now, display errors captured by the original function's try/catch
+            #         $Errors = $ReplicationData | Where-Object { $_.StatusMessage -like '*Error*' -or $_.Status -eq $false } | Select-Object Server, ServerPartner, StatusMessage, LastReplicationAttempt, ConsecutiveReplicationFailures
+            #         if ($Errors) {
+            #             New-HTMLTable -DataTable $Errors -DataTableID 'DT-ReplicationErrors' -Filtering -ScrollX
+            #         } else {
+            #             New-HTMLText -Text "No significant errors detected or reported by Get-WinADForestReplication."
+            #         }
+            #     }
+            # }
         }
     } -FilePath $FilePath -ShowHTML:(-not $HideHTML) -Online:$Online
 
