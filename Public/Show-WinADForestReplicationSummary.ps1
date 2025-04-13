@@ -161,6 +161,7 @@
         [ordered] @{
             ReplicationSummary = $ReplicationSummary
             Statistics         = $Statistics
+            ReplicationData    = $ReplicationData
         }
     }
 }
