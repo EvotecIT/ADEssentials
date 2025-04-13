@@ -32,6 +32,18 @@
         New-HTMLSectionStyle -BorderRadius 0px -HeaderBackGroundColor Grey -RemoveShadow
         New-HTMLTableOption -DataStore JavaScript -ArrayJoin -ArrayJoinString ", "
         New-HTMLTabStyle -BorderRadius 0px -TextTransform capitalize -BackgroundColorActive SlateGrey
+
+        New-HTMLHeader {
+            New-HTMLSection -Invisible {
+                New-HTMLSection {
+                    New-HTMLText -Text "Report generated on $(Get-Date)" -Color Blue
+                } -JustifyContent flex-start -Invisible
+                New-HTMLSection {
+                    New-HTMLText -Text "ADEssentials - $($Script:Reporting['Version'])" -Color Blue
+                } -JustifyContent flex-end -Invisible
+            }
+        }
+
         New-HTMLTabPanel {
             New-HTMLTab -TabName 'Standard' {
                 New-HTMLSection -HeaderText 'Organization Diagram' {
