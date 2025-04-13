@@ -63,9 +63,9 @@
             $ServerPartner = (Resolve-DnsName -Name $R.PartnerAddress -Verbose:$false -ErrorAction SilentlyContinue)
             $ServerInitiating = (Resolve-DnsName -Name $R.Server -Verbose:$false -ErrorAction SilentlyContinue)
             $ReplicationObject = [ordered] @{
-                Server                         = $R.Server
+                Server                         = $R.Server.ToUpper()
                 ServerIPV4                     = $ServerInitiating.IP4Address
-                ServerPartner                  = $ServerPartner.NameHost
+                ServerPartner                  = $ServerPartner.NameHost.ToUpper()
                 ServerPartnerIPV4              = $ServerPartner.IP4Address
                 LastReplicationAttempt         = $R.LastReplicationAttempt
                 LastReplicationResult          = $R.LastReplicationResult
@@ -107,9 +107,9 @@
                 $ServerInitiating = [PSCustomObject] @{ IP4Address = '127.0.0.1' }
             }
             $ReplicationObject = [ordered] @{
-                Server                         = $_.Server
+                Server                         = $E.Server.ToUpper()
                 ServerIPV4                     = $ServerInitiating.IP4Address
-                ServerPartner                  = 'Unknown'
+                ServerPartner                  = 'Unknown'.ToUpper()
                 ServerPartnerIPV4              = '127.0.0.1'
                 LastReplicationAttempt         = $null
                 LastReplicationResult          = $null
@@ -147,6 +147,20 @@
 
     if (-not $All) {
         return $ReplicationData
+    }
+
+    $SiteInformation = @{}
+
+    $Sites = Get-WinADForestSites
+    $Subnets = Get-WinADForestSubnet -VerifyOverlap
+
+    # Build a mapping of DC names to their sites
+    foreach ($Site in $Sites) {
+        if ($Site.DomainControllers) {
+            foreach ($DC in $Site.DomainControllers) {
+                $SiteInformation[$DC] = $Site.Name
+            }
+        }
     }
 
     $DCs = @{}
@@ -202,21 +216,41 @@
         $DC = $DCs[$DCName]
         [PSCustomObject]@{
             DomainController = $DCName
+            Site             = $SiteInformation[$DCName]
             IPAddress        = $DC.IP
-            Partners         = $DC.Partners -join ', '
+            Partners         = $DC.Partners | ForEach-Object { $_ }
             PartnerCount     = $DC.Partners.Count
+            PartnerSites     = @(
+                foreach ($Partner in $DC.Partners) {
+                    if ($SiteInformation.ContainsKey($Partner)) {
+                        $SiteInformation[$Partner]
+                    } else {
+                        "Unknown"
+                    }
+                }
+            ) | Sort-Object -Unique
+            PartnersIP       = $DC.Partners | ForEach-Object {
+                if ($DCs.ContainsKey($_)) {
+                    $DCs[$_].IP
+                } else {
+                    "Unknown"
+                }
+            } | Sort-Object -Unique
             Status           = if ($DC.Status) { "Healthy" } else { "Issues Detected" }
         }
     }
 
     # Create a matrix-style mapping of DCs to their replication partners
     $DCNames = $DCs.Keys | Sort-Object
-    $MatrixHeaders = @('Source DC') + $DCNames
+    $MatrixHeaders = $DCNames
     $ReplicationMatrix = [System.Collections.Generic.List[PSCustomObject]]::new()
 
     foreach ($SourceDC in $DCNames) {
         $Row = [ordered]@{
-            'Source DC' = $SourceDC
+            'Source DC'    = $SourceDC
+            'Site'         = $SiteInformation[$SourceDC]
+            'IP'           = $DCs[$SourceDC].IP
+            'PartnerCount' = $DCs[$SourceDC].Partners.Count
         }
 
         foreach ($TargetDC in $DCNames) {
@@ -253,5 +287,7 @@
         DCPartnerSummary  = $DCPartnerSummary
         ReplicationMatrix = $ReplicationMatrix
         MatrixHeaders     = $MatrixHeaders
+        Sites             = $Sites
+        Subnets           = $Subnets
     }
 }
