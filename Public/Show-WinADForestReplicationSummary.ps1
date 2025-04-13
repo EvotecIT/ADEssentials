@@ -168,28 +168,26 @@
                 }
                 New-HTMLSection -HeaderText 'Domain Controller Replication Partners' {
                     New-HTMLTable -DataTable $DCPartnerSummary -DataTableID 'DT-DCPartnerSummary' -Filtering -ScrollX {
-                        New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Issues Detected' -BackgroundColor '#f7bec3' -Row
-                        New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Healthy' -BackgroundColor '#c5e8cd' -Row
+                        New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Healthy' -BackgroundColor LightGreen -FailBackgroundColor Salmon
                     }
                 }
 
                 New-HTMLSection -HeaderText 'Replication Matrix' {
                     New-HTMLPanel {
-                        New-HTMLTable -DataTable $ReplicationMatrix -HideButtons -HideFooter -FixedHeader {
+                        New-HTMLTable -DataTable $ReplicationMatrix {
                             New-HTMLTableHeader -Names $MatrixHeaders -Title "Domain Controller Inbound Partners"
                             foreach ($Header in $MatrixHeaders) {
                                 New-HTMLTableCondition -Value '✓' -ComparisonType string -Operator eq -BackgroundColor LightGreen -Name $Header
                                 New-HTMLTableCondition -Value '✗' -ComparisonType string -Operator eq -BackgroundColor Salmon -Name $Header
                                 New-HTMLTableCondition -Value '-' -ComparisonType string -Operator eq -BackgroundColor LightYellow -Name $Header
                             }
-
-                        } -ScrollX -DataTableID 'DT-ReplicationMatrix'
+                        } -ScrollX -DataTableID 'DT-ReplicationMatrix' -Filtering
                     }
                 }
 
                 New-HTMLSection -HeaderText 'Detailed Replication Status' {
                     # Add conditional formatting for Status column
-                    New-HTMLTable -DataTable $ReplicationData -DataTableID 'DT-ReplicationDetails' -Filtering -ScrollX -ScrollY {
+                    New-HTMLTable -DataTable $ReplicationData -DataTableID 'DT-ReplicationDetails' -Filtering -ScrollX {
                         New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value $false -BackgroundColor '#f7bec3' -Row
 
                         New-HTMLTableCondition -Name 'LastReplicationResult' -ComparisonType string -Operator eq -Value "0" -BackgroundColor LightGreen -FailBackgroundColor Salmon
