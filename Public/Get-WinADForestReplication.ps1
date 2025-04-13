@@ -57,50 +57,50 @@
             $ProcessErrors.Add([PSCustomObject] @{ Server = $_.Exception.ServerName; StatusMessage = $_.Exception.Message })
         }
     }
-    foreach ($_ in $Replication) {
-        $ServerPartner = (Resolve-DnsName -Name $_.PartnerAddress -Verbose:$false -ErrorAction SilentlyContinue)
-        $ServerInitiating = (Resolve-DnsName -Name $_.Server -Verbose:$false -ErrorAction SilentlyContinue)
+    foreach ($R in $Replication) {
+        $ServerPartner = (Resolve-DnsName -Name $R.PartnerAddress -Verbose:$false -ErrorAction SilentlyContinue)
+        $ServerInitiating = (Resolve-DnsName -Name $R.Server -Verbose:$false -ErrorAction SilentlyContinue)
         $ReplicationObject = [ordered] @{
-            Server                         = $_.Server
+            Server                         = $R.Server
             ServerIPV4                     = $ServerInitiating.IP4Address
             ServerPartner                  = $ServerPartner.NameHost
             ServerPartnerIPV4              = $ServerPartner.IP4Address
-            LastReplicationAttempt         = $_.LastReplicationAttempt
-            LastReplicationResult          = $_.LastReplicationResult
-            LastReplicationSuccess         = $_.LastReplicationSuccess
-            ConsecutiveReplicationFailures = $_.ConsecutiveReplicationFailures
-            LastChangeUsn                  = $_.LastChangeUsn
-            PartnerType                    = $_.PartnerType
+            LastReplicationAttempt         = $R.LastReplicationAttempt
+            LastReplicationResult          = $R.LastReplicationResult
+            LastReplicationSuccess         = $R.LastReplicationSuccess
+            ConsecutiveReplicationFailures = $R.ConsecutiveReplicationFailures
+            LastChangeUsn                  = $R.LastChangeUsn
+            PartnerType                    = $R.PartnerType
 
-            Partition                      = $_.Partition
-            TwoWaySync                     = $_.TwoWaySync
-            ScheduledSync                  = $_.ScheduledSync
-            SyncOnStartup                  = $_.SyncOnStartup
-            CompressChanges                = $_.CompressChanges
-            DisableScheduledSync           = $_.DisableScheduledSync
-            IgnoreChangeNotifications      = $_.IgnoreChangeNotifications
-            IntersiteTransport             = $_.IntersiteTransport
-            IntersiteTransportGuid         = $_.IntersiteTransportGuid
-            IntersiteTransportType         = $_.IntersiteTransportType
+            Partition                      = $R.Partition
+            TwoWaySync                     = $R.TwoWaySync
+            ScheduledSync                  = $R.ScheduledSync
+            SyncOnStartup                  = $R.SyncOnStartup
+            CompressChanges                = $R.CompressChanges
+            DisableScheduledSync           = $R.DisableScheduledSync
+            IgnoreChangeNotifications      = $R.IgnoreChangeNotifications
+            IntersiteTransport             = $R.IntersiteTransport
+            IntersiteTransportGuid         = $R.IntersiteTransportGuid
+            IntersiteTransportType         = $R.IntersiteTransportType
 
-            UsnFilter                      = $_.UsnFilter
-            Writable                       = $_.Writable
-            Status                         = if ($_.LastReplicationResult -ne 0) { $false } else { $true }
-            StatusMessage                  = "Last successful replication time was $($_.LastReplicationSuccess), Consecutive Failures: $($_.ConsecutiveReplicationFailures)"
+            UsnFilter                      = $R.UsnFilter
+            Writable                       = $R.Writable
+            Status                         = if ($R.LastReplicationResult -ne 0) { $false } else { $true }
+            StatusMessage                  = "Last successful replication time was $($R.LastReplicationSuccess), Consecutive Failures: $($R.ConsecutiveReplicationFailures)"
         }
         if ($Extended) {
-            $ReplicationObject.Partner = $_.Partner
-            $ReplicationObject.PartnerAddress = $_.PartnerAddress
-            $ReplicationObject.PartnerGuid = $_.PartnerGuid
-            $ReplicationObject.PartnerInvocationId = $_.PartnerInvocationId
-            $ReplicationObject.PartitionGuid = $_.PartitionGuid
+            $ReplicationObject.Partner = $R.Partner
+            $ReplicationObject.PartnerAddress = $R.PartnerAddress
+            $ReplicationObject.PartnerGuid = $R.PartnerGuid
+            $ReplicationObject.PartnerInvocationId = $R.PartnerInvocationId
+            $ReplicationObject.PartitionGuid = $R.PartitionGuid
         }
         [PSCustomObject] $ReplicationObject
     }
 
-    foreach ($_ in $ProcessErrors) {
-        if ($null -ne $_.Server) {
-            $ServerInitiating = (Resolve-DnsName -Name $_.Server -Verbose:$false -ErrorAction SilentlyContinue)
+    foreach ($E in $ProcessErrors) {
+        if ($null -ne $E.Server) {
+            $ServerInitiating = (Resolve-DnsName -Name $E.Server -Verbose:$false -ErrorAction SilentlyContinue)
         } else {
             $ServerInitiating = [PSCustomObject] @{ IP4Address = '127.0.0.1' }
         }
@@ -130,7 +130,7 @@
             UsnFilter                      = $null
             Writable                       = $null
             Status                         = $false
-            StatusMessage                  = $_.StatusMessage
+            StatusMessage                  = $E.StatusMessage
         }
         if ($Extended) {
             $ReplicationObject.Partner = $null
