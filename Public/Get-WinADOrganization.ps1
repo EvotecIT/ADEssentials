@@ -38,7 +38,7 @@
     foreach ($Domain in $ForestInformation.Domains) {
         $CurrentDomainDN = ConvertTo-DistinguishedName -CanonicalName $Domain -ToDomain
 
-        $DomainObject = Get-ADObject -Identity $CurrentDomainDN -Server $ForestInformation['QueryServers'][$Domain].HostName[0] -Properties gPLink, ProtectedFromAccidentalDeletion, WhenCreated, WhenChanged, Description
+        $DomainObject = Get-ADObject -Identity $CurrentDomainDN -Server $ForestInformation['QueryServers'][$Domain].HostName[0] -Properties gPLink, ProtectedFromAccidentalDeletion, WhenCreated, WhenChanged, Description, CanonicalName
 
         # Renamed Objects*Count to Total*Count as they represent the overall domain total.
         # Added Objects*Count for objects directly in the domain root.
@@ -46,6 +46,7 @@
             Domain                          = $Domain
             Type                            = 'Domain'
             DistinguishedName               = $CurrentDomainDN
+            CanonicalName                   = $DomainObject.CanonicalName
             Name                            = $Domain
             OrganizationalUnits             = @() # This property seems unused/unpopulated later, consider removing or using.
             OrganizationalUnitsCount        = 0 # This property seems unused/unpopulated later, consider removing or using.
@@ -176,6 +177,7 @@
                 Domain                          = $Domain
                 Type                            = 'OrganizationalUnit'
                 DistinguishedName               = $OU.DistinguishedName
+                CanonicalName                   = $OU.CanonicalName
                 Name                            = $OU.Name
                 OrganizationalUnits             = $OutputSubOu # This represents the parent hierarchy, not children
                 OrganizationalUnitsCount        = $OutputSubOu.Count # Count of parent OUs + Domain
