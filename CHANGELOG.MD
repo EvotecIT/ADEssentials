@@ -1,4 +1,7 @@
-﻿#### 0.0.235
+﻿#### 0.0.236
+- Improved `Show-WinADForestReplicationSummary`
+
+#### 0.0.235
 ##### What's new
 * Improved Get-WinADOrganization
 * Improved Show-WinADOgranization
