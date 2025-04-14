@@ -76,24 +76,143 @@
             }
         }
         New-HTMLTabPanel {
-            New-HTMLTab -TabName 'Replication Summary' {
-                New-HTMLSection -HeaderText "Summary" {
-                    New-HTMLList {
-                        New-HTMLListItem -Text "Servers with good replication: ", $($Statistics.Good) -Color Black, LightGreen -FontWeight normal, bold
-                        New-HTMLListItem -Text "Servers with replication failures: ", $($Statistics.Failures) -Color Black, Red -FontWeight normal, bold
-                        New-HTMLListItem -Text "Servers with replication delta over 24 hours: ", $($Statistics.DeltaOver24Hours) -Color Black, Red -FontWeight normal, bold
-                        New-HTMLListItem -Text "Servers with replication delta over 12 hours: ", $($Statistics.DeltaOver12Hours) -Color Black, Red -FontWeight normal, bold
-                        New-HTMLListItem -Text "Servers with replication delta over 6 hours: ", $($Statistics.DeltaOver6Hours) -Color Black, Red -FontWeight normal, bold
-                        New-HTMLListItem -Text "Servers with replication delta over 3 hours: ", $($Statistics.DeltaOver3Hours) -Color Black, Red -FontWeight normal, bold
-                        New-HTMLListItem -Text "Servers with replication delta over 1 hour: ", $($Statistics.DeltaOver1Hours) -Color Black, Red -FontWeight normal, bold
-                        New-HTMLListItem -Text "Unique replication errors: ", $($Statistics.UniqueErrors.Count) -Color Black, Red -FontWeight normal, bold
-                        New-HTMLListItem -Text "Unique replication warnings: ", $($Statistics.UniqueWarnings.Count) -Color Black, Yellow -FontWeight normal, bold
+            New-HTMLTab -TabName 'Overview' {
+                New-HTMLSection -HeaderText "Report Overview" {
+                    New-HTMLPanel {
+                        New-HTMLText -Text "About this Report" -FontSize 16px -FontWeight bold
+                        New-HTMLText -Text "This report provides a comprehensive overview of Active Directory replication status across your forest. AD replication ensures that changes made to any domain controller are propagated to all other domain controllers in the environment. Monitoring replication is critical for maintaining a healthy Active Directory environment." -FontSize 12px
+
+                        New-HTMLText -Text "What to Look For" -FontSize 16px -FontWeight bold
+                        New-HTMLList {
+                            New-HTMLListItem -Text "Replication Failures: ", "Indicate domain controllers that cannot replicate changes" -FontWeight bold, normal
+                            New-HTMLListItem -Text "High Delta Times: ", "Indicate replications not happening frequently enough" -FontWeight bold, normal
+                            New-HTMLListItem -Text "Connectivity Issues: ", "Show potential network or configuration problems" -FontWeight bold, normal
+                        } -FontSize 12px
+
+                        New-HTMLText -Text "Report Sections" -FontSize 16px -FontWeight bold
+                        New-HTMLList {
+                            New-HTMLListItem -Text "Replication Summary: ", "Overview statistics and health at a glance" -FontWeight bold, normal
+                            New-HTMLListItem -Text "Replication Topology & Details: ", "Visual map of replication connections and detailed status" -FontWeight bold, normal
+                            New-HTMLListItem -Text "Sites & Subnets: ", "Information about AD sites, subnets, and their configuration" -FontWeight bold, normal
+                        } -FontSize 12px
+                    }
+                    New-HTMLPanel {
+                        New-HTMLText -Text "Domain Controllers / Subnets & Sites" -FontSize 16px -FontWeight bold
+                        # Create a few key metrics about the environment
+                        New-HTMLList {
+                            New-HTMLListItem -Text "Total Domain Controllers: ", $($DCs.Count) -Color Black, Blue -FontWeight normal, bold -FontSize 12px
+                            New-HTMLListItem -Text "Total AD Sites: ", $($Sites.Count) -Color Black, Blue -FontWeight normal, bold -FontSize 12px
+                            New-HTMLListItem -Text "Total Subnets: ", $($Subnets.Count) -Color Black, Blue -FontWeight normal, bold -FontSize 12px
+                        }
+                        # Get DC count by site
+                        $SiteCounts = @{}
+                        foreach ($DC in $DCPartnerSummary) {
+                            if ($DC.Site) {
+                                if (-not $SiteCounts.ContainsKey($DC.Site)) {
+                                    $SiteCounts[$DC.Site] = 0
+                                }
+                                $SiteCounts[$DC.Site]++
+                            }
+                        }
+
+                        # Create a small chart
+                        if ($SiteCounts.Count -gt 0) {
+                            New-HTMLChart {
+                                #New-ChartToolbar -Download
+                                #New-ChartBarOptions -Type bar
+                                foreach ($Site in $SiteCounts.Keys) {
+                                    New-ChartBar -Name $Site -Value $SiteCounts[$Site]
+                                }
+                                #New-ChartBar -Name 'DCs per Site' -Value $SiteCounts.Values # -Label $SiteCounts.Keys
+                            } -Title "Domain Controller Distribution by Site"
+                        }
                     }
                 }
-                New-HTMLSection -HeaderText "Replication Summary" {
+
+                New-HTMLSection -HeaderText "Replication Health Summary" -CanCollapse {
+                    # Create a cleaner visual layout for the statistics
+                    New-HTMLPanel {
+                        New-HTMLChart {
+                            # Good vs Failed Replication
+                            New-ChartToolbar -Download
+                            New-ChartPie -Name 'Good replication' -Value $Statistics.Good -Color LightGreen
+                            New-ChartPie -Name 'Failed replication' -Value $Statistics.Failures -Color Salmon
+                        }
+                    }
+                    New-HTMLPanel {
+                        # Keep the existing list but make it more compact
+                        New-HTMLList {
+                            New-HTMLListItem -Text "Servers with good replication: ", $($Statistics.Good) -Color Black, LightGreen -FontWeight normal, bold
+                            New-HTMLListItem -Text "Servers with replication failures: ", $($Statistics.Failures) -Color Black, Red -FontWeight normal, bold
+                            New-HTMLListItem -Text "Servers with replication delta over 24 hours: ", $($Statistics.DeltaOver24Hours) -Color Black, Red -FontWeight normal, bold
+                            New-HTMLListItem -Text "Servers with replication delta over 12 hours: ", $($Statistics.DeltaOver12Hours) -Color Black, Red -FontWeight normal, bold
+                            New-HTMLListItem -Text "Servers with replication delta over 6 hours: ", $($Statistics.DeltaOver6Hours) -Color Black, Red -FontWeight normal, bold
+                            New-HTMLListItem -Text "Servers with replication delta over 3 hours: ", $($Statistics.DeltaOver3Hours) -Color Black, Red -FontWeight normal, bold
+                            New-HTMLListItem -Text "Servers with replication delta over 1 hour: ", $($Statistics.DeltaOver1Hours) -Color Black, Red -FontWeight normal, bold
+                            New-HTMLListItem -Text "Unique replication errors: ", $($Statistics.UniqueErrors.Count) -Color Black, Red -FontWeight normal, bold
+                            New-HTMLListItem -Text "Unique replication warnings: ", $($Statistics.UniqueWarnings.Count) -Color Black, Yellow -FontWeight normal, bold
+                        } -FontSize 12px
+
+                        New-HTMLChart {
+                            # Replication delays by timeframe
+                            $DelayLabels = @('1-3 hours', '3-6 hours', '6-12 hours', '12-24 hours', 'Over 24 hours')
+                            $DelayValues = @(
+                                $Statistics.DeltaOver1Hours, $Statistics.DeltaOver3Hours,
+                                $Statistics.DeltaOver3Hours, $Statistics.DeltaOver6Hours,
+                                $Statistics.DeltaOver6Hours, $Statistics.DeltaOver12Hours,
+                                $Statistics.DeltaOver12Hours, $Statistics.DeltaOver24Hours,
+                                $Statistics.DeltaOver24Hours
+                            )
+                            $DelayColors = @(
+                                'LightGreen', 'Yellow', 'Orange', 'CoralRed', 'Salmon', 'Red', 'DarkRed', 'Crimson', 'FireBrick', 'DarkOrange'
+                            )
+                            New-ChartBarOptions -Type barStacked
+                            New-ChartLegend -Names $DelayLabels -Color $DelayColors
+                            New-ChartBar -Name 'Replication Delays' -Value $DelayValues -Color $DelayColors
+                        }
+                    }
+                }
+
+                # Add critical errors section if any exist
+                if ($Statistics.Failures -gt 0 -or $Statistics.DeltaOver24Hours -gt 0) {
+                    New-HTMLSection -HeaderText "Critical Issues Requiring Attention" -CanCollapse {
+                        $CriticalIssues = $ReplicationData | Where-Object {
+                            -not $_.Status -or
+                            ($_.LastReplicationSuccess -and (New-TimeSpan -Start $_.LastReplicationSuccess -End (Get-Date)).TotalHours -gt 24)
+                        } | Select-Object Server, ServerPartner, LastReplicationSuccess, ConsecutiveReplicationFailures, StatusMessage
+
+                        if ($CriticalIssues) {
+                            New-HTMLTable -DataTable $CriticalIssues -Filtering -PagingLength 5 {
+                                New-HTMLTableCondition -Name 'ConsecutiveReplicationFailures' -ComparisonType number -Operator gt -Value 0 -BackgroundColor Salmon
+                            }
+                        } else {
+                            New-HTMLText -Text "No critical issues found despite statistics indicating potential problems. This may require further investigation." -Color Orange -FontWeight bold
+                        }
+                    }
+                }
+
+                New-HTMLSection -HeaderText "Replication Summary by Domain Controller" {
                     New-HTMLTable -DataTable $ReplicationSummary -DataTableID 'DT-ReplicationSummary' -ScrollX {
                         New-HTMLTableCondition -Name "Fails" -HighlightHeaders 'Fails', 'Total', 'PercentageError' -ComparisonType number -Operator gt 0 -BackgroundColor Salmon -FailBackgroundColor LightGreen
                     } -Filtering -PagingLength 50 -PagingOptions @(5, 10, 15, 25, 50, 100)
+                }
+                # Recommended actions section
+                if ($Statistics.Failures -gt 0 -or $Statistics.DeltaOver24Hours -gt 0) {
+                    New-HTMLText -Text "Recommended Actions" -FontSize 16px -FontWeight bold
+                    New-HTMLPanel {
+                        New-HTMLList {
+                            New-HTMLListItem -Text "Check network connectivity between domain controllers with replication failures."
+                            New-HTMLListItem -Text "Verify that all domain controllers have appropriate DNS resolution."
+                            New-HTMLListItem -Text "Review site links and connection objects for misconfiguration."
+                            New-HTMLListItem -Text "Check for sufficient bandwidth and appropriate replication schedules between sites."
+                            New-HTMLListItem -Text "Resolve any lingering objects that could impact replication."
+                            New-HTMLListItem -Text "Review the Replication Topology tab for more detailed insights."
+                        } -FontSize 12px
+                    } -Invisible
+                } else {
+                    New-HTMLPanel {
+                        New-HTMLText -Text "No replication issues detected in this environment." -Color Green -FontWeight bold
+                    } -Invisible
                 }
             }
             New-HTMLTab -TabName 'Replication Topology & Details' {
