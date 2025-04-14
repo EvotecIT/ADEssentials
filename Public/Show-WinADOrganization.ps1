@@ -59,14 +59,14 @@
                     $Duplicates = [ordered] @{}
                     New-HTMLDiagram -Height 'calc(50vh)' {
                         New-DiagramEvent -ID 'DT-OrganizationalUnits' -ColumnID 2
-                        New-DiagramNode -Label 'Active Directory Forest' -Id 'Forest' -Image 'https://cdn-icons-png.flaticon.com/512/6329/6329785.png'
+                        New-DiagramNode -Label 'Active Directory Forest' -Id 'Forest' -Image 'https://cdn-icons-png.flaticon.com/512/6329/6329785.png' -ImageType squareImage
                         foreach ($Domain in $Organization.Domains) {
-                            New-DiagramNode -Label $Domain.Name -Id $Domain.DistinguishedName -Image 'https://cdn-icons-png.flaticon.com/512/6329/6329785.png'
+                            New-DiagramNode -Label $Domain.Name -Id $Domain.DistinguishedName -Image 'https://cdn-icons-png.flaticon.com/512/6329/6329785.png' -ImageType squareImage
                             New-DiagramEdge -From 'Forest' -To $Domain.DistinguishedName -Color Blue -ArrowsToEnabled -Dashes
                         }
                         foreach ($Domain in $Organization.OrganizationalUnits.Keys) {
                             foreach ($OU in $Organization.OrganizationalUnits[$Domain]) {
-                                New-DiagramNode -Id $OU.DistinguishedName -Label $OU.Name -Image 'https://cdn-icons-png.flaticon.com/512/3767/3767084.png'
+                                New-DiagramNode -Id $OU.DistinguishedName -Label $OU.Name -Image 'https://cdn-icons-png.flaticon.com/512/3767/3767084.png' -ImageType squareImage
                                 if ($OU.OrganizationalUnits.Count -gt 0) {
                                     $TopOU = $OU.DistinguishedName
                                     foreach ($Sub in $OU.OrganizationalUnits) {
@@ -95,14 +95,14 @@
                         New-DiagramOptionsLayout -ImprovedLayout $true -HierarchicalEnabled $true -HierarchicalDirection FromUpToDown -HierarchicalNodeSpacing 280 #-HierarchicalSortMethod directed -HierarchicalShakeTowards leaves
                         New-DiagramOptionsPhysics -Enabled $false
 
-                        New-DiagramNode -Label 'Active Directory Forest' -Id 'Forest' -Image 'https://cdn-icons-png.flaticon.com/512/6329/6329785.png' -Leve 0
+                        New-DiagramNode -Label 'Active Directory Forest' -Id 'Forest' -Image 'https://cdn-icons-png.flaticon.com/512/6329/6329785.png' -Leve 0 -ImageType squareImage
                         foreach ($Domain in $Organization.Domains) {
-                            New-DiagramNode -Label $Domain.Name -Id $Domain.DistinguishedName -Image 'https://cdn-icons-png.flaticon.com/512/6329/6329785.png' -Level 1
+                            New-DiagramNode -Label $Domain.Name -Id $Domain.DistinguishedName -Image 'https://cdn-icons-png.flaticon.com/512/6329/6329785.png' -Level 1 -ImageType squareImage
                             New-DiagramEdge -From 'Forest' -To $Domain.DistinguishedName -Color Blue -ArrowsToEnabled -Dashes
                         }
                         foreach ($Domain in $Organization.OrganizationalUnits.Keys) {
                             foreach ($OU in $Organization.OrganizationalUnits[$Domain]) {
-                                New-DiagramNode -Id $OU.DistinguishedName -Label $OU.Name -Image 'https://cdn-icons-png.flaticon.com/512/3767/3767084.png' -Level ($OU.OrganizationalUnitsCount + 2)
+                                New-DiagramNode -Id $OU.DistinguishedName -Label $OU.Name -Image 'https://cdn-icons-png.flaticon.com/512/3767/3767084.png' -Level ($OU.OrganizationalUnitsCount + 2) -ImageType squareImage
                                 if ($OU.OrganizationalUnits.Count -gt 0) {
                                     $TopOU = $OU.DistinguishedName
                                     foreach ($Sub in $OU.OrganizationalUnits) {
