@@ -35,7 +35,8 @@
         [string] $FilePath,
         [switch] $Online,
         [switch] $HideHTML,
-        [switch] $PassThru
+        [switch] $PassThru,
+        [switch] $SummaryOnly
     )
     $Script:Reporting = [ordered] @{}
     $Script:Reporting['Version'] = Get-GitHubVersion -Cmdlet 'Invoke-ADEssentials' -RepositoryOwner 'evotecit' -RepositoryName 'ADEssentials'
@@ -49,7 +50,11 @@
     $SiteLinks = Get-WinADSiteLinks
     $SiteOptions = Get-WinADSiteOptions
 
-    $ReplicationOutput = Get-WinADForestReplication -Extended -All
+    if ($SummaryOnly) {
+        $ReplicationOutput = Get-WinADForestReplication -Extended
+    } else {
+        $ReplicationOutput = Get-WinADForestReplication -Extended -All
+    }
     # Lets build the report using the data from Get-WinADForestReplication
     $ReplicationData = $ReplicationOutput.ReplicationData
     $DCs = $ReplicationOutput.DCs
@@ -77,54 +82,56 @@
         }
         New-HTMLTabPanel {
             New-HTMLTab -TabName 'Overview' {
-                New-HTMLSection -HeaderText "Report Overview" {
-                    New-HTMLPanel {
-                        New-HTMLText -Text "About this Report" -FontSize 16px -FontWeight bold
-                        New-HTMLText -Text "This report provides a comprehensive overview of Active Directory replication status across your forest. AD replication ensures that changes made to any domain controller are propagated to all other domain controllers in the environment. Monitoring replication is critical for maintaining a healthy Active Directory environment." -FontSize 12px
+                if (-not $SummaryOnly) {
+                    New-HTMLSection -HeaderText "Report Overview" {
+                        New-HTMLPanel {
+                            New-HTMLText -Text "About this Report" -FontSize 16px -FontWeight bold
+                            New-HTMLText -Text "This report provides a comprehensive overview of Active Directory replication status across your forest. AD replication ensures that changes made to any domain controller are propagated to all other domain controllers in the environment. Monitoring replication is critical for maintaining a healthy Active Directory environment." -FontSize 12px
 
-                        New-HTMLText -Text "What to Look For" -FontSize 16px -FontWeight bold
-                        New-HTMLList {
-                            New-HTMLListItem -Text "Replication Failures: ", "Indicate domain controllers that cannot replicate changes" -FontWeight bold, normal
-                            New-HTMLListItem -Text "High Delta Times: ", "Indicate replications not happening frequently enough" -FontWeight bold, normal
-                            New-HTMLListItem -Text "Connectivity Issues: ", "Show potential network or configuration problems" -FontWeight bold, normal
-                        } -FontSize 12px
+                            New-HTMLText -Text "What to Look For" -FontSize 16px -FontWeight bold
+                            New-HTMLList {
+                                New-HTMLListItem -Text "Replication Failures: ", "Indicate domain controllers that cannot replicate changes" -FontWeight bold, normal
+                                New-HTMLListItem -Text "High Delta Times: ", "Indicate replications not happening frequently enough" -FontWeight bold, normal
+                                New-HTMLListItem -Text "Connectivity Issues: ", "Show potential network or configuration problems" -FontWeight bold, normal
+                            } -FontSize 12px
 
-                        New-HTMLText -Text "Report Sections" -FontSize 16px -FontWeight bold
-                        New-HTMLList {
-                            New-HTMLListItem -Text "Replication Summary: ", "Overview statistics and health at a glance" -FontWeight bold, normal
-                            New-HTMLListItem -Text "Replication Topology & Details: ", "Visual map of replication connections and detailed status" -FontWeight bold, normal
-                            New-HTMLListItem -Text "Sites & Subnets: ", "Information about AD sites, subnets, and their configuration" -FontWeight bold, normal
-                        } -FontSize 12px
-                    }
-                    New-HTMLPanel {
-                        New-HTMLText -Text "Domain Controllers / Subnets & Sites" -FontSize 16px -FontWeight bold
-                        # Create a few key metrics about the environment
-                        New-HTMLList {
-                            New-HTMLListItem -Text "Total Domain Controllers: ", $($DCs.Count) -Color Black, Blue -FontWeight normal, bold -FontSize 12px
-                            New-HTMLListItem -Text "Total AD Sites: ", $($Sites.Count) -Color Black, Blue -FontWeight normal, bold -FontSize 12px
-                            New-HTMLListItem -Text "Total Subnets: ", $($Subnets.Count) -Color Black, Blue -FontWeight normal, bold -FontSize 12px
+                            New-HTMLText -Text "Report Sections" -FontSize 16px -FontWeight bold
+                            New-HTMLList {
+                                New-HTMLListItem -Text "Replication Summary: ", "Overview statistics and health at a glance" -FontWeight bold, normal
+                                New-HTMLListItem -Text "Replication Topology & Details: ", "Visual map of replication connections and detailed status" -FontWeight bold, normal
+                                New-HTMLListItem -Text "Sites & Subnets: ", "Information about AD sites, subnets, and their configuration" -FontWeight bold, normal
+                            } -FontSize 12px
                         }
-                        # Get DC count by site
-                        $SiteCounts = @{}
-                        foreach ($DC in $DCPartnerSummary) {
-                            if ($DC.Site) {
-                                if (-not $SiteCounts.ContainsKey($DC.Site)) {
-                                    $SiteCounts[$DC.Site] = 0
-                                }
-                                $SiteCounts[$DC.Site]++
+                        New-HTMLPanel {
+                            New-HTMLText -Text "Domain Controllers / Subnets & Sites" -FontSize 16px -FontWeight bold
+                            # Create a few key metrics about the environment
+                            New-HTMLList {
+                                New-HTMLListItem -Text "Total Domain Controllers: ", $($DCs.Count) -Color Black, Blue -FontWeight normal, bold -FontSize 12px
+                                New-HTMLListItem -Text "Total AD Sites: ", $($Sites.Count) -Color Black, Blue -FontWeight normal, bold -FontSize 12px
+                                New-HTMLListItem -Text "Total Subnets: ", $($Subnets.Count) -Color Black, Blue -FontWeight normal, bold -FontSize 12px
                             }
-                        }
-
-                        # Create a small chart
-                        if ($SiteCounts.Count -gt 0) {
-                            New-HTMLChart {
-                                #New-ChartToolbar -Download
-                                #New-ChartBarOptions -Type bar
-                                foreach ($Site in $SiteCounts.Keys) {
-                                    New-ChartBar -Name $Site -Value $SiteCounts[$Site]
+                            # Get DC count by site
+                            $SiteCounts = @{}
+                            foreach ($DC in $DCPartnerSummary) {
+                                if ($DC.Site) {
+                                    if (-not $SiteCounts.ContainsKey($DC.Site)) {
+                                        $SiteCounts[$DC.Site] = 0
+                                    }
+                                    $SiteCounts[$DC.Site]++
                                 }
-                                #New-ChartBar -Name 'DCs per Site' -Value $SiteCounts.Values # -Label $SiteCounts.Keys
-                            } -Title "Domain Controller Distribution by Site"
+                            }
+
+                            # Create a small chart
+                            if ($SiteCounts.Count -gt 0) {
+                                New-HTMLChart {
+                                    #New-ChartToolbar -Download
+                                    #New-ChartBarOptions -Type bar
+                                    foreach ($Site in $SiteCounts.Keys) {
+                                        New-ChartBar -Name $Site -Value $SiteCounts[$Site]
+                                    }
+                                    #New-ChartBar -Name 'DCs per Site' -Value $SiteCounts.Values # -Label $SiteCounts.Keys
+                                } -Title "Domain Controller Distribution by Site"
+                            }
                         }
                     }
                 }
@@ -155,20 +162,24 @@
 
                         New-HTMLChart {
                             # Replication delays by timeframe
-                            $DelayLabels = @('1-3 hours', '3-6 hours', '6-12 hours', '12-24 hours', 'Over 24 hours')
+                            $DelayLabels = @('Good', '1 hours', '3-6 hours', '6-12 hours', '12-24 hours', 'Over 24 hours')
                             $DelayValues = @(
-                                $Statistics.DeltaOver1Hours, $Statistics.DeltaOver3Hours,
-                                $Statistics.DeltaOver3Hours, $Statistics.DeltaOver6Hours,
-                                $Statistics.DeltaOver6Hours, $Statistics.DeltaOver12Hours,
-                                $Statistics.DeltaOver12Hours, $Statistics.DeltaOver24Hours,
+                                $Statistics.Good
+                                ($Statistics.DeltaOver1Hours + $Statistics.DeltaOver3Hours),
+                                ($Statistics.DeltaOver3Hours + $Statistics.DeltaOver6Hours),
+                                ($Statistics.DeltaOver6Hours + $Statistics.DeltaOver12Hours),
+                                ($Statistics.DeltaOver12Hours + $Statistics.DeltaOver24Hours),
                                 $Statistics.DeltaOver24Hours
                             )
-                            $DelayColors = @(
-                                'LightGreen', 'Yellow', 'Orange', 'CoralRed', 'Salmon', 'Red', 'DarkRed', 'Crimson', 'FireBrick', 'DarkOrange'
+                            $DelayValues = @(
+                                1, 5, 1, 5, 0, 1
                             )
-                            New-ChartBarOptions -Type barStacked
+                            $DelayColors = @(
+                                'LightGreen', 'Yellow', 'Gold', 'Orange', 'CoralRed', 'Salmon'
+                            )
+                            New-ChartBarOptions -Type bar
                             New-ChartLegend -Names $DelayLabels -Color $DelayColors
-                            New-ChartBar -Name 'Replication Delays' -Value $DelayValues -Color $DelayColors
+                            New-ChartBar -Name 'Replication Delays' -Value $DelayValues
                         }
                     }
                 }
@@ -215,159 +226,161 @@
                     } -Invisible
                 }
             }
-            New-HTMLTab -TabName 'Replication Topology & Details' {
-                New-HTMLSection -HeaderText 'Replication Topology' {
-                    New-HTMLDiagram -Height 'calc(50vh)' {
-                        New-DiagramEvent -ID 'DT-ReplicationDetails' -ColumnID 0
-                        New-DiagramEvent -ID 'DT-ReplicationMatrix' -ColumnID 0
-                        New-DiagramEvent -ID 'DT-DCPartnerSummary' -ColumnID 0
-                        New-DiagramOptionsPhysics -RepulsionNodeDistance 150 -Solver repulsion
+            if (-not $SummaryOnly) {
+                New-HTMLTab -TabName 'Replication Topology & Details' {
+                    New-HTMLSection -HeaderText 'Replication Topology' {
+                        New-HTMLDiagram -Height 'calc(50vh)' {
+                            New-DiagramEvent -ID 'DT-ReplicationDetails' -ColumnID 0
+                            New-DiagramEvent -ID 'DT-ReplicationMatrix' -ColumnID 0
+                            New-DiagramEvent -ID 'DT-DCPartnerSummary' -ColumnID 0
+                            New-DiagramOptionsPhysics -RepulsionNodeDistance 150 -Solver repulsion
 
-                        # Add Nodes (Domain Controllers)
-                        foreach ($DCName in $DCs.Keys) {
-                            $DCInfo = $DCs[$DCName]
-                            # $NodeLabel = "$($DCInfo.Label)`n$($DCInfo.IP)" # Add IP to label
-                            $NodeLabel = $DCInfo.Label
-                            $NodeColor = if ($DCInfo.Status) { "#c5e8cd" } else { "#f7bec3" } # Light green or light red
-                            $SiteName = ""
-                            # Add site information if available
-                            foreach ($DCPartner in $DCPartnerSummary) {
-                                if ($DCPartner.DomainController -eq $DCName -and $DCPartner.Site) {
-                                    $SiteName = $DCPartner.Site
-                                    break
+                            # Add Nodes (Domain Controllers)
+                            foreach ($DCName in $DCs.Keys) {
+                                $DCInfo = $DCs[$DCName]
+                                # $NodeLabel = "$($DCInfo.Label)`n$($DCInfo.IP)" # Add IP to label
+                                $NodeLabel = $DCInfo.Label
+                                $NodeColor = if ($DCInfo.Status) { "#c5e8cd" } else { "#f7bec3" } # Light green or light red
+                                $SiteName = ""
+                                # Add site information if available
+                                foreach ($DCPartner in $DCPartnerSummary) {
+                                    if ($DCPartner.DomainController -eq $DCName -and $DCPartner.Site) {
+                                        $SiteName = $DCPartner.Site
+                                        break
+                                    }
+                                }
+                                $NodeTitle = "DC: $($DCInfo.Label)"
+                                if ($SiteName) {
+                                    $NodeTitle += " (Site: $SiteName)"
+                                }
+                                #New-DiagramNode -Id $DCName -Label $NodeLabel -Title $NodeTitle -ColorBackground $NodeColor
+                                New-DiagramNode -Id $DCName -Label $NodeLabel -ColorBackground $NodeColor -Shape box
+                            }
+
+                            # Track which connections we've already processed to avoid duplicates
+                            $ProcessedLinks = @{}
+
+                            # Directly use the Links collection to create edges between DCs
+                            foreach ($Link in $Links) {
+                                $FromDC = $Link.From
+                                $ToDC = $Link.To
+                                $LinkKey = "$FromDC-$ToDC"
+                                $ReverseKey = "$ToDC-$FromDC"
+
+                                # Skip if we've already processed this link
+                                if ($ProcessedLinks.ContainsKey($LinkKey) -or $ProcessedLinks.ContainsKey($ReverseKey)) {
+                                    continue
+                                }
+
+                                # Mark as processed
+                                $ProcessedLinks[$LinkKey] = $true
+
+                                # Determine if it's bidirectional
+                                $Bidirectional = $false
+                                $ReverseLink = $Links | Where-Object { $_.From -eq $ToDC -and $_.To -eq $FromDC } | Select-Object -First 1
+                                if ($ReverseLink) {
+                                    $Bidirectional = $true
+                                    # Mark reverse link as processed too
+                                    $ProcessedLinks[$ReverseKey] = $true
+                                }
+
+                                # Determine status and color
+                                $EdgeColor = if ($Link.Status) { 'Green' } else { 'Red' }
+                                $EdgeDashes = -not $Link.Status # Dashed line for failures
+
+                                if ($Bidirectional) {
+                                    # Create bidirectional edge
+                                    New-DiagramEdge -From $FromDC -To $ToDC -Color $EdgeColor -ArrowsToEnabled -ArrowsFromEnabled -Dashes $EdgeDashes -Label "Both" -FontAlign middle
+                                } else {
+                                    # Create directional edge
+                                    New-DiagramEdge -From $ToDC -To $FromDC -Color $EdgeColor -ArrowsToEnabled -Dashes $EdgeDashes -Label "One-way" -FontAlign middle
                                 }
                             }
-                            $NodeTitle = "DC: $($DCInfo.Label)"
-                            if ($SiteName) {
-                                $NodeTitle += " (Site: $SiteName)"
-                            }
-                            #New-DiagramNode -Id $DCName -Label $NodeLabel -Title $NodeTitle -ColorBackground $NodeColor
-                            New-DiagramNode -Id $DCName -Label $NodeLabel -ColorBackground $NodeColor -Shape box
+                        } -EnableFiltering -EnableFilteringButton
+                    }
+                    New-HTMLSection -HeaderText 'Domain Controller Replication Partners' {
+                        New-HTMLTable -DataTable $DCPartnerSummary -DataTableID 'DT-DCPartnerSummary' -Filtering -ScrollX {
+                            New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Healthy' -BackgroundColor LightGreen -FailBackgroundColor Salmon
                         }
+                    }
 
-                        # Track which connections we've already processed to avoid duplicates
-                        $ProcessedLinks = @{}
-
-                        # Directly use the Links collection to create edges between DCs
-                        foreach ($Link in $Links) {
-                            $FromDC = $Link.From
-                            $ToDC = $Link.To
-                            $LinkKey = "$FromDC-$ToDC"
-                            $ReverseKey = "$ToDC-$FromDC"
-
-                            # Skip if we've already processed this link
-                            if ($ProcessedLinks.ContainsKey($LinkKey) -or $ProcessedLinks.ContainsKey($ReverseKey)) {
-                                continue
-                            }
-
-                            # Mark as processed
-                            $ProcessedLinks[$LinkKey] = $true
-
-                            # Determine if it's bidirectional
-                            $Bidirectional = $false
-                            $ReverseLink = $Links | Where-Object { $_.From -eq $ToDC -and $_.To -eq $FromDC } | Select-Object -First 1
-                            if ($ReverseLink) {
-                                $Bidirectional = $true
-                                # Mark reverse link as processed too
-                                $ProcessedLinks[$ReverseKey] = $true
-                            }
-
-                            # Determine status and color
-                            $EdgeColor = if ($Link.Status) { 'Green' } else { 'Red' }
-                            $EdgeDashes = -not $Link.Status # Dashed line for failures
-
-                            if ($Bidirectional) {
-                                # Create bidirectional edge
-                                New-DiagramEdge -From $FromDC -To $ToDC -Color $EdgeColor -ArrowsToEnabled -ArrowsFromEnabled -Dashes $EdgeDashes -Label "Both" -FontAlign middle
-                            } else {
-                                # Create directional edge
-                                New-DiagramEdge -From $ToDC -To $FromDC -Color $EdgeColor -ArrowsToEnabled -Dashes $EdgeDashes -Label "One-way" -FontAlign middle
-                            }
+                    New-HTMLSection -HeaderText 'Replication Matrix' {
+                        New-HTMLPanel {
+                            New-HTMLTable -DataTable $ReplicationMatrix {
+                                New-HTMLTableHeader -Names $MatrixHeaders -Title "Domain Controller Inbound Partners"
+                                foreach ($Header in $MatrixHeaders) {
+                                    New-HTMLTableCondition -Value '✓' -ComparisonType string -Operator eq -BackgroundColor LightGreen -Name $Header
+                                    New-HTMLTableCondition -Value '✗' -ComparisonType string -Operator eq -BackgroundColor Salmon -Name $Header
+                                    New-HTMLTableCondition -Value '-' -ComparisonType string -Operator eq -BackgroundColor LightYellow -Name $Header
+                                }
+                            } -ScrollX -DataTableID 'DT-ReplicationMatrix' -Filtering
                         }
-                    } -EnableFiltering -EnableFilteringButton
-                }
-                New-HTMLSection -HeaderText 'Domain Controller Replication Partners' {
-                    New-HTMLTable -DataTable $DCPartnerSummary -DataTableID 'DT-DCPartnerSummary' -Filtering -ScrollX {
-                        New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Healthy' -BackgroundColor LightGreen -FailBackgroundColor Salmon
                     }
-                }
 
-                New-HTMLSection -HeaderText 'Replication Matrix' {
-                    New-HTMLPanel {
-                        New-HTMLTable -DataTable $ReplicationMatrix {
-                            New-HTMLTableHeader -Names $MatrixHeaders -Title "Domain Controller Inbound Partners"
-                            foreach ($Header in $MatrixHeaders) {
-                                New-HTMLTableCondition -Value '✓' -ComparisonType string -Operator eq -BackgroundColor LightGreen -Name $Header
-                                New-HTMLTableCondition -Value '✗' -ComparisonType string -Operator eq -BackgroundColor Salmon -Name $Header
-                                New-HTMLTableCondition -Value '-' -ComparisonType string -Operator eq -BackgroundColor LightYellow -Name $Header
+                    New-HTMLSection -HeaderText 'Detailed Replication Status' {
+                        # Add conditional formatting for Status column
+                        New-HTMLTable -DataTable $ReplicationData -DataTableID 'DT-ReplicationDetails' -Filtering -ScrollX {
+                            New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value $false -BackgroundColor '#f7bec3' -Row
+
+                            New-HTMLTableCondition -Name 'LastReplicationResult' -ComparisonType string -Operator eq -Value "0" -BackgroundColor LightGreen -FailBackgroundColor Salmon
+                            New-HTMLTableCondition -Name 'ConsecutiveReplicationFailures' -ComparisonType string -Operator eq -Value "0" -BackgroundColor LightGreen -FailBackgroundColor Salmon
+
+                            $Properties = @('ScheduledSync', 'SyncOnStartup')
+                            foreach ($Property in $Properties) {
+                                New-HTMLTableCondition -Name $Property -ComparisonType string -Operator eq -Value "True" -BackgroundColor LightGreen -FailBackgroundColor Salmon
                             }
-                        } -ScrollX -DataTableID 'DT-ReplicationMatrix' -Filtering
-                    }
-                }
-
-                New-HTMLSection -HeaderText 'Detailed Replication Status' {
-                    # Add conditional formatting for Status column
-                    New-HTMLTable -DataTable $ReplicationData -DataTableID 'DT-ReplicationDetails' -Filtering -ScrollX {
-                        New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value $false -BackgroundColor '#f7bec3' -Row
-
-                        New-HTMLTableCondition -Name 'LastReplicationResult' -ComparisonType string -Operator eq -Value "0" -BackgroundColor LightGreen -FailBackgroundColor Salmon
-                        New-HTMLTableCondition -Name 'ConsecutiveReplicationFailures' -ComparisonType string -Operator eq -Value "0" -BackgroundColor LightGreen -FailBackgroundColor Salmon
-
-                        $Properties = @('ScheduledSync', 'SyncOnStartup')
-                        foreach ($Property in $Properties) {
-                            New-HTMLTableCondition -Name $Property -ComparisonType string -Operator eq -Value "True" -BackgroundColor LightGreen -FailBackgroundColor Salmon
+                            New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value "True" -BackgroundColor LightGreen -FailBackgroundColor Salmon -HighlightHeaders 'Status', 'StatusMessage'
+                            New-HTMLTableCondition -Name 'Writable' -ComparisonType string -Operator eq -Value "True" -BackgroundColor LightGreen -FailBackgroundColor LightYellow
                         }
-                        New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value "True" -BackgroundColor LightGreen -FailBackgroundColor Salmon -HighlightHeaders 'Status', 'StatusMessage'
-                        New-HTMLTableCondition -Name 'Writable' -ComparisonType string -Operator eq -Value "True" -BackgroundColor LightGreen -FailBackgroundColor LightYellow
                     }
                 }
-            }
-            New-HTMLTab -TabName 'Sites & Subnets' {
-                New-HTMLSection -HeaderText 'Organization Diagram' {
-                    New-HTMLDiagram -Height 'calc(50vh)' {
-                        New-DiagramEvent -ID 'DT-StandardSites' -ColumnID 0
-                        New-DiagramOptionsPhysics -RepulsionNodeDistance 150 -Solver repulsion
-                        foreach ($Site in $Sites) {
-                            New-DiagramNode -Id $Site.DistinguishedName -Label $Site.Name -Image 'https://cdn-icons-png.flaticon.com/512/1104/1104991.png' -ImageType squareImage
-                            foreach ($Subnet in $Site.Subnets) {
-                                New-DiagramNode -Id $Subnet -Label $Subnet -Image 'https://cdn-icons-png.flaticon.com/512/1674/1674968.png' -ImageType squareImage
-                                New-DiagramEdge -From $Subnet -To $Site.DistinguishedName
+                New-HTMLTab -TabName 'Sites & Subnets' {
+                    New-HTMLSection -HeaderText 'Organization Diagram' {
+                        New-HTMLDiagram -Height 'calc(50vh)' {
+                            New-DiagramEvent -ID 'DT-StandardSites' -ColumnID 0
+                            New-DiagramOptionsPhysics -RepulsionNodeDistance 150 -Solver repulsion
+                            foreach ($Site in $Sites) {
+                                New-DiagramNode -Id $Site.DistinguishedName -Label $Site.Name -Image 'https://cdn-icons-png.flaticon.com/512/1104/1104991.png' -ImageType squareImage
+                                foreach ($Subnet in $Site.Subnets) {
+                                    New-DiagramNode -Id $Subnet -Label $Subnet -Image 'https://cdn-icons-png.flaticon.com/512/1674/1674968.png' -ImageType squareImage
+                                    New-DiagramEdge -From $Subnet -To $Site.DistinguishedName
+                                }
+                                foreach ($DC in $Site.DomainControllers) {
+                                    New-DiagramNode -Id $DC -Label $DC -Image 'https://cdn-icons-png.flaticon.com/512/1383/1383395.png' -ImageType squareImage
+                                    New-DiagramEdge -From $DC -To $Site.DistinguishedName
+                                }
                             }
-                            foreach ($DC in $Site.DomainControllers) {
-                                New-DiagramNode -Id $DC -Label $DC -Image 'https://cdn-icons-png.flaticon.com/512/1383/1383395.png' -ImageType squareImage
-                                New-DiagramEdge -From $DC -To $Site.DistinguishedName
+                            foreach ($R in $CacheReplication.Values) {
+                                if ($R.ConsecutiveReplicationFailures -gt 0) {
+                                    $Color = 'CoralRed'
+                                } else {
+                                    $Color = 'MediumSeaGreen'
+                                }
+                                New-DiagramEdge -From $R.Server -To $R.ServerPartner -Color $Color -ArrowsToEnabled -ColorOpacity 0.5
                             }
+                        } -EnableFiltering -EnableFilteringButton
+                    }
+                    New-HTMLSection -HeaderText 'Sites' {
+                        New-HTMLTable -DataTable $Sites -DataTableID 'DT-Sites' -Filtering -ScrollX {
+                            New-TableCondition -BackgroundColor MediumSeaGreen -ComparisonType number -Value 0 -Name SubnetsCount -Operator gt
+                            New-TableCondition -BackgroundColor CoralRed -ComparisonType number -Value 0 -Name SubnetsCount -Operator eq
                         }
-                        foreach ($R in $CacheReplication.Values) {
-                            if ($R.ConsecutiveReplicationFailures -gt 0) {
-                                $Color = 'CoralRed'
-                            } else {
-                                $Color = 'MediumSeaGreen'
-                            }
-                            New-DiagramEdge -From $R.Server -To $R.ServerPartner -Color $Color -ArrowsToEnabled -ColorOpacity 0.5
+                    }
+                    New-HTMLSection -HeaderText 'Subnets' {
+                        New-HTMLTable -DataTable $Subnets -DataTableID 'DT-Subnets' -Filtering -ScrollX {
+                            New-TableCondition -BackgroundColor MediumSeaGreen -ComparisonType string -Value $true -Name SiteStatus -FailBackgroundColor CoralRed
+                            New-TableCondition -BackgroundColor MediumSeaGreen -ComparisonType string -Value $false -Name Overlap -FailBackgroundColor CoralRed
                         }
-                    } -EnableFiltering -EnableFilteringButton
-                }
-                New-HTMLSection -HeaderText 'Sites' {
-                    New-HTMLTable -DataTable $Sites -DataTableID 'DT-Sites' -Filtering -ScrollX {
-                        New-TableCondition -BackgroundColor MediumSeaGreen -ComparisonType number -Value 0 -Name SubnetsCount -Operator gt
-                        New-TableCondition -BackgroundColor CoralRed -ComparisonType number -Value 0 -Name SubnetsCount -Operator eq
                     }
-                }
-                New-HTMLSection -HeaderText 'Subnets' {
-                    New-HTMLTable -DataTable $Subnets -DataTableID 'DT-Subnets' -Filtering -ScrollX {
-                        New-TableCondition -BackgroundColor MediumSeaGreen -ComparisonType string -Value $true -Name SiteStatus -FailBackgroundColor CoralRed
-                        New-TableCondition -BackgroundColor MediumSeaGreen -ComparisonType string -Value $false -Name Overlap -FailBackgroundColor CoralRed
-                    }
-                }
-                New-HTMLSection -HeaderText 'Site Links' {
-                    New-HTMLTable -DataTable $SiteLinks -DataTableID 'DT-SiteLinks' -Filtering -ScrollX {
+                    New-HTMLSection -HeaderText 'Site Links' {
+                        New-HTMLTable -DataTable $SiteLinks -DataTableID 'DT-SiteLinks' -Filtering -ScrollX {
 
+                        }
                     }
-                }
-                New-HTMLSection -HeaderText 'Site Options' {
-                    New-HTMLTable -DataTable $SiteOptions -DataTableID 'DT-SiteOptions' -Filtering -ScrollX {
+                    New-HTMLSection -HeaderText 'Site Options' {
+                        New-HTMLTable -DataTable $SiteOptions -DataTableID 'DT-SiteOptions' -Filtering -ScrollX {
 
+                        }
                     }
                 }
             }
@@ -384,6 +397,42 @@
             Links              = $Links
             DCPartnerSummary   = $DCPartnerSummary
             ReplicationMatrix  = $ReplicationMatrix
+            EmailBody          = EmailBody {
+                EmailText -Text "Dear ", "AD Team," -LineBreak
+                EmailText -Text "Upon reviewing the resuls of replication I've found: "
+                EmailList {
+                    EmailListItem -Text "Servers with good replication: ", $($Statistics.Good) -Color Black, SpringGreen -FontWeight normal, bold
+                    EmailListItem -Text "Servers with replication failures: ", $($Statistics.Failures) -Color Black, Red -FontWeight normal, bold
+                    EmailListItem -Text "Servers with replication delta over 24 hours: ", $($Statistics.DeltaOver24Hours) -Color Black, Red -FontWeight normal, bold
+                    EmailListItem -Text "Servers with replication delta over 12 hours: ", $($Statistics.DeltaOver12Hours) -Color Black, Red -FontWeight normal, bold
+                    EmailListItem -Text "Servers with replication delta over 6 hours: ", $($Statistics.DeltaOver6Hours) -Color Black, Red -FontWeight normal, bold
+                    EmailListItem -Text "Servers with replication delta over 3 hours: ", $($Statistics.DeltaOver3Hours) -Color Black, Red -FontWeight normal, bold
+                    EmailListItem -Text "Servers with replication delta over 1 hour: ", $($Statistics.DeltaOver1Hours) -Color Black, Red -FontWeight normal, bold
+                    EmailListItem -Text "Unique replication errors: ", $($Statistics.UniqueErrors.Count) -Color Black, Red -FontWeight normal, bold
+                    EmailListItem -Text "Unique replication warnings: ", $($Statistics.UniqueWarnings.Count) -Color Black, Yellow -FontWeight normal, bold
+                }
+
+                if ($Statistics.UniqueErrors.Count -gt 0) {
+                    EmailText -Text "Unique replication errors:"
+                    EmailList {
+                        foreach ($ErrorText in $Statistics.UniqueErrors) {
+                            EmailListItem -Text $ErrorText
+                        }
+                    }
+                } else {
+                    EmailText -Text "It seems you're doing a great job! Keep it up! 😊" -LineBreak
+                }
+
+                EmailText -Text "For more details please check the table below:"
+
+                EmailTable -DataTable $ReplicationSummary {
+                    EmailTableCondition -Inline -Name "Fail" -HighlightHeaders 'Fails', 'Total', 'PercentageError' -ComparisonType number -Operator gt 0 -BackGroundColor Salmon -FailBackgroundColor SpringGreen
+                } -HideFooter
+
+                EmailText -LineBreak
+                EmailText -Text "Kind regards,"
+                EmailText -Text "Your automation friend"
+            }
         }
     }
 }
