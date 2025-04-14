@@ -21,8 +21,17 @@
     [cmdletBinding()]
     param(
         [ScriptBlock] $Conditions,
-        [string] $FilePath
+        [string] $FilePath,
+        [switch] $HideHTML
     )
+
+    $Script:Reporting = [ordered] @{}
+    $Script:Reporting['Version'] = Get-GitHubVersion -Cmdlet 'Invoke-ADEssentials' -RepositoryOwner 'evotecit' -RepositoryName 'ADEssentials'
+
+
+    if ($FilePath -eq '') {
+        $FilePath = Get-FileName -Extension 'html' -Temporary
+    }
 
     $Organization = Get-WinADOrganization
     $Subnets = Get-WinADForestSubnet
@@ -149,5 +158,5 @@
                 }
             }
         }
-    } -ShowHTML -FilePath $FilePath -Online
+    } -ShowHTML:(-not $HideHTML) -FilePath $FilePath -Online
 }
