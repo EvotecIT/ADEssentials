@@ -1,4 +1,36 @@
-﻿#### 0.0.231 - 2025.03.02
+﻿#### 0.0.235
+##### What's new
+* Improved Get-WinADOrganization
+* Improved Show-WinADOgranization
+
+**Full Changelog**: https://github.com/EvotecIT/ADEssentials/compare/v0.0.234...v0.0.235
+
+#### 0.0.234
+##### What's new
+- Improved `Get-WinADForestReplication`
+
+**Full Changelog**: https://github.com/EvotecIT/ADEssentials/compare/v0.0.233...v0.0.234
+
+#### 0.0.233
+- Improved Get-WinADOrganization
+- Improved Show-WinADOgranization
+
+#### 0.0.232
+##### What's Changed
+* Improvements by @PrzemyslawKlys in https://github.com/EvotecIT/ADEssentials/pull/53
+  * Improved Get-WinADBitlockerLapsSummary
+  * Improved Get-WinADOrganization
+  * Improved Show-WinADOgranization
+  * Improved Get-WinADReplication
+  * Improved Show-WinADForestReplicationSummary
+  * Improved Show-WinADSites
+
+##### New Contributors
+* @PrzemyslawKlys made their first contribution in https://github.com/EvotecIT/ADEssentials/pull/53
+
+**Full Changelog**: https://github.com/EvotecIT/ADEssentials/compare/v0.0.231...v0.0.232
+
+#### 0.0.231 - 2025.03.02
 - Improve `Get-WinADSIDHistory`
 - Improve `Show-WinADSIDHistory`
 
