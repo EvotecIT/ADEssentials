@@ -102,14 +102,16 @@
 
         foreach ($E in $ProcessErrors) {
             if ($null -ne $E.Server) {
+                $Server = $E.Server.ToUpper()
                 $ServerInitiating = (Resolve-DnsName -Name $E.Server -Verbose:$false -ErrorAction SilentlyContinue)
             } else {
+                $Server = 'UNKNOWN'
                 $ServerInitiating = [PSCustomObject] @{ IP4Address = '127.0.0.1' }
             }
             $ReplicationObject = [ordered] @{
-                Server                         = $E.Server.ToUpper()
+                Server                         = $Server
                 ServerIPV4                     = $ServerInitiating.IP4Address
-                ServerPartner                  = 'Unknown'.ToUpper()
+                ServerPartner                  = 'UNKNOWN'
                 ServerPartnerIPV4              = '127.0.0.1'
                 LastReplicationAttempt         = $null
                 LastReplicationResult          = $null
