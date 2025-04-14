@@ -107,7 +107,8 @@
                         # Add Nodes (Domain Controllers)
                         foreach ($DCName in $DCs.Keys) {
                             $DCInfo = $DCs[$DCName]
-                            $NodeLabel = "$($DCInfo.Label)`n$($DCInfo.IP)" # Add IP to label
+                            # $NodeLabel = "$($DCInfo.Label)`n$($DCInfo.IP)" # Add IP to label
+                            $NodeLabel = $DCInfo.Label
                             $NodeColor = if ($DCInfo.Status) { "#c5e8cd" } else { "#f7bec3" } # Light green or light red
                             $SiteName = ""
                             # Add site information if available
@@ -122,7 +123,7 @@
                                 $NodeTitle += " (Site: $SiteName)"
                             }
                             #New-DiagramNode -Id $DCName -Label $NodeLabel -Title $NodeTitle -ColorBackground $NodeColor
-                            New-DiagramNode -Id $DCName -Label $DCInfo.Label -ColorBackground $NodeColor -Shape box
+                            New-DiagramNode -Id $DCName -Label $NodeLabel -ColorBackground $NodeColor -Shape box
                         }
 
                         # Track which connections we've already processed to avoid duplicates
@@ -208,13 +209,13 @@
                         New-DiagramEvent -ID 'DT-StandardSites' -ColumnID 0
                         New-DiagramOptionsPhysics -RepulsionNodeDistance 150 -Solver repulsion
                         foreach ($Site in $Sites) {
-                            New-DiagramNode -Id $Site.DistinguishedName -Label $Site.Name -Image 'https://cdn-icons-png.flaticon.com/512/1104/1104991.png'
+                            New-DiagramNode -Id $Site.DistinguishedName -Label $Site.Name -Image 'https://cdn-icons-png.flaticon.com/512/1104/1104991.png' -ImageType squareImage
                             foreach ($Subnet in $Site.Subnets) {
-                                New-DiagramNode -Id $Subnet -Label $Subnet -Image 'https://cdn-icons-png.flaticon.com/512/1674/1674968.png'
+                                New-DiagramNode -Id $Subnet -Label $Subnet -Image 'https://cdn-icons-png.flaticon.com/512/1674/1674968.png' -ImageType squareImage
                                 New-DiagramEdge -From $Subnet -To $Site.DistinguishedName
                             }
                             foreach ($DC in $Site.DomainControllers) {
-                                New-DiagramNode -Id $DC -Label $DC -Image 'https://cdn-icons-png.flaticon.com/512/1383/1383395.png'
+                                New-DiagramNode -Id $DC -Label $DC -Image 'https://cdn-icons-png.flaticon.com/512/1383/1383395.png' -ImageType squareImage
                                 New-DiagramEdge -From $DC -To $Site.DistinguishedName
                             }
                         }
@@ -226,7 +227,7 @@
                             }
                             New-DiagramEdge -From $R.Server -To $R.ServerPartner -Color $Color -ArrowsToEnabled -ColorOpacity 0.5
                         }
-                    }
+                    } -EnableFiltering -EnableFilteringButton
                 }
                 New-HTMLSection -HeaderText 'Sites' {
                     New-HTMLTable -DataTable $Sites -DataTableID 'DT-Sites' -Filtering -ScrollX {
@@ -251,18 +252,6 @@
                     }
                 }
             }
-            # New-HTMLTab -TabName 'Errors & Warnings' {
-            #     New-HTMLSection -HeaderText 'Errors and Warnings During Data Collection' {
-            #         # Placeholder: Need to capture errors from Get-WinADForestReplication if possible
-            #         # For now, display errors captured by the original function's try/catch
-            #         $Errors = $ReplicationData | Where-Object { $_.StatusMessage -like '*Error*' -or $_.Status -eq $false } | Select-Object Server, ServerPartner, StatusMessage, LastReplicationAttempt, ConsecutiveReplicationFailures
-            #         if ($Errors) {
-            #             New-HTMLTable -DataTable $Errors -DataTableID 'DT-ReplicationErrors' -Filtering -ScrollX
-            #         } else {
-            #             New-HTMLText -Text "No significant errors detected or reported by Get-WinADForestReplication."
-            #         }
-            #     }
-            # }
         }
     } -FilePath $FilePath -ShowHTML:(-not $HideHTML) -Online:$Online
 
