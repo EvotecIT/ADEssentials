@@ -30,6 +30,15 @@
     .PARAMETER ExtendedForestInformation
     Specifies additional information about the forest for replication.
 
+    .PARAMETER SkipReplicationTopology
+    Skips the replication topology information.
+
+    .PARAMETER SkipSitesSubnets
+    Skips the sites and subnets information.
+
+    .PARAMETER All
+    Indicates whether to include all information in the output.
+
     .EXAMPLE
     Get-WinADForestReplication -Forest "example.com" -IncludeDomains @("example.com") -ExcludeDomains @("test.com") -IncludeDomainControllers @("DC1") -ExcludeDomainControllers @("DC2") -SkipRODC -Extended -ExtendedForestInformation $ExtendedForestInfo
 
@@ -45,12 +54,19 @@
         [alias('DomainControllers')][string[]] $IncludeDomainControllers,
         [switch] $SkipRODC,
         [switch] $Extended,
+        [switch] $SkipReplicationTopology,
+        [switch] $SkipSitesSubnets,
         [switch] $All,
         [System.Collections.IDictionary] $ExtendedForestInformation
     )
     $ProcessErrors = [System.Collections.Generic.List[PSCustomObject]]::new()
     $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC -ExtendedForestInformation $ExtendedForestInformation
+
+    Write-Verbose -Message "Get-WinADForestReplication - Getting replication information for forest $($ForestInformation.Forest.Name)"
+    $Count = 0
     $Replication = foreach ($DC in $ForestInformation.ForestDomainControllers) {
+        $Count++
+        Write-Verbose -Message "Get-WinADForestReplication - Getting replication information for server [$Count/$($ForestInformation.ForestDomainControllers.Count)] $($DC.HostName)"
         try {
             Get-ADReplicationPartnerMetadata -Target $DC.HostName -Partition * -ErrorAction Stop #-ErrorVariable +ProcessErrors
         } catch {
@@ -58,7 +74,9 @@
             $ProcessErrors.Add([PSCustomObject] @{ Server = $_.Exception.ServerName; StatusMessage = $_.Exception.Message })
         }
     }
+    Write-Verbose -Message "Get-WinADForestReplication - Finished getting replication information for forest $($ForestInformation.Forest.Name)"
     [Array] $ReplicationData = @(
+        Write-Verbose -Message "Get-WinADForestReplication - Processing replication data for forest $($ForestInformation.Forest.Name)"
         foreach ($R in $Replication) {
             $ServerPartner = (Resolve-DnsName -Name $R.PartnerAddress -Verbose:$false -ErrorAction SilentlyContinue)
             $ServerInitiating = (Resolve-DnsName -Name $R.Server -Verbose:$false -ErrorAction SilentlyContinue)
@@ -147,14 +165,23 @@
         }
     )
 
+    if ($SkipReplicationTopology -and $SkipSitesSubnets) {
+        return $ReplicationData
+    }
     if (-not $All) {
         return $ReplicationData
     }
 
     $SiteInformation = @{}
-
+    Write-Verbose -Message "Get-WinADForestReplication - Getting site information for forest $($ForestInformation.Forest.Name)"
     $Sites = Get-WinADForestSites
-    $Subnets = Get-WinADForestSubnet -VerifyOverlap
+
+    if (-not $SkipSitesSubnets) {
+        Write-Verbose -Message "Get-WinADForestReplication - Getting subnet information for forest $($ForestInformation.Forest.Name)"
+        $Subnets = Get-WinADForestSubnet -VerifyOverlap
+    } else {
+        $Subnets = @()
+    }
 
     # Build a mapping of DC names to their sites
     foreach ($Site in $Sites) {
@@ -167,119 +194,122 @@
 
     $DCs = @{}
     $Links = [System.Collections.Generic.List[object]]::new()
+    $ReplicationMatrix = [System.Collections.Generic.List[PSCustomObject]]::new()
 
-    foreach ($RepLink in $ReplicationData) {
-        # Ensure Server and Partner are added as nodes
-        if ($RepLink.Server -and -not $DCs.ContainsKey($RepLink.Server)) {
-            $DCs[$RepLink.Server] = @{
-                Label    = $RepLink.Server
-                IP       = $RepLink.ServerIPV4
-                Partners = [System.Collections.Generic.HashSet[string]]::new()
-                Status   = $true  # Will be set to false if any replication link fails
+    if (-not $SkipReplicationTopology) {
+        Write-Verbose -Message "Get-WinADForestReplication - Building replication topology for forest $($ForestInformation.Forest.Name)"
+        foreach ($RepLink in $ReplicationData) {
+            # Ensure Server and Partner are added as nodes
+            if ($RepLink.Server -and -not $DCs.ContainsKey($RepLink.Server)) {
+                $DCs[$RepLink.Server] = @{
+                    Label    = $RepLink.Server
+                    IP       = $RepLink.ServerIPV4
+                    Partners = [System.Collections.Generic.HashSet[string]]::new()
+                    Status   = $true  # Will be set to false if any replication link fails
+                }
+            }
+            if ($RepLink.ServerPartner -and -not $DCs.ContainsKey($RepLink.ServerPartner)) {
+                # Attempt to resolve partner IP if not directly available (may require another lookup or be less reliable)
+                $PartnerIP = $RepLink.ServerPartnerIPV4 # Use the IP already resolved by Get-WinADForestReplication
+                $DCs[$RepLink.ServerPartner] = @{
+                    Label    = $RepLink.ServerPartner
+                    IP       = $PartnerIP
+                    Partners = [System.Collections.Generic.HashSet[string]]::new()
+                    Status   = $true
+                }
+            }
+
+            # Add partner to the server's partner list (using HashSet to avoid duplicates)
+            if ($RepLink.Server -and $RepLink.ServerPartner) {
+                $null = $DCs[$RepLink.Server].Partners.Add($RepLink.ServerPartner)
+
+                # Update status if there's any failure
+                if (-not $RepLink.Status) {
+                    $DCs[$RepLink.Server].Status = $false
+                }
+            }
+
+            # Add the link (handle potential duplicates if needed, maybe group by Server/Partner/Partition?)
+            # For simplicity now, add each link found. Diagram might show multiple lines if partitions differ.
+            if ($RepLink.Server -and $RepLink.ServerPartner) {
+                $Links.Add(@{
+                        From        = $RepLink.Server
+                        To          = $RepLink.ServerPartner
+                        Status      = $RepLink.Status
+                        Fails       = $RepLink.ConsecutiveReplicationFailures
+                        LastSuccess = $RepLink.LastReplicationSuccess
+                        Partition   = $RepLink.Partition
+                    })
             }
         }
-        if ($RepLink.ServerPartner -and -not $DCs.ContainsKey($RepLink.ServerPartner)) {
-            # Attempt to resolve partner IP if not directly available (may require another lookup or be less reliable)
-            $PartnerIP = $RepLink.ServerPartnerIPV4 # Use the IP already resolved by Get-WinADForestReplication
-            $DCs[$RepLink.ServerPartner] = @{
-                Label    = $RepLink.ServerPartner
-                IP       = $PartnerIP
-                Partners = [System.Collections.Generic.HashSet[string]]::new()
-                Status   = $true
-            }
-        }
 
-        # Add partner to the server's partner list (using HashSet to avoid duplicates)
-        if ($RepLink.Server -and $RepLink.ServerPartner) {
-            $null = $DCs[$RepLink.Server].Partners.Add($RepLink.ServerPartner)
-
-            # Update status if there's any failure
-            if (-not $RepLink.Status) {
-                $DCs[$RepLink.Server].Status = $false
-            }
-        }
-
-        # Add the link (handle potential duplicates if needed, maybe group by Server/Partner/Partition?)
-        # For simplicity now, add each link found. Diagram might show multiple lines if partitions differ.
-        if ($RepLink.Server -and $RepLink.ServerPartner) {
-            $Links.Add(@{
-                    From        = $RepLink.Server
-                    To          = $RepLink.ServerPartner
-                    Status      = $RepLink.Status
-                    Fails       = $RepLink.ConsecutiveReplicationFailures
-                    LastSuccess = $RepLink.LastReplicationSuccess
-                    Partition   = $RepLink.Partition
-                })
-        }
-    }
-
-    # Create consolidated view of DC replication partnerships
-    $DCPartnerSummary = foreach ($DCName in $DCs.Keys) {
-        $DC = $DCs[$DCName]
-        [PSCustomObject]@{
-            DomainController = $DCName
-            Site             = $SiteInformation[$DCName]
-            IPAddress        = $DC.IP
-            Partners         = $DC.Partners | ForEach-Object { $_ }
-            PartnerCount     = $DC.Partners.Count
-            PartnerSites     = @(
-                foreach ($Partner in $DC.Partners) {
-                    if ($SiteInformation.ContainsKey($Partner)) {
-                        $SiteInformation[$Partner]
+        # Create consolidated view of DC replication partnerships
+        $DCPartnerSummary = foreach ($DCName in $DCs.Keys) {
+            $DC = $DCs[$DCName]
+            [PSCustomObject]@{
+                DomainController = $DCName
+                Site             = $SiteInformation[$DCName]
+                IPAddress        = $DC.IP
+                Partners         = $DC.Partners | ForEach-Object { $_ }
+                PartnerCount     = $DC.Partners.Count
+                PartnerSites     = @(
+                    foreach ($Partner in $DC.Partners) {
+                        if ($SiteInformation.ContainsKey($Partner)) {
+                            $SiteInformation[$Partner]
+                        } else {
+                            "Unknown"
+                        }
+                    }
+                ) | Sort-Object -Unique
+                PartnersIP       = $DC.Partners | ForEach-Object {
+                    if ($DCs.ContainsKey($_)) {
+                        $DCs[$_].IP
                     } else {
                         "Unknown"
                     }
-                }
-            ) | Sort-Object -Unique
-            PartnersIP       = $DC.Partners | ForEach-Object {
-                if ($DCs.ContainsKey($_)) {
-                    $DCs[$_].IP
-                } else {
-                    "Unknown"
-                }
-            } | Sort-Object -Unique
-            Status           = if ($DC.Status) { "Healthy" } else { "Issues Detected" }
-        }
-    }
-
-    # Create a matrix-style mapping of DCs to their replication partners
-    $DCNames = $DCs.Keys | Sort-Object
-    $MatrixHeaders = $DCNames
-    $ReplicationMatrix = [System.Collections.Generic.List[PSCustomObject]]::new()
-
-    foreach ($SourceDC in $DCNames) {
-        $Row = [ordered]@{
-            'Source DC'    = $SourceDC
-            'Site'         = $SiteInformation[$SourceDC]
-            'IP'           = $DCs[$SourceDC].IP
-            'PartnerCount' = $DCs[$SourceDC].Partners.Count
-        }
-
-        foreach ($TargetDC in $DCNames) {
-            if ($SourceDC -eq $TargetDC) {
-                # A DC doesn't replicate with itself
-                $Row[$TargetDC] = "-"
-            } else {
-                # Check if there are any replication links from Source to Target
-                $ReplicationLinks = $Links | Where-Object { $_.From -eq $SourceDC -and $_.To -eq $TargetDC }
-
-                if ($ReplicationLinks) {
-                    $AllHealthy = $true
-                    foreach ($Link in $ReplicationLinks) {
-                        if (-not $Link.Status) {
-                            $AllHealthy = $false
-                            break
-                        }
-                    }
-
-                    $Row[$TargetDC] = if ($AllHealthy) { "✓" } else { "✗" }
-                } else {
-                    $Row[$TargetDC] = " "  # No direct replication
-                }
+                } | Sort-Object -Unique
+                Status           = if ($DC.Status) { "Healthy" } else { "Issues Detected" }
             }
         }
 
-        $ReplicationMatrix.Add([PSCustomObject]$Row)
+        # Create a matrix-style mapping of DCs to their replication partners
+        $DCNames = $DCs.Keys | Sort-Object
+        $MatrixHeaders = $DCNames
+
+        foreach ($SourceDC in $DCNames) {
+            $Row = [ordered]@{
+                'Source DC'    = $SourceDC
+                'Site'         = $SiteInformation[$SourceDC]
+                'IP'           = $DCs[$SourceDC].IP
+                'PartnerCount' = $DCs[$SourceDC].Partners.Count
+            }
+
+            foreach ($TargetDC in $DCNames) {
+                if ($SourceDC -eq $TargetDC) {
+                    # A DC doesn't replicate with itself
+                    $Row[$TargetDC] = "-"
+                } else {
+                    # Check if there are any replication links from Source to Target
+                    $ReplicationLinks = $Links | Where-Object { $_.From -eq $SourceDC -and $_.To -eq $TargetDC }
+
+                    if ($ReplicationLinks) {
+                        $AllHealthy = $true
+                        foreach ($Link in $ReplicationLinks) {
+                            if (-not $Link.Status) {
+                                $AllHealthy = $false
+                                break
+                            }
+                        }
+
+                        $Row[$TargetDC] = if ($AllHealthy) { "✓" } else { "✗" }
+                    } else {
+                        $Row[$TargetDC] = " "  # No direct replication
+                    }
+                }
+            }
+
+            $ReplicationMatrix.Add([PSCustomObject]$Row)
+        }
     }
 
     [ordered] @{

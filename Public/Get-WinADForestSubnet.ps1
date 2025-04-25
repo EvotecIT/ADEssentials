@@ -30,6 +30,10 @@
         [switch] $VerifyOverlap
     )
     $ForestInformation = Get-WinADForestDetails -Forest $Forest -ExtendedForestInformation $ExtendedForestInformation
+    if (-not $ForestInformation) {
+        Write-Warning "Get-WinADForestSubnet - Unable to retrieve forest information for $Forest"
+        return
+    }
     $QueryServer = $ForestInformation.QueryServers[$($ForestInformation.Forest.Name)]['HostName'][0]
     $ForestDN = ConvertTo-DistinguishedName -ToDomain -CanonicalName $ForestInformation.Forest.Name
 

@@ -1,4 +1,11 @@
-﻿#### 0.0.236
+﻿#### 0.0.237
+- Improve `Get-WinADForestSubnet`
+  - Added handling for CNF objects
+  - Improved error handling for IP address and integer conversions
+  - Added better warning messages for malformed subnets
+- Improved `Show-WinADForestReplicationSummary`
+
+#### 0.0.236
 - Improved `Show-WinADForestReplicationSummary`
 
 #### 0.0.235
