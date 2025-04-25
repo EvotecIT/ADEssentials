@@ -37,7 +37,7 @@
     Skips the sites and subnets information.
 
     .PARAMETER All
-    Indicates whether to include all domain controllers in the replication search.
+    Indicates whether to include all information in the output.
 
     .EXAMPLE
     Get-WinADForestReplication -Forest "example.com" -IncludeDomains @("example.com") -ExcludeDomains @("test.com") -IncludeDomainControllers @("DC1") -ExcludeDomainControllers @("DC2") -SkipRODC -Extended -ExtendedForestInformation $ExtendedForestInfo
