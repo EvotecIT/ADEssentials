@@ -68,16 +68,19 @@
     if ($FilePath -eq '') {
         $FilePath = Get-FileName -Extension 'html' -Temporary
     }
-
+    Write-Verbose -Message "Show-WinADForestReplicationSummary - Getting Replication Summary"
     $ReplicationSummary = Get-WinADForestReplicationSummary -IncludeStatisticsVariable Statistics
 
+    Write-Verbose -Message "Show-WinADForestReplicationSummary - Getting SiteLinks"
     $SiteLinks = Get-WinADSiteLinks
+    Write-Verbose -Message "Show-WinADForestReplicationSummary - Getting SiteOptions"
     $SiteOptions = Get-WinADSiteOptions
 
+    Write-Verbose -Message "Show-WinADForestReplicationSummary - Getting Replication Summary"
     if ($SummaryOnly) {
         $ReplicationOutput = Get-WinADForestReplication -Extended
     } else {
-        $ReplicationOutput = Get-WinADForestReplication -Extended -All
+        $ReplicationOutput = Get-WinADForestReplication -Extended -All -SkipReplicationTopology:$SkipReplicationTopology.IsPresent -SkipSitesSubnets:$SkipSitesSubnets.IsPresent
     }
     # Lets build the report using the data from Get-WinADForestReplication
     $ReplicationData = $ReplicationOutput.ReplicationData
@@ -88,6 +91,8 @@
     $MatrixHeaders = $ReplicationOutput.MatrixHeaders
     $Sites = $ReplicationOutput.Sites
     $Subnets = $ReplicationOutput.Subnets
+
+    Write-Verbose -Message "Show-WinADForestReplicationSummary - Generating HTML report"
 
     New-HTML {
         New-HTMLSectionStyle -BorderRadius 0px -HeaderBackGroundColor Grey -RemoveShadow
@@ -462,7 +467,7 @@
                 EmailText -Text "For more details please check the table below:"
 
                 EmailTable -DataTable $ReplicationSummary {
-                    EmailTableCondition -Inline -Name "Fail" -HighlightHeaders 'Fails', 'Total', 'PercentageError' -ComparisonType number -Operator gt 0 -BackgroundColor Salmon -FailBackgroundColor SpringGreen
+                    EmailTableCondition -Inline -Name "Fail" -HighlightHeaders 'Fails', 'Total', 'PercentageError' -ComparisonType number -Operator gt 0 -BackGroundColor Salmon -FailBackgroundColor SpringGreen
                 } -HideFooter
 
                 EmailText -LineBreak
