@@ -22,7 +22,7 @@
     .NOTES
     This cmdlet requires the Active Directory PowerShell module to be installed and imported. It also requires appropriate permissions to query the Active Directory forest.
     #>
-    [alias('Get-WinADSubnet')]
+    [alias('Get-WinADSubnet', 'Get-WinADForestSubnets')]
     [cmdletBinding()]
     param(
         [string] $Forest,
@@ -30,6 +30,10 @@
         [switch] $VerifyOverlap
     )
     $ForestInformation = Get-WinADForestDetails -Forest $Forest -ExtendedForestInformation $ExtendedForestInformation
+    if (-not $ForestInformation) {
+        Write-Warning "Get-WinADForestSubnet - Unable to retrieve forest information for $Forest"
+        return
+    }
     $QueryServer = $ForestInformation.QueryServers[$($ForestInformation.Forest.Name)]['HostName'][0]
     $ForestDN = ConvertTo-DistinguishedName -ToDomain -CanonicalName $ForestInformation.Forest.Name
 
