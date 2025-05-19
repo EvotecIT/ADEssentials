@@ -200,9 +200,6 @@
                                 ($Statistics.DeltaOver12Hours + $Statistics.DeltaOver24Hours),
                                 $Statistics.DeltaOver24Hours
                             )
-                            $DelayValues = @(
-                                1, 5, 1, 5, 0, 1
-                            )
                             $DelayColors = @(
                                 'LightGreen', 'Yellow', 'Gold', 'Orange', 'CoralRed', 'Salmon'
                             )
