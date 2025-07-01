@@ -50,14 +50,14 @@
     )
     $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC -ExtendedForestInformation $ExtendedForestInformation
     $Events = Get-Events -LogName 'Directory Service' -ID 2887 -Machine $ForestInformation.ForestDomainControllers.HostName -DateFrom ((Get-Date).Date.adddays(-$Days))
-    foreach ($Event in $Events) {
+    foreach ($E in $Events) {
         [PSCustomobject] @{
-            'Domain Controller'                                                        = $Event.Computer
-            'Date'                                                                     = $Event.Date
-            'Number of simple binds performed without SSL/TLS'                         = $Event.'NoNameA0'
-            'Number of Negotiate/Kerberos/NTLM/Digest binds performed without signing' = $Event.'NoNameA1'
-            'GatheredFrom'                                                             = $Event.'GatheredFrom'
-            'GatheredLogName'                                                          = $Event.'GatheredLogName'
+            'Domain Controller'                                                        = $E.Computer
+            'Date'                                                                     = $E.Date
+            'Number of simple binds performed without SSL/TLS'                         = $E.'NoNameA0'
+            'Number of Negotiate/Kerberos/NTLM/Digest binds performed without signing' = $E.'NoNameA1'
+            'GatheredFrom'                                                             = $E.'GatheredFrom'
+            'GatheredLogName'                                                          = $E.'GatheredLogName'
         }
     }
 }
