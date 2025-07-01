@@ -131,25 +131,25 @@ function Get-WinADDHCPSummary {
 
         # Initialize statistics with zero values for empty environments
         $DHCPSummary.Statistics = [ordered] @{
-            TotalServers                = 0
-            ServersOnline              = 0
-            ServersOffline             = 0
-            ServersWithIssues          = 0
-            ServersWithoutIssues       = 0
-            TotalScopes                = 0
-            ScopesActive               = 0
-            ScopesInactive             = 0
-            ScopesWithIssues           = 0
-            ScopesWithoutIssues        = 0
-            TotalAddresses             = 0
-            AddressesInUse             = 0
-            AddressesFree              = 0
-            OverallPercentageInUse     = 0
+            TotalServers           = 0
+            ServersOnline          = 0
+            ServersOffline         = 0
+            ServersWithIssues      = 0
+            ServersWithoutIssues   = 0
+            TotalScopes            = 0
+            ScopesActive           = 0
+            ScopesInactive         = 0
+            ScopesWithIssues       = 0
+            ScopesWithoutIssues    = 0
+            TotalAddresses         = 0
+            AddressesInUse         = 0
+            AddressesFree          = 0
+            OverallPercentageInUse = 0
         }
 
         # Initialize empty validation results
         $DHCPSummary.ValidationResults = [ordered] @{
-            Summary = [ordered] @{
+            Summary  = [ordered] @{
                 TotalCriticalIssues = 0
                 TotalWarningIssues  = 0
                 TotalInfoIssues     = 0
@@ -185,7 +185,7 @@ function Get-WinADDHCPSummary {
     foreach ($DHCPServer in $DHCPServersFromAD) {
         $Computer = $DHCPServer.DnsName
         $ProcessedServers++
-        Write-Progress -Activity "Processing DHCP Servers" -Status "Processing $Computer ($ProcessedServers of $TotalServers)" -PercentComplete (($ProcessedServers / $TotalServers) * 100)
+        Write-Progress -Activity "Processing DHCP Servers" -Status "Processing $Computer ($ProcessedServers of $TotalServers)" -PercentComplete (($ProcessedServers / $TotalServers) * 100) -Id 1
 
         Write-Verbose "Get-WinADDHCPSummary - Processing DHCP server: $Computer"
 
@@ -195,22 +195,22 @@ function Get-WinADDHCPSummary {
         # Initialize server object
         $ServerInfo = [ordered] @{
             ServerName           = $Computer
-            IsReachable         = $false
+            IsReachable          = $false
             IsADDomainController = $false
-            DHCPRole            = 'Unknown'
-            Version             = $null
-            Status              = 'Unknown'
-            ErrorMessage        = $null
-            ScopeCount          = 0
-            ActiveScopeCount    = 0
-            InactiveScopeCount  = 0
-            ScopesWithIssues    = 0
-            TotalAddresses      = 0
-            AddressesInUse      = 0
-            AddressesFree       = 0
-            PercentageInUse     = 0
-            GatheredFrom        = $Computer
-            GatheredDate        = Get-Date
+            DHCPRole             = 'Unknown'
+            Version              = $null
+            Status               = 'Unknown'
+            ErrorMessage         = $null
+            ScopeCount           = 0
+            ActiveScopeCount     = 0
+            InactiveScopeCount   = 0
+            ScopesWithIssues     = 0
+            TotalAddresses       = 0
+            AddressesInUse       = 0
+            AddressesFree        = 0
+            PercentageInUse      = 0
+            GatheredFrom         = $Computer
+            GatheredDate         = Get-Date
         }
 
         # Check if server is a domain controller
@@ -269,12 +269,16 @@ function Get-WinADDHCPSummary {
         $ServerTotalAddresses = 0
         $ServerAddressesInUse = 0
         $ServerAddressesFree = 0
+        $ScopeCounter = 0
 
         foreach ($Scope in $Scopes) {
+            $ScopeCounter++
+            Write-Progress -Activity "Processing DHCP Servers" -Status "Processing $Computer ($ProcessedServers of $TotalServers)" -PercentComplete (($ProcessedServers / $TotalServers) * 100) -Id 1
+            Write-Progress -Activity "Processing Scopes on $Computer" -Status "Scope $($Scope.ScopeId) ($ScopeCounter of $($Scopes.Count))" -PercentComplete (($ScopeCounter / $Scopes.Count) * 100) -ParentId 1 -Id 2
             Write-Verbose "Get-WinADDHCPSummary - Processing scope $($Scope.ScopeId) on $Computer"
 
             $ScopeObject = [ordered] @{
-                ServerName          = $Computer
+                ServerName         = $Computer
                 ScopeId            = $Scope.ScopeId
                 Name               = $Scope.Name
                 Description        = $Scope.Description
@@ -316,8 +320,12 @@ function Get-WinADDHCPSummary {
             # Validate scope configuration
             # Check lease duration (should not exceed 48 hours unless explicitly documented)
             if ($Scope.LeaseDuration.TotalHours -gt 48) {
-                if ($Scope.Description -notlike "*lease time*" -and $Scope.Description -notlike "*7d*" -and $Scope.Description -notlike "*day*") {
-                    $ScopeObject.Issues.Add("Lease duration exceeds 48 hours ($([Math]::Round($Scope.LeaseDuration.TotalHours, 1)) hours)")
+                # Check for documented exceptions (like your validator's "DHCP lease time" check)
+                if ($Scope.Description -notlike "*DHCP lease time*" -and
+                    $Scope.Description -notlike "*lease time*" -and
+                    $Scope.Description -notlike "*7d*" -and
+                    $Scope.Description -notlike "*day*") {
+                    $ScopeObject.Issues.Add("Lease duration exceeds 48 hours ($([Math]::Round($Scope.LeaseDuration.TotalHours, 1)) hours) without documented exception")
                     $ScopeObject.HasIssues = $true
                 }
             }
@@ -335,19 +343,22 @@ function Get-WinADDHCPSummary {
                         $Option15 = $Options | Where-Object { $_.OptionId -eq 15 } # Domain Name
 
                         if ($Option6 -and $Option6.Value) {
-                            $PublicDNS = $Option6.Value | Where-Object { $_ -notmatch "^10\." -and $_ -notmatch "^192\.168\." -and $_ -notmatch "^172\.(1[6-9]|2[0-9]|3[0-1])\." }
-                            if ($PublicDNS) {
-                                $ScopeObject.Issues.Add("DNS updates enabled with public DNS servers: $($PublicDNS -join ', ')")
+                            # Check for non-private DNS servers (similar to your validator's ^10. check)
+                            $NonPrivateDNS = $Option6.Value | Where-Object { $_ -notmatch "^10\." -and $_ -notmatch "^192\.168\." -and $_ -notmatch "^172\.(1[6-9]|2[0-9]|3[0-1])\." }
+                            if ($NonPrivateDNS) {
+                                $ScopeObject.Issues.Add("DNS updates enabled with non-private DNS servers: $($NonPrivateDNS -join ', ')")
                                 $ScopeObject.HasIssues = $true
                             }
                         }
 
-                        if (-not $DNSSettings.UpdateDnsRRForOlderClients) {
+                        # Enhanced DNS update validation (from your validator)
+                        if (-not $DNSSettings.UpdateDnsRRForOlderClients -and -not $DNSSettings.DeleteDnsRROnLeaseExpiry) {
+                            $ScopeObject.Issues.Add("Both UpdateDnsRRForOlderClients and DeleteDnsRROnLeaseExpiry are disabled")
+                            $ScopeObject.HasIssues = $true
+                        } elseif (-not $DNSSettings.UpdateDnsRRForOlderClients) {
                             $ScopeObject.Issues.Add("UpdateDnsRRForOlderClients is disabled")
                             $ScopeObject.HasIssues = $true
-                        }
-
-                        if (-not $DNSSettings.DeleteDnsRROnLeaseExpiry) {
+                        } elseif (-not $DNSSettings.DeleteDnsRROnLeaseExpiry) {
                             $ScopeObject.Issues.Add("DeleteDnsRROnLeaseExpiry is disabled")
                             $ScopeObject.HasIssues = $true
                         }
@@ -387,6 +398,9 @@ function Get-WinADDHCPSummary {
             $DHCPSummary.Scopes.Add([PSCustomObject]$ScopeObject)
         }
 
+        # Clear scope-level progress when done with this server's scopes
+        Write-Progress -Activity "Processing Scopes on $Computer" -Completed -Id 2
+
         # Update server statistics
         $ServerInfo.ScopesWithIssues = $ServerScopesWithIssues
         $ServerInfo.TotalAddresses = $ServerTotalAddresses
@@ -423,15 +437,15 @@ function Get-WinADDHCPSummary {
             try {
                 $Database = Get-DhcpServerDatabase -ComputerName $Computer -ErrorAction Stop
                 $DatabaseObject = [PSCustomObject] @{
-                    ServerName                 = $Computer
-                    FileName                   = $Database.FileName
-                    BackupPath                 = $Database.BackupPath
-                    BackupIntervalMinutes      = $Database.'BackupInterval(m)'
-                    CleanupIntervalMinutes     = $Database.'CleanupInterval(m)'
-                    LoggingEnabled             = $Database.LoggingEnabled
-                    RestoreFromBackup          = $Database.RestoreFromBackup
-                    GatheredFrom               = $Computer
-                    GatheredDate               = Get-Date
+                    ServerName             = $Computer
+                    FileName               = $Database.FileName
+                    BackupPath             = $Database.BackupPath
+                    BackupIntervalMinutes  = $Database.'BackupInterval(m)'
+                    CleanupIntervalMinutes = $Database.'CleanupInterval(m)'
+                    LoggingEnabled         = $Database.LoggingEnabled
+                    RestoreFromBackup      = $Database.RestoreFromBackup
+                    GatheredFrom           = $Computer
+                    GatheredDate           = Get-Date
                 }
                 $DHCPSummary.Databases.Add($DatabaseObject)
             } catch {
@@ -459,20 +473,20 @@ function Get-WinADDHCPSummary {
     }
 
     $DHCPSummary.Statistics = [ordered] @{
-        TotalServers                = $TotalServers
-        ServersOnline              = $ServersOnlineCount
-        ServersOffline             = $ServersOfflineCount
-        ServersWithIssues          = $ServersWithIssues
-        ServersWithoutIssues       = $TotalServers - $ServersWithIssues
-        TotalScopes                = $TotalScopes
-        ScopesActive               = $ScopesActiveCount
-        ScopesInactive             = $ScopesInactiveCount
-        ScopesWithIssues           = $ScopesWithIssues
-        ScopesWithoutIssues        = $TotalScopes - $ScopesWithIssues
-        TotalAddresses             = ($DHCPSummary.Servers | Measure-Object -Property TotalAddresses -Sum).Sum
-        AddressesInUse             = ($DHCPSummary.Servers | Measure-Object -Property AddressesInUse -Sum).Sum
-        AddressesFree              = ($DHCPSummary.Servers | Measure-Object -Property AddressesFree -Sum).Sum
-        OverallPercentageInUse     = 0
+        TotalServers           = $TotalServers
+        ServersOnline          = $ServersOnlineCount
+        ServersOffline         = $ServersOfflineCount
+        ServersWithIssues      = $ServersWithIssues
+        ServersWithoutIssues   = $TotalServers - $ServersWithIssues
+        TotalScopes            = $TotalScopes
+        ScopesActive           = $ScopesActiveCount
+        ScopesInactive         = $ScopesInactiveCount
+        ScopesWithIssues       = $ScopesWithIssues
+        ScopesWithoutIssues    = $TotalScopes - $ScopesWithIssues
+        TotalAddresses         = ($DHCPSummary.Servers | Measure-Object -Property TotalAddresses -Sum).Sum
+        AddressesInUse         = ($DHCPSummary.Servers | Measure-Object -Property AddressesInUse -Sum).Sum
+        AddressesFree          = ($DHCPSummary.Servers | Measure-Object -Property AddressesFree -Sum).Sum
+        OverallPercentageInUse = 0
     }
 
     # Categorize validation results efficiently using single-pass operations
@@ -530,30 +544,30 @@ function Get-WinADDHCPSummary {
     $DHCPSummary.ValidationResults = [ordered] @{
         # Critical issues that require immediate attention
         CriticalIssues = [ordered] @{
-            PublicDNSWithUpdates    = $PublicDNSWithUpdates
-            HighUtilization         = $HighUtilization
-            ServersOffline          = $ServersOffline
+            PublicDNSWithUpdates = $PublicDNSWithUpdates
+            HighUtilization      = $HighUtilization
+            ServersOffline       = $ServersOffline
         }
         # Warning issues that should be addressed soon
-        WarningIssues = [ordered] @{
-            MissingFailover         = $MissingFailover
-            ExtendedLeaseDuration   = $ExtendedLeaseDuration
-            ModerateUtilization     = $ModerateUtilization
-            DNSRecordManagement     = $DNSRecordManagement
+        WarningIssues  = [ordered] @{
+            MissingFailover       = $MissingFailover
+            ExtendedLeaseDuration = $ExtendedLeaseDuration
+            ModerateUtilization   = $ModerateUtilization
+            DNSRecordManagement   = $DNSRecordManagement
         }
         # Information issues that are good to know but not urgent
-        InfoIssues = [ordered] @{
-            MissingDomainName       = $MissingDomainName
-            InactiveScopes          = $InactiveScopes
+        InfoIssues     = [ordered] @{
+            MissingDomainName = $MissingDomainName
+            InactiveScopes    = $InactiveScopes
         }
         # Summary counters for quick overview
-        Summary = [ordered] @{
-            TotalCriticalIssues     = 0
-            TotalWarningIssues      = 0
-            TotalInfoIssues         = 0
-            ScopesWithCritical      = 0
-            ScopesWithWarnings      = 0
-            ScopesWithInfo          = 0
+        Summary        = [ordered] @{
+            TotalCriticalIssues = 0
+            TotalWarningIssues  = 0
+            TotalInfoIssues     = 0
+            ScopesWithCritical  = 0
+            ScopesWithWarnings  = 0
+            ScopesWithInfo      = 0
         }
     }
 
