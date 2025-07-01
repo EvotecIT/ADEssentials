@@ -6,4 +6,5 @@
 #$SchemaInformation['SchemaSummary']['File-Link-Tracking'] | Format-Table *
 #$SchemaInformation['SchemaSummary'].Values | Format-Table *
 
-Invoke-ADEssentials -Type Schema #-Verbose
+$Test = Invoke-ADEssentials -Type Schema -PassThru -Verbose
+$Test
