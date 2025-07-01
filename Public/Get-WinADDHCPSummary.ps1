@@ -24,7 +24,8 @@ function Get-WinADDHCPSummary {
     Specifies an array of domain controllers to include in DHCP information retrieval.
 
     .PARAMETER ComputerName
-    Specifies specific DHCP servers to query. If not provided, discovers all DHCP servers in the forest.
+    Specifies specific DHCP servers to perform detailed analysis on. If not provided, discovers all DHCP servers in the forest.
+    When specified, all discovered servers will be shown but only the specified servers will have detailed scope and configuration analysis.
 
     .PARAMETER SkipRODC
     Indicates whether to skip Read-Only Domain Controllers (RODC) when retrieving DHCP information.
@@ -48,7 +49,7 @@ function Get-WinADDHCPSummary {
     .EXAMPLE
     Get-WinADDHCPSummary -ComputerName "dhcp01.example.com", "dhcp02.example.com"
 
-    Retrieves DHCP summary information from specific DHCP servers.
+    Retrieves all DHCP servers from AD but performs detailed analysis only on the specified servers.
 
     .EXAMPLE
     Get-WinADDHCPSummary -IncludeDomains "domain1.com", "domain2.com" -SkipRODC
@@ -98,20 +99,34 @@ function Get-WinADDHCPSummary {
         ValidationResults = [ordered] @{}
     }
 
-    # Get DHCP servers
-    if ($ComputerName.Count -eq 0) {
-        Write-Verbose "Get-WinADDHCPSummary - Discovering DHCP servers in forest"
-        try {
-            $DHCPServersFromAD = Get-DhcpServerInDC -ErrorAction Stop
-            $ComputerName = $DHCPServersFromAD.DnsName
-            Write-Verbose "Get-WinADDHCPSummary - Found $($ComputerName.Count) DHCP servers in AD"
-        } catch {
-            Write-Warning "Get-WinADDHCPSummary - Failed to get DHCP servers from AD: $($_.Exception.Message)"
-            return $DHCPSummary
-        }
+    # Get DHCP servers from AD for discovery
+    Write-Verbose "Get-WinADDHCPSummary - Discovering DHCP servers in forest"
+    try {
+        $DHCPServersFromAD = Get-DhcpServerInDC -ErrorAction Stop
+        Write-Verbose "Get-WinADDHCPSummary - Found $($DHCPServersFromAD.Count) DHCP servers in AD"
+    } catch {
+        Write-Warning "Get-WinADDHCPSummary - Failed to get DHCP servers from AD: $($_.Exception.Message)"
+        return $DHCPSummary
     }
 
+    # Determine which servers to analyze in detail
     if ($ComputerName.Count -eq 0) {
+        # If no specific servers provided, analyze all discovered servers
+        $ServersToAnalyze = $DHCPServersFromAD.DnsName
+        Write-Verbose "Get-WinADDHCPSummary - Will perform detailed analysis on all $($ServersToAnalyze.Count) discovered servers"
+    } else {
+        # If specific servers provided, only analyze those
+        $ServersToAnalyze = $ComputerName
+        Write-Verbose "Get-WinADDHCPSummary - Will perform detailed analysis on $($ServersToAnalyze.Count) specified servers"
+    }
+
+    # Create lookup for servers to analyze
+    $ServersToAnalyzeSet = @{}
+    foreach ($Server in $ServersToAnalyze) {
+        $ServersToAnalyzeSet[$Server.ToLower()] = $true
+    }
+
+    if ($DHCPServersFromAD.Count -eq 0) {
         Write-Warning "Get-WinADDHCPSummary - No DHCP servers found"
 
         # Initialize statistics with zero values for empty environments
@@ -160,18 +175,22 @@ function Get-WinADDHCPSummary {
         }
     }
 
-    # Process each DHCP server
-    $TotalServers = $ComputerName.Count
+    # Process each DHCP server (all discovered servers)
+    $TotalServers = $DHCPServersFromAD.Count
     $ProcessedServers = 0
     $ServersWithIssues = 0
     $TotalScopes = 0
     $ScopesWithIssues = 0
 
-    foreach ($Computer in $ComputerName) {
+    foreach ($DHCPServer in $DHCPServersFromAD) {
+        $Computer = $DHCPServer.DnsName
         $ProcessedServers++
         Write-Progress -Activity "Processing DHCP Servers" -Status "Processing $Computer ($ProcessedServers of $TotalServers)" -PercentComplete (($ProcessedServers / $TotalServers) * 100)
 
         Write-Verbose "Get-WinADDHCPSummary - Processing DHCP server: $Computer"
+
+        # Determine if this server should be analyzed in detail
+        $ShouldAnalyze = $ServersToAnalyzeSet[$Computer.ToLower()] -eq $true
 
         # Initialize server object
         $ServerInfo = [ordered] @{
@@ -203,17 +222,25 @@ function Get-WinADDHCPSummary {
             }
         }
 
-        # Test connectivity and get server information
-        try {
-            $DHCPServerInfo = Get-DhcpServerVersion -ComputerName $Computer -ErrorAction Stop
-            $ServerInfo.IsReachable = $true
-            $ServerInfo.Version = $DHCPServerInfo.MajorVersion.ToString() + '.' + $DHCPServerInfo.MinorVersion.ToString()
-            $ServerInfo.Status = 'Online'
-        } catch {
-            $ServerInfo.Status = 'Unreachable'
-            $ServerInfo.ErrorMessage = $_.Exception.Message
-            Write-Warning "Get-WinADDHCPSummary - Cannot reach DHCP server $Computer`: $($_.Exception.Message)"
-            $ServersWithIssues++
+        # Test connectivity and get server information only for servers to analyze
+        if ($ShouldAnalyze) {
+            try {
+                $DHCPServerInfo = Get-DhcpServerVersion -ComputerName $Computer -ErrorAction Stop
+                $ServerInfo.IsReachable = $true
+                $ServerInfo.Version = $DHCPServerInfo.MajorVersion.ToString() + '.' + $DHCPServerInfo.MinorVersion.ToString()
+                $ServerInfo.Status = 'Online'
+            } catch {
+                $ServerInfo.Status = 'Unreachable'
+                $ServerInfo.ErrorMessage = $_.Exception.Message
+                Write-Warning "Get-WinADDHCPSummary - Cannot reach DHCP server $Computer`: $($_.Exception.Message)"
+                $ServersWithIssues++
+                $DHCPSummary.Servers.Add([PSCustomObject]$ServerInfo)
+                continue
+            }
+        } else {
+            # For non-analyzed servers, mark as not tested
+            $ServerInfo.Status = 'Not Analyzed'
+            $ServerInfo.ErrorMessage = 'Server discovered but not selected for detailed analysis'
             $DHCPSummary.Servers.Add([PSCustomObject]$ServerInfo)
             continue
         }
