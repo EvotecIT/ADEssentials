@@ -1,6 +1,11 @@
 ﻿Clear-Host
 Import-Module .\ADEssentials.psd1 -Force
 
+
+Show-WinADObjectDifference -Identity "CN=Przemysław Kłys,OU=Default,OU=Users,OU=Accounts,OU=Production,DC=ad,DC=evotec,DC=xyz" -GlobalCatalog -Properties memberof, samaccountname, displayname -Verbose
+
+return
+
 #$Users = Get-ADUser -Filter "*" | Select-Object -First 1 -Skip 1
 #Show-WinADObjectDifference -Identity $Users.DistinguishedName -Verbose -GlobalCatalog
 
@@ -65,5 +70,5 @@ $Computers = @(
     'CN=Test4,OU=Default,OU=Computers,OU=Devices,OU=Production,DC=ad,DC=evotec,DC=xyz'
 
 )
-$Computers = get-aduser 'krbtgt'
-Show-WinADObjectDifference -Identity $Computers.DistinguishedName -Verbose -Properties 'PasswordLastSet','LastLogonTimestamp' -FilePath $PSScriptRoot\Reports\Comparison.html
+$Computers = Get-ADUser 'krbtgt'
+Show-WinADObjectDifference -Identity $Computers.DistinguishedName -Verbose -Properties 'PasswordLastSet', 'LastLogonTimestamp' -FilePath $PSScriptRoot\Reports\Comparison.html
