@@ -4,7 +4,12 @@
 # $ReplicationSummary = Get-WinADForestReplicationSummary -IncludeStatisticsVariable Statistics
 
 # HTML way
-$Output = Show-WinADForestReplicationSummary -Verbose -FilePath "$PSScriptRoot\Reports\ReplicationSummary.html" -PassThru
+#$Output = Show-WinADForestReplicationSummary -Verbose -FilePath "$PSScriptRoot\Reports\ReplicationSummary.html" -PassThru -SummaryOnly
+
+$Output = Show-WinADForestReplicationSummary -Verbose -FilePath "$PSScriptRoot\Reports\ReplicationSummary.html" -PassThru -DiagramSitesSubnetsNodes DC
+
+return
+
 $ReplicationSummary = $Output.ReplicationSummary
 $Statistics = $Output.Statistics
 
