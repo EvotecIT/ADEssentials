@@ -1,4 +1,4 @@
-﻿function Get-WinADSharePermission {
+function Get-WinADSharePermission {
     <#
     .SYNOPSIS
     Retrieves the permissions for a specified Windows Active Directory share or shares based on type.
@@ -11,6 +11,12 @@
 
     .PARAMETER ShareType
     Specifies the type of share for which to retrieve permissions. This parameter is mandatory when using the 'ShareType' parameter set. Valid values are 'NetLogon' and 'SYSVOL'.
+
+	.PARAMETER NoRecursion
+    Disables recursive querying of permissions and limits the query to the root of the sepcified path. This is a switch so no other variable is neeed. Just add `-NoRecursion`. This superceeds the `-Depth` parameter.
+
+	.PARAMETER Depth
+    Limit the depth of recursion that happens when querying a directory. Especially useful for large and complex folders with several hundred or dozen subfolders.  -1 = unlimited recursion, 0 = no recursion, 1-1023 total limit of recursion depth
 
     .PARAMETER Owner
     Specifies that the cmdlet should only return the owner of the share instead of the full permissions.
@@ -49,6 +55,8 @@
     param(
         [Parameter(ParameterSetName = 'Path', Mandatory)][string] $Path,
         [Parameter(ParameterSetName = 'ShareType', Mandatory)][validateset('NetLogon', 'SYSVOL')][string[]] $ShareType,
+        [switch]$NoRecursion,   # Prevents recursive scanning (supercedes Depth)
+        [int]$Depth = -1,       # -1 means unlimited recursion
         [switch] $Owner,
         [string[]] $Name,
         [alias('ForestName')][string] $Forest,
@@ -56,42 +64,18 @@
         [alias('Domain', 'Domains')][string[]] $IncludeDomains,
         [System.Collections.IDictionary] $ExtendedForestInformation
     )
+
     if ($ShareType) {
         $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation
         foreach ($Domain in $ForestInformation.Domains) {
-            $Path = -join ("\\", $Domain, "\$ShareType")
-            @(Get-Item -Path $Path -Force) + @(Get-ChildItem -Path $Path -Recurse:$true -Force -ErrorAction SilentlyContinue -ErrorVariable Err) | ForEach-Object -Process {
-                if ($Owner) {
-                    $Output = Get-FileOwner -JustPath -Path $_ -Resolve -AsHashTable
-                    $Output['Attributes'] = $_.Attributes
-                    [PSCustomObject] $Output
-                } else {
-                    $Output = Get-FilePermission -Path $_ -ResolveTypes -Extended -AsHashTable
-                    foreach ($O in $Output) {
-                        $O['Attributes'] = $_.Attributes
-                        [PSCustomObject] $O
-                    }
-                }
-            }
+            $SharePath = "\\$Domain\$ShareType"
+            Invoke-SharePath -Path $SharePath -NoRecursion:$NoRecursion -Depth $Depth -Owner:$Owner
         }
     } else {
         if ($Path -and (Test-Path -Path $Path)) {
-            @(Get-Item -Path $Path -Force) + @(Get-ChildItem -Path $Path -Recurse:$true -Force -ErrorAction SilentlyContinue -ErrorVariable Err) | ForEach-Object -Process {
-                if ($Owner) {
-                    $Output = Get-FileOwner -JustPath -Path $_ -Resolve -AsHashTable -Verbose
-                    $Output['Attributes'] = $_.Attributes
-                    [PSCustomObject] $Output
-                } else {
-                    $Output = Get-FilePermission -Path $_ -ResolveTypes -Extended -AsHashTable
-                    foreach ($O in $Output) {
-                        $O['Attributes'] = $_.Attributes
-                        [PSCustomObject] $O
-                    }
-                }
-            }
+            Invoke-SharePath -Path $Path -NoRecursion:$NoRecursion -Depth $Depth -Owner:$Owner
+        } else {
+            Write-Warning "Path does not exist: $Path"
         }
-    }
-    foreach ($e in $err) {
-        Write-Warning "Get-WinADSharePermission - $($e.Exception.Message) ($($e.CategoryInfo.Reason))"
     }
 }
