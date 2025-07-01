@@ -2,7 +2,7 @@
 # This script shows how to use the DHCP functions to analyze your DHCP infrastructure
 
 # Import the ADEssentials module (assuming it's installed)
-Import-Module .\ADEssentials.psd1 -Force
+Import-Module .\..\ADEssentials.psd1 -Force
 
 # Example 1: Basic DHCP server discovery
 Write-Host "=== Basic DHCP Server Discovery ===" -ForegroundColor Green
@@ -99,26 +99,9 @@ if ($DHCPSummary.ScopesWithIssues.Count -gt 0) {
     Write-Host "Scopes with issues exported to: $ExportPath`_ScopesWithIssues.csv"
 }
 
-# Example 6: Use the public DHCP health check function
-function Get-LocalDHCPHealthCheck {
-    <#
-    .SYNOPSIS
-    Legacy local health check function - use Get-WinADDHCPHealthCheck instead.
-    .DESCRIPTION
-    This function is kept for backward compatibility. The functionality has been
-    moved to the public Get-WinADDHCPHealthCheck function which provides
-    enhanced features and better parameter support.
-    #>
-    [CmdletBinding()]
-    param()
-
-    Write-Warning "This local function is deprecated. Use Invoke-WinADDHCPHealthCheck instead."
-    return Invoke-WinADDHCPHealthCheck
-}
-
 # Example 7: Run the comprehensive health check using the public function
 Write-Host "`n=== DHCP Health Check (Using Public Function) ===" -ForegroundColor Green
-$HealthCheck = Invoke-WinADDHCPHealthCheck
+Invoke-WinADDHCPHealthCheck
 
 # You can also run it quietly and process results programmatically
 Write-Host "`n=== Programmatic Health Check ===" -ForegroundColor Green
