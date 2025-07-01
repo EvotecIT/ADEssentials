@@ -446,7 +446,179 @@ function Show-WinADDHCPSummary {
                         New-HTMLTableCondition -Name 'LeaseDurationHours' -ComparisonType number -Operator gt -Value 48 -BackgroundColor Orange -HighlightHeaders 'LeaseDurationHours'
                         New-HTMLTableCondition -Name 'FailoverPartner' -ComparisonType string -Operator eq -Value '' -BackgroundColor LightYellow -HighlightHeaders 'FailoverPartner'
                     } -DataStore JavaScript -ScrollX
-                } }
+                }
+
+                # Enhanced Infrastructure sections (when Extended data is available)
+
+                # IPv6 Readiness & Status
+                New-HTMLSection -HeaderText "IPv6 DHCP Status" -CanCollapse {
+                    if ($DHCPData.IPv6Scopes.Count -gt 0) {
+                        # IPv6 scopes are configured and available
+                        New-HTMLText -Text "✅ IPv6 DHCP is configured and active in this environment." -Color Green -FontWeight bold
+                        New-HTMLTable -DataTable $DHCPData.IPv6Scopes -ScrollX -HideFooter -PagingLength 10 {
+                            New-HTMLTableCondition -Name 'State' -ComparisonType string -Operator eq -Value 'Active' -BackgroundColor LightGreen -FailBackgroundColor Orange
+                            New-HTMLTableCondition -Name 'HasIssues' -ComparisonType bool -Operator eq -Value $true -BackgroundColor Salmon -HighlightHeaders 'HasIssues', 'Issues'
+                            New-HTMLTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 80 -BackgroundColor Orange -HighlightHeaders 'PercentageInUse'
+                        } -Title "IPv6 DHCP Scopes Configuration" -Buttons @('copyHtml5', 'excelHtml5', 'csvHtml5')
+                    } else {
+                        # No IPv6 scopes found - could be not configured or not supported
+                        $IPv6StatusText = "ℹ️ No IPv6 DHCP scopes found in this environment."
+                        $IPv6DetailText = "This is normal in most environments as IPv6 DHCP is rarely deployed. Most networks use IPv6 stateless autoconfiguration (SLAAC) instead of DHCP for IPv6 address assignment."
+
+                        New-HTMLText -Text $IPv6StatusText -Color Blue -FontWeight bold
+                        New-HTMLText -Text $IPv6DetailText -Color Gray -FontSize 12px
+
+                        New-HTMLPanel -Invisible {
+                            New-HTMLText -Text "IPv6 DHCP Deployment Considerations:" -FontWeight bold
+                            New-HTMLList {
+                                New-HTMLListItem -Text "Most environments use SLAAC (Stateless Address Autoconfiguration) for IPv6"
+                                New-HTMLListItem -Text "IPv6 DHCP is typically only needed for stateful configuration requirements"
+                                New-HTMLListItem -Text "Windows DHCP Server supports IPv6 starting with Windows Server 2008"
+                                New-HTMLListItem -Text "IPv6 DHCP requires separate scope configuration from IPv4"
+                            } -FontSize 11px
+                        }
+                    }
+                }
+
+                # Multicast DHCP Status
+                New-HTMLSection -HeaderText "Multicast DHCP Status" -CanCollapse {
+                    if ($DHCPData.MulticastScopes.Count -gt 0) {
+                        # Multicast scopes are configured
+                        New-HTMLText -Text "✅ Multicast DHCP scopes are configured in this environment." -Color Green -FontWeight bold
+                        New-HTMLTable -DataTable $DHCPData.MulticastScopes -ScrollX -HideFooter -PagingLength 10 {
+                            New-HTMLTableCondition -Name 'State' -ComparisonType string -Operator eq -Value 'Active' -BackgroundColor LightGreen -FailBackgroundColor Orange
+                            New-HTMLTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 80 -BackgroundColor Orange -HighlightHeaders 'PercentageInUse'
+                        } -Title "Multicast DHCP Scopes" -Buttons @('copyHtml5', 'excelHtml5', 'csvHtml5')
+                    } else {
+                        # No multicast scopes found
+                        $MulticastStatusText = "ℹ️ No Multicast DHCP scopes found in this environment."
+                        $MulticastDetailText = "This is typical for most environments. Multicast DHCP is specialized for applications requiring automatic multicast address assignment, such as video streaming or specialized network applications."
+
+                        New-HTMLText -Text $MulticastStatusText -Color Blue -FontWeight bold
+                        New-HTMLText -Text $MulticastDetailText -Color Gray -FontSize 12px
+
+                        New-HTMLPanel -Invisible {
+                            New-HTMLText -Text "Multicast DHCP Use Cases:" -FontWeight bold
+                            New-HTMLList {
+                                New-HTMLListItem -Text "Automatic assignment of multicast IP addresses"
+                                New-HTMLListItem -Text "Video streaming and multimedia applications"
+                                New-HTMLListItem -Text "Network-based applications requiring group communication"
+                                New-HTMLListItem -Text "Reduces manual multicast address management"
+                            } -FontSize 11px
+                        }
+                    }
+                }
+
+                # Security Filters Status
+                New-HTMLSection -HeaderText "Security Filters Status" -CanCollapse {
+                    if ($DHCPData.SecurityFilters.Count -gt 0) {
+                        # Security filters are configured
+                        New-HTMLText -Text "✅ DHCP Security filters are configured in this environment." -Color Green -FontWeight bold
+                        New-HTMLTable -DataTable $DHCPData.SecurityFilters -ScrollX -HideFooter {
+                            New-HTMLTableCondition -Name 'FilteringMode' -ComparisonType string -Operator eq -Value 'None' -BackgroundColor LightYellow -HighlightHeaders 'FilteringMode'
+                            New-HTMLTableCondition -Name 'FilteringMode' -ComparisonType string -Operator eq -Value 'Allow' -BackgroundColor LightGreen -HighlightHeaders 'FilteringMode'
+                            New-HTMLTableCondition -Name 'FilteringMode' -ComparisonType string -Operator eq -Value 'Deny' -BackgroundColor Orange -HighlightHeaders 'FilteringMode'
+                            New-HTMLTableCondition -Name 'FilteringMode' -ComparisonType string -Operator eq -Value 'Both' -BackgroundColor LightBlue -HighlightHeaders 'FilteringMode'
+                        } -Title "MAC Address Filtering Configuration" -Buttons @('copyHtml5', 'excelHtml5', 'csvHtml5')
+                    } else {
+                        # No security filters configured
+                        $SecurityStatusText = "ℹ️ No DHCP security filters configured in this environment."
+                        $SecurityDetailText = "Security filters are optional and provide MAC address-based filtering. This feature may not be available on older DHCP servers or may not be configured for security policy reasons."
+
+                        New-HTMLText -Text $SecurityStatusText -Color Blue -FontWeight bold
+                        New-HTMLText -Text $SecurityDetailText -Color Gray -FontSize 12px
+
+                        New-HTMLPanel -Invisible {
+                            New-HTMLText -Text "DHCP Security Filter Options:" -FontWeight bold
+                            New-HTMLList {
+                                New-HTMLListItem -Text "Allow List: Only specified MAC addresses can receive DHCP leases"
+                                New-HTMLListItem -Text "Deny List: Specified MAC addresses are blocked from DHCP"
+                                New-HTMLListItem -Text "Vendor/User Class Filtering: Filter based on DHCP client classes"
+                                New-HTMLListItem -Text "Requires Windows Server 2008 R2 or later for full functionality"
+                            } -FontSize 11px
+                        }
+                    }
+                }
+
+                # DHCP Policies Status
+                New-HTMLSection -HeaderText "DHCP Policies Status" -CanCollapse {
+                    if ($DHCPData.Policies.Count -gt 0) {
+                        # DHCP policies are configured
+                        New-HTMLText -Text "✅ DHCP Policies are configured in this environment." -Color Green -FontWeight bold
+                        New-HTMLTable -DataTable $DHCPData.Policies -ScrollX -HideFooter -PagingLength 15 {
+                            New-HTMLTableCondition -Name 'Enabled' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightGreen -FailBackgroundColor Orange
+                            New-HTMLTableCondition -Name 'ProcessingOrder' -ComparisonType number -Operator lt -Value 5 -BackgroundColor LightBlue -HighlightHeaders 'ProcessingOrder'
+                        } -Title "DHCP Policy Configuration" -Buttons @('copyHtml5', 'excelHtml5', 'csvHtml5')
+                    } else {
+                        # No DHCP policies configured
+                        $PoliciesStatusText = "ℹ️ No DHCP Policies configured in this environment."
+                        $PoliciesDetailText = "DHCP Policies provide advanced configuration options and require Windows Server 2012 or later. Many environments operate effectively without policies using standard scope configuration."
+
+                        New-HTMLText -Text $PoliciesStatusText -Color Blue -FontWeight bold
+                        New-HTMLText -Text $PoliciesDetailText -Color Gray -FontSize 12px
+
+                        New-HTMLPanel -Invisible {
+                            New-HTMLText -Text "DHCP Policy Capabilities (Windows Server 2012+):" -FontWeight bold
+                            New-HTMLList {
+                                New-HTMLListItem -Text "Conditional IP address assignment based on client attributes"
+                                New-HTMLListItem -Text "Different lease durations for different device types"
+                                New-HTMLListItem -Text "Custom DHCP options based on vendor class or user class"
+                                New-HTMLListItem -Text "Advanced filtering based on MAC address patterns or client identifiers"
+                            } -FontSize 11px
+                        }
+                    }
+                }
+
+                if ($DHCPData.Reservations.Count -gt 0) {
+                    New-HTMLSection -HeaderText "Static Reservations" -CanCollapse {
+                        New-HTMLTable -DataTable $DHCPData.Reservations -ScrollX -HideFooter -PagingLength 20 {
+                            New-HTMLTableCondition -Name 'Type' -ComparisonType string -Operator eq -Value 'Dhcp' -BackgroundColor LightGreen
+                            New-HTMLTableCondition -Name 'Type' -ComparisonType string -Operator eq -Value 'Both' -BackgroundColor LightBlue
+                        } -Title "Static IP Reservations" -Buttons @('copyHtml5', 'excelHtml5', 'csvHtml5')
+                    }
+                }
+
+                if ($DHCPData.NetworkBindings.Count -gt 0) {
+                    New-HTMLSection -HeaderText "Network Bindings" -CanCollapse {
+                        New-HTMLTable -DataTable $DHCPData.NetworkBindings -ScrollX -HideFooter {
+                            New-HTMLTableCondition -Name 'State' -ComparisonType string -Operator eq -Value 'True' -BackgroundColor LightGreen -FailBackgroundColor Orange
+                        } -Title "DHCP Server Network Interface Bindings" -Buttons @('copyHtml5', 'excelHtml5', 'csvHtml5')
+                    }
+                }
+
+                # Comprehensive Security and Best Practices Summary
+                if ($DHCPData.ServerSettings.Count -gt 0) {
+                    New-HTMLSection -HeaderText "Security & Best Practices Summary" -CanCollapse {
+                        $SecuritySummary = $DHCPData.ServerSettings | ForEach-Object {
+                            [PSCustomObject]@{
+                                'Server'                 = $_.ServerName
+                                'Authorization Status'   = if ($null -ne $_.IsAuthorized) {
+                                    if ($_.IsAuthorized) { 'Authorized' } else { 'Not Authorized' }
+                                } else { 'Unknown' }
+                                'Domain Membership'      = if ($null -ne $_.IsDomainJoined) {
+                                    if ($_.IsDomainJoined) { 'Domain Joined' } else { 'Workgroup' }
+                                } else { 'Unknown' }
+                                'Policy Activation'      = if ($null -ne $_.ActivatePolicies) { $_.ActivatePolicies } else { 'Unknown' }
+                                'Conflict Detection'     = if ($_.ConflictDetectionAttempts -gt 0) { "$($_.ConflictDetectionAttempts) attempts" } else { 'Disabled' }
+                                'Dynamic Bootp'          = if ($null -ne $_.DynamicBootp) { $_.DynamicBootp } else { 'Unknown' }
+                                'NAP Integration'        = if ($null -ne $_.NapEnabled) { $_.NapEnabled } else { 'Unknown' }
+                                'Restore Status'         = if ($_.RestoreStatus) { $_.RestoreStatus } else { 'N/A' }
+                                'NPS Unreachable Action' = if ($_.NpsUnreachableAction) { $_.NpsUnreachableAction } else { 'N/A' }
+                            }
+                        }
+
+                        New-HTMLTable -DataTable $SecuritySummary -HideFooter {
+                            New-HTMLTableCondition -Name 'Authorization Status' -ComparisonType string -Operator eq -Value 'Authorized' -BackgroundColor LightGreen
+                            New-HTMLTableCondition -Name 'Authorization Status' -ComparisonType string -Operator eq -Value 'Not Authorized' -BackgroundColor Red -Color White
+                            New-HTMLTableCondition -Name 'Authorization Status' -ComparisonType string -Operator eq -Value 'Unknown' -BackgroundColor LightGray
+                            New-HTMLTableCondition -Name 'Policy Activation' -ComparisonType string -Operator eq -Value $true -BackgroundColor LightGreen
+                            New-HTMLTableCondition -Name 'Conflict Detection' -ComparisonType string -Operator eq -Value 'Disabled' -BackgroundColor Orange
+                            New-HTMLTableCondition -Name 'Domain Membership' -ComparisonType string -Operator eq -Value 'Domain Joined' -BackgroundColor LightGreen
+                            New-HTMLTableCondition -Name 'Domain Membership' -ComparisonType string -Operator eq -Value 'Workgroup' -BackgroundColor Orange
+                        } -Title "DHCP Server Security Configuration" -Buttons @('copyHtml5', 'excelHtml5', 'csvHtml5')
+                    }
+                }
+            }
 
             New-HTMLTab -TabName 'Validation Issues' {
                 # If no validation issues found
