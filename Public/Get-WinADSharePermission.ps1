@@ -69,98 +69,13 @@ function Get-WinADSharePermission {
         $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExtendedForestInformation $ExtendedForestInformation
         foreach ($Domain in $ForestInformation.Domains) {
             $SharePath = "\\$Domain\$ShareType"
-            Process-SharePath -Path $SharePath -NoRecursion:$NoRecursion -Depth $Depth -Owner:$Owner
+            Invoke-SharePath -Path $SharePath -NoRecursion:$NoRecursion -Depth $Depth -Owner:$Owner
         }
     } else {
         if ($Path -and (Test-Path -Path $Path)) {
-            Process-SharePath -Path $Path -NoRecursion:$NoRecursion -Depth $Depth -Owner:$Owner
+            Invoke-SharePath -Path $Path -NoRecursion:$NoRecursion -Depth $Depth -Owner:$Owner
         } else {
             Write-Warning "Path does not exist: $Path"
-        }
-    }
-}
-
-function Process-SharePath {
-    param (
-        [string]$Path,
-        [switch]$NoRecursion,
-        [int]$Depth,
-        [switch]$Owner
-    )
-
-    # Ensure the root path is always included
-    $items = @()
-    if (Test-Path -Path $Path) {
-        $items += Get-Item -Path $Path -Force  # Always include the root folder
-    }
-
-    # Get subdirectories based on recursion settings
-    if (-not $NoRecursion) {
-        if ($Depth -ge 0) {
-            $items += Get-ChildItem -Path $Path -Directory -Depth $Depth -Force -ErrorAction SilentlyContinue
-        } else {
-            $items += Get-ChildItem -Path $Path -Directory -Recurse -Force -ErrorAction SilentlyContinue
-        }
-    }
-
-    # Process each item
-    $items | ForEach-Object -Process {
-        if ($Owner) {
-            $Output = Get-FileOwner -JustPath -Path $_.FullName -Resolve -AsHashTable
-            $Output['Attributes'] = $_.Attributes
-            [PSCustomObject] $Output
-        } else {
-            $Output = Get-FilePermission -Path $_.FullName -ResolveTypes -Extended -AsHashTable
-            foreach ($O in $Output) {
-                $O['Attributes'] = $_.Attributes
-                [PSCustomObject] $O
-            }
-        }
-    }
-}
-
-# Helper function to process permissions
-function Get-PermissionsForPath {
-    param(
-        [string] $Path,
-        [switch] $NoRecursion,
-        [int] $Depth,
-        [switch] $Owner
-    )
-
-    try {
-        $targetItem = Get-Item -Path $Path -Force -ErrorAction Stop
-    } catch {
-        Write-Warning "Get-PermissionsForPath - Failed to get item '$Path': $($_.Exception.Message)"
-        return
-    }
-
-    # Determine child items based on recursion settings
-    $childItems = if ($NoRecursion) {
-        @()
-    } elseif ($Depth -ge 0) {
-        Get-ChildItem -Path $Path -Recurse -Depth $Depth -Force -ErrorAction SilentlyContinue
-    } else {
-        Get-ChildItem -Path $Path -Recurse -Force -ErrorAction SilentlyContinue
-    }
-
-    $items = @($targetItem) + $childItems
-
-    foreach ($item in $items) {
-        try {
-            if ($Owner) {
-                $Output = Get-FileOwner -JustPath -Path $item.FullName -Resolve -AsHashTable -ErrorAction Stop
-                $Output['Attributes'] = $item.Attributes
-                [PSCustomObject] $Output
-            } else {
-                $Output = Get-FilePermission -Path $item.FullName -ResolveTypes -Extended -AsHashTable -ErrorAction Stop
-                foreach ($O in $Output) {
-                    $O['Attributes'] = $item.Attributes
-                    [PSCustomObject] $O
-                }
-            }
-        } catch {
-            Write-Warning "Get-PermissionsForPath - Failed to process '$($item.FullName)': $($_.Exception.Message)"
         }
     }
 }
