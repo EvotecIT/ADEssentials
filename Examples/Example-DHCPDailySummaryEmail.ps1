@@ -6,6 +6,13 @@ Import-Module ADEssentials -Force
 # Generate comprehensive DHCP summary
 $DHCPData = Get-WinADDHCPSummary -Extended -Verbose
 
+# Check if no DHCP servers were found
+if ($DHCPData.Statistics.TotalServers -eq 0) {
+    Write-Warning "No DHCP servers found in the environment. Cannot generate email report."
+    Write-Host "Consider running: Install-WindowsFeature -Name DHCP -IncludeManagementTools" -ForegroundColor Yellow
+    exit 0
+}
+
 # Determine email priority and subject based on issues found
 $Priority = 'Low'
 $SubjectEmoji = '💚'
@@ -122,10 +129,10 @@ $EmailBody = EmailBody {
     }
 
     # Info Issues Section (if any and not too many critical/warning issues)
-    if ($DHCPData.ValidationResults.Summary.TotalInfoIssues -gt 0 -and 
-        $DHCPData.ValidationResults.Summary.TotalCriticalIssues -eq 0 -and 
+    if ($DHCPData.ValidationResults.Summary.TotalInfoIssues -gt 0 -and
+        $DHCPData.ValidationResults.Summary.TotalCriticalIssues -eq 0 -and
         $DHCPData.ValidationResults.Summary.TotalWarningIssues -lt 5) {
-        
+
         EmailText -Text "ℹ️ Information Items" -Color Blue -FontSize 12pt -FontWeight bold
 
         # Missing Domain Name Option
@@ -139,7 +146,7 @@ $EmailBody = EmailBody {
 
     # Overall Server Status Table
     EmailText -Text "Server Status Overview" -Color Blue -FontSize 12pt -FontWeight bold
-    
+
     $ServerProperties = 'ServerName', 'Status', 'ScopeCount', 'ScopesWithIssues', 'PercentageInUse', 'IsDC', 'DHCPRole'
     EmailTable -DataTable $DHCPData.Servers {
         EmailTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Online' -BackgroundColor LightGreen -FailBackgroundColor Salmon -Inline
@@ -212,21 +219,21 @@ Write-Host "Warning Issues: $($DHCPData.ValidationResults.Summary.TotalWarningIs
 try {
     # Connect to Microsoft Graph (requires appropriate permissions)
     # Connect-MgGraph -Scopes 'Mail.Send'
-    
+
     # Send the email
     # Send-EmailMessage @EmailSplat
-    
+
     # For testing without actually sending, just display the email body
     Write-Host "Email body generated successfully. Enable sending by uncommenting the Send-EmailMessage line." -ForegroundColor Cyan
-    
+
     # Optionally save the email body to HTML file for preview
     $PreviewPath = "$env:TEMP\DHCP_Email_Preview_$(Get-Date -Format 'yyyyMMdd_HHmmss').html"
     $EmailBody | Out-File -FilePath $PreviewPath -Encoding UTF8
     Write-Host "Email preview saved to: $PreviewPath" -ForegroundColor Cyan
-    
+
 } catch {
     Write-Error "Failed to send email: $($_.Exception.Message)"
-    
+
     # Fallback: Generate HTML report
     Write-Host "Generating fallback HTML report..." -ForegroundColor Yellow
     $FallbackPath = "$env:TEMP\DHCP_Summary_$(Get-Date -Format 'yyyyMMdd_HHmmss').html"

@@ -113,6 +113,40 @@ function Get-WinADDHCPSummary {
 
     if ($ComputerName.Count -eq 0) {
         Write-Warning "Get-WinADDHCPSummary - No DHCP servers found"
+
+        # Initialize statistics with zero values for empty environments
+        $DHCPSummary.Statistics = [ordered] @{
+            TotalServers                = 0
+            ServersOnline              = 0
+            ServersOffline             = 0
+            ServersWithIssues          = 0
+            ServersWithoutIssues       = 0
+            TotalScopes                = 0
+            ScopesActive               = 0
+            ScopesInactive             = 0
+            ScopesWithIssues           = 0
+            ScopesWithoutIssues        = 0
+            TotalAddresses             = 0
+            AddressesInUse             = 0
+            AddressesFree              = 0
+            OverallPercentageInUse     = 0
+        }
+
+        # Initialize empty validation results
+        $DHCPSummary.ValidationResults = [ordered] @{
+            Summary = [ordered] @{
+                TotalCriticalIssues = 0
+                TotalWarningIssues  = 0
+                TotalInfoIssues     = 0
+                ScopesWithCritical  = 0
+                ScopesWithWarnings  = 0
+                ScopesWithInfo      = 0
+            }
+            Critical = @()
+            Warning  = @()
+            Info     = @()
+        }
+
         return $DHCPSummary
     }
 
