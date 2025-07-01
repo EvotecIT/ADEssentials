@@ -1,5 +1,5 @@
 ﻿Clear-Host
-Import-Module "C:\Support\GitHub\PSPublishModule\PSPublishModule.psd1" -Force
+Import-Module "PSPublishModule" -Force
 
 Invoke-ModuleBuild -ModuleName 'ADEssentials' {
     # Usual defaults as per standard module
@@ -27,7 +27,7 @@ Invoke-ModuleBuild -ModuleName 'ADEssentials' {
     New-ConfigurationManifest @Manifest
 
     New-ConfigurationModule -Type RequiredModule -Name 'PSSharedGoods' -Version Latest -Guid Auto
-    New-ConfigurationModule -Type RequiredModule -Name 'PSWriteHTML' -Version 1.27.0 -Guid Auto
+    New-ConfigurationModule -Type RequiredModule -Name 'PSWriteHTML' -Version 1.31.0 -Guid Auto
     New-ConfigurationModule -Type RequiredModule -Name 'PSEventViewer' -Version 1.0.22 -Guid Auto
     New-ConfigurationModule -Type ApprovedModule -Name @('PSSharedGoods', 'PSWriteColor', 'Connectimo', 'PSUnifi', 'PSWebToolbox', 'PSMyPassword')
 
@@ -172,6 +172,9 @@ Invoke-ModuleBuild -ModuleName 'ADEssentials' {
     )
     New-ConfigurationCommand -ModuleName 'DHCPServer' -CommandName @(
         'Get-WinADDHCP'
+        'Get-WinADDHCPSummary'
+        'Show-WinADDHCPSummary'
+        'Get-WinADDHCPHealthCheck'
     )
     New-ConfigurationCommand -ModuleName 'DNSServer' -CommandName @(
         'Get-WinADDnsInformation'
