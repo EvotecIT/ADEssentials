@@ -724,43 +724,89 @@ function Get-WinADDHCPSummary {
                 # DHCP Policies (advanced feature - may not be available on all DHCP servers)
                 try {
                     Write-Verbose "Get-WinADDHCPSummary - Checking for DHCP policies on $Computer"
-                    $Policies = Get-DhcpServerv4Policy -ComputerName $Computer -ErrorAction Stop
 
-                    if ($Policies -and $Policies.Count -gt 0) {
-                        Write-Verbose "Get-WinADDHCPSummary - Found $($Policies.Count) DHCP policies on $Computer"
+                    # Add more granular verbose messages to track where it might be hanging
+                    Write-Verbose "Get-WinADDHCPSummary - Attempting to enumerate DHCP policies on $Computer..."
 
-                        foreach ($Policy in $Policies) {
-                            Write-Verbose "Get-WinADDHCPSummary - Processing policy $($Policy.Name) on $Computer"
+                    try {
+                        $Policies = Get-DhcpServerv4Policy -ComputerName $Computer -ErrorAction Stop
+                        Write-Verbose "Get-WinADDHCPSummary - Successfully retrieved policy list from $Computer"
 
-                            $PolicyObject = [PSCustomObject] @{
-                                ServerName      = $Computer
-                                Name            = $Policy.Name
-                                ScopeId         = $Policy.ScopeId
-                                Description     = $Policy.Description
-                                Enabled         = if ($Policy.Enabled) { $Policy.Enabled } else { $false }
-                                ProcessingOrder = if ($Policy.ProcessingOrder) { $Policy.ProcessingOrder } else { 0 }
-                                Condition       = $Policy.Condition
-                                GatheredFrom    = $Computer
-                                GatheredDate    = Get-Date
+                        if ($Policies -and $Policies.Count -gt 0) {
+                            Write-Verbose "Get-WinADDHCPSummary - Found $($Policies.Count) DHCP policies on $Computer - starting individual processing"
+
+                            $PolicyCounter = 0
+                            foreach ($Policy in $Policies) {
+                                $PolicyCounter++
+                                try {
+                                    Write-Verbose "Get-WinADDHCPSummary - Processing policy [$PolicyCounter/$($Policies.Count)]: '$($Policy.Name)' on $Computer"
+
+                                    # Add a check for potentially problematic policy properties
+                                    $PolicyConditionText = if ($Policy.Condition) {
+                                        if ($Policy.Condition.ToString().Length -gt 100) {
+                                            "Complex condition (${($Policy.Condition.ToString().Length)} chars)"
+                                        } else {
+                                            $Policy.Condition.ToString()
+                                        }
+                                    } else {
+                                        "No condition"
+                                    }
+
+                                    Write-Verbose "Get-WinADDHCPSummary - Policy '$($Policy.Name)' details - Enabled: $($Policy.Enabled), Order: $($Policy.ProcessingOrder), Condition: $PolicyConditionText"
+
+                                    $PolicyObject = [PSCustomObject] @{
+                                        ServerName      = $Computer
+                                        Name            = $Policy.Name
+                                        ScopeId         = $Policy.ScopeId
+                                        Description     = $Policy.Description
+                                        Enabled         = if ($Policy.Enabled) { $Policy.Enabled } else { $false }
+                                        ProcessingOrder = if ($Policy.ProcessingOrder) { $Policy.ProcessingOrder } else { 0 }
+                                        Condition       = $PolicyConditionText
+                                        GatheredFrom    = $Computer
+                                        GatheredDate    = Get-Date
+                                    }
+                                    $DHCPSummary.Policies.Add($PolicyObject)
+                                    Write-Verbose "Get-WinADDHCPSummary - Successfully processed policy '$($Policy.Name)' on $Computer"
+                                } catch {
+                                    Write-Warning "Get-WinADDHCPSummary - Error processing individual policy '$($Policy.Name)' on $Computer`: $($_.Exception.Message)"
+                                    Write-Verbose "Get-WinADDHCPSummary - Continuing with next policy despite error..."
+                                }
                             }
-                            $DHCPSummary.Policies.Add($PolicyObject)
+                            Write-Verbose "Get-WinADDHCPSummary - Completed processing all $($Policies.Count) policies on $Computer"
+                        } else {
+                            Write-Verbose "Get-WinADDHCPSummary - No DHCP policies configured on $Computer"
                         }
-                    } else {
-                        Write-Verbose "Get-WinADDHCPSummary - No DHCP policies configured on $Computer"
+                    } catch {
+                        $ErrorMessage = $_.Exception.Message
+                        Write-Verbose "Get-WinADDHCPSummary - Policy enumeration failed on $Computer with error: $ErrorMessage"
+
+                        if ($ErrorMessage -like "*not found*" -or $ErrorMessage -like "*not supported*" -or $ErrorMessage -like "*not available*") {
+                            Write-Verbose "Get-WinADDHCPSummary - DHCP policies not available on $Computer (requires Windows Server 2012+ DHCP)"
+                        } elseif ($ErrorMessage -like "*RPC*" -or $ErrorMessage -like "*timeout*" -or $ErrorMessage -like "*network*") {
+                            Write-Warning "Get-WinADDHCPSummary - Network/RPC issue accessing DHCP policies on $Computer - this may indicate connectivity problems"
+                        } elseif ($ErrorMessage -like "*access*denied*" -or $ErrorMessage -like "*permission*") {
+                            Write-Warning "Get-WinADDHCPSummary - Access denied retrieving DHCP policies on $Computer - insufficient permissions"
+                        } else {
+                            Write-Warning "Get-WinADDHCPSummary - Unexpected error checking DHCP policies on $Computer`: $ErrorMessage"
+                        }
                     }
+
+                    Write-Verbose "Get-WinADDHCPSummary - DHCP policy processing completed for $Computer"
                 } catch {
-                    $ErrorMessage = $_.Exception.Message
-                    if ($ErrorMessage -like "*not found*" -or $ErrorMessage -like "*not supported*" -or $ErrorMessage -like "*not available*") {
-                        Write-Verbose "Get-WinADDHCPSummary - DHCP policies not available on $Computer (requires Windows Server 2012+ DHCP)"
-                    } else {
-                        Write-Verbose "Get-WinADDHCPSummary - Error checking DHCP policies on $Computer`: $ErrorMessage"
-                    }
+                    Write-Warning "Get-WinADDHCPSummary - Outer exception in DHCP policy processing for $Computer`: $($_.Exception.Message)"
                 }
 
                 # Reservations analysis for each scope
+                Write-Verbose "Get-WinADDHCPSummary - Starting reservations analysis for $($Scopes.Count) scopes on $Computer"
+                $ScopeReservationCounter = 0
                 foreach ($Scope in $Scopes) {
+                    $ScopeReservationCounter++
+                    Write-Verbose "Get-WinADDHCPSummary - Processing reservations for scope [$ScopeReservationCounter/$($Scopes.Count)]: $($Scope.ScopeId) on $Computer"
+
                     try {
                         $Reservations = Get-DhcpServerv4Reservation -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction Stop
+                        Write-Verbose "Get-WinADDHCPSummary - Found $($Reservations.Count) reservations in scope $($Scope.ScopeId) on $Computer"
+
                         foreach ($Reservation in $Reservations) {
                             $ReservationObject = [PSCustomObject] @{
                                 ServerName   = $Computer
@@ -776,14 +822,18 @@ function Get-WinADDHCPSummary {
                             $DHCPSummary.Reservations.Add($ReservationObject)
                         }
                     } catch {
-                        Write-Verbose "Get-WinADDHCPSummary - No reservations found for scope $($Scope.ScopeId) on $Computer"
+                        Write-Verbose "Get-WinADDHCPSummary - No reservations found for scope $($Scope.ScopeId) on $Computer (or access error: $($_.Exception.Message))"
                     }
 
                     # Active leases analysis (sample for high utilization scopes)
                     try {
+                        Write-Verbose "Get-WinADDHCPSummary - Checking lease information for scope $($Scope.ScopeId) on $Computer"
                         $CurrentScopeStats = Get-DhcpServerv4ScopeStatistics -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction Stop
                         if ($Scope.State -eq 'Active' -and $CurrentScopeStats.PercentageInUse -gt 75) {
+                            Write-Verbose "Get-WinADDHCPSummary - High utilization scope $($Scope.ScopeId) ($($CurrentScopeStats.PercentageInUse)%) - collecting lease sample on $Computer"
                             $Leases = Get-DhcpServerv4Lease -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction Stop | Select-Object -First 100
+                            Write-Verbose "Get-WinADDHCPSummary - Retrieved $($Leases.Count) lease samples for scope $($Scope.ScopeId) on $Computer"
+
                             foreach ($Lease in $Leases) {
                                 $LeaseObject = [PSCustomObject] @{
                                     ServerName      = $Computer
@@ -799,14 +849,19 @@ function Get-WinADDHCPSummary {
                                 }
                                 $DHCPSummary.Leases.Add($LeaseObject)
                             }
+                        } else {
+                            Write-Verbose "Get-WinADDHCPSummary - Scope $($Scope.ScopeId) on $Computer - utilization $($CurrentScopeStats.PercentageInUse)% (below threshold for lease collection)"
                         }
                     } catch {
-                        Write-Verbose "Get-WinADDHCPSummary - Failed to get leases for scope $($Scope.ScopeId) on $Computer"
+                        Write-Verbose "Get-WinADDHCPSummary - Failed to get leases for scope $($Scope.ScopeId) on $Computer`: $($_.Exception.Message)"
                     }
 
                     # Enhanced options collection
+                    Write-Verbose "Get-WinADDHCPSummary - Collecting DHCP options for scope $($Scope.ScopeId) on $Computer"
                     try {
                         $ScopeOptions = Get-DhcpServerv4OptionValue -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction Stop
+                        Write-Verbose "Get-WinADDHCPSummary - Found $($ScopeOptions.Count) options for scope $($Scope.ScopeId) on $Computer"
+
                         foreach ($Option in $ScopeOptions) {
                             $OptionObject = [PSCustomObject] @{
                                 ServerName   = $Computer
@@ -823,9 +878,10 @@ function Get-WinADDHCPSummary {
                             $DHCPSummary.Options.Add($OptionObject)
                         }
                     } catch {
-                        Write-Verbose "Get-WinADDHCPSummary - Failed to get options for scope $($Scope.ScopeId) on $Computer"
+                        Write-Verbose "Get-WinADDHCPSummary - Failed to get options for scope $($Scope.ScopeId) on $Computer`: $($_.Exception.Message)"
                     }
                 }
+                Write-Verbose "Get-WinADDHCPSummary - Completed reservations and options analysis for all scopes on $Computer"
 
             } catch {
                 Write-Warning "Get-WinADDHCPSummary - Failed to get enhanced server configuration from $Computer`: $($_.Exception.Message)"
