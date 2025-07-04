@@ -24,17 +24,19 @@ function Get-WinDHCPServerInfo {
     )
 
     $ServerInfo = [ordered] @{
-        ServerName      = $ComputerName
-        IsReachable     = $false
-        PingSuccessful  = $false
-        DNSResolvable   = $false
-        DHCPResponding  = $false
-        Version         = $null
-        Status          = 'Unknown'
-        ErrorMessage    = $null
+        ServerName       = $ComputerName
+        IsReachable      = $false
+        PingSuccessful   = $false
+        DNSResolvable    = $false
+        DHCPResponding   = $false
+        Version          = $null
+        Status           = 'Unknown'
+        ErrorMessage     = $null
         ValidationIssues = [System.Collections.Generic.List[string]]::new()
-        IPAddress       = $null
-        ResponseTimeMs  = $null
+        IPAddress        = $null
+        ResponseTimeMs   = $null
+        ReverseDNSName   = $null
+        ReverseDNSValid  = $false
     }
 
     # Step 1: DNS Resolution Test
@@ -56,13 +58,38 @@ function Get-WinDHCPServerInfo {
         $PingResult = Test-Connection -ComputerName $PingTarget -Count 1 -ErrorAction Stop
         $ServerInfo.PingSuccessful = $true
         $ServerInfo.ResponseTimeMs = $PingResult.ResponseTime
-        Write-Verbose "Get-WinDHCPServerInfo - Ping successful to $PingTarget (${$ServerInfo.ResponseTimeMs}ms)"
+        Write-Verbose "Get-WinDHCPServerInfo - Ping successful to $PingTarget ($($ServerInfo.ResponseTimeMs)ms)"
     } catch {
         $ServerInfo.ValidationIssues.Add("Ping failed: $($_.Exception.Message)")
         Write-Verbose "Get-WinDHCPServerInfo - Ping failed to $PingTarget`: $($_.Exception.Message)"
     }
 
-    # Step 3: DHCP Service Test
+    # Step 3: Reverse DNS Test (only if we have an IP address)
+    if ($ServerInfo.IPAddress) {
+        Write-Verbose "Get-WinDHCPServerInfo - Testing reverse DNS resolution for $($ServerInfo.IPAddress)"
+        try {
+            $ReverseDNSResult = Resolve-DnsName -Name $ServerInfo.IPAddress -Type PTR -ErrorAction Stop
+            if ($ReverseDNSResult -and $ReverseDNSResult.NameHost) {
+                $ServerInfo.ReverseDNSName = $ReverseDNSResult.NameHost
+                $ServerInfo.ReverseDNSValid = $true
+                Write-Verbose "Get-WinDHCPServerInfo - Reverse DNS successful: $($ServerInfo.IPAddress) -> $($ServerInfo.ReverseDNSName)"
+
+                # Check if reverse DNS matches original hostname (optional validation)
+                if ($ServerInfo.ReverseDNSName -ne $ComputerName) {
+                    $ServerInfo.ValidationIssues.Add("Reverse DNS mismatch: $($ServerInfo.ReverseDNSName) != $ComputerName")
+                    Write-Verbose "Get-WinDHCPServerInfo - Reverse DNS name mismatch detected"
+                }
+            }
+        } catch {
+            $ServerInfo.ValidationIssues.Add("Reverse DNS failed: $($_.Exception.Message)")
+            Write-Verbose "Get-WinDHCPServerInfo - Reverse DNS failed for $($ServerInfo.IPAddress): $($_.Exception.Message)"
+        }
+    } else {
+        $ServerInfo.ValidationIssues.Add("No IP address available for reverse DNS test")
+        Write-Verbose "Get-WinDHCPServerInfo - Skipping reverse DNS test - no IP address available"
+    }
+
+    # Step 4: DHCP Service Test
     Write-Verbose "Get-WinDHCPServerInfo - Testing DHCP service on $ComputerName"
     try {
         $DHCPServerInfo = Get-DhcpServerVersion -ComputerName $ComputerName -ErrorAction Stop

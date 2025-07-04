@@ -133,7 +133,7 @@
         $ShouldTest = $ServersToTest[$DHCP.DNSName.ToLower()] -eq $true
 
         $DHCPObject = [ordered] @{
-            DNSName             = $DHCP.DNSName
+            DNSName            = $DHCP.DNSName
             IPAddress          = $DHCP.IPAddress
             IsDC               = $false
             IsRODC             = $false
@@ -145,6 +145,12 @@
             DNSType            = $null
             DHCPVersion        = $null
             IsReachable        = $false
+            PingSuccessful     = $null
+            DNSResolvable      = $null
+            DHCPResponding     = $null
+            ReverseDNSName     = $null
+            ReverseDNSValid    = $null
+            ResponseTimeMs     = $null
             ConnectivityStatus = if ($ShouldTest) { 'Unknown' } else { 'Not Tested' }
             ErrorMessage       = $null
             TestedDate         = if ($ShouldTest) { $null } else { 'N/A' }
@@ -176,20 +182,34 @@
 
         # Test connectivity and get version only for specified servers
         if ($ShouldTest -and $TestConnectivity) {
-            try {
-                Write-Verbose "Get-WinADDHCP - Testing connectivity to $($DHCP.DNSName)"
-                $DHCPServerInfo = Get-DhcpServerVersion -ComputerName $DHCP.DNSName -ErrorAction Stop
-                $DHCPObject['IsReachable'] = $true
+            Write-Verbose "Get-WinADDHCP - Performing comprehensive validation for $($DHCP.DNSName)"
+            $ValidationResult = Get-WinDHCPServerInfo -ComputerName $DHCP.DNSName
+
+            # Update DHCP object with comprehensive validation results
+            $DHCPObject['IsReachable'] = $ValidationResult.IsReachable
+            $DHCPObject['PingSuccessful'] = $ValidationResult.PingSuccessful
+            $DHCPObject['DNSResolvable'] = $ValidationResult.DNSResolvable
+            $DHCPObject['DHCPResponding'] = $ValidationResult.DHCPResponding
+            $DHCPObject['DHCPVersion'] = $ValidationResult.Version
+            $DHCPObject['ReverseDNSName'] = $ValidationResult.ReverseDNSName
+            $DHCPObject['ReverseDNSValid'] = $ValidationResult.ReverseDNSValid
+            $DHCPObject['ResponseTimeMs'] = $ValidationResult.ResponseTimeMs
+            $DHCPObject['ErrorMessage'] = $ValidationResult.ErrorMessage
+            $DHCPObject['TestedDate'] = Get-Date
+
+            # Set connectivity status based on results
+            if ($ValidationResult.DHCPResponding) {
                 $DHCPObject['ConnectivityStatus'] = 'Online'
-                $DHCPObject['DHCPVersion'] = "$($DHCPServerInfo.MajorVersion).$($DHCPServerInfo.MinorVersion)"
-                $DHCPObject['TestedDate'] = Get-Date
-                Write-Verbose "Get-WinADDHCP - Successfully connected to $($DHCP.DNSName), version: $($DHCPObject['DHCPVersion'])"
-            } catch {
-                $DHCPObject['IsReachable'] = $false
-                $DHCPObject['ConnectivityStatus'] = 'Unreachable'
-                $DHCPObject['ErrorMessage'] = $_.Exception.Message
-                $DHCPObject['TestedDate'] = Get-Date
-                Write-Warning "Get-WinADDHCP - Cannot reach DHCP server $($DHCP.DNSName): $($_.Exception.Message)"
+                Write-Verbose "Get-WinADDHCP - Successfully connected to $($DHCP.DNSName), version: $($ValidationResult.Version)"
+            } elseif ($ValidationResult.PingSuccessful) {
+                $DHCPObject['ConnectivityStatus'] = 'Reachable but DHCP not responding'
+                Write-Warning "Get-WinADDHCP - Server $($DHCP.DNSName) responds to ping but DHCP service is not accessible"
+            } elseif ($ValidationResult.DNSResolvable) {
+                $DHCPObject['ConnectivityStatus'] = 'DNS OK but unreachable'
+                Write-Warning "Get-WinADDHCP - Server $($DHCP.DNSName) resolves in DNS but does not respond to ping"
+            } else {
+                $DHCPObject['ConnectivityStatus'] = 'DNS resolution failed'
+                Write-Warning "Get-WinADDHCP - Cannot resolve DHCP server $($DHCP.DNSName) in DNS"
             }
         } elseif ($ShouldTest -and -not $TestConnectivity) {
             # Server was specified but TestConnectivity not used
