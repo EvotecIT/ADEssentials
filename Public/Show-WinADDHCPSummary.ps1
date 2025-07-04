@@ -44,6 +44,10 @@ function Show-WinADDHCPSummary {
     .PARAMETER PassThru
     Returns the DHCP summary data object along with generating the HTML report.
 
+    .PARAMETER TestMode
+    Generates the HTML report using sample test data instead of querying real DHCP servers.
+    Useful for quickly testing HTML layout and structure without running through all servers.
+
     .EXAMPLE
     Show-WinADDHCPSummary
 
@@ -53,6 +57,11 @@ function Show-WinADDHCPSummary {
     Show-WinADDHCPSummary -FilePath "C:\Reports\DHCP_Report.html" -HideHTML
 
     Generates an HTML report and saves it to the specified path without opening in browser.
+
+    .EXAMPLE
+    Show-WinADDHCPSummary -TestMode -Online
+
+    Generates a test HTML report using sample data for quick layout testing and validation.
 
     .EXAMPLE
     Show-WinADDHCPSummary -Forest "example.com" -IncludeDomains "domain1.com" -Online
@@ -91,7 +100,8 @@ function Show-WinADDHCPSummary {
         [string] $FilePath,
         [switch] $Online,
         [switch] $HideHTML,
-        [switch] $PassThru
+        [switch] $PassThru,
+        [switch] $TestMode
     )
 
     # Initialize reporting version info
@@ -105,21 +115,66 @@ function Show-WinADDHCPSummary {
 
     Write-Verbose "Show-WinADDHCPSummary - Starting DHCP report generation"
 
-    # Gather DHCP data
-    $GetWinADDHCPSummarySplat = @{
-        Extended = $true
+    # Test Mode: Generate sample data for quick HTML testing
+    if ($TestMode) {
+        Write-Verbose "Show-WinADDHCPSummary - Running in test mode with sample data"
+        $DHCPData = @{
+            Servers = @(
+                [PSCustomObject]@{ ComputerName = 'dhcp01.domain.com'; Status = 'Online'; Version = '10.0'; PingSuccessful = $true; DNSResolvable = $true; DHCPResponding = $true; TotalScopes = 15; ScopesWithIssues = 2; PercentageInUse = 45; IsADDomainController = $false }
+                [PSCustomObject]@{ ComputerName = 'dhcp02.domain.com'; Status = 'Unreachable'; Version = $null; PingSuccessful = $false; DNSResolvable = $true; DHCPResponding = $false; TotalScopes = 0; ScopesWithIssues = 0; PercentageInUse = 0; IsADDomainController = $false }
+                [PSCustomObject]@{ ComputerName = 'dc01.domain.com'; Status = 'Online'; Version = '10.0'; PingSuccessful = $true; DNSResolvable = $true; DHCPResponding = $true; TotalScopes = 8; ScopesWithIssues = 1; PercentageInUse = 78; IsADDomainController = $true }
+            )
+            Scopes = @(
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '192.168.1.0'; Name = 'Corporate LAN'; State = 'Active'; PercentageInUse = 85; AddressesInUse = 170; AddressesFree = 30; HasIssues = $true; Issues = @('High utilization') }
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '10.1.0.0'; Name = 'Guest Network'; State = 'Active'; PercentageInUse = 25; AddressesInUse = 50; AddressesFree = 150; HasIssues = $false; Issues = @() }
+                [PSCustomObject]@{ ServerName = 'dc01.domain.com'; ScopeId = '172.16.1.0'; Name = 'Server VLAN'; State = 'Active'; PercentageInUse = 92; AddressesInUse = 92; AddressesFree = 8; HasIssues = $true; Issues = @('Critical utilization', 'No failover configured') }
+            )
+            ScopesWithIssues = @(
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '192.168.1.0'; Name = 'Corporate LAN'; State = 'Active'; PercentageInUse = 85; HasIssues = $true; Issues = @('High utilization') }
+                [PSCustomObject]@{ ServerName = 'dc01.domain.com'; ScopeId = '172.16.1.0'; Name = 'Server VLAN'; State = 'Active'; PercentageInUse = 92; HasIssues = $true; Issues = @('Critical utilization', 'No failover configured') }
+            )
+            IPv6Scopes = @()
+            MulticastScopes = @()
+            SecurityFilters = @(
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; FilteringMode = 'Deny'; Allow = $false; Deny = $true }
+                [PSCustomObject]@{ ServerName = 'dc01.domain.com'; FilteringMode = 'None'; Allow = $false; Deny = $false }
+            )
+            Policies = @(
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; Name = 'Corporate Devices'; Enabled = $true; ProcessingOrder = 1; Condition = 'Vendor Class matches Corporate' }
+            )
+            ServerSettings = @(
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; IsAuthorized = $true; IsDomainJoined = $true; ActivatePolicies = $true; ConflictDetectionAttempts = 2 }
+                [PSCustomObject]@{ ServerName = 'dc01.domain.com'; IsAuthorized = $true; IsDomainJoined = $true; ActivatePolicies = $false; ConflictDetectionAttempts = 0 }
+            )
+            NetworkBindings = @(
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; InterfaceAlias = 'Ethernet'; IPAddress = '192.168.1.10'; State = $true }
+            )
+            Reservations = @()
+            AuditLogs = @()
+            Databases = @()
+            Statistics = @{
+                TotalServers = 3; ServersOnline = 2; ServersOffline = 1; ServersWithIssues = 1
+                TotalScopes = 3; ScopesActive = 3; ScopesInactive = 0; ScopesWithIssues = 2
+                TotalAddresses = 450; AddressesInUse = 312; AddressesFree = 138; OverallPercentageInUse = 69
+            }
+        }
+    } else {
+        # Gather DHCP data
+        $GetWinADDHCPSummarySplat = @{
+            Extended = $true
+        }
+
+        if ($Forest) { $GetWinADDHCPSummarySplat.Forest = $Forest }
+        if ($ExcludeDomains) { $GetWinADDHCPSummarySplat.ExcludeDomains = $ExcludeDomains }
+        if ($ExcludeDomainControllers) { $GetWinADDHCPSummarySplat.ExcludeDomainControllers = $ExcludeDomainControllers }
+        if ($IncludeDomains) { $GetWinADDHCPSummarySplat.IncludeDomains = $IncludeDomains }
+        if ($IncludeDomainControllers) { $GetWinADDHCPSummarySplat.IncludeDomainControllers = $IncludeDomainControllers }
+        if ($ComputerName) { $GetWinADDHCPSummarySplat.ComputerName = $ComputerName }
+        if ($SkipRODC) { $GetWinADDHCPSummarySplat.SkipRODC = $SkipRODC }
+        if ($ExtendedForestInformation) { $GetWinADDHCPSummarySplat.ExtendedForestInformation = $ExtendedForestInformation }
+
+        $DHCPData = Get-WinADDHCPSummary @GetWinADDHCPSummarySplat
     }
-
-    if ($Forest) { $GetWinADDHCPSummarySplat.Forest = $Forest }
-    if ($ExcludeDomains) { $GetWinADDHCPSummarySplat.ExcludeDomains = $ExcludeDomains }
-    if ($ExcludeDomainControllers) { $GetWinADDHCPSummarySplat.ExcludeDomainControllers = $ExcludeDomainControllers }
-    if ($IncludeDomains) { $GetWinADDHCPSummarySplat.IncludeDomains = $IncludeDomains }
-    if ($IncludeDomainControllers) { $GetWinADDHCPSummarySplat.IncludeDomainControllers = $IncludeDomainControllers }
-    if ($ComputerName) { $GetWinADDHCPSummarySplat.ComputerName = $ComputerName }
-    if ($SkipRODC) { $GetWinADDHCPSummarySplat.SkipRODC = $SkipRODC }
-    if ($ExtendedForestInformation) { $GetWinADDHCPSummarySplat.ExtendedForestInformation = $ExtendedForestInformation }
-
-    $DHCPData = Get-WinADDHCPSummary @GetWinADDHCPSummarySplat
 
     if (-not $DHCPData) {
         Write-Warning "Show-WinADDHCPSummary - No DHCP data available to generate report"
@@ -245,78 +300,68 @@ function Show-WinADDHCPSummary {
                 $OverallPercentageInUse = if ($DHCPData.Statistics.OverallPercentageInUse) { $DHCPData.Statistics.OverallPercentageInUse } else { 0 }
 
                 New-HTMLSection -HeaderText "DHCP Infrastructure Statistics" {
-                    New-HTMLPanel {
-                        # DHCP Infrastructure Overview using Info Cards
-                        New-HTMLSection -HeaderText "Infrastructure Overview" -Invisible {
-                            New-HTMLSection -Invisible -Density Comfortable {
-                                # Server Status Cards
-                                New-HTMLInfoCard -Title "Total Servers" -Number $TotalServers -Subtitle "DHCP Infrastructure" -Icon "🖥️" -TitleColor 'DodgerBlue' -NumberColor 'Navy' -ShadowColor 'rgba(30, 144, 255, 0.15)'
+                    # Infrastructure Overview using Info Cards - organized in logical rows
+                    New-HTMLSection -HeaderText "Server Status Overview" -Invisible {
+                        New-HTMLInfoCard -Title "Total Servers" -Number $TotalServers -Subtitle "DHCP Infrastructure" -Icon "🖥️" -TitleColor 'DodgerBlue' -NumberColor 'Navy' -ShadowColor 'rgba(30, 144, 255, 0.15)'
+                        New-HTMLInfoCard -Title "Online Servers" -Number $ServersOnline -Subtitle "Operational" -Icon "✅" -TitleColor 'LimeGreen' -NumberColor 'DarkGreen' -ShadowColor 'rgba(50, 205, 50, 0.15)'
 
-                                New-HTMLInfoCard -Title "Online Servers" -Number $ServersOnline -Subtitle "Operational" -Icon "✅" -TitleColor 'LimeGreen' -NumberColor 'DarkGreen' -ShadowColor 'rgba(50, 205, 50, 0.15)'
-
-                                if ($ServersOffline -gt 0) {
-                                    New-HTMLInfoCard -Title "Offline Servers" -Number $ServersOffline -Subtitle "Need Attention" -Icon "❌" -TitleColor 'Crimson' -NumberColor 'DarkRed' -ShadowColor 'rgba(220, 20, 60, 0.2)' -ShadowIntensity Bold
-                                } else {
-                                    New-HTMLInfoCard -Title "Offline Servers" -Number $ServersOffline -Subtitle "All Online" -Icon "🎯" -TitleColor 'LimeGreen' -NumberColor 'DarkGreen' -ShadowColor 'rgba(50, 205, 50, 0.15)'
-                                }
-
-                                if ($ServersWithIssues -gt 0) {
-                                    New-HTMLInfoCard -Title "Servers with Issues" -Number $ServersWithIssues -Subtitle "Configuration Issues" -Icon "⚠️" -TitleColor 'Orange' -NumberColor 'DarkOrange' -ShadowColor 'rgba(255, 165, 0, 0.2)'
-                                } else {
-                                    New-HTMLInfoCard -Title "Servers with Issues" -Number $ServersWithIssues -Subtitle "All Clean" -Icon "✨" -TitleColor 'LimeGreen' -NumberColor 'DarkGreen' -ShadowColor 'rgba(50, 205, 50, 0.15)'
-                                }
-                            }
+                        if ($ServersOffline -gt 0) {
+                            New-HTMLInfoCard -Title "Offline Servers" -Number $ServersOffline -Subtitle "Need Attention" -Icon "❌" -TitleColor 'Crimson' -NumberColor 'DarkRed' -ShadowColor 'rgba(220, 20, 60, 0.2)' -ShadowIntensity Bold
+                        } else {
+                            New-HTMLInfoCard -Title "Offline Servers" -Number $ServersOffline -Subtitle "All Online" -Icon "🎯" -TitleColor 'LimeGreen' -NumberColor 'DarkGreen' -ShadowColor 'rgba(50, 205, 50, 0.15)'
                         }
 
-                        New-HTMLSection -HeaderText "Scope Statistics" -Invisible {
-                            New-HTMLSection -Invisible -Density Comfortable {
-                                # Scope Status Cards
-                                New-HTMLInfoCard -Title "Total Scopes" -Number $TotalScopes -Subtitle "All Configured Scopes" -Icon "📋" -TitleColor 'DodgerBlue' -NumberColor 'Navy' -ShadowColor 'rgba(30, 144, 255, 0.15)'
-
-                                New-HTMLInfoCard -Title "Active Scopes" -Number $ScopesActive -Subtitle "Currently Serving" -Icon "🟢" -TitleColor 'LimeGreen' -NumberColor 'DarkGreen' -ShadowColor 'rgba(50, 205, 50, 0.15)'
-
-                                if ($ScopesInactive -gt 0) {
-                                    New-HTMLInfoCard -Title "Inactive Scopes" -Number $ScopesInactive -Subtitle "Disabled" -Icon "🔴" -TitleColor 'Orange' -NumberColor 'DarkOrange' -ShadowColor 'rgba(255, 165, 0, 0.15)'
-                                } else {
-                                    New-HTMLInfoCard -Title "Inactive Scopes" -Number $ScopesInactive -Subtitle "All Active" -Icon "✅" -TitleColor 'LimeGreen' -NumberColor 'DarkGreen' -ShadowColor 'rgba(50, 205, 50, 0.15)'
-                                }
-
-                                if ($ScopesWithIssues -gt 0) {
-                                    New-HTMLInfoCard -Title "Scopes with Issues" -Number $ScopesWithIssues -Subtitle "Need Review" -Icon "🔧" -TitleColor 'Crimson' -NumberColor 'DarkRed' -ShadowColor 'rgba(220, 20, 60, 0.2)' -ShadowIntensity Bold
-                                } else {
-                                    New-HTMLInfoCard -Title "Scopes with Issues" -Number $ScopesWithIssues -Subtitle "All Configured" -Icon "💯" -TitleColor 'LimeGreen' -NumberColor 'DarkGreen' -ShadowColor 'rgba(50, 205, 50, 0.15)'
-                                }
-                            }
-                        }
-
-                        New-HTMLSection -HeaderText "Address Pool Utilization" -Invisible {
-                            New-HTMLSection -Invisible -Density Comfortable {
-                                # Address Pool Cards
-                                New-HTMLInfoCard -Title "Total IP Addresses" -Number $TotalAddresses.ToString("N0") -Subtitle "Pool Capacity" -Icon "🏊‍♂️" -TitleColor 'DodgerBlue' -NumberColor 'Navy' -ShadowColor 'rgba(30, 144, 255, 0.15)'
-
-                                if ($OverallPercentageInUse -gt 80) {
-                                    New-HTMLInfoCard -Title "Addresses In Use" -Number $AddressesInUse.ToString("N0") -Subtitle "High Utilization" -Icon "🚨" -TitleColor 'Crimson' -NumberColor 'DarkRed' -ShadowColor 'rgba(220, 20, 60, 0.25)' -ShadowIntensity ExtraBold
-                                } elseif ($OverallPercentageInUse -gt 60) {
-                                    New-HTMLInfoCard -Title "Addresses In Use" -Number $AddressesInUse.ToString("N0") -Subtitle "Moderate Usage" -Icon "⚠️" -TitleColor 'Orange' -NumberColor 'DarkOrange' -ShadowColor 'rgba(255, 165, 0, 0.2)'
-                                } else {
-                                    New-HTMLInfoCard -Title "Addresses In Use" -Number $AddressesInUse.ToString("N0") -Subtitle "Healthy Usage" -Icon "📊" -TitleColor 'LimeGreen' -NumberColor 'DarkGreen' -ShadowColor 'rgba(50, 205, 50, 0.15)'
-                                }
-
-                                New-HTMLInfoCard -Title "Addresses Available" -Number $AddressesFree.ToString("N0") -Subtitle "Ready for Assignment" -Icon "🆓" -TitleColor 'LimeGreen' -NumberColor 'DarkGreen' -ShadowColor 'rgba(50, 205, 50, 0.15)'
-
-                                if ($OverallPercentageInUse -gt 90) {
-                                    New-HTMLInfoCard -Title "Overall Utilization" -Number "$OverallPercentageInUse%" -Subtitle "Critical Level" -Icon "🔥" -TitleColor 'Crimson' -NumberColor 'DarkRed' -ShadowColor 'rgba(220, 20, 60, 0.3)' -ShadowIntensity ExtraBold -ShadowDirection 'All'
-                                } elseif ($OverallPercentageInUse -gt 75) {
-                                    New-HTMLInfoCard -Title "Overall Utilization" -Number "$OverallPercentageInUse%" -Subtitle "High Usage" -Icon "📈" -TitleColor 'Orange' -NumberColor 'DarkOrange' -ShadowColor 'rgba(255, 165, 0, 0.25)' -ShadowIntensity Bold
-                                } elseif ($OverallPercentageInUse -gt 50) {
-                                    New-HTMLInfoCard -Title "Overall Utilization" -Number "$OverallPercentageInUse%" -Subtitle "Moderate Usage" -Icon "📊" -TitleColor 'DodgerBlue' -NumberColor 'Navy' -ShadowColor 'rgba(30, 144, 255, 0.15)'
-                                } else {
-                                    New-HTMLInfoCard -Title "Overall Utilization" -Number "$OverallPercentageInUse%" -Subtitle "Low Usage" -Icon "🌱" -TitleColor 'LimeGreen' -NumberColor 'DarkGreen' -ShadowColor 'rgba(50, 205, 50, 0.15)'
-                                }
-                            }
+                        if ($ServersWithIssues -gt 0) {
+                            New-HTMLInfoCard -Title "Servers with Issues" -Number $ServersWithIssues -Subtitle "Configuration Issues" -Icon "⚠️" -TitleColor 'Orange' -NumberColor 'DarkOrange' -ShadowColor 'rgba(255, 165, 0, 0.2)'
+                        } else {
+                            New-HTMLInfoCard -Title "Servers with Issues" -Number $ServersWithIssues -Subtitle "All Clean" -Icon "✨" -TitleColor 'LimeGreen' -NumberColor 'DarkGreen' -ShadowColor 'rgba(50, 205, 50, 0.15)'
                         }
                     }
 
+                    New-HTMLSection -HeaderText "Scope Status Overview" -Invisible {
+                        New-HTMLInfoCard -Title "Total Scopes" -Number $TotalScopes -Subtitle "All Configured Scopes" -Icon "📋" -TitleColor 'DodgerBlue' -NumberColor 'Navy' -ShadowColor 'rgba(30, 144, 255, 0.15)'
+                        New-HTMLInfoCard -Title "Active Scopes" -Number $ScopesActive -Subtitle "Currently Serving" -Icon "🟢" -TitleColor 'LimeGreen' -NumberColor 'DarkGreen' -ShadowColor 'rgba(50, 205, 50, 0.15)'
+
+                        if ($ScopesInactive -gt 0) {
+                            New-HTMLInfoCard -Title "Inactive Scopes" -Number $ScopesInactive -Subtitle "Disabled" -Icon "🔴" -TitleColor 'Orange' -NumberColor 'DarkOrange' -ShadowColor 'rgba(255, 165, 0, 0.15)'
+                        } else {
+                            New-HTMLInfoCard -Title "Inactive Scopes" -Number $ScopesInactive -Subtitle "All Active" -Icon "✅" -TitleColor 'LimeGreen' -NumberColor 'DarkGreen' -ShadowColor 'rgba(50, 205, 50, 0.15)'
+                        }
+
+                        if ($ScopesWithIssues -gt 0) {
+                            New-HTMLInfoCard -Title "Scopes with Issues" -Number $ScopesWithIssues -Subtitle "Need Review" -Icon "🔧" -TitleColor 'Crimson' -NumberColor 'DarkRed' -ShadowColor 'rgba(220, 20, 60, 0.2)' -ShadowIntensity Bold
+                        } else {
+                            New-HTMLInfoCard -Title "Scopes with Issues" -Number $ScopesWithIssues -Subtitle "All Configured" -Icon "💯" -TitleColor 'LimeGreen' -NumberColor 'DarkGreen' -ShadowColor 'rgba(50, 205, 50, 0.15)'
+                        }
+                    }
+
+                    New-HTMLSection -HeaderText "Address Pool Utilization" -Invisible {
+                        New-HTMLInfoCard -Title "Total IP Addresses" -Number $TotalAddresses.ToString("N0") -Subtitle "Pool Capacity" -Icon "🏊‍♂️" -TitleColor 'DodgerBlue' -NumberColor 'Navy' -ShadowColor 'rgba(30, 144, 255, 0.15)'
+
+                        if ($OverallPercentageInUse -gt 80) {
+                            New-HTMLInfoCard -Title "Addresses In Use" -Number $AddressesInUse.ToString("N0") -Subtitle "High Utilization" -Icon "🚨" -TitleColor 'Crimson' -NumberColor 'DarkRed' -ShadowColor 'rgba(220, 20, 60, 0.25)' -ShadowIntensity ExtraBold
+                        } elseif ($OverallPercentageInUse -gt 60) {
+                            New-HTMLInfoCard -Title "Addresses In Use" -Number $AddressesInUse.ToString("N0") -Subtitle "Moderate Usage" -Icon "⚠️" -TitleColor 'Orange' -NumberColor 'DarkOrange' -ShadowColor 'rgba(255, 165, 0, 0.2)'
+                        } else {
+                            New-HTMLInfoCard -Title "Addresses In Use" -Number $AddressesInUse.ToString("N0") -Subtitle "Healthy Usage" -Icon "📊" -TitleColor 'LimeGreen' -NumberColor 'DarkGreen' -ShadowColor 'rgba(50, 205, 50, 0.15)'
+                        }
+
+                        New-HTMLInfoCard -Title "Addresses Available" -Number $AddressesFree.ToString("N0") -Subtitle "Ready for Assignment" -Icon "🆓" -TitleColor 'LimeGreen' -NumberColor 'DarkGreen' -ShadowColor 'rgba(50, 205, 50, 0.15)'
+
+                        if ($OverallPercentageInUse -gt 90) {
+                            New-HTMLInfoCard -Title "Overall Utilization" -Number "$OverallPercentageInUse%" -Subtitle "Critical Level" -Icon "🔥" -TitleColor 'Crimson' -NumberColor 'DarkRed' -ShadowColor 'rgba(220, 20, 60, 0.3)' -ShadowIntensity ExtraBold -ShadowDirection 'All'
+                        } elseif ($OverallPercentageInUse -gt 75) {
+                            New-HTMLInfoCard -Title "Overall Utilization" -Number "$OverallPercentageInUse%" -Subtitle "High Usage" -Icon "📈" -TitleColor 'Orange' -NumberColor 'DarkOrange' -ShadowColor 'rgba(255, 165, 0, 0.25)' -ShadowIntensity Bold
+                        } elseif ($OverallPercentageInUse -gt 50) {
+                            New-HTMLInfoCard -Title "Overall Utilization" -Number "$OverallPercentageInUse%" -Subtitle "Moderate Usage" -Icon "📊" -TitleColor 'DodgerBlue' -NumberColor 'Navy' -ShadowColor 'rgba(30, 144, 255, 0.15)'
+                        } else {
+                            New-HTMLInfoCard -Title "Overall Utilization" -Number "$OverallPercentageInUse%" -Subtitle "Low Usage" -Icon "🌱" -TitleColor 'LimeGreen' -NumberColor 'DarkGreen' -ShadowColor 'rgba(50, 205, 50, 0.15)'
+                        }
+                    }
+                }
+
+                # Charts Section - separate and organized
+                New-HTMLSection -HeaderText "Visual Analytics" {
                     New-HTMLPanel {
                         New-HTMLChart {
                             New-ChartPie -Name 'Servers Online' -Value $DHCPData.Statistics.ServersOnline -Color LightGreen
@@ -427,17 +472,21 @@ function Show-WinADDHCPSummary {
             }
 
             New-HTMLTab -TabName 'Infrastructure' {
-                New-HTMLSection -HeaderText "DHCP Servers" {
+                # Enhanced Server Health Status
+                New-HTMLSection -HeaderText "Server Health & Connectivity Analysis" {
                     New-HTMLTable -DataTable $DHCPData.Servers -Filtering {
                         New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Online' -BackgroundColor LightGreen -FailBackgroundColor Salmon
+                        New-HTMLTableCondition -Name 'DHCPResponding' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightGreen -FailBackgroundColor Salmon
+                        New-HTMLTableCondition -Name 'PingSuccessful' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightGreen -FailBackgroundColor Orange
+                        New-HTMLTableCondition -Name 'DNSResolvable' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightGreen -FailBackgroundColor Red -Color White
                         New-HTMLTableCondition -Name 'ScopesWithIssues' -ComparisonType number -Operator gt -Value 0 -BackgroundColor Orange -HighlightHeaders 'ScopesWithIssues'
                         New-HTMLTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 80 -BackgroundColor Salmon -HighlightHeaders 'PercentageInUse'
                         New-HTMLTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 60 -BackgroundColor Orange -HighlightHeaders 'PercentageInUse'
                         New-HTMLTableCondition -Name 'IsADDomainController' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightBlue -HighlightHeaders 'IsADDomainController'
-                    } -DataStore JavaScript
+                    } -DataStore JavaScript -Title "DHCP Server Connectivity & Health Analysis" -Buttons @('copyHtml5', 'excelHtml5', 'csvHtml5') -SearchBuilder
                 }
 
-                New-HTMLSection -HeaderText "DHCP Scopes" {
+                New-HTMLSection -HeaderText "DHCP Scopes Overview" {
                     New-HTMLTable -DataTable $DHCPData.Scopes -Filtering {
                         New-HTMLTableCondition -Name 'State' -ComparisonType string -Operator eq -Value 'Active' -BackgroundColor LightGreen -FailBackgroundColor Orange
                         New-HTMLTableCondition -Name 'HasIssues' -ComparisonType bool -Operator eq -Value $true -BackgroundColor Salmon -HighlightHeaders 'HasIssues', 'Issues'
@@ -445,7 +494,7 @@ function Show-WinADDHCPSummary {
                         New-HTMLTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 75 -BackgroundColor Orange -HighlightHeaders 'PercentageInUse'
                         New-HTMLTableCondition -Name 'LeaseDurationHours' -ComparisonType number -Operator gt -Value 48 -BackgroundColor Orange -HighlightHeaders 'LeaseDurationHours'
                         New-HTMLTableCondition -Name 'FailoverPartner' -ComparisonType string -Operator eq -Value '' -BackgroundColor LightYellow -HighlightHeaders 'FailoverPartner'
-                    } -DataStore JavaScript -ScrollX
+                    } -DataStore JavaScript -ScrollX -Title "All DHCP Scopes Configuration" -Buttons @('copyHtml5', 'excelHtml5', 'csvHtml5') -SearchBuilder
                 }
 
                 # Enhanced Infrastructure sections (when Extended data is available)
