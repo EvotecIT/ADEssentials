@@ -23,7 +23,7 @@
         }, @{
             Guid          = 'a7bdf640-f5cb-4acf-9de0-365b322d245c'
             ModuleName    = 'PSWriteHTML'
-            ModuleVersion = '1.31.0'
+            ModuleVersion = '1.38.0'
         }, @{
             Guid          = '5df72a79-cdf6-4add-b38d-bcacf26fb7bc'
             ModuleName    = 'PSEventViewer'
