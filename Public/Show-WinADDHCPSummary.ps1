@@ -119,40 +119,40 @@ function Show-WinADDHCPSummary {
     if ($TestMode) {
         Write-Verbose "Show-WinADDHCPSummary - Running in test mode with sample data"
         $DHCPData = @{
-            Servers = @(
-                [PSCustomObject]@{ ComputerName = 'dhcp01.domain.com'; Status = 'Online'; Version = '10.0'; PingSuccessful = $true; DNSResolvable = $true; DHCPResponding = $true; TotalScopes = 15; ScopesWithIssues = 2; PercentageInUse = 45; IsADDomainController = $false }
-                [PSCustomObject]@{ ComputerName = 'dhcp02.domain.com'; Status = 'Unreachable'; Version = $null; PingSuccessful = $false; DNSResolvable = $true; DHCPResponding = $false; TotalScopes = 0; ScopesWithIssues = 0; PercentageInUse = 0; IsADDomainController = $false }
-                [PSCustomObject]@{ ComputerName = 'dc01.domain.com'; Status = 'Online'; Version = '10.0'; PingSuccessful = $true; DNSResolvable = $true; DHCPResponding = $true; TotalScopes = 8; ScopesWithIssues = 1; PercentageInUse = 78; IsADDomainController = $true }
+            Servers          = @(
+                [PSCustomObject]@{ ComputerName = 'dhcp01.domain.com'; Status = 'Online'; Version = '10.0'; PingSuccessful = $true; DNSResolvable = $true; DHCPResponding = $true; TotalScopes = 15; ScopesWithIssues = 2; PercentageInUse = 45; IsADDomainController = $false; DomainName = 'domain.com'; IPAddress = '192.168.1.10'; ScopesActive = 13; ScopesInactive = 2 }
+                [PSCustomObject]@{ ComputerName = 'dhcp02.domain.com'; Status = 'Unreachable'; Version = $null; PingSuccessful = $false; DNSResolvable = $true; DHCPResponding = $false; TotalScopes = 0; ScopesWithIssues = 0; PercentageInUse = 0; IsADDomainController = $false; DomainName = 'domain.com'; IPAddress = $null; ScopesActive = 0; ScopesInactive = 0 }
+                [PSCustomObject]@{ ComputerName = 'dc01.domain.com'; Status = 'Online'; Version = '10.0'; PingSuccessful = $true; DNSResolvable = $true; DHCPResponding = $true; TotalScopes = 8; ScopesWithIssues = 1; PercentageInUse = 78; IsADDomainController = $true; DomainName = 'domain.com'; IPAddress = '192.168.1.5'; ScopesActive = 8; ScopesInactive = 0 }
             )
-            Scopes = @(
-                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '192.168.1.0'; Name = 'Corporate LAN'; State = 'Active'; PercentageInUse = 85; AddressesInUse = 170; AddressesFree = 30; HasIssues = $true; Issues = @('High utilization') }
-                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '10.1.0.0'; Name = 'Guest Network'; State = 'Active'; PercentageInUse = 25; AddressesInUse = 50; AddressesFree = 150; HasIssues = $false; Issues = @() }
-                [PSCustomObject]@{ ServerName = 'dc01.domain.com'; ScopeId = '172.16.1.0'; Name = 'Server VLAN'; State = 'Active'; PercentageInUse = 92; AddressesInUse = 92; AddressesFree = 8; HasIssues = $true; Issues = @('Critical utilization', 'No failover configured') }
+            Scopes           = @(
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '192.168.1.0'; Name = 'Corporate LAN'; State = 'Active'; PercentageInUse = 85; AddressesInUse = 170; AddressesFree = 30; HasIssues = $true; Issues = @('High utilization'); LeaseDurationHours = 8; FailoverPartner = $null }
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '10.1.0.0'; Name = 'Guest Network'; State = 'Active'; PercentageInUse = 25; AddressesInUse = 50; AddressesFree = 150; HasIssues = $false; Issues = @(); LeaseDurationHours = 24; FailoverPartner = 'dhcp02.domain.com' }
+                [PSCustomObject]@{ ServerName = 'dc01.domain.com'; ScopeId = '172.16.1.0'; Name = 'Server VLAN'; State = 'Active'; PercentageInUse = 92; AddressesInUse = 92; AddressesFree = 8; HasIssues = $true; Issues = @('Critical utilization', 'No failover configured'); LeaseDurationHours = 168; FailoverPartner = $null }
             )
             ScopesWithIssues = @(
-                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '192.168.1.0'; Name = 'Corporate LAN'; State = 'Active'; PercentageInUse = 85; HasIssues = $true; Issues = @('High utilization') }
-                [PSCustomObject]@{ ServerName = 'dc01.domain.com'; ScopeId = '172.16.1.0'; Name = 'Server VLAN'; State = 'Active'; PercentageInUse = 92; HasIssues = $true; Issues = @('Critical utilization', 'No failover configured') }
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '192.168.1.0'; Name = 'Corporate LAN'; State = 'Active'; PercentageInUse = 85; HasIssues = $true; Issues = @('High utilization'); LeaseDurationHours = 8; FailoverPartner = $null }
+                [PSCustomObject]@{ ServerName = 'dc01.domain.com'; ScopeId = '172.16.1.0'; Name = 'Server VLAN'; State = 'Active'; PercentageInUse = 92; HasIssues = $true; Issues = @('Critical utilization', 'No failover configured'); LeaseDurationHours = 168; FailoverPartner = $null }
             )
-            IPv6Scopes = @()
-            MulticastScopes = @()
-            SecurityFilters = @(
+            IPv6Scopes       = @()
+            MulticastScopes  = @()
+            SecurityFilters  = @(
                 [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; FilteringMode = 'Deny'; Allow = $false; Deny = $true }
                 [PSCustomObject]@{ ServerName = 'dc01.domain.com'; FilteringMode = 'None'; Allow = $false; Deny = $false }
             )
-            Policies = @(
+            Policies         = @(
                 [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; Name = 'Corporate Devices'; Enabled = $true; ProcessingOrder = 1; Condition = 'Vendor Class matches Corporate' }
             )
-            ServerSettings = @(
+            ServerSettings   = @(
                 [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; IsAuthorized = $true; IsDomainJoined = $true; ActivatePolicies = $true; ConflictDetectionAttempts = 2 }
                 [PSCustomObject]@{ ServerName = 'dc01.domain.com'; IsAuthorized = $true; IsDomainJoined = $true; ActivatePolicies = $false; ConflictDetectionAttempts = 0 }
             )
-            NetworkBindings = @(
+            NetworkBindings  = @(
                 [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; InterfaceAlias = 'Ethernet'; IPAddress = '192.168.1.10'; State = $true }
             )
-            Reservations = @()
-            AuditLogs = @()
-            Databases = @()
-            Statistics = @{
+            Reservations     = @()
+            AuditLogs        = @()
+            Databases        = @()
+            Statistics       = @{
                 TotalServers = 3; ServersOnline = 2; ServersOffline = 1; ServersWithIssues = 1
                 TotalScopes = 3; ScopesActive = 3; ScopesInactive = 0; ScopesWithIssues = 2
                 TotalAddresses = 450; AddressesInUse = 312; AddressesFree = 138; OverallPercentageInUse = 69
@@ -180,6 +180,20 @@ function Show-WinADDHCPSummary {
         Write-Warning "Show-WinADDHCPSummary - No DHCP data available to generate report"
         return
     }
+
+    # Safe access to statistics with null protection
+    $TotalServers = if ($DHCPData.Statistics.TotalServers) { $DHCPData.Statistics.TotalServers } else { 0 }
+    $ServersOnline = if ($DHCPData.Statistics.ServersOnline) { $DHCPData.Statistics.ServersOnline } else { 0 }
+    $ServersOffline = if ($DHCPData.Statistics.ServersOffline) { $DHCPData.Statistics.ServersOffline } else { 0 }
+    $ServersWithIssues = if ($DHCPData.Statistics.ServersWithIssues) { $DHCPData.Statistics.ServersWithIssues } else { 0 }
+    $TotalScopes = if ($DHCPData.Statistics.TotalScopes) { $DHCPData.Statistics.TotalScopes } else { 0 }
+    $ScopesActive = if ($DHCPData.Statistics.ScopesActive) { $DHCPData.Statistics.ScopesActive } else { 0 }
+    $ScopesInactive = if ($DHCPData.Statistics.ScopesInactive) { $DHCPData.Statistics.ScopesInactive } else { 0 }
+    $ScopesWithIssues = if ($DHCPData.Statistics.ScopesWithIssues) { $DHCPData.Statistics.ScopesWithIssues } else { 0 }
+    $TotalAddresses = if ($DHCPData.Statistics.TotalAddresses) { $DHCPData.Statistics.TotalAddresses } else { 0 }
+    $AddressesInUse = if ($DHCPData.Statistics.AddressesInUse) { $DHCPData.Statistics.AddressesInUse } else { 0 }
+    $AddressesFree = if ($DHCPData.Statistics.AddressesFree) { $DHCPData.Statistics.AddressesFree } else { 0 }
+    $OverallPercentageInUse = if ($DHCPData.Statistics.OverallPercentageInUse) { $DHCPData.Statistics.OverallPercentageInUse } else { 0 }
 
     # Handle case where no DHCP servers are found
     if ($DHCPData.Statistics.TotalServers -eq 0) {
@@ -240,68 +254,119 @@ function Show-WinADDHCPSummary {
 
         New-HTMLTabPanel {
             New-HTMLTab -TabName 'Overview' {
-                New-HTMLSection -HeaderText "DHCP Infrastructure Overview" {
-                    New-HTMLPanel {
-                        New-HTMLText -Text "About this Report" -FontSize 16px -FontWeight bold
-                        New-HTMLText -Text "This report provides a comprehensive overview of DHCP infrastructure across your Active Directory forest. DHCP (Dynamic Host Configuration Protocol) is critical for automatic IP address assignment and network configuration. Monitoring DHCP health ensures reliable network connectivity for all clients." -FontSize 12px
+                New-HTMLSection -Invisible {
+                    New-HTMLSection -HeaderText "DHCP Infrastructure Overview" {
+                        New-HTMLPanel -Invisible {
+                            New-HTMLText -Text "About this Report" -FontSize 16px -FontWeight bold
+                            New-HTMLText -Text "This report provides a comprehensive overview of DHCP infrastructure across your Active Directory forest. DHCP (Dynamic Host Configuration Protocol) is critical for automatic IP address assignment and network configuration. Monitoring DHCP health ensures reliable network connectivity for all clients." -FontSize 12px
 
-                        New-HTMLText -Text "What to Look For" -FontSize 16px -FontWeight bold
-                        New-HTMLList {
-                            New-HTMLListItem -Text "Server Health: ", "Ensure all DHCP servers are online and operational" -FontWeight bold, normal
-                            New-HTMLListItem -Text "Scope Utilization: ", "Monitor IP address pool usage to prevent exhaustion" -FontWeight bold, normal
-                            New-HTMLListItem -Text "Configuration Issues: ", "Address DNS settings, lease durations, and failover configuration" -FontWeight bold, normal
-                            New-HTMLListItem -Text "High Utilization: ", "Identify scopes approaching capacity limits" -FontWeight bold, normal
-                        } -FontSize 12px
+                            New-HTMLText -Text "What to Look For" -FontSize 16px -FontWeight bold
+                            New-HTMLList {
+                                New-HTMLListItem -Text "Server Health: ", "Ensure all DHCP servers are online and operational" -FontWeight bold, normal
+                                New-HTMLListItem -Text "Scope Utilization: ", "Monitor IP address pool usage to prevent exhaustion" -FontWeight bold, normal
+                                New-HTMLListItem -Text "Configuration Issues: ", "Address DNS settings, lease durations, and failover configuration" -FontWeight bold, normal
+                                New-HTMLListItem -Text "High Utilization: ", "Identify scopes approaching capacity limits" -FontWeight bold, normal
+                            } -FontSize 12px
 
-                        New-HTMLText -Text "Report Sections" -FontSize 16px -FontWeight bold
-                        New-HTMLList {
-                            New-HTMLListItem -Text "Overview: ", "Health summary, statistics, and key metrics at a glance" -FontWeight bold, normal
-                            New-HTMLListItem -Text "Infrastructure: ", "Detailed server and scope information" -FontWeight bold, normal
-                            New-HTMLListItem -Text "Validation Issues: ", "All configuration problems and capacity concerns" -FontWeight bold, normal
-                            New-HTMLListItem -Text "Configuration: ", "Audit logs and database settings" -FontWeight bold, normal
-                        } -FontSize 12px
-                    }
-                    New-HTMLPanel {
-                        New-HTMLText -Text "Environment Summary" -FontSize 16px -FontWeight bold
-                        New-HTMLList {
-                            New-HTMLListItem -Text "Total DHCP Servers: ", $TotalServers -Color Black, Blue -FontWeight normal, bold -FontSize 12px
-                            New-HTMLListItem -Text "Total DHCP Scopes: ", $TotalScopes -Color Black, Blue -FontWeight normal, bold -FontSize 12px
-                            New-HTMLListItem -Text "Total IP Addresses: ", $TotalAddresses.ToString("N0") -Color Black, Blue -FontWeight normal, bold -FontSize 12px
-                            New-HTMLListItem -Text "Overall Utilization: ", "$OverallPercentageInUse%" -Color Black, $(if ($OverallPercentageInUse -gt 80) { 'Red' } elseif ($OverallPercentageInUse -gt 60) { 'Orange' } else { 'Green' }) -FontWeight normal, bold -FontSize 12px
+                            New-HTMLText -Text "Report Sections" -FontSize 16px -FontWeight bold
+                            New-HTMLList {
+                                New-HTMLListItem -Text "Overview: ", "Health summary, statistics, and key metrics at a glance" -FontWeight bold, normal
+                                New-HTMLListItem -Text "Infrastructure: ", "Detailed server and scope information" -FontWeight bold, normal
+                                New-HTMLListItem -Text "Validation Issues: ", "All configuration problems and capacity concerns" -FontWeight bold, normal
+                                New-HTMLListItem -Text "Configuration: ", "Audit logs and database settings" -FontWeight bold, normal
+                            } -FontSize 12px
+
+                            New-HTMLText -Text "Environment Summary" -FontSize 16px -FontWeight bold
+                            New-HTMLList {
+                                New-HTMLListItem -Text "Total DHCP Servers: ", $TotalServers -Color Black, Blue -FontWeight normal, bold -FontSize 12px
+                                New-HTMLListItem -Text "Total DHCP Scopes: ", $TotalScopes -Color Black, Blue -FontWeight normal, bold -FontSize 12px
+                                New-HTMLListItem -Text "Total IP Addresses: ", $TotalAddresses.ToString("N0") -Color Black, Blue -FontWeight normal, bold -FontSize 12px
+                                New-HTMLListItem -Text "Overall Utilization: ", "$OverallPercentageInUse%" -Color Black, $(if ($OverallPercentageInUse -gt 80) { 'Red' } elseif ($OverallPercentageInUse -gt 60) { 'Orange' } else { 'Green' }) -FontWeight normal, bold -FontSize 12px
+                            }
                         }
+                    }
+                    # CRITICAL ACTIONS
+                    New-HTMLSection -HeaderText "🚨 Immediate Actions Required" {
+                        New-HTMLPanel -Invisible {
+                            # Calculate critical metrics first
+                            $CriticalIssuesCount = 0
+                            $WarningIssuesCount = 0
+                            $CriticalActions = @()
+                            $WarningActions = @()
 
-                        # Create environment health chart
-                        if ($TotalServers -gt 0) {
-                            New-HTMLChart {
-                                New-ChartPie -Name 'Servers Online' -Value $ServersOnline -Color LightGreen
-                                if ($ServersOffline -gt 0) {
-                                    New-ChartPie -Name 'Servers Offline' -Value $ServersOffline -Color Salmon
-                                }
-                                if ($ServersWithIssues -gt 0) {
-                                    New-ChartPie -Name 'Servers with Issues' -Value $ServersWithIssues -Color Orange
-                                }
-                            } -Title "DHCP Server Health Distribution"
+                            # Check for offline servers
+                            $OfflineServersCount = @($DHCPData.Servers | Where-Object { $_.Status -ne 'Online' }).Count
+                            if ($OfflineServersCount -gt 0) {
+                                $CriticalIssuesCount += $OfflineServersCount
+                                $CriticalActions += "🔴 $OfflineServersCount DHCP server(s) are offline - Check network connectivity and service status immediately"
+                            }
+
+                            # Check for high utilization (>90%)
+                            $CriticalUtilizationScopes = @($DHCPData.Scopes | Where-Object { $_.PercentageInUse -gt 90 }).Count
+                            if ($CriticalUtilizationScopes -gt 0) {
+                                $CriticalIssuesCount += $CriticalUtilizationScopes
+                                $CriticalActions += "🔴 $CriticalUtilizationScopes scope(s) have critical utilization (>90%) - Expand IP ranges immediately"
+                            }
+
+                            # Check for high utilization (>80%)
+                            $HighUtilizationScopes = @($DHCPData.Scopes | Where-Object { $_.PercentageInUse -gt 80 -and $_.PercentageInUse -le 90 }).Count
+                            if ($HighUtilizationScopes -gt 0) {
+                                $WarningIssuesCount += $HighUtilizationScopes
+                                $WarningActions += "⚠️ $HighUtilizationScopes scope(s) have high utilization (>80%) - Monitor and plan expansion"
+                            }
+
+                            # Check for servers with failed validation
+                            $FailedValidationServers = @($DHCPData.Servers | Where-Object { -not $_.DHCPResponding -or -not $_.PingSuccessful -or -not $_.DNSResolvable }).Count
+                            if ($FailedValidationServers -gt 0) {
+                                $CriticalIssuesCount += $FailedValidationServers
+                                $CriticalActions += "🔴 $FailedValidationServers server(s) failed connectivity validation - Check DNS, network, and DHCP service"
+                            }
+
+                            # Check for scopes with configuration issues
+                            $ScopesWithConfigIssues = @($DHCPData.ScopesWithIssues).Count
+                            if ($ScopesWithConfigIssues -gt 0) {
+                                $WarningIssuesCount += $ScopesWithConfigIssues
+                                $WarningActions += "⚠️ $ScopesWithConfigIssues scope(s) have configuration issues - Review DNS settings and failover configuration"
+                            }
+
+                            if ($CriticalIssuesCount -gt 0 -and $CriticalActions.Count -gt 0) {
+                                New-HTMLText -Text "CRITICAL ISSUES REQUIRING IMMEDIATE ATTENTION" -Color Red -FontSize 18px -FontWeight bold
+                                New-HTMLList {
+                                    foreach ($Action in $CriticalActions) {
+                                        New-HTMLListItem -Text $Action -Color Red -FontWeight bold
+                                    }
+                                } -FontSize 14px
+                            }
+
+                            if ($WarningIssuesCount -gt 0 -and $WarningActions.Count -gt 0) {
+                                New-HTMLText -Text "Warning Issues Requiring Attention" -Color Orange -FontSize 16px -FontWeight bold
+                                New-HTMLList {
+                                    foreach ($Action in $WarningActions) {
+                                        New-HTMLListItem -Text $Action -Color DarkOrange -FontWeight bold
+                                    }
+                                } -FontSize 13px
+                            }
+
+                            if ($CriticalIssuesCount -eq 0 -and $WarningIssuesCount -eq 0) {
+                                New-HTMLText -Text "✅ No Critical Issues Detected" -Color Green -FontSize 18px -FontWeight bold
+                                New-HTMLText -Text "Your DHCP infrastructure appears healthy. Continue monitoring and review recommendations below." -Color Green -FontSize 14px
+                            }
+
+                            # Always show these general recommendations
+                            New-HTMLText -Text "General Recommendations:" -Color Blue -FontSize 14px -FontWeight bold
+                            New-HTMLList {
+                                New-HTMLListItem -Text "📊 Review detailed analysis in the Infrastructure and Validation Issues tabs"
+                                New-HTMLListItem -Text "📋 Check Configuration tab for audit log and database settings"
+                                New-HTMLListItem -Text "🔄 Implement DHCP failover for critical environments"
+                                New-HTMLListItem -Text "📈 Monitor scope utilization trends regularly"
+                                New-HTMLListItem -Text "🔍 Validate server connectivity and DNS resolution monthly"
+                            } -FontSize 12px
                         }
                     }
                 }
-
-                # Safe access to statistics with null protection
-                $TotalServers = if ($DHCPData.Statistics.TotalServers) { $DHCPData.Statistics.TotalServers } else { 0 }
-                $ServersOnline = if ($DHCPData.Statistics.ServersOnline) { $DHCPData.Statistics.ServersOnline } else { 0 }
-                $ServersOffline = if ($DHCPData.Statistics.ServersOffline) { $DHCPData.Statistics.ServersOffline } else { 0 }
-                $ServersWithIssues = if ($DHCPData.Statistics.ServersWithIssues) { $DHCPData.Statistics.ServersWithIssues } else { 0 }
-                $TotalScopes = if ($DHCPData.Statistics.TotalScopes) { $DHCPData.Statistics.TotalScopes } else { 0 }
-                $ScopesActive = if ($DHCPData.Statistics.ScopesActive) { $DHCPData.Statistics.ScopesActive } else { 0 }
-                $ScopesInactive = if ($DHCPData.Statistics.ScopesInactive) { $DHCPData.Statistics.ScopesInactive } else { 0 }
-                $ScopesWithIssues = if ($DHCPData.Statistics.ScopesWithIssues) { $DHCPData.Statistics.ScopesWithIssues } else { 0 }
-                $TotalAddresses = if ($DHCPData.Statistics.TotalAddresses) { $DHCPData.Statistics.TotalAddresses } else { 0 }
-                $AddressesInUse = if ($DHCPData.Statistics.AddressesInUse) { $DHCPData.Statistics.AddressesInUse } else { 0 }
-                $AddressesFree = if ($DHCPData.Statistics.AddressesFree) { $DHCPData.Statistics.AddressesFree } else { 0 }
-                $OverallPercentageInUse = if ($DHCPData.Statistics.OverallPercentageInUse) { $DHCPData.Statistics.OverallPercentageInUse } else { 0 }
-
-                New-HTMLSection -HeaderText "DHCP Infrastructure Statistics" {
+                New-HTMLSection -HeaderText "DHCP Infrastructure Statistics & Visual analytics" -Wrap wrap {
                     # Infrastructure Overview using Info Cards - organized in logical rows
-                    New-HTMLSection -HeaderText "Server Status Overview" -Invisible {
+                    New-HTMLSection -HeaderText "Server Status Overview" -Invisible -Density Compact {
                         New-HTMLInfoCard -Title "Total Servers" -Number $TotalServers -Subtitle "DHCP Infrastructure" -Icon "🖥️" -TitleColor 'DodgerBlue' -NumberColor 'Navy' -ShadowColor 'rgba(30, 144, 255, 0.15)'
                         New-HTMLInfoCard -Title "Online Servers" -Number $ServersOnline -Subtitle "Operational" -Icon "✅" -TitleColor 'LimeGreen' -NumberColor 'DarkGreen' -ShadowColor 'rgba(50, 205, 50, 0.15)'
 
@@ -318,7 +383,7 @@ function Show-WinADDHCPSummary {
                         }
                     }
 
-                    New-HTMLSection -HeaderText "Scope Status Overview" -Invisible {
+                    New-HTMLSection -HeaderText "Scope Status Overview" -Invisible -Density Compact {
                         New-HTMLInfoCard -Title "Total Scopes" -Number $TotalScopes -Subtitle "All Configured Scopes" -Icon "📋" -TitleColor 'DodgerBlue' -NumberColor 'Navy' -ShadowColor 'rgba(30, 144, 255, 0.15)'
                         New-HTMLInfoCard -Title "Active Scopes" -Number $ScopesActive -Subtitle "Currently Serving" -Icon "🟢" -TitleColor 'LimeGreen' -NumberColor 'DarkGreen' -ShadowColor 'rgba(50, 205, 50, 0.15)'
 
@@ -335,7 +400,7 @@ function Show-WinADDHCPSummary {
                         }
                     }
 
-                    New-HTMLSection -HeaderText "Address Pool Utilization" -Invisible {
+                    New-HTMLSection -HeaderText "Address Pool Utilization" -Invisible -Density Compact {
                         New-HTMLInfoCard -Title "Total IP Addresses" -Number $TotalAddresses.ToString("N0") -Subtitle "Pool Capacity" -Icon "🏊‍♂️" -TitleColor 'DodgerBlue' -NumberColor 'Navy' -ShadowColor 'rgba(30, 144, 255, 0.15)'
 
                         if ($OverallPercentageInUse -gt 80) {
@@ -360,9 +425,9 @@ function Show-WinADDHCPSummary {
                     }
                 }
 
-                # Charts Section - separate and organized
-                New-HTMLSection -HeaderText "Visual Analytics" {
-                    New-HTMLPanel {
+                # Charts Section - organized vertically for better readability
+                New-HTMLSection -HeaderText "Visual Analytics" -Invisible {
+                    New-HTMLPanel -Invisible {
                         New-HTMLChart {
                             New-ChartPie -Name 'Servers Online' -Value $DHCPData.Statistics.ServersOnline -Color LightGreen
                             New-ChartPie -Name 'Servers Offline' -Value $DHCPData.Statistics.ServersOffline -Color Salmon
@@ -370,103 +435,11 @@ function Show-WinADDHCPSummary {
                         } -Title 'DHCP Server Status' -TitleColor DodgerBlue
                     }
 
-                    New-HTMLPanel {
+                    New-HTMLPanel -Invisible {
                         New-HTMLChart {
                             New-ChartPie -Name 'Addresses In Use' -Value $DHCPData.Statistics.AddressesInUse -Color Orange
                             New-ChartPie -Name 'Addresses Available' -Value $DHCPData.Statistics.AddressesFree -Color LightGreen
                         } -Title 'Address Pool Utilization' -TitleColor DodgerBlue
-                    }
-                }
-
-                # Calculate validation summary statistics
-                $ScopesWithIssuesCount = ($DHCPData.ScopesWithIssues | Measure-Object).Count
-                $HighUtilizationScopesCount = ($DHCPData.Scopes | Where-Object { $_.PercentageInUse -gt 75 -and $_.State -eq 'Active' } | Measure-Object).Count
-                $LongLeaseScopesCount = ($DHCPData.Scopes | Where-Object { $_.LeaseDurationHours -gt 48 } | Measure-Object).Count
-                $OfflineServersCount = ($DHCPData.Servers | Where-Object { $_.Status -ne 'Online' } | Measure-Object).Count
-                $CriticalIssuesCount = $OfflineServersCount + ($DHCPData.Scopes | Where-Object { $_.PercentageInUse -gt 90 -and $_.State -eq 'Active' } | Measure-Object).Count
-                $WarningIssuesCount = $HighUtilizationScopesCount + $LongLeaseScopesCount + $ScopesWithIssuesCount
-                $TotalIssuesCount = $CriticalIssuesCount + $WarningIssuesCount
-
-                # Validation Summary with Info Cards
-                New-HTMLSection -HeaderText "Health & Validation Summary" -Invisible {
-                    New-HTMLPanel {
-                        New-HTMLSection -HeaderText "Issue Summary" -Invisible {
-                            New-HTMLSection -Invisible -Density Comfortable {
-                                if ($TotalIssuesCount -eq 0) {
-                                    New-HTMLInfoCard -Title "Health Status" -Number "HEALTHY" -Subtitle "No Issues Found" -Icon "✅" -TitleColor 'LimeGreen' -NumberColor 'DarkGreen' -ShadowColor 'rgba(50, 205, 50, 0.2)' -ShadowIntensity Bold
-                                } else {
-                                    New-HTMLInfoCard -Title "Total Issues" -Number $TotalIssuesCount -Subtitle "Need Attention" -Icon "🔍" -TitleColor 'DodgerBlue' -NumberColor 'Navy' -ShadowColor 'rgba(30, 144, 255, 0.15)'
-                                }
-
-                                if ($CriticalIssuesCount -gt 0) {
-                                    New-HTMLInfoCard -Title "Critical Issues" -Number $CriticalIssuesCount -Subtitle "Immediate Action Required" -Icon "🚨" -TitleColor 'Crimson' -NumberColor 'DarkRed' -ShadowColor 'rgba(220, 20, 60, 0.3)' -ShadowIntensity ExtraBold -ShadowDirection 'All'
-                                } else {
-                                    New-HTMLInfoCard -Title "Critical Issues" -Number $CriticalIssuesCount -Subtitle "None Found" -Icon "🛡️" -TitleColor 'LimeGreen' -NumberColor 'DarkGreen' -ShadowColor 'rgba(50, 205, 50, 0.15)'
-                                }
-
-                                if ($WarningIssuesCount -gt 0) {
-                                    New-HTMLInfoCard -Title "Warning Issues" -Number $WarningIssuesCount -Subtitle "Should Be Reviewed" -Icon "⚠️" -TitleColor 'Orange' -NumberColor 'DarkOrange' -ShadowColor 'rgba(255, 165, 0, 0.2)' -ShadowIntensity Bold
-                                } else {
-                                    New-HTMLInfoCard -Title "Warning Issues" -Number $WarningIssuesCount -Subtitle "None Found" -Icon "🌟" -TitleColor 'LimeGreen' -NumberColor 'DarkGreen' -ShadowColor 'rgba(50, 205, 50, 0.15)'
-                                }
-
-                                if ($ScopesWithIssuesCount -gt 0) {
-                                    New-HTMLInfoCard -Title "Config Issues" -Number $ScopesWithIssuesCount -Subtitle "Scope Configuration" -Icon "🔧" -TitleColor 'Orange' -NumberColor 'DarkOrange' -ShadowColor 'rgba(255, 165, 0, 0.15)'
-                                } else {
-                                    New-HTMLInfoCard -Title "Config Issues" -Number $ScopesWithIssuesCount -Subtitle "All Configured" -Icon "⚙️" -TitleColor 'LimeGreen' -NumberColor 'DarkGreen' -ShadowColor 'rgba(50, 205, 50, 0.15)'
-                                }
-                            }
-                        }
-                    }
-
-                    New-HTMLPanel {
-                        New-HTMLChart {
-                            if ($TotalIssuesCount -gt 0) {
-                                if ($CriticalIssuesCount -gt 0) {
-                                    New-ChartPie -Name 'Critical Issues' -Value $CriticalIssuesCount -Color Crimson
-                                }
-                                if ($WarningIssuesCount -gt 0) {
-                                    New-ChartPie -Name 'Warning Issues' -Value $WarningIssuesCount -Color Orange
-                                }
-                                $HealthyItems = [Math]::Max(0, $TotalServers + $TotalScopes - $TotalIssuesCount)
-                                if ($HealthyItems -gt 0) {
-                                    New-ChartPie -Name 'Healthy Items' -Value $HealthyItems -Color LimeGreen
-                                }
-                            } else {
-                                New-ChartPie -Name 'All Healthy' -Value ($TotalServers + $TotalScopes) -Color LimeGreen
-                            }
-                        } -Title 'Health Overview' -TitleColor DodgerBlue
-                    }
-                }
-
-                # Recommendations section
-                if ($TotalIssuesCount -gt 0) {
-                    New-HTMLSection -HeaderText "Recommended Actions" -CanCollapse {
-                        New-HTMLPanel {
-                            New-HTMLList {
-                                if ($OfflineServersCount -gt 0) {
-                                    New-HTMLListItem -Text "Check network connectivity and service status for offline DHCP servers"
-                                }
-                                if ($HighUtilizationScopesCount -gt 0) {
-                                    New-HTMLListItem -Text "Monitor high utilization scopes and consider expanding IP address ranges"
-                                }
-                                if ($ScopesWithIssuesCount -gt 0) {
-                                    New-HTMLListItem -Text "Review scope configuration issues, particularly DNS settings and failover configuration"
-                                }
-                                if ($LongLeaseScopesCount -gt 0) {
-                                    New-HTMLListItem -Text "Consider reducing lease durations for scopes with extended lease times (>48 hours)"
-                                }
-                                New-HTMLListItem -Text "Review the Validation Issues tab for detailed analysis of specific problems"
-                                New-HTMLListItem -Text "Check the Configuration tab for audit log and database settings"
-                            } -FontSize 12px
-                        } -Invisible
-                    }
-                } else {
-                    New-HTMLSection -HeaderText "Environment Status" -CanCollapse {
-                        New-HTMLPanel {
-                            New-HTMLText -Text "✅ No DHCP issues detected in this environment." -Color Green -FontWeight bold -FontSize 14px
-                            New-HTMLText -Text "Your DHCP infrastructure appears to be healthy and well-configured." -FontSize 12px
-                        } -Invisible
                     }
                 }
             }
