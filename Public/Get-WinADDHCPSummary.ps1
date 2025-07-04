@@ -229,11 +229,18 @@ function Get-WinADDHCPSummary {
         $ServerInfo = [ordered] @{
             ServerName           = $Computer
             IsReachable          = $false
+            PingSuccessful       = $null
+            DNSResolvable        = $null
+            DHCPResponding       = $null
             IsADDomainController = $false
             DHCPRole             = 'Unknown'
             Version              = $null
             Status               = 'Unknown'
             ErrorMessage         = $null
+            IPAddress            = $null
+            ResponseTimeMs       = $null
+            ReverseDNSName       = $null
+            ReverseDNSValid      = $null
             ScopeCount           = 0
             ActiveScopeCount     = 0
             InactiveScopeCount   = 0
@@ -257,15 +264,25 @@ function Get-WinADDHCPSummary {
 
         # Test connectivity and get server information only for servers to analyze
         if ($ShouldAnalyze) {
-            try {
-                $DHCPServerInfo = Get-DhcpServerVersion -ComputerName $Computer -ErrorAction Stop
-                $ServerInfo.IsReachable = $true
-                $ServerInfo.Version = $DHCPServerInfo.MajorVersion.ToString() + '.' + $DHCPServerInfo.MinorVersion.ToString()
-                $ServerInfo.Status = 'Online'
-            } catch {
-                $ServerInfo.Status = 'Unreachable'
-                $ServerInfo.ErrorMessage = $_.Exception.Message
-                Write-Warning "Get-WinADDHCPSummary - Cannot reach DHCP server $Computer`: $($_.Exception.Message)"
+            Write-Verbose "Get-WinADDHCPSummary - Performing comprehensive validation for $Computer"
+            $ValidationResult = Get-WinDHCPServerInfo -ComputerName $Computer
+
+            # Update server info with comprehensive validation results
+            $ServerInfo.IsReachable = $ValidationResult.IsReachable
+            $ServerInfo.PingSuccessful = $ValidationResult.PingSuccessful
+            $ServerInfo.DNSResolvable = $ValidationResult.DNSResolvable
+            $ServerInfo.DHCPResponding = $ValidationResult.DHCPResponding
+            $ServerInfo.Version = $ValidationResult.Version
+            $ServerInfo.Status = $ValidationResult.Status
+            $ServerInfo.ErrorMessage = $ValidationResult.ErrorMessage
+            $ServerInfo.IPAddress = $ValidationResult.IPAddress
+            $ServerInfo.ResponseTimeMs = $ValidationResult.ResponseTimeMs
+            $ServerInfo.ReverseDNSName = $ValidationResult.ReverseDNSName
+            $ServerInfo.ReverseDNSValid = $ValidationResult.ReverseDNSValid
+
+            # If DHCP service is not responding, mark as having issues and continue to next server
+            if (-not $ValidationResult.DHCPResponding) {
+                Write-Warning "Get-WinADDHCPSummary - DHCP service not responding on $Computer"
                 $ServersWithIssues++
                 $DHCPSummary.Servers.Add([PSCustomObject]$ServerInfo)
                 continue
@@ -274,6 +291,13 @@ function Get-WinADDHCPSummary {
             # For non-analyzed servers, mark as not tested
             $ServerInfo.Status = 'Not Analyzed'
             $ServerInfo.ErrorMessage = 'Server discovered but not selected for detailed analysis'
+            $ServerInfo.PingSuccessful = $null
+            $ServerInfo.DNSResolvable = $null
+            $ServerInfo.DHCPResponding = $null
+            $ServerInfo.IPAddress = $null
+            $ServerInfo.ResponseTimeMs = $null
+            $ServerInfo.ReverseDNSName = $null
+            $ServerInfo.ReverseDNSValid = $null
             $DHCPSummary.Servers.Add([PSCustomObject]$ServerInfo)
             continue
         }
