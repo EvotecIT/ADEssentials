@@ -128,6 +128,8 @@ function Get-WinADDHCPSummary {
         AuditLogs            = [System.Collections.Generic.List[Object]]::new()
         Databases            = [System.Collections.Generic.List[Object]]::new()
         Options              = [System.Collections.Generic.List[Object]]::new()
+        Errors               = [System.Collections.Generic.List[Object]]::new()
+        Warnings             = [System.Collections.Generic.List[Object]]::new()
         Statistics           = [ordered] @{}
         ValidationResults    = [ordered] @{}
     }
@@ -138,7 +140,7 @@ function Get-WinADDHCPSummary {
         $DHCPServersFromAD = Get-DhcpServerInDC -ErrorAction Stop
         Write-Verbose "Get-WinADDHCPSummary - Found $($DHCPServersFromAD.Count) DHCP servers in AD"
     } catch {
-        Write-Warning "Get-WinADDHCPSummary - Failed to get DHCP servers from AD: $($_.Exception.Message)"
+        Add-DHCPError -ServerName 'AD Discovery' -Component 'DHCP Server Discovery' -Operation 'Get-DhcpServerInDC' -ErrorMessage $_.Exception.Message -Severity 'Error'
         return $DHCPSummary
     }
 
@@ -160,7 +162,7 @@ function Get-WinADDHCPSummary {
     }
 
     if ($DHCPServersFromAD.Count -eq 0) {
-        Write-Warning "Get-WinADDHCPSummary - No DHCP servers found"
+        Add-DHCPError -ServerName 'AD Discovery' -Component 'DHCP Server Discovery' -Operation 'Server Count Check' -ErrorMessage 'No DHCP servers found in Active Directory' -Severity 'Warning'
 
         # Initialize statistics with zero values for empty environments
         $DHCPSummary.Statistics = [ordered] @{
@@ -204,7 +206,7 @@ function Get-WinADDHCPSummary {
         try {
             $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC -ExtendedForestInformation $ExtendedForestInformation
         } catch {
-            Write-Warning "Get-WinADDHCPSummary - Failed to get forest information: $($_.Exception.Message)"
+            Add-DHCPError -ServerName 'Forest Information' -Component 'Forest Discovery' -Operation 'Get-WinADForestDetails' -ErrorMessage $_.Exception.Message -Severity 'Warning'
         }
     }
 
@@ -282,7 +284,7 @@ function Get-WinADDHCPSummary {
 
             # If DHCP service is not responding, mark as having issues and continue to next server
             if (-not $ValidationResult.DHCPResponding) {
-                Write-Warning "Get-WinADDHCPSummary - DHCP service not responding on $Computer"
+                Add-DHCPError -ServerName $Computer -Component 'DHCP Service Validation' -Operation 'Service Connectivity Test' -ErrorMessage "DHCP service not responding: $($ValidationResult.ErrorMessage)" -Severity 'Error'
                 $ServersWithIssues++
                 $DHCPSummary.Servers.Add([PSCustomObject]$ServerInfo)
                 continue
@@ -314,7 +316,7 @@ function Get-WinADDHCPSummary {
 
             Write-Verbose "Get-WinADDHCPSummary - Found $($Scopes.Count) scopes on $Computer"
         } catch {
-            Write-Warning "Get-WinADDHCPSummary - Failed to get scopes from $Computer`: $($_.Exception.Message)"
+            Add-DHCPError -ServerName $Computer -Component 'DHCP Scope Discovery' -Operation 'Get-DhcpServerv4Scope' -ErrorMessage $_.Exception.Message -Severity 'Error'
             $ServerInfo.ErrorMessage = $_.Exception.Message
             $ServersWithIssues++
             $DHCPSummary.Servers.Add([PSCustomObject]$ServerInfo)
@@ -353,6 +355,13 @@ function Get-WinADDHCPSummary {
                 Reserved           = 0
                 HasIssues          = $false
                 Issues             = [System.Collections.Generic.List[string]]::new()
+                # DNS Configuration fields
+                DomainName         = $null
+                DomainNameOption   = $null
+                DNSServers         = $null
+                UpdateDnsRRForOlderClients = $null
+                DeleteDnsRROnLeaseExpiry = $null
+                DynamicUpdates     = $null
                 DNSSettings        = $null
                 FailoverPartner    = $null
                 GatheredFrom       = $Computer
@@ -367,11 +376,15 @@ function Get-WinADDHCPSummary {
                 $ScopeObject.PercentageInUse = [Math]::Round($ScopeStats.PercentageInUse, 2)
                 $ScopeObject.Reserved = $ScopeStats.Reserved
 
-                $ServerTotalAddresses += ($ScopeStats.AddressesInUse + $ScopeStats.AddressesFree)
+                # Calculate total addresses for server-level statistics
+                $ScopeTotalAddresses = ($ScopeStats.AddressesInUse + $ScopeStats.AddressesFree)
+                $ServerTotalAddresses += $ScopeTotalAddresses
                 $ServerAddressesInUse += $ScopeStats.AddressesInUse
                 $ServerAddressesFree += $ScopeStats.AddressesFree
+
+                Write-Verbose "Get-WinADDHCPSummary - Scope $($Scope.ScopeId) statistics: Total=$ScopeTotalAddresses, InUse=$($ScopeStats.AddressesInUse), Free=$($ScopeStats.AddressesFree), Utilization=$($ScopeObject.PercentageInUse)%"
             } catch {
-                Write-Warning "Get-WinADDHCPSummary - Failed to get scope statistics for $($Scope.ScopeId) on $Computer`: $($_.Exception.Message)"
+                Add-DHCPError -ServerName $Computer -ScopeId $Scope.ScopeId -Component 'Scope Statistics' -Operation 'Get-DhcpServerv4ScopeStatistics' -ErrorMessage $_.Exception.Message -Severity 'Warning'
             }
 
             # Validate scope configuration
@@ -392,13 +405,24 @@ function Get-WinADDHCPSummary {
                 $DNSSettings = Get-DhcpServerv4DnsSetting -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction Stop
                 $ScopeObject.DNSSettings = $DNSSettings
 
-                # Check for dynamic DNS updates with public DNS servers
-                if ($DNSSettings.DynamicUpdates -ne 'Never') {
-                    try {
-                        $Options = Get-DhcpServerv4OptionValue -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction Stop
-                        $Option6 = $Options | Where-Object { $_.OptionId -eq 6 }  # DNS Servers
-                        $Option15 = $Options | Where-Object { $_.OptionId -eq 15 } # Domain Name
+                # Populate DNS configuration fields
+                $ScopeObject.DynamicUpdates = $DNSSettings.DynamicUpdates
+                $ScopeObject.UpdateDnsRRForOlderClients = $DNSSettings.UpdateDnsRRForOlderClients
+                $ScopeObject.DeleteDnsRROnLeaseExpiry = $DNSSettings.DeleteDnsRROnLeaseExpiry
 
+                # Get DHCP options for this scope
+                try {
+                    $Options = Get-DhcpServerv4OptionValue -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction Stop
+                    $Option6 = $Options | Where-Object { $_.OptionId -eq 6 }  # DNS Servers
+                    $Option15 = $Options | Where-Object { $_.OptionId -eq 15 } # Domain Name
+
+                    # Populate option fields
+                    $ScopeObject.DNSServers = if ($Option6 -and $Option6.Value) { $Option6.Value -join ', ' } else { $null }
+                    $ScopeObject.DomainNameOption = if ($Option15 -and $Option15.Value) { $Option15.Value } else { $null }
+                    $ScopeObject.DomainName = $ScopeObject.DomainNameOption
+
+                    # Check for dynamic DNS updates with public DNS servers
+                    if ($DNSSettings.DynamicUpdates -ne 'Never') {
                         if ($Option6 -and $Option6.Value) {
                             # Check for non-private DNS servers (similar to your validator's ^10. check)
                             $NonPrivateDNS = $Option6.Value | Where-Object { $_ -notmatch "^10\." -and $_ -notmatch "^192\.168\." -and $_ -notmatch "^172\.(1[6-9]|2[0-9]|3[0-1])\." }
@@ -424,12 +448,12 @@ function Get-WinADDHCPSummary {
                             $ScopeObject.Issues.Add("Domain name option (015) is empty")
                             $ScopeObject.HasIssues = $true
                         }
-                    } catch {
-                        Write-Warning "Get-WinADDHCPSummary - Failed to get DHCP options for scope $($Scope.ScopeId) on $Computer`: $($_.Exception.Message)"
                     }
+                } catch {
+                    Add-DHCPError -ServerName $Computer -ScopeId $Scope.ScopeId -Component 'DHCP Options' -Operation 'Get-DhcpServerv4OptionValue' -ErrorMessage $_.Exception.Message -Severity 'Warning'
                 }
             } catch {
-                Write-Warning "Get-WinADDHCPSummary - Failed to get DNS settings for scope $($Scope.ScopeId) on $Computer`: $($_.Exception.Message)"
+                Add-DHCPError -ServerName $Computer -ScopeId $Scope.ScopeId -Component 'DNS Settings' -Operation 'Get-DhcpServerv4DnsSetting' -ErrorMessage $_.Exception.Message -Severity 'Warning'
             }
 
             # Check DHCP failover configuration
@@ -471,6 +495,10 @@ function Get-WinADDHCPSummary {
             $ServersWithIssues++
         }
 
+        # Add the successfully processed server to the collection
+        $DHCPSummary.Servers.Add([PSCustomObject]$ServerInfo)
+        Write-Verbose "Get-WinADDHCPSummary - Server $Computer processing completed: Scopes=$($ServerInfo.ScopeCount), Total Addresses=$($ServerInfo.TotalAddresses), Utilization=$($ServerInfo.PercentageInUse)%"
+
         # Get audit log information
         if ($Extended) {
             try {
@@ -487,7 +515,7 @@ function Get-WinADDHCPSummary {
                 }
                 $DHCPSummary.AuditLogs.Add($AuditLogObject)
             } catch {
-                Write-Warning "Get-WinADDHCPSummary - Failed to get audit log from $Computer`: $($_.Exception.Message)"
+                Add-DHCPError -ServerName $Computer -Component 'Audit Log Configuration' -Operation 'Get-DhcpServerAuditLog' -ErrorMessage $_.Exception.Message -Severity 'Warning'
             }
 
             # Get database information
@@ -506,7 +534,7 @@ function Get-WinADDHCPSummary {
                 }
                 $DHCPSummary.Databases.Add($DatabaseObject)
             } catch {
-                Write-Warning "Get-WinADDHCPSummary - Failed to get database information from $Computer`: $($_.Exception.Message)"
+                Add-DHCPError -ServerName $Computer -Component 'Database Configuration' -Operation 'Get-DhcpServerDatabase' -ErrorMessage $_.Exception.Message -Severity 'Warning'
             }
 
             # Get enhanced server configuration (with comprehensive error handling)
@@ -534,9 +562,9 @@ function Get-WinADDHCPSummary {
                 } catch {
                     $ErrorMessage = $_.Exception.Message
                     if ($ErrorMessage -like "*access*denied*" -or $ErrorMessage -like "*permission*") {
-                        Write-Verbose "Get-WinADDHCPSummary - Insufficient permissions to read server settings on $Computer"
+                        Add-DHCPError -ServerName $Computer -Component 'Server Settings' -Operation 'Get-DhcpServerSetting' -ErrorMessage "Insufficient permissions: $ErrorMessage" -Severity 'Warning'
                     } else {
-                        Write-Verbose "Get-WinADDHCPSummary - Failed to get server settings from $Computer`: $ErrorMessage"
+                        Add-DHCPError -ServerName $Computer -Component 'Server Settings' -Operation 'Get-DhcpServerSetting' -ErrorMessage $ErrorMessage -Severity 'Warning'
                     }
                 }
 
@@ -563,7 +591,7 @@ function Get-WinADDHCPSummary {
                         Write-Verbose "Get-WinADDHCPSummary - No network bindings found on $Computer"
                     }
                 } catch {
-                    Write-Verbose "Get-WinADDHCPSummary - Failed to get network bindings from $Computer`: $($_.Exception.Message)"
+                    Add-DHCPError -ServerName $Computer -Component 'Network Bindings' -Operation 'Get-DhcpServerv4Binding' -ErrorMessage $_.Exception.Message -Severity 'Warning'
                 }
 
                 # Security filters (may not be configured on all servers)
@@ -584,9 +612,9 @@ function Get-WinADDHCPSummary {
                 } catch {
                     $ErrorMessage = $_.Exception.Message
                     if ($ErrorMessage -like "*not found*" -or $ErrorMessage -like "*not supported*") {
-                        Write-Verbose "Get-WinADDHCPSummary - Security filtering not available on $Computer (this is normal for older DHCP servers)"
+                        Add-DHCPError -ServerName $Computer -Component 'Security Filters' -Operation 'Get-DhcpServerv4FilterList' -ErrorMessage "Security filtering not available (normal for older DHCP servers): $ErrorMessage" -Severity 'Warning'
                     } else {
-                        Write-Verbose "Get-WinADDHCPSummary - Error checking security filters on $Computer`: $ErrorMessage"
+                        Add-DHCPError -ServerName $Computer -Component 'Security Filters' -Operation 'Get-DhcpServerv4FilterList' -ErrorMessage $ErrorMessage -Severity 'Warning'
                     }
 
                     # Add a default entry indicating no filtering
@@ -621,9 +649,9 @@ function Get-WinADDHCPSummary {
                             $ErrorMessage -like "*service*" -or
                             $ErrorMessage -like "*RPC*" -or
                             $ErrorMessage -like "*access*denied*") {
-                            Write-Verbose "Get-WinADDHCPSummary - IPv6 DHCP not available on $Computer (this is normal): $ErrorMessage"
+                            Add-DHCPError -ServerName $Computer -Component 'IPv6 DHCP Service' -Operation 'Get-DhcpServerv6Scope' -ErrorMessage "IPv6 DHCP not available (normal): $ErrorMessage" -Severity 'Warning'
                         } else {
-                            Write-Warning "Get-WinADDHCPSummary - Unexpected error checking IPv6 DHCP on $Computer`: $ErrorMessage"
+                            Add-DHCPError -ServerName $Computer -Component 'IPv6 DHCP Service' -Operation 'Get-DhcpServerv6Scope' -ErrorMessage $ErrorMessage -Severity 'Warning'
                         }
                     }
 
@@ -661,7 +689,7 @@ function Get-WinADDHCPSummary {
                                 $IPv6ScopeObject.PercentageInUse = if ($IPv6Stats.PercentageInUse) { [Math]::Round($IPv6Stats.PercentageInUse, 2) } else { 0 }
                                 Write-Verbose "Get-WinADDHCPSummary - IPv6 scope $($IPv6Scope.Prefix) utilization: $($IPv6ScopeObject.PercentageInUse)%"
                             } catch {
-                                Write-Verbose "Get-WinADDHCPSummary - Failed to get IPv6 scope statistics for $($IPv6Scope.Prefix) on $Computer`: $($_.Exception.Message)"
+                                Add-DHCPError -ServerName $Computer -ScopeId $IPv6Scope.Prefix -Component 'IPv6 Scope Statistics' -Operation 'Get-DhcpServerv6ScopeStatistics' -ErrorMessage $_.Exception.Message -Severity 'Warning'
                                 $IPv6ScopeObject.Issues.Add("Unable to retrieve IPv6 scope statistics")
                                 $IPv6ScopeObject.HasIssues = $true
                             }
@@ -689,7 +717,7 @@ function Get-WinADDHCPSummary {
                     }
                 } catch {
                     # This catch should rarely be reached due to inner try-catch, but provides final safety net
-                    Write-Verbose "Get-WinADDHCPSummary - IPv6 DHCP analysis skipped for $Computer`: $($_.Exception.Message)"
+                    Add-DHCPError -ServerName $Computer -Component 'IPv6 DHCP Analysis' -Operation 'IPv6 Overall Processing' -ErrorMessage $_.Exception.Message -Severity 'Warning'
                 }
 
                 # Multicast scopes (rarely used - handle gracefully)
@@ -728,7 +756,7 @@ function Get-WinADDHCPSummary {
                                 $MulticastScopeObject.PercentageInUse = if ($MulticastStats.PercentageInUse) { [Math]::Round($MulticastStats.PercentageInUse, 2) } else { 0 }
                                 Write-Verbose "Get-WinADDHCPSummary - Multicast scope $($MulticastScope.Name) utilization: $($MulticastScopeObject.PercentageInUse)%"
                             } catch {
-                                Write-Verbose "Get-WinADDHCPSummary - Failed to get multicast scope statistics for $($MulticastScope.Name) on $Computer`: $($_.Exception.Message)"
+                                Add-DHCPError -ServerName $Computer -ScopeId $MulticastScope.Name -Component 'Multicast Scope Statistics' -Operation 'Get-DhcpServerv4MulticastScopeStatistics' -ErrorMessage $_.Exception.Message -Severity 'Warning'
                             }
 
                             $DHCPSummary.MulticastScopes.Add($MulticastScopeObject)
@@ -739,9 +767,9 @@ function Get-WinADDHCPSummary {
                 } catch {
                     $ErrorMessage = $_.Exception.Message
                     if ($ErrorMessage -like "*not found*" -or $ErrorMessage -like "*not supported*") {
-                        Write-Verbose "Get-WinADDHCPSummary - Multicast DHCP not available on $Computer (this is normal)"
+                        Add-DHCPError -ServerName $Computer -Component 'Multicast DHCP' -Operation 'Get-DhcpServerv4MulticastScope' -ErrorMessage "Multicast DHCP not available (normal): $ErrorMessage" -Severity 'Warning'
                     } else {
-                        Write-Verbose "Get-WinADDHCPSummary - Error checking multicast scopes on $Computer`: $ErrorMessage"
+                        Add-DHCPError -ServerName $Computer -Component 'Multicast DHCP' -Operation 'Get-DhcpServerv4MulticastScope' -ErrorMessage $ErrorMessage -Severity 'Warning'
                     }
                 }
 
@@ -792,7 +820,7 @@ function Get-WinADDHCPSummary {
                                     $DHCPSummary.Policies.Add($PolicyObject)
                                     Write-Verbose "Get-WinADDHCPSummary - Successfully processed policy '$($Policy.Name)' on $Computer"
                                 } catch {
-                                    Write-Warning "Get-WinADDHCPSummary - Error processing individual policy '$($Policy.Name)' on $Computer`: $($_.Exception.Message)"
+                                    Add-DHCPError -ServerName $Computer -Component 'DHCP Policy Processing' -Operation "Individual Policy: $($Policy.Name)" -ErrorMessage $_.Exception.Message -Severity 'Warning'
                                     Write-Verbose "Get-WinADDHCPSummary - Continuing with next policy despite error..."
                                 }
                             }
@@ -805,19 +833,19 @@ function Get-WinADDHCPSummary {
                         Write-Verbose "Get-WinADDHCPSummary - Policy enumeration failed on $Computer with error: $ErrorMessage"
 
                         if ($ErrorMessage -like "*not found*" -or $ErrorMessage -like "*not supported*" -or $ErrorMessage -like "*not available*") {
-                            Write-Verbose "Get-WinADDHCPSummary - DHCP policies not available on $Computer (requires Windows Server 2012+ DHCP)"
+                            Add-DHCPError -ServerName $Computer -Component 'DHCP Policies' -Operation 'Get-DhcpServerv4Policy' -ErrorMessage "DHCP policies not available (requires Windows Server 2012+): $ErrorMessage" -Severity 'Warning'
                         } elseif ($ErrorMessage -like "*RPC*" -or $ErrorMessage -like "*timeout*" -or $ErrorMessage -like "*network*") {
-                            Write-Warning "Get-WinADDHCPSummary - Network/RPC issue accessing DHCP policies on $Computer - this may indicate connectivity problems"
+                            Add-DHCPError -ServerName $Computer -Component 'DHCP Policies' -Operation 'Get-DhcpServerv4Policy' -ErrorMessage "Network/RPC connectivity issue: $ErrorMessage" -Severity 'Error'
                         } elseif ($ErrorMessage -like "*access*denied*" -or $ErrorMessage -like "*permission*") {
-                            Write-Warning "Get-WinADDHCPSummary - Access denied retrieving DHCP policies on $Computer - insufficient permissions"
+                            Add-DHCPError -ServerName $Computer -Component 'DHCP Policies' -Operation 'Get-DhcpServerv4Policy' -ErrorMessage "Access denied - insufficient permissions: $ErrorMessage" -Severity 'Warning'
                         } else {
-                            Write-Warning "Get-WinADDHCPSummary - Unexpected error checking DHCP policies on $Computer`: $ErrorMessage"
+                            Add-DHCPError -ServerName $Computer -Component 'DHCP Policies' -Operation 'Get-DhcpServerv4Policy' -ErrorMessage $ErrorMessage -Severity 'Error'
                         }
                     }
 
                     Write-Verbose "Get-WinADDHCPSummary - DHCP policy processing completed for $Computer"
                 } catch {
-                    Write-Warning "Get-WinADDHCPSummary - Outer exception in DHCP policy processing for $Computer`: $($_.Exception.Message)"
+                    Add-DHCPError -ServerName $Computer -Component 'DHCP Policy Processing' -Operation 'Overall Policy Processing' -ErrorMessage $_.Exception.Message -Severity 'Error'
                 }
 
                 # Reservations analysis for each scope
@@ -846,7 +874,7 @@ function Get-WinADDHCPSummary {
                             $DHCPSummary.Reservations.Add($ReservationObject)
                         }
                     } catch {
-                        Write-Verbose "Get-WinADDHCPSummary - No reservations found for scope $($Scope.ScopeId) on $Computer (or access error: $($_.Exception.Message))"
+                        Add-DHCPError -ServerName $Computer -ScopeId $Scope.ScopeId -Component 'DHCP Reservations' -Operation 'Get-DhcpServerv4Reservation' -ErrorMessage $_.Exception.Message -Severity 'Warning'
                     }
 
                     # Active leases analysis (sample for high utilization scopes)
@@ -877,7 +905,7 @@ function Get-WinADDHCPSummary {
                             Write-Verbose "Get-WinADDHCPSummary - Scope $($Scope.ScopeId) on $Computer - utilization $($CurrentScopeStats.PercentageInUse)% (below threshold for lease collection)"
                         }
                     } catch {
-                        Write-Verbose "Get-WinADDHCPSummary - Failed to get leases for scope $($Scope.ScopeId) on $Computer`: $($_.Exception.Message)"
+                        Add-DHCPError -ServerName $Computer -ScopeId $Scope.ScopeId -Component 'DHCP Leases' -Operation 'Get-DhcpServerv4Lease' -ErrorMessage $_.Exception.Message -Severity 'Warning'
                     }
 
                     # Enhanced options collection
@@ -902,13 +930,13 @@ function Get-WinADDHCPSummary {
                             $DHCPSummary.Options.Add($OptionObject)
                         }
                     } catch {
-                        Write-Verbose "Get-WinADDHCPSummary - Failed to get options for scope $($Scope.ScopeId) on $Computer`: $($_.Exception.Message)"
+                        Add-DHCPError -ServerName $Computer -ScopeId $Scope.ScopeId -Component 'DHCP Options Collection' -Operation 'Get-DhcpServerv4OptionValue' -ErrorMessage $_.Exception.Message -Severity 'Warning'
                     }
                 }
                 Write-Verbose "Get-WinADDHCPSummary - Completed reservations and options analysis for all scopes on $Computer"
 
             } catch {
-                Write-Warning "Get-WinADDHCPSummary - Failed to get enhanced server configuration from $Computer`: $($_.Exception.Message)"
+                Add-DHCPError -ServerName $Computer -Component 'Enhanced Server Configuration' -Operation 'Overall Enhanced Configuration Gathering' -ErrorMessage $_.Exception.Message -Severity 'Warning'
             }
         }
     }
@@ -920,8 +948,11 @@ function Get-WinADDHCPSummary {
     $ScopesInactiveCount = 0
 
     foreach ($Server in $DHCPSummary.Servers) {
-        if ($Server.Status -eq 'Online') { $ServersOnlineCount++ }
-        elseif ($Server.Status -eq 'Unreachable') { $ServersOfflineCount++ }
+        if ($Server.Status -eq 'Online' -or ($Server.DHCPResponding -eq $true)) {
+            $ServersOnlineCount++
+        } elseif ($Server.Status -eq 'Unreachable' -or ($Server.DHCPResponding -eq $false)) {
+            $ServersOfflineCount++
+        }
     }
 
     foreach ($Scope in $DHCPSummary.Scopes) {
@@ -955,6 +986,13 @@ function Get-WinADDHCPSummary {
         TotalOptions           = $DHCPSummary.Options.Count
         ServersWithFiltering   = ($DHCPSummary.SecurityFilters | Where-Object { $_.FilteringMode -ne 'None' }).Count
         ServersWithPolicies    = ($DHCPSummary.Policies | Select-Object -Property ServerName -Unique).Count
+        # Error and Warning statistics
+        TotalErrors            = $DHCPSummary.Errors.Count
+        TotalWarnings          = $DHCPSummary.Warnings.Count
+        ServersWithErrors      = ($DHCPSummary.Errors | Select-Object -Property ServerName -Unique).Count
+        ServersWithWarnings    = ($DHCPSummary.Warnings | Select-Object -Property ServerName -Unique).Count
+        MostCommonErrorType    = if ($DHCPSummary.Errors.Count -gt 0) { ($DHCPSummary.Errors | Group-Object Component | Sort-Object Count -Descending | Select-Object -First 1).Name } else { 'None' }
+        MostCommonWarningType  = if ($DHCPSummary.Warnings.Count -gt 0) { ($DHCPSummary.Warnings | Group-Object Component | Sort-Object Count -Descending | Select-Object -First 1).Name } else { 'None' }
     }
 
     # Categorize validation results efficiently using single-pass operations
