@@ -119,44 +119,57 @@ function Show-WinADDHCPSummary {
     if ($TestMode) {
         Write-Verbose "Show-WinADDHCPSummary - Running in test mode with sample data"
         $DHCPData = @{
-            Servers          = @(
+            Servers               = @(
                 [PSCustomObject]@{ ComputerName = 'dhcp01.domain.com'; Status = 'Online'; Version = '10.0'; PingSuccessful = $true; DNSResolvable = $true; DHCPResponding = $true; TotalScopes = 15; ScopesWithIssues = 2; PercentageInUse = 45; IsADDomainController = $false; DomainName = 'domain.com'; IPAddress = '192.168.1.10'; ScopesActive = 13; ScopesInactive = 2 }
                 [PSCustomObject]@{ ComputerName = 'dhcp02.domain.com'; Status = 'Unreachable'; Version = $null; PingSuccessful = $false; DNSResolvable = $true; DHCPResponding = $false; TotalScopes = 0; ScopesWithIssues = 0; PercentageInUse = 0; IsADDomainController = $false; DomainName = 'domain.com'; IPAddress = $null; ScopesActive = 0; ScopesInactive = 0 }
                 [PSCustomObject]@{ ComputerName = 'dc01.domain.com'; Status = 'Online'; Version = '10.0'; PingSuccessful = $true; DNSResolvable = $true; DHCPResponding = $true; TotalScopes = 8; ScopesWithIssues = 1; PercentageInUse = 78; IsADDomainController = $true; DomainName = 'domain.com'; IPAddress = '192.168.1.5'; ScopesActive = 8; ScopesInactive = 0 }
             )
-            Scopes           = @(
+            Scopes                = @(
                 [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '192.168.1.0'; Name = 'Corporate LAN'; State = 'Active'; PercentageInUse = 85; AddressesInUse = 170; AddressesFree = 30; HasIssues = $true; Issues = @('High utilization'); LeaseDurationHours = 8; FailoverPartner = $null }
                 [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '10.1.0.0'; Name = 'Guest Network'; State = 'Active'; PercentageInUse = 25; AddressesInUse = 50; AddressesFree = 150; HasIssues = $false; Issues = @(); LeaseDurationHours = 24; FailoverPartner = 'dhcp02.domain.com' }
                 [PSCustomObject]@{ ServerName = 'dc01.domain.com'; ScopeId = '172.16.1.0'; Name = 'Server VLAN'; State = 'Active'; PercentageInUse = 92; AddressesInUse = 92; AddressesFree = 8; HasIssues = $true; Issues = @('Critical utilization', 'No failover configured'); LeaseDurationHours = 168; FailoverPartner = $null }
             )
-            ScopesWithIssues = @(
+            ScopesWithIssues      = @(
                 [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '192.168.1.0'; Name = 'Corporate LAN'; State = 'Active'; PercentageInUse = 85; HasIssues = $true; Issues = @('High utilization'); LeaseDurationHours = 8; FailoverPartner = $null }
                 [PSCustomObject]@{ ServerName = 'dc01.domain.com'; ScopeId = '172.16.1.0'; Name = 'Server VLAN'; State = 'Active'; PercentageInUse = 92; HasIssues = $true; Issues = @('Critical utilization', 'No failover configured'); LeaseDurationHours = 168; FailoverPartner = $null }
             )
-            IPv6Scopes       = @()
-            MulticastScopes  = @()
-            SecurityFilters  = @(
+            IPv6Scopes            = @()
+            MulticastScopes       = @()
+            SecurityFilters       = @(
                 [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; FilteringMode = 'Deny'; Allow = $false; Deny = $true }
                 [PSCustomObject]@{ ServerName = 'dc01.domain.com'; FilteringMode = 'None'; Allow = $false; Deny = $false }
             )
-            Policies         = @(
+            Policies              = @(
                 [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; Name = 'Corporate Devices'; Enabled = $true; ProcessingOrder = 1; Condition = 'Vendor Class matches Corporate' }
             )
-            ServerSettings   = @(
+            ServerSettings        = @(
                 [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; IsAuthorized = $true; IsDomainJoined = $true; ActivatePolicies = $true; ConflictDetectionAttempts = 2 }
                 [PSCustomObject]@{ ServerName = 'dc01.domain.com'; IsAuthorized = $true; IsDomainJoined = $true; ActivatePolicies = $false; ConflictDetectionAttempts = 0 }
             )
-            NetworkBindings  = @(
+            NetworkBindings       = @(
                 [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; InterfaceAlias = 'Ethernet'; IPAddress = '192.168.1.10'; State = $true }
             )
-            Reservations     = @()
-            AuditLogs        = @()
-            Databases        = @()
-            Statistics       = @{
+            Reservations          = @()
+            AuditLogs             = @()
+            Databases             = @()
+            Statistics            = @{
                 TotalServers = 3; ServersOnline = 2; ServersOffline = 1; ServersWithIssues = 1
                 TotalScopes = 3; ScopesActive = 3; ScopesInactive = 0; ScopesWithIssues = 2
                 TotalAddresses = 450; AddressesInUse = 312; AddressesFree = 138; OverallPercentageInUse = 69
             }
+            SecurityAnalysis      = @(
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; IsAuthorized = $true; AuthorizationStatus = 'Authorized in AD'; AuditLoggingEnabled = $true; ServiceAccount = 'Network Service'; SecurityRiskLevel = 'Low'; SecurityRecommendations = @() }
+                [PSCustomObject]@{ ServerName = 'dhcp02.domain.com'; IsAuthorized = $false; AuthorizationStatus = 'Not authorized in AD'; AuditLoggingEnabled = $false; ServiceAccount = 'LocalSystem'; SecurityRiskLevel = 'Critical'; SecurityRecommendations = @('Authorize DHCP server in Active Directory immediately', 'Enable DHCP audit logging for security monitoring', 'Configure dedicated service account for DHCP service') }
+                [PSCustomObject]@{ ServerName = 'dc01.domain.com'; IsAuthorized = $true; AuthorizationStatus = 'Authorized in AD'; AuditLoggingEnabled = $false; ServiceAccount = 'LocalSystem'; SecurityRiskLevel = 'Medium'; SecurityRecommendations = @('Enable DHCP audit logging for security monitoring', 'Configure dedicated service account for DHCP service') }
+            )
+            PerformanceMetrics    = @(
+                [PSCustomObject]@{ TotalServers = 3; TotalScopes = 3; AverageUtilization = 67.33; HighUtilizationScopes = 2; CriticalUtilizationScopes = 1; UnderUtilizedScopes = 0; CapacityPlanningRecommendations = @('1 scope(s) require immediate expansion', '2 scope(s) need expansion planning') }
+            )
+            NetworkDesignAnalysis = @(
+                [PSCustomObject]@{ TotalNetworkSegments = 3; ScopeOverlaps = @(); DesignRecommendations = @('Implement DHCP failover for high availability'); RedundancyAnalysis = @('2 scope(s) have no redundancy (single server)') }
+            )
+            BackupAnalysis        = @()
+            AdvancedScopeAnalysis = @()
         }
     } else {
         # Gather DHCP data
@@ -760,6 +773,135 @@ function Show-WinADDHCPSummary {
                             New-HTMLTableCondition -Name 'BackupIntervalMinutes' -ComparisonType number -Operator gt -Value 1440 -BackgroundColor Orange -HighlightHeaders 'BackupIntervalMinutes'
                             New-HTMLTableCondition -Name 'CleanupIntervalMinutes' -ComparisonType number -Operator gt -Value 10080 -BackgroundColor Orange -HighlightHeaders 'CleanupIntervalMinutes'
                         } -DataStore JavaScript
+                    }
+                }
+
+                # Enhanced Security Analysis Section
+                if ($DHCPData.SecurityAnalysis.Count -gt 0) {
+                    New-HTMLSection -HeaderText "🔒 Security Analysis & Authorization" {
+                        New-HTMLPanel -Invisible {
+                            New-HTMLPanel -Invisible {
+                                New-HTMLText -Text "Security Risk Assessment" -FontSize 16pt -FontWeight bold -Color DarkBlue
+                                New-HTMLText -Text "Analysis of DHCP server authorization status, security configurations, and potential risks." -FontSize 12pt
+                            }
+
+                            New-HTMLTable -DataTable $DHCPData.SecurityAnalysis -Filtering {
+                                New-HTMLTableCondition -Name 'IsAuthorized' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightGreen -FailBackgroundColor Red
+                                New-HTMLTableCondition -Name 'SecurityRiskLevel' -ComparisonType string -Operator eq -Value 'Critical' -BackgroundColor Red -Color White
+                                New-HTMLTableCondition -Name 'SecurityRiskLevel' -ComparisonType string -Operator eq -Value 'High' -BackgroundColor Orange -Color White
+                                New-HTMLTableCondition -Name 'SecurityRiskLevel' -ComparisonType string -Operator eq -Value 'Medium' -BackgroundColor Yellow
+                                New-HTMLTableCondition -Name 'SecurityRiskLevel' -ComparisonType string -Operator eq -Value 'Low' -BackgroundColor LightGreen
+                            } -DataStore JavaScript -ScrollX
+
+                            # Security recommendations summary
+                            $SecurityRecommendations = $DHCPData.SecurityAnalysis | Where-Object { $_.SecurityRecommendations.Count -gt 0 }
+                            if ($SecurityRecommendations.Count -gt 0) {
+                                New-HTMLSection -HeaderText "🔧 Security Recommendations" -Density Compact {
+                                    foreach ($Server in $SecurityRecommendations) {
+                                        New-HTMLPanel {
+                                            New-HTMLText -Text "Server: $($Server.ServerName)" -FontWeight bold -Color DarkRed
+                                            foreach ($Recommendation in $Server.SecurityRecommendations) {
+                                                New-HTMLText -Text "• $Recommendation" -Color Red
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                # Enhanced Performance Metrics Section
+                if ($DHCPData.PerformanceMetrics.Count -gt 0) {
+                    New-HTMLSection -HeaderText "📊 Performance Metrics & Capacity Planning" {
+                        New-HTMLPanel -Invisible {
+                            foreach ($Performance in $DHCPData.PerformanceMetrics) {
+                                New-HTMLPanel -Invisible {
+                                    New-HTMLText -Text "Performance Overview" -FontSize 16pt -FontWeight bold -Color DarkBlue
+                                    New-HTMLText -Text "Capacity utilization analysis and performance recommendations for optimal DHCP infrastructure." -FontSize 12pt
+                                }
+
+                                # Performance summary table
+                                $PerformanceSummary = [PSCustomObject]@{
+                                    'Total Servers'                      = $Performance.TotalServers
+                                    'Total Scopes'                       = $Performance.TotalScopes
+                                    'Average Utilization %'              = $Performance.AverageUtilization
+                                    'High Utilization Scopes (>80%)'     = $Performance.HighUtilizationScopes
+                                    'Critical Utilization Scopes (>95%)' = $Performance.CriticalUtilizationScopes
+                                    'Under-Utilized Scopes (<5%)'        = $Performance.UnderUtilizedScopes
+                                }
+
+                                New-HTMLTable -DataTable @($PerformanceSummary) -HideFooter {
+                                    New-HTMLTableCondition -Name 'High Utilization Scopes (>80%)' -ComparisonType number -Operator gt -Value 0 -BackgroundColor Orange -HighlightHeaders 'High Utilization Scopes (>80%)'
+                                    New-HTMLTableCondition -Name 'Critical Utilization Scopes (>95%)' -ComparisonType number -Operator gt -Value 0 -BackgroundColor Red -Color White -HighlightHeaders 'Critical Utilization Scopes (>95%)'
+                                    New-HTMLTableCondition -Name 'Under-Utilized Scopes (<5%)' -ComparisonType number -Operator gt -Value 0 -BackgroundColor LightBlue -HighlightHeaders 'Under-Utilized Scopes (<5%)'
+                                }
+
+                                # Capacity planning recommendations
+                                if ($Performance.CapacityPlanningRecommendations.Count -gt 0) {
+                                    New-HTMLSection -HeaderText "📈 Capacity Planning Recommendations" -CanCollapse {
+                                        foreach ($Recommendation in $Performance.CapacityPlanningRecommendations) {
+                                            New-HTMLText -Text "• $Recommendation" -Color DarkBlue
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                # Enhanced Network Design Analysis Section
+                if ($DHCPData.NetworkDesignAnalysis.Count -gt 0) {
+                    New-HTMLSection -HeaderText "🌐 Network Design Analysis" {
+                        New-HTMLPanel -Invisible {
+                            foreach ($NetworkDesign in $DHCPData.NetworkDesignAnalysis) {
+                                New-HTMLPanel -Invisible {
+                                    New-HTMLText -Text "Network Architecture Assessment" -FontSize 16pt -FontWeight bold -Color DarkBlue
+                                    New-HTMLText -Text "Analysis of network segmentation, redundancy, and design best practices." -FontSize 12pt
+                                }
+
+                                # Network design summary
+                                $DesignSummary = [PSCustomObject]@{
+                                    'Total Network Segments'  = $NetworkDesign.TotalNetworkSegments
+                                    'Scope Overlaps Detected' = $NetworkDesign.ScopeOverlaps.Count
+                                    'Redundancy Issues'       = $NetworkDesign.RedundancyAnalysis.Count
+                                    'Design Recommendations'  = $NetworkDesign.DesignRecommendations.Count
+                                }
+
+                                New-HTMLTable -DataTable @($DesignSummary) -HideFooter {
+                                    New-HTMLTableCondition -Name 'Scope Overlaps Detected' -ComparisonType number -Operator gt -Value 0 -BackgroundColor Red -Color White -HighlightHeaders 'Scope Overlaps Detected'
+                                    New-HTMLTableCondition -Name 'Redundancy Issues' -ComparisonType number -Operator gt -Value 0 -BackgroundColor Orange -HighlightHeaders 'Redundancy Issues'
+                                    New-HTMLTableCondition -Name 'Design Recommendations' -ComparisonType number -Operator gt -Value 0 -BackgroundColor LightBlue -HighlightHeaders 'Design Recommendations'
+                                }
+
+                                # Scope overlaps
+                                if ($NetworkDesign.ScopeOverlaps.Count -gt 0) {
+                                    New-HTMLSection -HeaderText "⚠️ Scope Overlap Issues" -CanCollapse {
+                                        foreach ($Overlap in $NetworkDesign.ScopeOverlaps) {
+                                            New-HTMLText -Text "• $Overlap" -Color Red
+                                        }
+                                    }
+                                }
+
+                                # Redundancy analysis
+                                if ($NetworkDesign.RedundancyAnalysis.Count -gt 0) {
+                                    New-HTMLSection -HeaderText "🔄 Redundancy Analysis" -CanCollapse {
+                                        foreach ($Analysis in $NetworkDesign.RedundancyAnalysis) {
+                                            New-HTMLText -Text "• $Analysis" -Color Orange
+                                        }
+                                    }
+                                }
+
+                                # Design recommendations
+                                if ($NetworkDesign.DesignRecommendations.Count -gt 0) {
+                                    New-HTMLSection -HeaderText "🏗️ Design Recommendations" -CanCollapse {
+                                        foreach ($Recommendation in $NetworkDesign.DesignRecommendations) {
+                                            New-HTMLText -Text "• $Recommendation" -Color DarkBlue
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 

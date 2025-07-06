@@ -130,6 +130,12 @@ function Get-WinADDHCPSummary {
         Options              = [System.Collections.Generic.List[Object]]::new()
         Errors               = [System.Collections.Generic.List[Object]]::new()
         Warnings             = [System.Collections.Generic.List[Object]]::new()
+        # Enhanced analysis collections
+        ScopeConflicts       = [System.Collections.Generic.List[Object]]::new()
+        PerformanceMetrics   = [System.Collections.Generic.List[Object]]::new()
+        SecurityAnalysis     = [System.Collections.Generic.List[Object]]::new()
+        BestPracticeViolations = [System.Collections.Generic.List[Object]]::new()
+        CapacityAnalysis     = [System.Collections.Generic.List[Object]]::new()
         Statistics           = [ordered] @{}
         ValidationResults    = [ordered] @{}
     }
@@ -251,6 +257,10 @@ function Get-WinADDHCPSummary {
             AddressesInUse       = 0
             AddressesFree        = 0
             PercentageInUse      = 0
+            IsAuthorized         = $null
+            AuthorizationStatus  = 'Unknown'
+            Issues               = [System.Collections.Generic.List[string]]::new()
+            HasIssues            = $false
             GatheredFrom         = $Computer
             GatheredDate         = Get-Date
         }
@@ -382,7 +392,42 @@ function Get-WinADDHCPSummary {
                 $ServerAddressesInUse += $ScopeStats.AddressesInUse
                 $ServerAddressesFree += $ScopeStats.AddressesFree
 
-                Write-Verbose "Get-WinADDHCPSummary - Scope $($Scope.ScopeId) statistics: Total=$ScopeTotalAddresses, InUse=$($ScopeStats.AddressesInUse), Free=$($ScopeStats.AddressesFree), Utilization=$($ScopeObject.PercentageInUse)%"
+            # Enhanced scope analysis and best practice validation
+            $ScopeObject.TotalAddresses = $ScopeTotalAddresses
+
+            # Calculate scope efficiency metrics
+            $ScopeRange = [System.Net.IPAddress]::Parse($Scope.EndRange).GetAddressBytes()[3] - [System.Net.IPAddress]::Parse($Scope.StartRange).GetAddressBytes()[3] + 1
+            $ScopeObject.DefinedRange = $ScopeRange
+            $ScopeObject.UtilizationEfficiency = if ($ScopeRange -gt 0) { [Math]::Round(($ScopeTotalAddresses / $ScopeRange) * 100, 2) } else { 0 }
+
+            # Best practice validations
+            $BestPracticeIssues = [System.Collections.Generic.List[string]]::new()
+
+            # Check scope size best practices
+            if ($ScopeTotalAddresses -lt 10) {
+                $BestPracticeIssues.Add("Very small scope size ($ScopeTotalAddresses addresses) - consider consolidation")
+            } elseif ($ScopeTotalAddresses -gt 1000) {
+                $BestPracticeIssues.Add("Very large scope size ($ScopeTotalAddresses addresses) - consider segmentation")
+            }
+
+            # Check utilization thresholds
+            if ($ScopeObject.PercentageInUse -gt 95) {
+                $BestPracticeIssues.Add("Critical utilization level ($($ScopeObject.PercentageInUse)%) - immediate expansion needed")
+            } elseif ($ScopeObject.PercentageInUse -gt 80) {
+                $BestPracticeIssues.Add("High utilization level ($($ScopeObject.PercentageInUse)%) - expansion planning recommended")
+            } elseif ($ScopeObject.PercentageInUse -lt 5 -and $Scope.State -eq 'Active') {
+                $BestPracticeIssues.Add("Very low utilization ($($ScopeObject.PercentageInUse)%) - scope may be unnecessary")
+            }
+
+            # Add best practice issues to main issues list
+            foreach ($Issue in $BestPracticeIssues) {
+                $ScopeObject.Issues.Add($Issue)
+                if ($Issue -like "*Critical*" -or $Issue -like "*immediate*") {
+                    $ScopeObject.HasIssues = $true
+                }
+            }
+
+            Write-Verbose "Get-WinADDHCPSummary - Scope $($Scope.ScopeId) statistics: Total=$ScopeTotalAddresses, InUse=$($ScopeStats.AddressesInUse), Free=$($ScopeStats.AddressesFree), Utilization=$($ScopeObject.PercentageInUse)%"
             } catch {
                 Add-DHCPError -ServerName $Computer -ScopeId $Scope.ScopeId -Component 'Scope Statistics' -Operation 'Get-DhcpServerv4ScopeStatistics' -ErrorMessage $_.Exception.Message -Severity 'Warning'
             }
@@ -493,6 +538,50 @@ function Get-WinADDHCPSummary {
 
         if ($ServerScopesWithIssues -gt 0) {
             $ServersWithIssues++
+        }
+
+        # DHCP Authorization Analysis
+        try {
+            Write-Verbose "Get-WinADDHCPSummary - Checking DHCP authorization for $Computer"
+            $AuthorizedServers = Get-DhcpServerInDC -ErrorAction SilentlyContinue | Where-Object { $_.DnsName -eq $Computer -or $_.IPAddress -eq $Computer }
+            if ($AuthorizedServers) {
+                $ServerInfo.IsAuthorized = $true
+                $ServerInfo.AuthorizationStatus = "Authorized in AD"
+            } else {
+                $ServerInfo.IsAuthorized = $false
+                $ServerInfo.AuthorizationStatus = "Not authorized in AD"
+                $ServerInfo.Issues.Add("DHCP server is not authorized in Active Directory")
+                $ServerInfo.HasIssues = $true
+            }
+        } catch {
+            $ServerInfo.IsAuthorized = $null
+            $ServerInfo.AuthorizationStatus = "Unable to verify authorization: $($_.Exception.Message)"
+            $ServerInfo.Issues.Add("Could not verify DHCP authorization status")
+        }
+
+        # Security Analysis
+        try {
+            Write-Verbose "Get-WinADDHCPSummary - Performing security analysis for $Computer"
+
+            # Check for DHCP service account configuration
+            $DHCPService = Get-WmiObject -Class Win32_Service -Filter "Name='DHCPServer'" -ComputerName $Computer -ErrorAction SilentlyContinue
+            if ($DHCPService) {
+                if ($DHCPService.StartName -eq "LocalSystem") {
+                    $ServerInfo.Issues.Add("DHCP service running as LocalSystem - consider using dedicated service account")
+                }
+            }
+
+            # Check for common security misconfigurations
+            $DHCPAuditSettings = Get-DhcpServerAuditLog -ComputerName $Computer -ErrorAction SilentlyContinue
+            if ($DHCPAuditSettings) {
+                if (-not $DHCPAuditSettings.Enable) {
+                    $ServerInfo.Issues.Add("DHCP audit logging is disabled - enable for security monitoring")
+                    $ServerInfo.HasIssues = $true
+                }
+            }
+
+        } catch {
+            Write-Warning "Get-WinADDHCPSummary - Security analysis failed for $Computer`: $($_.Exception.Message)"
         }
 
         # Add the successfully processed server to the collection
@@ -1120,6 +1209,93 @@ function Get-WinADDHCPSummary {
         $InactiveScopes
     )
     $DHCPSummary.ValidationResults.Summary.ScopesWithInfo = ($InfoScopes | Sort-Object -Property ScopeId -Unique).Count
+
+    # Enhanced Analysis: Security Analysis
+    Write-Verbose "Get-WinADDHCPSummary - Performing enhanced security analysis"
+    foreach ($Server in $DHCPSummary.Servers) {
+        $SecurityIssues = [PSCustomObject]@{
+            ServerName = $Server.ServerName
+            IsAuthorized = $Server.IsAuthorized
+            AuthorizationStatus = $Server.AuthorizationStatus
+            AuditLoggingEnabled = $null
+            ServiceAccount = $null
+            SecurityRiskLevel = 'Low'
+            SecurityRecommendations = [System.Collections.Generic.List[string]]::new()
+        }
+
+        # Determine security risk level based on issues
+        if ($Server.Issues | Where-Object { $_ -like "*not authorized*" }) {
+            $SecurityIssues.SecurityRiskLevel = 'Critical'
+            $SecurityIssues.SecurityRecommendations.Add("Authorize DHCP server in Active Directory immediately")
+        }
+        if ($Server.Issues | Where-Object { $_ -like "*audit*" }) {
+            $SecurityIssues.SecurityRiskLevel = if ($SecurityIssues.SecurityRiskLevel -eq 'Critical') { 'Critical' } else { 'High' }
+            $SecurityIssues.SecurityRecommendations.Add("Enable DHCP audit logging for security monitoring")
+        }
+        if ($Server.Issues | Where-Object { $_ -like "*LocalSystem*" }) {
+            $SecurityIssues.SecurityRiskLevel = if ($SecurityIssues.SecurityRiskLevel -eq 'Critical') { 'Critical' } else { 'Medium' }
+            $SecurityIssues.SecurityRecommendations.Add("Configure dedicated service account for DHCP service")
+        }
+
+        $DHCPSummary.SecurityAnalysis.Add($SecurityIssues)
+    }
+
+    # Enhanced Analysis: Performance Metrics
+    Write-Verbose "Get-WinADDHCPSummary - Calculating performance metrics"
+    $OverallPerformance = [PSCustomObject]@{
+        TotalServers = $DHCPSummary.Summary.TotalServers
+        TotalScopes = $DHCPSummary.Summary.TotalScopes
+        AverageUtilization = if ($DHCPSummary.Summary.TotalScopes -gt 0) {
+            [Math]::Round(($DHCPSummary.Servers | ForEach-Object { $_.PercentageInUse } | Measure-Object -Average).Average, 2)
+        } else { 0 }
+        HighUtilizationScopes = ($DHCPSummary.Scopes | Where-Object { $_.PercentageInUse -gt 80 }).Count
+        CriticalUtilizationScopes = ($DHCPSummary.Scopes | Where-Object { $_.PercentageInUse -gt 95 }).Count
+        UnderUtilizedScopes = ($DHCPSummary.Scopes | Where-Object { $_.PercentageInUse -lt 5 -and $_.State -eq 'Active' }).Count
+        CapacityPlanningRecommendations = [System.Collections.Generic.List[string]]::new()
+    }
+
+    if ($OverallPerformance.CriticalUtilizationScopes -gt 0) {
+        $OverallPerformance.CapacityPlanningRecommendations.Add("$($OverallPerformance.CriticalUtilizationScopes) scope(s) require immediate expansion")
+    }
+    if ($OverallPerformance.HighUtilizationScopes -gt 0) {
+        $OverallPerformance.CapacityPlanningRecommendations.Add("$($OverallPerformance.HighUtilizationScopes) scope(s) need expansion planning")
+    }
+    if ($OverallPerformance.UnderUtilizedScopes -gt 0) {
+        $OverallPerformance.CapacityPlanningRecommendations.Add("$($OverallPerformance.UnderUtilizedScopes) scope(s) are underutilized and may need review")
+    }
+
+    $DHCPSummary.PerformanceMetrics.Add($OverallPerformance)
+
+    # Enhanced Analysis: Network Design Analysis
+    Write-Verbose "Get-WinADDHCPSummary - Analyzing network design"
+    $NetworkDesign = [PSCustomObject]@{
+        TotalNetworkSegments = ($DHCPSummary.Scopes | Group-Object { [System.Net.IPAddress]::Parse($_.ScopeId).GetAddressBytes()[0..2] -join '.' }).Count
+        ScopeOverlaps = [System.Collections.Generic.List[string]]::new()
+        DesignRecommendations = [System.Collections.Generic.List[string]]::new()
+        RedundancyAnalysis = [System.Collections.Generic.List[string]]::new()
+    }
+
+    # Check for potential scope overlaps (simplified check)
+    $ScopeRanges = $DHCPSummary.Scopes | Where-Object { $_.State -eq 'Active' }
+    for ($i = 0; $i -lt $ScopeRanges.Count; $i++) {
+        for ($j = $i + 1; $j -lt $ScopeRanges.Count; $j++) {
+            $Scope1 = $ScopeRanges[$i]
+            $Scope2 = $ScopeRanges[$j]
+            if ($Scope1.ScopeId -eq $Scope2.ScopeId -and $Scope1.ServerName -ne $Scope2.ServerName) {
+                $NetworkDesign.ScopeOverlaps.Add("Scope $($Scope1.ScopeId) exists on multiple servers: $($Scope1.ServerName), $($Scope2.ServerName)")
+            }
+        }
+    }
+
+    # Analyze redundancy
+    $ServersPerScope = $DHCPSummary.Scopes | Where-Object { $_.State -eq 'Active' } | Group-Object ScopeId
+    $SingleServerScopes = ($ServersPerScope | Where-Object { $_.Count -eq 1 }).Count
+    if ($SingleServerScopes -gt 0) {
+        $NetworkDesign.RedundancyAnalysis.Add("$SingleServerScopes scope(s) have no redundancy (single server)")
+        $NetworkDesign.DesignRecommendations.Add("Implement DHCP failover for high availability")
+    }
+
+    $DHCPSummary.NetworkDesignAnalysis.Add($NetworkDesign)
 
     Write-Progress -Activity "Processing DHCP Servers" -Completed
     Write-Verbose "Get-WinADDHCPSummary - DHCP information gathering completed"
