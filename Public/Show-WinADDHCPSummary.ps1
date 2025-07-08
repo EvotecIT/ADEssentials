@@ -1,4 +1,4 @@
-function Show-WinADDHCPSummary {
+﻿function Show-WinADDHCPSummary {
     <#
     .SYNOPSIS
     Generates an HTML report displaying comprehensive DHCP server information from Active Directory forest.
