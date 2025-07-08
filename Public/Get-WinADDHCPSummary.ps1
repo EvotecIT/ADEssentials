@@ -200,6 +200,31 @@
                 [PSCustomObject]@{ ServerName = 'dhcp02.domain.com'; IPAddress = $null; Status = 'Unreachable'; IsDomainController = $false; TotalScopes = 0; ActiveScopes = 0; InactiveScopes = 0; DNSResolvable = $true; ReverseDNSValid = $false; NetworkHealth = 'Network Issues'; DesignNotes = 'Standard Configuration' }
                 [PSCustomObject]@{ ServerName = 'dc01.domain.com'; IPAddress = '192.168.1.5'; Status = 'Online'; IsDomainController = $true; TotalScopes = 8; ActiveScopes = 8; InactiveScopes = 0; DNSResolvable = $true; ReverseDNSValid = $true; NetworkHealth = 'Healthy'; DesignNotes = 'Domain Controller' }
             )
+            # New safe, high-value test data
+            DHCPOptions               = @(
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = 'Server-Level'; OptionId = 6; Name = 'DNS Servers'; Value = '192.168.1.2, 192.168.1.3'; VendorClass = ''; UserClass = ''; PolicyName = ''; Level = 'Server'; GatheredFrom = 'dhcp01.domain.com'; GatheredDate = (Get-Date) }
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = 'Server-Level'; OptionId = 15; Name = 'Domain Name'; Value = 'domain.com'; VendorClass = ''; UserClass = ''; PolicyName = ''; Level = 'Server'; GatheredFrom = 'dhcp01.domain.com'; GatheredDate = (Get-Date) }
+                [PSCustomObject]@{ ServerName = 'dc01.domain.com'; ScopeId = 'Server-Level'; OptionId = 6; Name = 'DNS Servers'; Value = '8.8.8.8, 1.1.1.1'; VendorClass = ''; UserClass = ''; PolicyName = ''; Level = 'Server'; GatheredFrom = 'dc01.domain.com'; GatheredDate = (Get-Date) }
+            )
+            DHCPClasses               = @(
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; Name = 'Microsoft Windows 2000 Options'; Type = 'Vendor'; Data = 'MSFT 5.0'; Description = 'Microsoft Windows 2000 vendor class'; GatheredFrom = 'dhcp01.domain.com'; GatheredDate = (Get-Date) }
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; Name = 'Corporate Laptops'; Type = 'User'; Data = 'CORP-LAPTOP'; Description = 'Corporate laptop user class'; GatheredFrom = 'dhcp01.domain.com'; GatheredDate = (Get-Date) }
+                [PSCustomObject]@{ ServerName = 'dc01.domain.com'; Name = 'Microsoft Options'; Type = 'Vendor'; Data = 'MSFT'; Description = 'Standard Microsoft vendor class'; GatheredFrom = 'dc01.domain.com'; GatheredDate = (Get-Date) }
+            )
+            Superscopes               = @(
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; SuperscopeName = 'Building-A'; ScopeId = '192.168.1.0'; SuperscopeState = 'Active'; GatheredFrom = 'dhcp01.domain.com'; GatheredDate = (Get-Date) }
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; SuperscopeName = 'Building-A'; ScopeId = '192.168.2.0'; SuperscopeState = 'Active'; GatheredFrom = 'dhcp01.domain.com'; GatheredDate = (Get-Date) }
+            )
+            FailoverRelationships     = @(
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; Name = 'dhcp01-dhcp02-failover'; PartnerServer = 'dhcp02.domain.com'; Mode = 'LoadBalance'; State = 'Normal'; LoadBalancePercent = 50; MaxClientLeadTime = '01:00:00'; StateSwitchInterval = '00:05:00'; AutoStateTransition = $true; EnableAuth = $true; ScopeCount = 3; ScopeIds = '10.1.0.0, 10.2.0.0, 10.3.0.0'; GatheredFrom = 'dhcp01.domain.com'; GatheredDate = (Get-Date) }
+            )
+            ServerStatistics          = @(
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; TotalScopes = 15; ScopesWithDelay = 0; TotalAddresses = 3000; AddressesInUse = 1350; AddressesAvailable = 1650; PercentageInUse = 45; PercentageAvailable = 55; Discovers = 2500; Offers = 2400; Requests = 2350; Acks = 2300; Naks = 50; Declines = 2; Releases = 150; ServerStartTime = (Get-Date).AddDays(-30); GatheredFrom = 'dhcp01.domain.com'; GatheredDate = (Get-Date) }
+                [PSCustomObject]@{ ServerName = 'dc01.domain.com'; TotalScopes = 8; ScopesWithDelay = 1; TotalAddresses = 1500; AddressesInUse = 1170; AddressesAvailable = 330; PercentageInUse = 78; PercentageAvailable = 22; Discovers = 1200; Offers = 1150; Requests = 1100; Acks = 1050; Naks = 50; Declines = 5; Releases = 80; ServerStartTime = (Get-Date).AddDays(-15); GatheredFrom = 'dc01.domain.com'; GatheredDate = (Get-Date) }
+            )
+            OptionsAnalysis           = @(
+                [PSCustomObject]@{ AnalysisType = 'DHCP Options Configuration'; TotalServersAnalyzed = 2; TotalOptionsConfigured = 8; UniqueOptionTypes = 6; CriticalOptionsCovered = 3; MissingCriticalOptions = @('Option 3 (Router - Default Gateway)', 'Option 51 (Lease Time)', 'Option 66 (Boot Server Host Name)'); OptionIssues = @('Public DNS servers configured in scope Server-Level on dc01.domain.com'); OptionRecommendations = @('Configure missing critical DHCP options for proper client functionality', 'Consider configuring server-level options for common settings') }
+            )
         }
     }
 
@@ -233,6 +258,13 @@
         ScopeRedundancyAnalysis   = [System.Collections.Generic.List[Object]]::new()
         ServerPerformanceAnalysis = [System.Collections.Generic.List[Object]]::new()
         ServerNetworkAnalysis     = [System.Collections.Generic.List[Object]]::new()
+        # New safe, high-value collections
+        DHCPOptions               = [System.Collections.Generic.List[Object]]::new()
+        DHCPClasses               = [System.Collections.Generic.List[Object]]::new()
+        Superscopes               = [System.Collections.Generic.List[Object]]::new()
+        FailoverRelationships     = [System.Collections.Generic.List[Object]]::new()
+        ServerStatistics          = [System.Collections.Generic.List[Object]]::new()
+        OptionsAnalysis           = [System.Collections.Generic.List[Object]]::new()
         Statistics                = [ordered] @{}
         ValidationResults         = [ordered] @{}
     }
@@ -1121,6 +1153,135 @@
                 }
                 Write-Verbose "Get-WinADDHCPSummary - Completed reservations and options analysis for all scopes on $Computer"
 
+                # NEW: Collect additional safe, high-value data
+                Write-Verbose "Get-WinADDHCPSummary - Collecting enhanced DHCP configuration data for $Computer"
+
+                # DHCP Server Options (global/server-level)
+                try {
+                    Write-Verbose "Get-WinADDHCPSummary - Collecting server-level DHCP options for $Computer"
+                    $ServerOptions = Get-DhcpServerv4OptionValue -ComputerName $Computer -All -ErrorAction Stop
+                    foreach ($Option in $ServerOptions) {
+                        $ServerOptionObject = [PSCustomObject] @{
+                            ServerName   = $Computer
+                            ScopeId      = 'Server-Level'
+                            OptionId     = $Option.OptionId
+                            Name         = $Option.Name
+                            Value        = ($Option.Value -join ', ')
+                            VendorClass  = $Option.VendorClass
+                            UserClass    = $Option.UserClass
+                            PolicyName   = $Option.PolicyName
+                            Level        = 'Server'
+                            GatheredFrom = $Computer
+                            GatheredDate = Get-Date
+                        }
+                        $DHCPSummary.DHCPOptions.Add($ServerOptionObject)
+                    }
+                    Write-Verbose "Get-WinADDHCPSummary - Found $($ServerOptions.Count) server-level options for $Computer"
+                } catch {
+                    Add-DHCPError -ServerName $Computer -Component 'Server Options' -Operation 'Get-DhcpServerv4OptionValue -All' -ErrorMessage $_.Exception.Message -Severity 'Warning'
+                }
+
+                # DHCP Classes (Vendor/User Classes)
+                try {
+                    Write-Verbose "Get-WinADDHCPSummary - Collecting DHCP classes for $Computer"
+                    $Classes = Get-DhcpServerv4Class -ComputerName $Computer -ErrorAction Stop
+                    foreach ($Class in $Classes) {
+                        $ClassObject = [PSCustomObject] @{
+                            ServerName   = $Computer
+                            Name         = $Class.Name
+                            Type         = $Class.Type
+                            Data         = $Class.Data
+                            Description  = $Class.Description
+                            GatheredFrom = $Computer
+                            GatheredDate = Get-Date
+                        }
+                        $DHCPSummary.DHCPClasses.Add($ClassObject)
+                    }
+                    Write-Verbose "Get-WinADDHCPSummary - Found $($Classes.Count) DHCP classes for $Computer"
+                } catch {
+                    Add-DHCPError -ServerName $Computer -Component 'DHCP Classes' -Operation 'Get-DhcpServerv4Class' -ErrorMessage $_.Exception.Message -Severity 'Warning'
+                }
+
+                # Superscopes
+                try {
+                    Write-Verbose "Get-WinADDHCPSummary - Collecting superscopes for $Computer"
+                    $Superscopes = Get-DhcpServerv4Superscope -ComputerName $Computer -ErrorAction Stop
+                    foreach ($Superscope in $Superscopes) {
+                        $SuperscopeObject = [PSCustomObject] @{
+                            ServerName        = $Computer
+                            SuperscopeName    = $Superscope.SuperscopeName
+                            ScopeId           = $Superscope.ScopeId
+                            SuperscopeState   = $Superscope.SuperscopeState
+                            GatheredFrom      = $Computer
+                            GatheredDate      = Get-Date
+                        }
+                        $DHCPSummary.Superscopes.Add($SuperscopeObject)
+                    }
+                    Write-Verbose "Get-WinADDHCPSummary - Found $($Superscopes.Count) superscopes for $Computer"
+                } catch {
+                    Add-DHCPError -ServerName $Computer -Component 'Superscopes' -Operation 'Get-DhcpServerv4Superscope' -ErrorMessage $_.Exception.Message -Severity 'Warning'
+                }
+
+                # Failover Relationships
+                try {
+                    Write-Verbose "Get-WinADDHCPSummary - Collecting failover relationships for $Computer"
+                    $FailoverRelationships = Get-DhcpServerv4Failover -ComputerName $Computer -ErrorAction Stop
+                    foreach ($Failover in $FailoverRelationships) {
+                        $FailoverObject = [PSCustomObject] @{
+                            ServerName              = $Computer
+                            Name                    = $Failover.Name
+                            PartnerServer           = $Failover.PartnerServer
+                            Mode                    = $Failover.Mode
+                            State                   = $Failover.State
+                            LoadBalancePercent      = $Failover.LoadBalancePercent
+                            MaxClientLeadTime       = $Failover.MaxClientLeadTime
+                            StateSwitchInterval     = $Failover.StateSwitchInterval
+                            AutoStateTransition     = $Failover.AutoStateTransition
+                            EnableAuth              = $Failover.EnableAuth
+                            ScopeCount              = ($Failover.ScopeId | Measure-Object).Count
+                            ScopeIds                = ($Failover.ScopeId -join ', ')
+                            GatheredFrom            = $Computer
+                            GatheredDate            = Get-Date
+                        }
+                        $DHCPSummary.FailoverRelationships.Add($FailoverObject)
+                    }
+                    Write-Verbose "Get-WinADDHCPSummary - Found $($FailoverRelationships.Count) failover relationships for $Computer"
+                } catch {
+                    Add-DHCPError -ServerName $Computer -Component 'Failover Relationships' -Operation 'Get-DhcpServerv4Failover' -ErrorMessage $_.Exception.Message -Severity 'Warning'
+                }
+
+                # Server Statistics
+                try {
+                    Write-Verbose "Get-WinADDHCPSummary - Collecting server statistics for $Computer"
+                    $ServerStats = Get-DhcpServerv4Statistics -ComputerName $Computer -ErrorAction Stop
+                    $ServerStatsObject = [PSCustomObject] @{
+                        ServerName          = $Computer
+                        TotalScopes         = $ServerStats.TotalScopes
+                        ScopesWithDelay     = $ServerStats.ScopesWithDelay
+                        TotalAddresses      = $ServerStats.TotalAddresses
+                        AddressesInUse      = $ServerStats.AddressesInUse
+                        AddressesAvailable  = $ServerStats.AddressesAvailable
+                        PercentageInUse     = $ServerStats.PercentageInUse
+                        PercentageAvailable = $ServerStats.PercentageAvailable
+                        Discovers           = $ServerStats.Discovers
+                        Offers              = $ServerStats.Offers
+                        Requests            = $ServerStats.Requests
+                        Acks                = $ServerStats.Acks
+                        Naks                = $ServerStats.Naks
+                        Declines            = $ServerStats.Declines
+                        Releases            = $ServerStats.Releases
+                        ServerStartTime     = $ServerStats.ServerStartTime
+                        GatheredFrom        = $Computer
+                        GatheredDate        = Get-Date
+                    }
+                    $DHCPSummary.ServerStatistics.Add($ServerStatsObject)
+                    Write-Verbose "Get-WinADDHCPSummary - Server statistics collected for $Computer"
+                } catch {
+                    Add-DHCPError -ServerName $Computer -Component 'Server Statistics' -Operation 'Get-DhcpServerv4Statistics' -ErrorMessage $_.Exception.Message -Severity 'Warning'
+                }
+
+                Write-Verbose "Get-WinADDHCPSummary - Completed enhanced configuration data collection for $Computer"
+
             } catch {
                 Add-DHCPError -ServerName $Computer -Component 'Enhanced Server Configuration' -Operation 'Overall Enhanced Configuration Gathering' -ErrorMessage $_.Exception.Message -Severity 'Warning'
             }
@@ -1501,6 +1662,89 @@
             'Recommendations'        = @('Enable regular backup validation', 'Verify backup restoration procedures')
         }
         $DHCPSummary.BackupAnalysis.Add($BackupAnalysis)
+    }
+
+    # Enhanced Analysis: DHCP Options Analysis
+    Write-Verbose "Get-WinADDHCPSummary - Analyzing DHCP options configuration"
+    if ($DHCPSummary.DHCPOptions.Count -gt 0 -or $DHCPSummary.Options.Count -gt 0) {
+        # Combine server-level and scope-level options for analysis
+        $AllOptions = @()
+        $AllOptions += $DHCPSummary.DHCPOptions
+        $AllOptions += $DHCPSummary.Options
+
+        # Analyze critical options
+        $CriticalOptions = @{
+            3  = 'Router (Default Gateway)'
+            6  = 'DNS Servers'
+            15 = 'Domain Name'
+            51 = 'Lease Time'
+            66 = 'Boot Server Host Name'
+            67 = 'Bootfile Name'
+        }
+
+        $OptionsAnalysis = [PSCustomObject]@{
+            'AnalysisType'           = 'DHCP Options Configuration'
+            'TotalServersAnalyzed'   = ($AllOptions | Group-Object ServerName).Count
+            'TotalOptionsConfigured' = $AllOptions.Count
+            'UniqueOptionTypes'      = ($AllOptions | Group-Object OptionId).Count
+            'CriticalOptionsCovered' = 0
+            'MissingCriticalOptions' = [System.Collections.Generic.List[string]]::new()
+            'OptionIssues'           = [System.Collections.Generic.List[string]]::new()
+            'OptionRecommendations'  = [System.Collections.Generic.List[string]]::new()
+            'ServerLevelOptions'     = ($DHCPSummary.DHCPOptions | Group-Object OptionId).Count
+            'ScopeLevelOptions'      = ($DHCPSummary.Options | Group-Object OptionId).Count
+        }
+
+        # Check for critical options coverage
+        foreach ($OptionId in $CriticalOptions.Keys) {
+            $OptionExists = $AllOptions | Where-Object { $_.OptionId -eq $OptionId }
+            if ($OptionExists) {
+                $OptionsAnalysis.CriticalOptionsCovered++
+
+                # Analyze specific option values for issues
+                foreach ($Option in $OptionExists) {
+                    switch ($OptionId) {
+                        6 { # DNS Servers
+                            if ($Option.Value -match '8\.8\.8\.8|1\.1\.1\.1|208\.67\.222\.222') {
+                                $OptionsAnalysis.OptionIssues.Add("Public DNS servers configured in scope $($Option.ScopeId) on $($Option.ServerName)")
+                            }
+                        }
+                        15 { # Domain Name
+                            if ([string]::IsNullOrEmpty($Option.Value)) {
+                                $OptionsAnalysis.OptionIssues.Add("Empty domain name in scope $($Option.ScopeId) on $($Option.ServerName)")
+                            }
+                        }
+                        51 { # Lease Time
+                            try {
+                                $LeaseHours = [int]$Option.Value / 3600
+                                if ($LeaseHours -gt 168) { # More than 7 days
+                                    $OptionsAnalysis.OptionIssues.Add("Very long lease time ($LeaseHours hours) in scope $($Option.ScopeId) on $($Option.ServerName)")
+                                }
+                            } catch {
+                                $OptionsAnalysis.OptionIssues.Add("Invalid lease time format in scope $($Option.ScopeId) on $($Option.ServerName)")
+                            }
+                        }
+                    }
+                }
+            } else {
+                $OptionsAnalysis.MissingCriticalOptions.Add("Option $OptionId ($($CriticalOptions[$OptionId])) not configured on any server/scope")
+            }
+        }
+
+        # Generate recommendations
+        if ($OptionsAnalysis.MissingCriticalOptions.Count -gt 0) {
+            $OptionsAnalysis.OptionRecommendations.Add("Configure missing critical DHCP options for proper client functionality")
+        }
+        if ($OptionsAnalysis.OptionIssues.Count -eq 0) {
+            $OptionsAnalysis.OptionRecommendations.Add("DHCP options configuration appears healthy")
+        }
+        if ($OptionsAnalysis.ServerLevelOptions -eq 0) {
+            $OptionsAnalysis.OptionRecommendations.Add("Consider configuring server-level options for common settings")
+        }
+
+        $DHCPSummary.OptionsAnalysis.Add($OptionsAnalysis)
+    } else {
+        Write-Verbose "Get-WinADDHCPSummary - No DHCP options data available for analysis"
     }
 
     Write-Progress -Activity "Processing DHCP Servers" -Completed

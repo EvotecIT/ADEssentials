@@ -670,51 +670,388 @@
                 }
             }
 
-            New-HTMLTab -TabName 'Configuration' {
+            New-HTMLTab -TabName 'Options & Classes' {
+                # DHCP Options Analysis Section with enhanced visuals
+                if ($DHCPData.OptionsAnalysis.Count -gt 0) {
+                    New-HTMLSection -HeaderText "⚙️ DHCP Options Health Dashboard" {
+                        New-HTMLPanel -Invisible {
+                            New-HTMLPanel -Invisible {
+                                New-HTMLText -Text "DHCP Options Configuration Analysis" -FontSize 18pt -FontWeight bold -Color DarkBlue
+                                New-HTMLText -Text "Critical analysis of DHCP options configuration across all servers and scopes. Essential options ensure proper client functionality and network connectivity." -FontSize 12pt -Color DarkGray
+                            }
+
+                            # Summary cards for quick overview
+                            foreach ($Analysis in $DHCPData.OptionsAnalysis) {
+                                New-HTMLSection -HeaderText "Configuration Health Overview" -Invisible -Density Compact {
+                                    New-HTMLInfoCard -Title "Total Servers" -Number $Analysis.TotalServersAnalyzed -Subtitle "Analyzed" -Icon "🖥️" -TitleColor DodgerBlue -NumberColor Navy
+                                    New-HTMLInfoCard -Title "Options Configured" -Number $Analysis.TotalOptionsConfigured -Subtitle "Total Settings" -Icon "⚙️" -TitleColor Purple -NumberColor DarkMagenta
+                                    New-HTMLInfoCard -Title "Option Types" -Number $Analysis.UniqueOptionTypes -Subtitle "Different Options" -Icon "🔧" -TitleColor Orange -NumberColor DarkOrange
+
+                                    if ($Analysis.CriticalOptionsCovered -ge 4) {
+                                        New-HTMLInfoCard -Title "Critical Options" -Number "$($Analysis.CriticalOptionsCovered)/6" -Subtitle "Good Coverage" -Icon "✅" -TitleColor LimeGreen -NumberColor DarkGreen -ShadowColor 'rgba(50, 205, 50, 0.15)'
+                                    } else {
+                                        New-HTMLInfoCard -Title "Critical Options" -Number "$($Analysis.CriticalOptionsCovered)/6" -Subtitle "Needs Attention" -Icon "⚠️" -TitleColor Crimson -NumberColor DarkRed -ShadowColor 'rgba(220, 20, 60, 0.2)' -ShadowIntensity Bold
+                                    }
+                                }
+
+                                New-HTMLTable -DataTable @($Analysis) -HideFooter {
+                                    New-HTMLTableCondition -Name 'CriticalOptionsCovered' -ComparisonType number -Operator lt -Value 4 -BackgroundColor Orange -HighlightHeaders 'CriticalOptionsCovered'
+                                    New-HTMLTableCondition -Name 'CriticalOptionsCovered' -ComparisonType number -Operator gt -Value 3 -BackgroundColor LightGreen -HighlightHeaders 'CriticalOptionsCovered'
+                                    New-HTMLTableCondition -Name 'OptionIssues' -ComparisonType string -Operator ne -Value '' -BackgroundColor Orange
+                                } -Title "Detailed Analysis Results"
+
+                                # Show missing critical options if any
+                                if ($Analysis.MissingCriticalOptions.Count -gt 0) {
+                                    New-HTMLSection -HeaderText "🚨 Missing Critical Options" -CanCollapse {
+                                        New-HTMLPanel {
+                                            New-HTMLText -Text "The following critical DHCP options are not configured anywhere in your environment:" -FontSize 12pt -Color DarkRed -FontWeight bold
+                                            foreach ($MissingOption in $Analysis.MissingCriticalOptions) {
+                                                New-HTMLText -Text "🔴 $MissingOption" -Color Red -FontSize 14px
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if ($Analysis.OptionIssues.Count -gt 0) {
+                                    New-HTMLSection -HeaderText "⚠️ Configuration Issues Found" -CanCollapse {
+                                        New-HTMLPanel {
+                                            New-HTMLText -Text "These configuration issues require attention:" -FontSize 12pt -Color DarkOrange -FontWeight bold
+                                            foreach ($Issue in $Analysis.OptionIssues) {
+                                                New-HTMLText -Text "🟠 $Issue" -Color Orange -FontSize 14px
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if ($Analysis.OptionRecommendations.Count -gt 0) {
+                                    New-HTMLSection -HeaderText "💡 Expert Recommendations" -CanCollapse {
+                                        New-HTMLPanel {
+                                            New-HTMLText -Text "Recommended actions to optimize your DHCP configuration:" -FontSize 12pt -Color DarkBlue -FontWeight bold
+                                            foreach ($Recommendation in $Analysis.OptionRecommendations) {
+                                                New-HTMLText -Text "💙 $Recommendation" -Color DarkBlue -FontSize 14px
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                # Server-Level DHCP Options with improved presentation
+                if ($DHCPData.DHCPOptions.Count -gt 0) {
+                    New-HTMLSection -HeaderText "🔧 Server-Level DHCP Options Configuration" -CanCollapse {
+                        New-HTMLPanel -Invisible {
+                            New-HTMLText -Text "Global Options Analysis" -FontSize 16pt -FontWeight bold -Color DarkBlue
+                            New-HTMLText -Text "Server-level options apply to all scopes on each DHCP server unless overridden at the scope level. These are your baseline configurations." -FontSize 12pt -Color DarkGray
+
+                            # Group by server for better organization
+                            $ServerGroups = $DHCPData.DHCPOptions | Group-Object ServerName
+                            foreach ($ServerGroup in $ServerGroups) {
+                                New-HTMLSection -HeaderText "🖥️ $($ServerGroup.Name) Options" -CanCollapse {
+                                    New-HTMLTable -DataTable $ServerGroup.Group -HideFooter {
+                                        New-HTMLTableCondition -Name 'OptionId' -ComparisonType number -Operator eq -Value 6 -BackgroundColor LightBlue -HighlightHeaders 'OptionId', 'Name'
+                                        New-HTMLTableCondition -Name 'OptionId' -ComparisonType number -Operator eq -Value 3 -BackgroundColor LightGreen -HighlightHeaders 'OptionId', 'Name'
+                                        New-HTMLTableCondition -Name 'OptionId' -ComparisonType number -Operator eq -Value 15 -BackgroundColor LightYellow -HighlightHeaders 'OptionId', 'Name'
+                                        New-HTMLTableCondition -Name 'Value' -ComparisonType string -Operator like -Value '*8.8.8.8*' -BackgroundColor Orange -HighlightHeaders 'Value'
+                                        New-HTMLTableCondition -Name 'Value' -ComparisonType string -Operator like -Value '*1.1.1.1*' -BackgroundColor Orange -HighlightHeaders 'Value'
+                                    } -Title "Server Options for $($ServerGroup.Name)"
+                                }
+                            }
+                        }
+                    }
+                }
+
+                # DHCP Classes with enhanced visuals
+                if ($DHCPData.DHCPClasses.Count -gt 0) {
+                    New-HTMLSection -HeaderText "📋 DHCP Classes & Device Categorization" -CanCollapse {
+                        New-HTMLPanel -Invisible {
+                            New-HTMLText -Text "Vendor & User Classes Overview" -FontSize 16pt -FontWeight bold -Color DarkBlue
+                            New-HTMLText -Text "DHCP classes allow different configuration based on client type. Vendor classes identify device manufacturers, while user classes provide custom categorization." -FontSize 12pt -Color DarkGray
+
+                            # Summary statistics
+                            $VendorClasses = ($DHCPData.DHCPClasses | Where-Object { $_.Type -eq 'Vendor' }).Count
+                            $UserClasses = ($DHCPData.DHCPClasses | Where-Object { $_.Type -eq 'User' }).Count
+                            $TotalServers = ($DHCPData.DHCPClasses | Group-Object ServerName).Count
+
+                            New-HTMLSection -HeaderText "Classes Summary" -Invisible -Density Compact {
+                                New-HTMLInfoCard -Title "Vendor Classes" -Number $VendorClasses -Subtitle "Device Types" -Icon "🏭" -TitleColor DodgerBlue -NumberColor Navy
+                                New-HTMLInfoCard -Title "User Classes" -Number $UserClasses -Subtitle "Custom Categories" -Icon "👥" -TitleColor Orange -NumberColor DarkOrange
+                                New-HTMLInfoCard -Title "Servers" -Number $TotalServers -Subtitle "With Classes" -Icon "🖥️" -TitleColor Purple -NumberColor DarkMagenta
+                            }
+
+                            New-HTMLTable -DataTable $DHCPData.DHCPClasses -Filtering {
+                                New-HTMLTableCondition -Name 'Type' -ComparisonType string -Operator eq -Value 'Vendor' -BackgroundColor LightBlue -HighlightHeaders 'Type'
+                                New-HTMLTableCondition -Name 'Type' -ComparisonType string -Operator eq -Value 'User' -BackgroundColor LightGreen -HighlightHeaders 'Type'
+                                New-HTMLTableCondition -Name 'Name' -ComparisonType string -Operator like -Value '*Microsoft*' -BackgroundColor LightYellow -HighlightHeaders 'Name'
+                            } -DataStore JavaScript -ScrollX -Title "Complete Classes Configuration"
+                        }
+                    }
+                } else {
+                    New-HTMLSection -HeaderText "📋 DHCP Classes & Device Categorization" -CanCollapse {
+                        New-HTMLPanel -Invisible {
+                            New-HTMLText -Text "ℹ️ No custom DHCP classes configured" -Color Blue -FontWeight bold -FontSize 14pt
+                            New-HTMLText -Text "DHCP classes allow you to provide different configurations based on client type or custom categories." -Color Gray -FontSize 12px
+
+                            New-HTMLPanel -Invisible {
+                                New-HTMLText -Text "Benefits of DHCP Classes:" -FontWeight bold
+                                New-HTMLList {
+                                    New-HTMLListItem -Text "Different lease durations for laptops vs servers"
+                                    New-HTMLListItem -Text "Specific DNS servers for different device types"
+                                    New-HTMLListItem -Text "Custom boot options for network boot devices"
+                                    New-HTMLListItem -Text "Vendor-specific option configurations"
+                                } -FontSize 11px
+                            }
+                        }
+                    }
+                }
+            }
+
+            New-HTMLTab -TabName 'Network Design' {
+                # Superscopes with enhanced presentation
+                if ($DHCPData.Superscopes.Count -gt 0) {
+                    New-HTMLSection -HeaderText "🏗️ Superscopes & Network Architecture" {
+                        New-HTMLPanel -Invisible {
+                            New-HTMLText -Text "Network Segmentation Analysis" -FontSize 18pt -FontWeight bold -Color DarkBlue
+                            New-HTMLText -Text "Superscopes combine multiple IP ranges into logical units, typically used for multi-homed subnets or network expansion scenarios." -FontSize 12pt -Color DarkGray
+
+                            # Superscopes summary
+                            $SuperscopeGroups = $DHCPData.Superscopes | Group-Object SuperscopeName
+                            $TotalSuperscopes = $SuperscopeGroups.Count
+                            $TotalScopesInSuperscopes = $DHCPData.Superscopes.Count
+                            $ServersWithSuperscopes = ($DHCPData.Superscopes | Group-Object ServerName).Count
+
+                            New-HTMLSection -HeaderText "Superscopes Overview" -Invisible -Density Compact {
+                                New-HTMLInfoCard -Title "Superscopes" -Number $TotalSuperscopes -Subtitle "Configured" -Icon "🏗️" -TitleColor DodgerBlue -NumberColor Navy
+                                New-HTMLInfoCard -Title "Member Scopes" -Number $TotalScopesInSuperscopes -Subtitle "In Superscopes" -Icon "📋" -TitleColor Purple -NumberColor DarkMagenta
+                                New-HTMLInfoCard -Title "Servers" -Number $ServersWithSuperscopes -Subtitle "With Superscopes" -Icon "🖥️" -TitleColor Orange -NumberColor DarkOrange
+                            }
+
+                            # Group by superscope for better visualization
+                            foreach ($SuperscopeGroup in $SuperscopeGroups) {
+                                New-HTMLSection -HeaderText "🏢 $($SuperscopeGroup.Name)" -CanCollapse {
+                                    New-HTMLTable -DataTable $SuperscopeGroup.Group -HideFooter {
+                                        New-HTMLTableCondition -Name 'SuperscopeState' -ComparisonType string -Operator eq -Value 'Active' -BackgroundColor LightGreen -FailBackgroundColor Orange
+                                    } -Title "Scopes in $($SuperscopeGroup.Name)"
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    New-HTMLSection -HeaderText "🏗️ Superscopes & Network Architecture" {
+                        New-HTMLPanel -Invisible {
+                            New-HTMLText -Text "ℹ️ No superscopes configured in this environment" -Color Blue -FontWeight bold -FontSize 14pt
+                            New-HTMLText -Text "Superscopes are used to combine multiple scopes into a single administrative unit." -Color Gray -FontSize 12px
+
+                            New-HTMLPanel -Invisible {
+                                New-HTMLText -Text "When to Use Superscopes:" -FontWeight bold
+                                New-HTMLList {
+                                    New-HTMLListItem -Text "Multi-homed subnets (multiple IP ranges on same network)"
+                                    New-HTMLListItem -Text "Network expansion scenarios"
+                                    New-HTMLListItem -Text "Simplified scope management"
+                                    New-HTMLListItem -Text "Load distribution across multiple ranges"
+                                } -FontSize 11px
+                            }
+                        }
+                    }
+                }
+
+                # Failover Relationships with enhanced visuals
+                if ($DHCPData.FailoverRelationships.Count -gt 0) {
+                    New-HTMLSection -HeaderText "🔄 High Availability & Failover Configuration" {
+                        New-HTMLPanel -Invisible {
+                            New-HTMLText -Text "DHCP Failover Analysis" -FontSize 18pt -FontWeight bold -Color DarkBlue
+                            New-HTMLText -Text "Failover relationships ensure DHCP service continuity. Monitor partner health and synchronization status for optimal reliability." -FontSize 12pt -Color DarkGray
+
+                            # Failover summary
+                            $LoadBalanceCount = ($DHCPData.FailoverRelationships | Where-Object { $_.Mode -eq 'LoadBalance' }).Count
+                            $HotStandbyCount = ($DHCPData.FailoverRelationships | Where-Object { $_.Mode -eq 'HotStandby' }).Count
+                            $NormalState = ($DHCPData.FailoverRelationships | Where-Object { $_.State -eq 'Normal' }).Count
+                            $TotalFailovers = $DHCPData.FailoverRelationships.Count
+
+                            New-HTMLSection -HeaderText "Failover Health Dashboard" -Invisible -Density Compact {
+                                New-HTMLInfoCard -Title "Total Relations" -Number $TotalFailovers -Subtitle "Configured" -Icon "🔄" -TitleColor DodgerBlue -NumberColor Navy
+                                New-HTMLInfoCard -Title "Load Balance" -Number $LoadBalanceCount -Subtitle "50/50 Mode" -Icon "⚖️" -TitleColor Purple -NumberColor DarkMagenta
+                                New-HTMLInfoCard -Title "Hot Standby" -Number $HotStandbyCount -Subtitle "Primary/Backup" -Icon "🔥" -TitleColor Orange -NumberColor DarkOrange
+
+                                if ($NormalState -eq $TotalFailovers) {
+                                    New-HTMLInfoCard -Title "Health Status" -Number "Healthy" -Subtitle "All Normal" -Icon "✅" -TitleColor LimeGreen -NumberColor DarkGreen
+                                } else {
+                                    New-HTMLInfoCard -Title "Health Status" -Number "Issues" -Subtitle "Check Status" -Icon "⚠️" -TitleColor Crimson -NumberColor DarkRed -ShadowColor 'rgba(220, 20, 60, 0.2)' -ShadowIntensity Bold
+                                }
+                            }
+
+                            New-HTMLTable -DataTable $DHCPData.FailoverRelationships -Filtering {
+                                New-HTMLTableCondition -Name 'State' -ComparisonType string -Operator eq -Value 'Normal' -BackgroundColor LightGreen
+                                New-HTMLTableCondition -Name 'State' -ComparisonType string -Operator ne -Value 'Normal' -BackgroundColor Orange -HighlightHeaders 'State'
+                                New-HTMLTableCondition -Name 'Mode' -ComparisonType string -Operator eq -Value 'LoadBalance' -BackgroundColor LightBlue -HighlightHeaders 'Mode'
+                                New-HTMLTableCondition -Name 'Mode' -ComparisonType string -Operator eq -Value 'HotStandby' -BackgroundColor LightYellow -HighlightHeaders 'Mode'
+                                New-HTMLTableCondition -Name 'AutoStateTransition' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightGreen -FailBackgroundColor Orange
+                                New-HTMLTableCondition -Name 'ScopeCount' -ComparisonType number -Operator gt -Value 5 -BackgroundColor LightBlue -HighlightHeaders 'ScopeCount'
+                            } -DataStore JavaScript -ScrollX -Title "Complete Failover Configuration"
+                        }
+                    }
+                } else {
+                    New-HTMLSection -HeaderText "🔄 High Availability & Failover Configuration" {
+                        New-HTMLPanel -Invisible {
+                            New-HTMLText -Text "⚠️ No DHCP failover relationships configured" -Color Orange -FontWeight bold -FontSize 16pt
+                            New-HTMLText -Text "DHCP failover provides high availability by allowing two DHCP servers to serve the same scopes." -Color Gray -FontSize 12px
+
+                            New-HTMLSection -HeaderText "🚨 High Availability Recommendations" -CanCollapse {
+                                New-HTMLPanel {
+                                    New-HTMLText -Text "Benefits of DHCP Failover:" -FontWeight bold -Color DarkBlue
+                                    New-HTMLList {
+                                        New-HTMLListItem -Text "🟢 Automatic failover when primary server becomes unavailable"
+                                        New-HTMLListItem -Text "🟢 Load balancing between two servers for better performance"
+                                        New-HTMLListItem -Text "🟢 Centralized scope management and synchronization"
+                                        New-HTMLListItem -Text "🟢 Improved network uptime and reliability"
+                                        New-HTMLListItem -Text "🟢 Reduced single points of failure"
+                                    } -FontSize 12px
+
+                                    New-HTMLText -Text "Implementation Considerations:" -FontWeight bold -Color DarkOrange
+                                    New-HTMLList {
+                                        New-HTMLListItem -Text "🟠 Requires Windows Server 2012 or later"
+                                        New-HTMLListItem -Text "🟠 Both servers must be in same domain"
+                                        New-HTMLListItem -Text "🟠 Network connectivity required between partners"
+                                        New-HTMLListItem -Text "🟠 Regular monitoring of sync status recommended"
+                                    } -FontSize 12px
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            New-HTMLTab -TabName 'Performance' {
+                # Server Statistics with enhanced visuals
+                if ($DHCPData.ServerStatistics.Count -gt 0) {
+                    New-HTMLSection -HeaderText "📊 DHCP Server Performance Analytics" {
+                        New-HTMLPanel -Invisible {
+                            New-HTMLText -Text "Performance Metrics Dashboard" -FontSize 18pt -FontWeight bold -Color DarkBlue
+                            New-HTMLText -Text "Real-time analysis of DHCP server performance, request handling, and capacity utilization. Monitor these metrics to ensure optimal service delivery." -FontSize 12pt -Color DarkGray
+
+                            # Performance summary across all servers
+                            $TotalDiscovers = ($DHCPData.ServerStatistics | Measure-Object -Property Discovers -Sum).Sum
+                            $TotalOffers = ($DHCPData.ServerStatistics | Measure-Object -Property Offers -Sum).Sum
+                            $TotalAcks = ($DHCPData.ServerStatistics | Measure-Object -Property Acks -Sum).Sum
+                            $TotalNaks = ($DHCPData.ServerStatistics | Measure-Object -Property Naks -Sum).Sum
+                            $SuccessRate = if ($TotalDiscovers -gt 0) { [Math]::Round(($TotalAcks / $TotalDiscovers) * 100, 2) } else { 0 }
+
+                            New-HTMLSection -HeaderText "Infrastructure Performance Overview" -Invisible -Density Compact {
+                                New-HTMLInfoCard -Title "Total Requests" -Number $TotalDiscovers.ToString("N0") -Subtitle "DHCP Discovers" -Icon "📡" -TitleColor DodgerBlue -NumberColor Navy
+                                New-HTMLInfoCard -Title "Successful Leases" -Number $TotalAcks.ToString("N0") -Subtitle "Acks Sent" -Icon "✅" -TitleColor LimeGreen -NumberColor DarkGreen
+                                New-HTMLInfoCard -Title "Success Rate" -Number "$SuccessRate%" -Subtitle "Efficiency" -Icon "🎯" -TitleColor Purple -NumberColor DarkMagenta
+
+                                if ($TotalNaks -gt 100) {
+                                    New-HTMLInfoCard -Title "Rejections" -Number $TotalNaks.ToString("N0") -Subtitle "NAKs (High)" -Icon "❌" -TitleColor Crimson -NumberColor DarkRed -ShadowColor 'rgba(220, 20, 60, 0.2)' -ShadowIntensity Bold
+                                } else {
+                                    New-HTMLInfoCard -Title "Rejections" -Number $TotalNaks.ToString("N0") -Subtitle "NAKs (Normal)" -Icon "📊" -TitleColor Orange -NumberColor DarkOrange
+                                }
+                            }
+
+                            New-HTMLTable -DataTable $DHCPData.ServerStatistics -Filtering {
+                                New-HTMLTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 80 -BackgroundColor Orange -HighlightHeaders 'PercentageInUse'
+                                New-HTMLTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 90 -BackgroundColor Red -Color White -HighlightHeaders 'PercentageInUse'
+                                New-HTMLTableCondition -Name 'ScopesWithDelay' -ComparisonType number -Operator gt -Value 0 -BackgroundColor Yellow -HighlightHeaders 'ScopesWithDelay'
+                                New-HTMLTableCondition -Name 'Naks' -ComparisonType number -Operator gt -Value 100 -BackgroundColor Orange -HighlightHeaders 'Naks'
+                                New-HTMLTableCondition -Name 'Declines' -ComparisonType number -Operator gt -Value 10 -BackgroundColor Orange -HighlightHeaders 'Declines'
+                            } -DataStore JavaScript -ScrollX -Title "Detailed Server Performance Metrics"
+                        }
+                    }
+                } else {
+                    New-HTMLSection -HeaderText "📊 DHCP Server Performance Analytics" {
+                        New-HTMLPanel -Invisible {
+                            New-HTMLText -Text "ℹ️ No server statistics available" -Color Blue -FontWeight bold -FontSize 14pt
+                            New-HTMLText -Text "Server statistics require Extended mode data collection or administrative access to DHCP servers." -Color Gray -FontSize 12px
+                        }
+                    }
+                }
+
+                # Include existing performance analysis sections here
+                if ($DHCPData.PerformanceMetrics.Count -gt 0) {
+                    New-HTMLSection -HeaderText "📈 Capacity Planning & Performance Analysis" {
+                        New-HTMLPanel -Invisible {
+                            New-HTMLPanel -Invisible {
+                                New-HTMLText -Text "Performance Overview" -FontSize 16pt -FontWeight bold -Color DarkBlue
+                                New-HTMLText -Text "Capacity utilization analysis and performance recommendations for optimal DHCP infrastructure." -FontSize 12pt
+                            }
+
+                            foreach ($Performance in $DHCPData.PerformanceMetrics) {
+                                New-HTMLTable -DataTable @($Performance) -HideFooter {
+                                    New-HTMLTableCondition -Name 'HighUtilizationScopes' -ComparisonType number -Operator gt -Value 0 -BackgroundColor Orange -HighlightHeaders 'HighUtilizationScopes'
+                                    New-HTMLTableCondition -Name 'CriticalUtilizationScopes' -ComparisonType number -Operator gt -Value 0 -BackgroundColor Red -Color White -HighlightHeaders 'CriticalUtilizationScopes'
+                                    New-HTMLTableCondition -Name 'UnderUtilizedScopes' -ComparisonType number -Operator gt -Value 0 -BackgroundColor LightBlue -HighlightHeaders 'UnderUtilizedScopes'
+                                }
+
+                                if ($Performance.CapacityPlanningRecommendations.Count -gt 0) {
+                                    New-HTMLSection -HeaderText "📈 Capacity Planning Recommendations" -CanCollapse {
+                                        foreach ($Recommendation in $Performance.CapacityPlanningRecommendations) {
+                                            New-HTMLText -Text "• $Recommendation" -Color DarkBlue
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            New-HTMLTab -TabName 'Security & Compliance' {
                 # Configuration recommendations
-                New-HTMLSection -HeaderText "Configuration Recommendations" -CanCollapse {
+                New-HTMLSection -HeaderText "🔐 Security & Compliance Overview" {
+                    New-HTMLPanel -Invisible {
+                        New-HTMLText -Text "DHCP Security Best Practices Dashboard" -FontSize 18pt -FontWeight bold -Color DarkBlue
+                        New-HTMLText -Text "Comprehensive security analysis covering authorization, logging, backup, and compliance requirements for your DHCP infrastructure." -FontSize 12pt -Color DarkGray
+                    }
+                }
+
+                New-HTMLSection -HeaderText "📋 Security Configuration Checklist" -CanCollapse {
                     New-HTMLPanel {
-                        New-HTMLText -Text "Best Practices for DHCP Configuration:" -FontSize 14px -FontWeight bold
+                        New-HTMLText -Text "Essential Security Practices for DHCP:" -FontSize 14px -FontWeight bold -Color DarkBlue
                         New-HTMLList {
-                            New-HTMLListItem -Text "Enable DHCP audit logging on all servers for troubleshooting and compliance"
-                            New-HTMLListItem -Text "Configure appropriate lease durations (typically 8-24 hours for most environments)"
-                            New-HTMLListItem -Text "Implement DHCP failover for high availability in critical environments"
-                            New-HTMLListItem -Text "Monitor scope utilization to prevent IP address exhaustion"
-                            New-HTMLListItem -Text "Use consistent DNS server assignments across all scopes"
-                            New-HTMLListItem -Text "Regularly backup DHCP database configuration"
-                            New-HTMLListItem -Text "Document IP address assignments and reservations"
-                            New-HTMLListItem -Text "Review and update scope options as network requirements change"
+                            New-HTMLListItem -Text "✅ Authorize all DHCP servers in Active Directory to prevent rogue servers"
+                            New-HTMLListItem -Text "✅ Enable DHCP audit logging on all servers for security monitoring and compliance"
+                            New-HTMLListItem -Text "✅ Configure appropriate lease durations (8-24 hours) to balance security and performance"
+                            New-HTMLListItem -Text "✅ Implement DHCP failover for high availability in critical environments"
+                            New-HTMLListItem -Text "✅ Use consistent and secure DNS server assignments across all scopes"
+                            New-HTMLListItem -Text "✅ Regularly backup DHCP database configuration for disaster recovery"
+                            New-HTMLListItem -Text "✅ Monitor and document IP address assignments and reservations"
+                            New-HTMLListItem -Text "✅ Review and validate scope options against security policies"
+                            New-HTMLListItem -Text "✅ Implement conflict detection to prevent IP address conflicts"
+                            New-HTMLListItem -Text "✅ Use dedicated service accounts for DHCP services"
                         } -FontSize 12px
                     } -Invisible
                 }
 
-                if ($DHCPData.AuditLogs.Count -gt 0) {
-                    New-HTMLSection -HeaderText "DHCP Audit Log Configuration" {
-                        New-HTMLTable -DataTable $DHCPData.AuditLogs -Filtering {
-                            New-HTMLTableCondition -Name 'Enable' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightGreen -FailBackgroundColor Orange
-                            New-HTMLTableCondition -Name 'MaxMBFileSize' -ComparisonType number -Operator lt -Value 10 -BackgroundColor Orange -HighlightHeaders 'MaxMBFileSize'
-                        } -DataStore JavaScript
-                    }
-                }
-
-                if ($DHCPData.Databases.Count -gt 0) {
-                    New-HTMLSection -HeaderText "DHCP Database Configuration" {
-                        New-HTMLTable -DataTable $DHCPData.Databases -Filtering {
-                            New-HTMLTableCondition -Name 'LoggingEnabled' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightGreen -FailBackgroundColor Orange
-                            New-HTMLTableCondition -Name 'BackupIntervalMinutes' -ComparisonType number -Operator gt -Value 1440 -BackgroundColor Orange -HighlightHeaders 'BackupIntervalMinutes'
-                            New-HTMLTableCondition -Name 'CleanupIntervalMinutes' -ComparisonType number -Operator gt -Value 10080 -BackgroundColor Orange -HighlightHeaders 'CleanupIntervalMinutes'
-                        } -DataStore JavaScript
-                    }
-                }
-
                 # Enhanced Security Analysis Section
                 if ($DHCPData.SecurityAnalysis.Count -gt 0) {
-                    New-HTMLSection -HeaderText "🔒 Security Analysis & Authorization" {
+                    New-HTMLSection -HeaderText "🔒 Security Risk Assessment" {
                         New-HTMLPanel -Invisible {
-                            New-HTMLPanel -Invisible {
-                                New-HTMLText -Text "Security Risk Assessment" -FontSize 16pt -FontWeight bold -Color DarkBlue
-                                New-HTMLText -Text "Analysis of DHCP server authorization status, security configurations, and potential risks." -FontSize 12pt
-                                New-HTMLText -Text "⚠️ Note: Audit logging and service account details require administrative access to DHCP servers for full analysis." -FontSize 10pt -Color Gray
+                            New-HTMLText -Text "Server Security Analysis" -FontSize 16pt -FontWeight bold -Color DarkBlue
+                            New-HTMLText -Text "Detailed analysis of DHCP server authorization status, security configurations, and potential risks across your infrastructure." -FontSize 12pt -Color DarkGray
+                            New-HTMLText -Text "⚠️ Note: Some security details require administrative access to DHCP servers for complete analysis." -FontSize 10pt -Color Gray
+
+                            # Security summary
+                            $AuthorizedServers = ($DHCPData.SecurityAnalysis | Where-Object { $_.IsAuthorized -eq $true }).Count
+                            $CriticalRisk = ($DHCPData.SecurityAnalysis | Where-Object { $_.SecurityRiskLevel -eq 'Critical' }).Count
+                            $HighRisk = ($DHCPData.SecurityAnalysis | Where-Object { $_.SecurityRiskLevel -eq 'High' }).Count
+                            $AuditEnabled = ($DHCPData.SecurityAnalysis | Where-Object { $_.AuditLoggingEnabled -eq $true }).Count
+
+                            New-HTMLSection -HeaderText "Security Health Dashboard" -Invisible -Density Compact {
+                                if ($AuthorizedServers -eq $DHCPData.SecurityAnalysis.Count) {
+                                    New-HTMLInfoCard -Title "Authorization" -Number "$AuthorizedServers/$($DHCPData.SecurityAnalysis.Count)" -Subtitle "All Authorized" -Icon "✅" -TitleColor LimeGreen -NumberColor DarkGreen
+                                } else {
+                                    New-HTMLInfoCard -Title "Authorization" -Number "$AuthorizedServers/$($DHCPData.SecurityAnalysis.Count)" -Subtitle "Need Attention" -Icon "⚠️" -TitleColor Crimson -NumberColor DarkRed -ShadowColor 'rgba(220, 20, 60, 0.2)' -ShadowIntensity Bold
+                                }
+
+                                if ($CriticalRisk -eq 0) {
+                                    New-HTMLInfoCard -Title "Critical Risks" -Number $CriticalRisk -Subtitle "None Found" -Icon "🛡️" -TitleColor LimeGreen -NumberColor DarkGreen
+                                } else {
+                                    New-HTMLInfoCard -Title "Critical Risks" -Number $CriticalRisk -Subtitle "Immediate Action" -Icon "🚨" -TitleColor Crimson -NumberColor DarkRed -ShadowColor 'rgba(220, 20, 60, 0.3)' -ShadowIntensity ExtraBold
+                                }
+
+                                New-HTMLInfoCard -Title "High Risks" -Number $HighRisk -Subtitle "Review Required" -Icon "⚠️" -TitleColor Orange -NumberColor DarkOrange
+                                New-HTMLInfoCard -Title "Audit Logging" -Number "$AuditEnabled/$($DHCPData.SecurityAnalysis.Count)" -Subtitle "Enabled" -Icon "📊" -TitleColor Purple -NumberColor DarkMagenta
                             }
 
                             New-HTMLTable -DataTable $DHCPData.SecurityAnalysis -Filtering {
@@ -723,22 +1060,140 @@
                                 New-HTMLTableCondition -Name 'SecurityRiskLevel' -ComparisonType string -Operator eq -Value 'High' -BackgroundColor Orange -Color White
                                 New-HTMLTableCondition -Name 'SecurityRiskLevel' -ComparisonType string -Operator eq -Value 'Medium' -BackgroundColor Yellow
                                 New-HTMLTableCondition -Name 'SecurityRiskLevel' -ComparisonType string -Operator eq -Value 'Low' -BackgroundColor LightGreen
-                            } -DataStore JavaScript -ScrollX
+                                New-HTMLTableCondition -Name 'AuditLoggingEnabled' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightGreen -FailBackgroundColor Orange
+                            } -DataStore JavaScript -ScrollX -Title "Complete Security Assessment"
 
                             # Security recommendations summary
                             $SecurityRecommendations = $DHCPData.SecurityAnalysis | Where-Object { $_.SecurityRecommendations.Count -gt 0 }
                             if ($SecurityRecommendations.Count -gt 0) {
-                                New-HTMLSection -HeaderText "🔧 Security Recommendations" -Density Compact {
+                                New-HTMLSection -HeaderText "🚨 Immediate Security Actions Required" -CanCollapse {
                                     foreach ($Server in $SecurityRecommendations) {
-                                        New-HTMLPanel {
-                                            New-HTMLText -Text "Server: $($Server.ServerName)" -FontWeight bold -Color DarkRed
-                                            foreach ($Recommendation in $Server.SecurityRecommendations) {
-                                                New-HTMLText -Text "• $Recommendation" -Color Red
+                                        New-HTMLSection -HeaderText "🖥️ $($Server.ServerName)" -CanCollapse {
+                                            New-HTMLPanel {
+                                                New-HTMLText -Text "Risk Level: " -FontWeight bold -Color DarkRed
+                                                New-HTMLText -Text $Server.SecurityRiskLevel -FontWeight bold -Color $(
+                                                    switch ($Server.SecurityRiskLevel) {
+                                                        'Critical' { 'Red' }
+                                                        'High' { 'Orange' }
+                                                        'Medium' { 'GoldenRod' }
+                                                        'Low' { 'Green' }
+                                                        default { 'Black' }
+                                                    }
+                                                )
+                                                foreach ($Recommendation in $Server.SecurityRecommendations) {
+                                                    New-HTMLText -Text "🔴 $Recommendation" -Color Red -FontSize 12px
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
+                        }
+                    }
+                }
+
+                # Audit Logs with enhanced presentation
+                if ($DHCPData.AuditLogs.Count -gt 0) {
+                    New-HTMLSection -HeaderText "📋 DHCP Audit Log Configuration" {
+                        New-HTMLPanel -Invisible {
+                            New-HTMLText -Text "Compliance & Monitoring" -FontSize 16pt -FontWeight bold -Color DarkBlue
+                            New-HTMLText -Text "Audit logging is essential for security monitoring, troubleshooting, and compliance requirements. Monitor log file sizes and retention policies." -FontSize 12pt -Color DarkGray
+
+                            # Audit summary
+                            $AuditEnabled = ($DHCPData.AuditLogs | Where-Object { $_.Enable -eq $true }).Count
+                            $SmallLogFiles = ($DHCPData.AuditLogs | Where-Object { $_.MaxMBFileSize -lt 10 }).Count
+
+                            New-HTMLSection -HeaderText "Audit Configuration Summary" -Invisible -Density Compact {
+                                if ($AuditEnabled -eq $DHCPData.AuditLogs.Count) {
+                                    New-HTMLInfoCard -Title "Logging Status" -Number "Enabled" -Subtitle "All Servers" -Icon "✅" -TitleColor LimeGreen -NumberColor DarkGreen
+                                } else {
+                                    New-HTMLInfoCard -Title "Logging Status" -Number "$AuditEnabled/$($DHCPData.AuditLogs.Count)" -Subtitle "Partially Enabled" -Icon "⚠️" -TitleColor Orange -NumberColor DarkOrange
+                                }
+
+                                New-HTMLInfoCard -Title "Servers" -Number $DHCPData.AuditLogs.Count -Subtitle "Configured" -Icon "🖥️" -TitleColor DodgerBlue -NumberColor Navy
+
+                                if ($SmallLogFiles -gt 0) {
+                                    New-HTMLInfoCard -Title "Small Log Files" -Number $SmallLogFiles -Subtitle "< 10MB (Review)" -Icon "📁" -TitleColor Orange -NumberColor DarkOrange
+                                } else {
+                                    New-HTMLInfoCard -Title "Log File Sizes" -Number "Adequate" -Subtitle "≥ 10MB" -Icon "📁" -TitleColor LimeGreen -NumberColor DarkGreen
+                                }
+                            }
+
+                            New-HTMLTable -DataTable $DHCPData.AuditLogs -Filtering {
+                                New-HTMLTableCondition -Name 'Enable' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightGreen -FailBackgroundColor Orange
+                                New-HTMLTableCondition -Name 'MaxMBFileSize' -ComparisonType number -Operator lt -Value 10 -BackgroundColor Orange -HighlightHeaders 'MaxMBFileSize'
+                                New-HTMLTableCondition -Name 'MinMBDiskSpace' -ComparisonType number -Operator lt -Value 100 -BackgroundColor Yellow -HighlightHeaders 'MinMBDiskSpace'
+                            } -DataStore JavaScript -Title "Detailed Audit Log Configuration"
+                        }
+                    }
+                }
+
+                # Database Configuration with enhanced visuals
+                if ($DHCPData.Databases.Count -gt 0) {
+                    New-HTMLSection -HeaderText "💾 Database & Backup Configuration" {
+                        New-HTMLPanel -Invisible {
+                            New-HTMLText -Text "Data Protection Analysis" -FontSize 16pt -FontWeight bold -Color DarkBlue
+                            New-HTMLText -Text "DHCP database backup and maintenance configuration is critical for disaster recovery and maintaining service availability." -FontSize 12pt -Color DarkGray
+
+                            # Database summary
+                            $BackupEnabled = ($DHCPData.Databases | Where-Object { $_.LoggingEnabled -eq $true }).Count
+                            $ShortBackupInterval = ($DHCPData.Databases | Where-Object { $_.BackupIntervalMinutes -gt 0 -and $_.BackupIntervalMinutes -le 60 }).Count
+                            $LongCleanupInterval = ($DHCPData.Databases | Where-Object { $_.CleanupIntervalMinutes -gt 10080 }).Count
+
+                            New-HTMLSection -HeaderText "Database Health Summary" -Invisible -Density Compact {
+                                if ($BackupEnabled -eq $DHCPData.Databases.Count) {
+                                    New-HTMLInfoCard -Title "Backup Status" -Number "Enabled" -Subtitle "All Databases" -Icon "✅" -TitleColor LimeGreen -NumberColor DarkGreen
+                                } else {
+                                    New-HTMLInfoCard -Title "Backup Status" -Number "$BackupEnabled/$($DHCPData.Databases.Count)" -Subtitle "Check Config" -Icon "⚠️" -TitleColor Orange -NumberColor DarkOrange
+                                }
+
+                                New-HTMLInfoCard -Title "Databases" -Number $DHCPData.Databases.Count -Subtitle "Configured" -Icon "💾" -TitleColor DodgerBlue -NumberColor Navy
+                                New-HTMLInfoCard -Title "Optimal Backup" -Number $ShortBackupInterval -Subtitle "≤60min Interval" -Icon "⏱️" -TitleColor Purple -NumberColor DarkMagenta
+
+                                if ($LongCleanupInterval -gt 0) {
+                                    New-HTMLInfoCard -Title "Cleanup Issues" -Number $LongCleanupInterval -Subtitle ">7 Days" -Icon "🧹" -TitleColor Orange -NumberColor DarkOrange
+                                } else {
+                                    New-HTMLInfoCard -Title "Cleanup Config" -Number "Optimal" -Subtitle "≤7 Days" -Icon "🧹" -TitleColor LimeGreen -NumberColor DarkGreen
+                                }
+                            }
+
+                            New-HTMLTable -DataTable $DHCPData.Databases -Filtering {
+                                New-HTMLTableCondition -Name 'LoggingEnabled' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightGreen -FailBackgroundColor Orange
+                                New-HTMLTableCondition -Name 'BackupIntervalMinutes' -ComparisonType number -Operator gt -Value 1440 -BackgroundColor Orange -HighlightHeaders 'BackupIntervalMinutes'
+                                New-HTMLTableCondition -Name 'BackupIntervalMinutes' -ComparisonType number -Operator eq -Value 0 -BackgroundColor Red -Color White -HighlightHeaders 'BackupIntervalMinutes'
+                                New-HTMLTableCondition -Name 'CleanupIntervalMinutes' -ComparisonType number -Operator gt -Value 10080 -BackgroundColor Orange -HighlightHeaders 'CleanupIntervalMinutes'
+                                New-HTMLTableCondition -Name 'RestoreFromBackup' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightYellow -HighlightHeaders 'RestoreFromBackup'
+                            } -DataStore JavaScript -Title "Complete Database Configuration"
+                        }
+                    }
+                }
+
+                # Server Configuration Summary with enhanced presentation
+                if ($DHCPData.ServerSettings.Count -gt 0) {
+                    New-HTMLSection -HeaderText "⚙️ Server Security Settings" {
+                        New-HTMLPanel -Invisible {
+                            New-HTMLText -Text "Server-Level Security Configuration" -FontSize 16pt -FontWeight bold -Color DarkBlue
+                            New-HTMLText -Text "Core security settings that affect the entire DHCP server operation, including authorization, policies, and conflict detection." -FontSize 12pt -Color DarkGray
+
+                            # Server settings summary
+                            $AuthorizedServers = ($DHCPData.ServerSettings | Where-Object { $_.IsAuthorized -eq $true }).Count
+                            $DomainJoinedServers = ($DHCPData.ServerSettings | Where-Object { $_.IsDomainJoined -eq $true }).Count
+                            $ConflictDetectionEnabled = ($DHCPData.ServerSettings | Where-Object { $_.ConflictDetectionAttempts -gt 0 }).Count
+                            $PoliciesActive = ($DHCPData.ServerSettings | Where-Object { $_.ActivatePolicies -eq $true }).Count
+
+                            New-HTMLSection -HeaderText "Security Settings Overview" -Invisible -Density Compact {
+                                New-HTMLInfoCard -Title "AD Authorization" -Number "$AuthorizedServers/$($DHCPData.ServerSettings.Count)" -Subtitle "Servers" -Icon "🔐" -TitleColor LimeGreen -NumberColor DarkGreen
+                                New-HTMLInfoCard -Title "Domain Joined" -Number "$DomainJoinedServers/$($DHCPData.ServerSettings.Count)" -Subtitle "Servers" -Icon "🏢" -TitleColor DodgerBlue -NumberColor Navy
+                                New-HTMLInfoCard -Title "Conflict Detection" -Number "$ConflictDetectionEnabled/$($DHCPData.ServerSettings.Count)" -Subtitle "Enabled" -Icon "🛡️" -TitleColor Purple -NumberColor DarkMagenta
+                                New-HTMLInfoCard -Title "Policies Active" -Number "$PoliciesActive/$($DHCPData.ServerSettings.Count)" -Subtitle "Servers" -Icon "📋" -TitleColor Orange -NumberColor DarkOrange
+                            }
+
+                            New-HTMLTable -DataTable $DHCPData.ServerSettings -HideFooter {
+                                New-HTMLTableCondition -Name 'IsAuthorized' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightGreen -FailBackgroundColor Red
+                                New-HTMLTableCondition -Name 'ActivatePolicies' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightGreen
+                                New-HTMLTableCondition -Name 'ConflictDetectionAttempts' -ComparisonType number -Operator eq -Value 0 -BackgroundColor Orange -HighlightHeaders 'ConflictDetectionAttempts'
+                                New-HTMLTableCondition -Name 'IsDomainJoined' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightGreen -FailBackgroundColor Orange
+                            } -Title "DHCP Server Security Configuration"
                         }
                     }
                 }
@@ -914,7 +1369,17 @@
                     }
                 }
 
-                # Server-level configuration summary
+                # If no security configuration data available
+                if ($DHCPData.AuditLogs.Count -eq 0 -and $DHCPData.Databases.Count -eq 0 -and $DHCPData.SecurityAnalysis.Count -eq 0) {
+                    New-HTMLSection -HeaderText "Security Configuration Status" {
+                        New-HTMLPanel -Invisible {
+                            New-HTMLText -Text "ℹ️ Limited security configuration data available" -Color Blue -FontSize 14pt -FontWeight bold
+                            New-HTMLText -Text "This may indicate limited access to DHCP server configuration or that detailed security collection was not performed. Consider running with Extended mode for complete analysis." -FontSize 12pt -Color DarkGray
+                        }
+                    }
+                }
+
+
                 if ($DHCPData.Servers.Count -gt 0) {
                     New-HTMLSection -HeaderText "Server Configuration Summary" {
                         # Use structured data directly from Get function - no transformation needed
@@ -925,6 +1390,136 @@
                             New-HTMLTableCondition -Name 'DHCPRole' -ComparisonType string -Operator eq -Value 'Unknown' -BackgroundColor Orange -HighlightHeaders 'DHCPRole'
                             New-HTMLTableCondition -Name 'ScopesWithIssues' -ComparisonType number -Operator gt -Value 0 -BackgroundColor Orange -HighlightHeaders 'ScopesWithIssues'
                         } -DataStore JavaScript -ScrollX
+                    }
+                }
+
+                # NEW: DHCP Options Analysis Section
+                if ($DHCPData.OptionsAnalysis.Count -gt 0) {
+                    New-HTMLSection -HeaderText "⚙️ DHCP Options Analysis" {
+                        New-HTMLPanel -Invisible {
+                            New-HTMLPanel -Invisible {
+                                New-HTMLText -Text "DHCP Options Configuration Analysis" -FontSize 16pt -FontWeight bold -Color DarkBlue
+                                New-HTMLText -Text "Analysis of critical DHCP options configuration across all servers and scopes." -FontSize 12pt
+                            }
+
+                            New-HTMLTable -DataTable $DHCPData.OptionsAnalysis -HideFooter {
+                                New-HTMLTableCondition -Name 'CriticalOptionsCovered' -ComparisonType number -Operator lt -Value 4 -BackgroundColor Orange -HighlightHeaders 'CriticalOptionsCovered'
+                                New-HTMLTableCondition -Name 'CriticalOptionsCovered' -ComparisonType number -Operator gt -Value 3 -BackgroundColor LightGreen -HighlightHeaders 'CriticalOptionsCovered'
+                                New-HTMLTableCondition -Name 'MissingCriticalOptions' -ComparisonType string -Operator ne -Value '' -BackgroundColor LightYellow
+                                New-HTMLTableCondition -Name 'OptionIssues' -ComparisonType string -Operator ne -Value '' -BackgroundColor Orange
+                            }
+
+                            # Show missing critical options if any
+                            foreach ($Analysis in $DHCPData.OptionsAnalysis) {
+                                if ($Analysis.MissingCriticalOptions.Count -gt 0) {
+                                    New-HTMLSection -HeaderText "⚠️ Missing Critical Options" -CanCollapse {
+                                        foreach ($MissingOption in $Analysis.MissingCriticalOptions) {
+                                            New-HTMLText -Text "• $MissingOption" -Color Red
+                                        }
+                                    }
+                                }
+
+                                if ($Analysis.OptionIssues.Count -gt 0) {
+                                    New-HTMLSection -HeaderText "🚨 Options Configuration Issues" -CanCollapse {
+                                        foreach ($Issue in $Analysis.OptionIssues) {
+                                            New-HTMLText -Text "• $Issue" -Color Orange
+                                        }
+                                    }
+                                }
+
+                                if ($Analysis.OptionRecommendations.Count -gt 0) {
+                                    New-HTMLSection -HeaderText "💡 Recommendations" -CanCollapse {
+                                        foreach ($Recommendation in $Analysis.OptionRecommendations) {
+                                            New-HTMLText -Text "• $Recommendation" -Color DarkBlue
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                # NEW: DHCP Server Options Section
+                if ($DHCPData.DHCPOptions.Count -gt 0) {
+                    New-HTMLSection -HeaderText "🔧 Server-Level DHCP Options" -CanCollapse {
+                        New-HTMLTable -DataTable $DHCPData.DHCPOptions -Filtering {
+                            New-HTMLTableCondition -Name 'OptionId' -ComparisonType number -Operator eq -Value 6 -BackgroundColor LightBlue -HighlightHeaders 'OptionId', 'Name'
+                            New-HTMLTableCondition -Name 'OptionId' -ComparisonType number -Operator eq -Value 3 -BackgroundColor LightGreen -HighlightHeaders 'OptionId', 'Name'
+                            New-HTMLTableCondition -Name 'OptionId' -ComparisonType number -Operator eq -Value 15 -BackgroundColor LightYellow -HighlightHeaders 'OptionId', 'Name'
+                            New-HTMLTableCondition -Name 'Value' -ComparisonType string -Operator like -Value '*8.8.8.8*' -BackgroundColor Orange -HighlightHeaders 'Value'
+                            New-HTMLTableCondition -Name 'Value' -ComparisonType string -Operator like -Value '*1.1.1.1*' -BackgroundColor Orange -HighlightHeaders 'Value'
+                        } -DataStore JavaScript -ScrollX -Title "Server-Level Options Configuration"
+                    }
+                }
+
+                # NEW: DHCP Classes Section
+                if ($DHCPData.DHCPClasses.Count -gt 0) {
+                    New-HTMLSection -HeaderText "📋 DHCP Classes (Vendor/User)" -CanCollapse {
+                        New-HTMLTable -DataTable $DHCPData.DHCPClasses -Filtering {
+                            New-HTMLTableCondition -Name 'Type' -ComparisonType string -Operator eq -Value 'Vendor' -BackgroundColor LightBlue -HighlightHeaders 'Type'
+                            New-HTMLTableCondition -Name 'Type' -ComparisonType string -Operator eq -Value 'User' -BackgroundColor LightGreen -HighlightHeaders 'Type'
+                            New-HTMLTableCondition -Name 'Name' -ComparisonType string -Operator like -Value '*Microsoft*' -BackgroundColor LightYellow -HighlightHeaders 'Name'
+                        } -DataStore JavaScript -ScrollX -Title "DHCP Vendor and User Classes"
+                    }
+                }
+
+                # NEW: Superscopes Section
+                if ($DHCPData.Superscopes.Count -gt 0) {
+                    New-HTMLSection -HeaderText "🏗️ Superscopes Configuration" -CanCollapse {
+                        New-HTMLTable -DataTable $DHCPData.Superscopes -Filtering {
+                            New-HTMLTableCondition -Name 'SuperscopeState' -ComparisonType string -Operator eq -Value 'Active' -BackgroundColor LightGreen -FailBackgroundColor Orange
+                        } -DataStore JavaScript -ScrollX -Title "Superscopes Network Design"
+                    }
+                } else {
+                    New-HTMLSection -HeaderText "🏗️ Superscopes Configuration" -CanCollapse {
+                        New-HTMLPanel -Invisible {
+                            New-HTMLText -Text "ℹ️ No superscopes configured in this environment." -Color Blue -FontWeight bold
+                            New-HTMLText -Text "Superscopes are used to combine multiple scopes into a single administrative unit, typically for multi-homed subnets or when you need to provide multiple IP ranges on the same network segment." -Color Gray -FontSize 12px
+                        }
+                    }
+                }
+
+                # NEW: Failover Relationships Section
+                if ($DHCPData.FailoverRelationships.Count -gt 0) {
+                    New-HTMLSection -HeaderText "🔄 Failover Relationships" -CanCollapse {
+                        New-HTMLTable -DataTable $DHCPData.FailoverRelationships -Filtering {
+                            New-HTMLTableCondition -Name 'State' -ComparisonType string -Operator eq -Value 'Normal' -BackgroundColor LightGreen
+                            New-HTMLTableCondition -Name 'State' -ComparisonType string -Operator ne -Value 'Normal' -BackgroundColor Orange -HighlightHeaders 'State'
+                            New-HTMLTableCondition -Name 'Mode' -ComparisonType string -Operator eq -Value 'LoadBalance' -BackgroundColor LightBlue -HighlightHeaders 'Mode'
+                            New-HTMLTableCondition -Name 'Mode' -ComparisonType string -Operator eq -Value 'HotStandby' -BackgroundColor LightYellow -HighlightHeaders 'Mode'
+                            New-HTMLTableCondition -Name 'AutoStateTransition' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightGreen -FailBackgroundColor Orange
+                            New-HTMLTableCondition -Name 'ScopeCount' -ComparisonType number -Operator gt -Value 5 -BackgroundColor LightBlue -HighlightHeaders 'ScopeCount'
+                        } -DataStore JavaScript -ScrollX -Title "DHCP Failover Configuration"
+                    }
+                } else {
+                    New-HTMLSection -HeaderText "🔄 Failover Relationships" -CanCollapse {
+                        New-HTMLPanel -Invisible {
+                            New-HTMLText -Text "⚠️ No DHCP failover relationships configured." -Color Orange -FontWeight bold
+                            New-HTMLText -Text "DHCP failover provides high availability by allowing two DHCP servers to serve the same scopes. Consider implementing failover for critical network segments." -Color Gray -FontSize 12px
+
+                            New-HTMLPanel -Invisible {
+                                New-HTMLText -Text "DHCP Failover Benefits:" -FontWeight bold
+                                New-HTMLList {
+                                    New-HTMLListItem -Text "Automatic failover when primary server becomes unavailable"
+                                    New-HTMLListItem -Text "Load balancing between two servers for better performance"
+                                    New-HTMLListItem -Text "Centralized scope management and synchronization"
+                                    New-HTMLListItem -Text "Improved network uptime and reliability"
+                                } -FontSize 11px
+                            }
+                        }
+                    }
+                }
+
+                # NEW: Server Statistics Section
+                if ($DHCPData.ServerStatistics.Count -gt 0) {
+                    New-HTMLSection -HeaderText "📊 Server Performance Statistics" -CanCollapse {
+                        New-HTMLTable -DataTable $DHCPData.ServerStatistics -Filtering {
+                            New-HTMLTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 80 -BackgroundColor Orange -HighlightHeaders 'PercentageInUse'
+                            New-HTMLTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 90 -BackgroundColor Red -Color White -HighlightHeaders 'PercentageInUse'
+                            New-HTMLTableCondition -Name 'ScopesWithDelay' -ComparisonType number -Operator gt -Value 0 -BackgroundColor Yellow -HighlightHeaders 'ScopesWithDelay'
+                            New-HTMLTableCondition -Name 'Naks' -ComparisonType number -Operator gt -Value 100 -BackgroundColor Orange -HighlightHeaders 'Naks'
+                            New-HTMLTableCondition -Name 'Declines' -ComparisonType number -Operator gt -Value 10 -BackgroundColor Orange -HighlightHeaders 'Declines'
+                        } -DataStore JavaScript -ScrollX -Title "DHCP Server Performance Metrics"
                     }
                 }
 
