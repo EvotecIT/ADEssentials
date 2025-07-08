@@ -115,117 +115,47 @@
 
     Write-Verbose "Show-WinADDHCPSummary - Starting DHCP report generation"
 
-    # Test Mode: Generate sample data for quick HTML testing
-    if ($TestMode) {
-        Write-Verbose "Show-WinADDHCPSummary - Running in test mode with sample data"
-        $DHCPData = @{
-            Servers               = @(
-                [PSCustomObject]@{
-                    ServerName = 'dhcp01.domain.com'; ComputerName = 'dhcp01.domain.com'; Status = 'Online'; Version = '10.0'; PingSuccessful = $true; DNSResolvable = $true; DHCPResponding = $true
-                    ScopeCount = 15; ActiveScopeCount = 13; InactiveScopeCount = 2; TotalScopes = 15; ScopesActive = 13; ScopesInactive = 2; ScopesWithIssues = 2; TotalAddresses = 300; AddressesInUse = 135; AddressesFree = 165; PercentageInUse = 45
-                    IsADDomainController = $false; DomainName = 'domain.com'; IPAddress = '192.168.1.10'
-                    ReverseDNSName = 'dhcp01.domain.com'; ReverseDNSValid = $true; ResponseTimeMs = 5; DHCPRole = 'Primary'
-                }
-                [PSCustomObject]@{
-                    ServerName = 'dhcp02.domain.com'; ComputerName = 'dhcp02.domain.com'; Status = 'Unreachable'; Version = $null; PingSuccessful = $false; DNSResolvable = $true; DHCPResponding = $false
-                    ScopeCount = 0; ActiveScopeCount = 0; InactiveScopeCount = 0; TotalScopes = 0; ScopesActive = 0; ScopesInactive = 0; ScopesWithIssues = 0; TotalAddresses = 0; AddressesInUse = 0; AddressesFree = 0; PercentageInUse = 0
-                    IsADDomainController = $false; DomainName = 'domain.com'; IPAddress = $null
-                    ReverseDNSName = $null; ReverseDNSValid = $false; ResponseTimeMs = $null; DHCPRole = 'Unknown'
-                }
-                [PSCustomObject]@{
-                    ServerName = 'dc01.domain.com'; ComputerName = 'dc01.domain.com'; Status = 'Online'; Version = '10.0'; PingSuccessful = $true; DNSResolvable = $true; DHCPResponding = $true
-                    ScopeCount = 8; ActiveScopeCount = 8; InactiveScopeCount = 0; TotalScopes = 8; ScopesActive = 8; ScopesInactive = 0; ScopesWithIssues = 1; TotalAddresses = 150; AddressesInUse = 117; AddressesFree = 33; PercentageInUse = 78
-                    IsADDomainController = $true; DomainName = 'domain.com'; IPAddress = '192.168.1.5'
-                    ReverseDNSName = 'dc01.domain.com'; ReverseDNSValid = $true; ResponseTimeMs = 3; DHCPRole = 'Backup'
-                }
-            )
-            Scopes                = @(
-                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '192.168.1.0'; Name = 'Corporate LAN'; State = 'Active'; PercentageInUse = 85; AddressesInUse = 170; AddressesFree = 30; HasIssues = $true; Issues = @('High utilization'); LeaseDurationHours = 8; FailoverPartner = $null }
-                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '10.1.0.0'; Name = 'Guest Network'; State = 'Active'; PercentageInUse = 25; AddressesInUse = 50; AddressesFree = 150; HasIssues = $false; Issues = @(); LeaseDurationHours = 24; FailoverPartner = 'dhcp02.domain.com' }
-                [PSCustomObject]@{ ServerName = 'dc01.domain.com'; ScopeId = '172.16.1.0'; Name = 'Server VLAN'; State = 'Active'; PercentageInUse = 92; AddressesInUse = 92; AddressesFree = 8; HasIssues = $true; Issues = @('Critical utilization', 'No failover configured'); LeaseDurationHours = 168; FailoverPartner = $null }
-            )
-            ScopesWithIssues      = @(
-                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '192.168.1.0'; Name = 'Corporate LAN'; State = 'Active'; PercentageInUse = 85; HasIssues = $true; Issues = @('High utilization'); LeaseDurationHours = 8; FailoverPartner = $null }
-                [PSCustomObject]@{ ServerName = 'dc01.domain.com'; ScopeId = '172.16.1.0'; Name = 'Server VLAN'; State = 'Active'; PercentageInUse = 92; HasIssues = $true; Issues = @('Critical utilization', 'No failover configured'); LeaseDurationHours = 168; FailoverPartner = $null }
-            )
-            IPv6Scopes            = @()
-            MulticastScopes       = @()
-            SecurityFilters       = @(
-                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; FilteringMode = 'Deny'; Allow = $false; Deny = $true }
-                [PSCustomObject]@{ ServerName = 'dc01.domain.com'; FilteringMode = 'None'; Allow = $false; Deny = $false }
-            )
-            Policies              = @(
-                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; Name = 'Corporate Devices'; Enabled = $true; ProcessingOrder = 1; Condition = 'Vendor Class matches Corporate' }
-            )
-            ServerSettings        = @(
-                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; IsAuthorized = $true; IsDomainJoined = $true; ActivatePolicies = $true; ConflictDetectionAttempts = 2 }
-                [PSCustomObject]@{ ServerName = 'dc01.domain.com'; IsAuthorized = $true; IsDomainJoined = $true; ActivatePolicies = $false; ConflictDetectionAttempts = 0 }
-            )
-            NetworkBindings       = @(
-                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; InterfaceAlias = 'Ethernet'; IPAddress = '192.168.1.10'; State = $true }
-            )
-            Reservations          = @()
-            AuditLogs             = @()
-            Databases             = @()
-            Statistics            = @{
-                TotalServers = 3; ServersOnline = 2; ServersOffline = 1; ServersWithIssues = 1
-                TotalScopes = 3; ScopesActive = 3; ScopesInactive = 0; ScopesWithIssues = 2
-                TotalAddresses = 450; AddressesInUse = 312; AddressesFree = 138; OverallPercentageInUse = 69
-            }
-            SecurityAnalysis      = @(
-                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; IsAuthorized = $true; AuthorizationStatus = 'Authorized in AD'; AuditLoggingEnabled = $true; ServiceAccount = 'Network Service'; SecurityRiskLevel = 'Low'; SecurityRecommendations = @() }
-                [PSCustomObject]@{ ServerName = 'dhcp02.domain.com'; IsAuthorized = $false; AuthorizationStatus = 'Not authorized in AD'; AuditLoggingEnabled = $false; ServiceAccount = 'LocalSystem'; SecurityRiskLevel = 'Critical'; SecurityRecommendations = @('Authorize DHCP server in Active Directory immediately', 'Enable DHCP audit logging for security monitoring', 'Configure dedicated service account for DHCP service') }
-                [PSCustomObject]@{ ServerName = 'dc01.domain.com'; IsAuthorized = $true; AuthorizationStatus = 'Authorized in AD'; AuditLoggingEnabled = $false; ServiceAccount = 'LocalSystem'; SecurityRiskLevel = 'Medium'; SecurityRecommendations = @('Enable DHCP audit logging for security monitoring', 'Configure dedicated service account for DHCP service') }
-            )
-            PerformanceMetrics    = @(
-                [PSCustomObject]@{ TotalServers = 3; TotalScopes = 3; AverageUtilization = 67.33; HighUtilizationScopes = 2; CriticalUtilizationScopes = 1; UnderUtilizedScopes = 0; CapacityPlanningRecommendations = @('1 scope(s) require immediate expansion', '2 scope(s) need expansion planning') }
-            )
-            NetworkDesignAnalysis = @(
-                [PSCustomObject]@{ TotalNetworkSegments = 3; ScopeOverlaps = @(); DesignRecommendations = @('Implement DHCP failover for high availability'); RedundancyAnalysis = @('2 scope(s) have no redundancy (single server)') }
-            )
-            BackupAnalysis        = @(
-                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; BackupEnabled = $true; BackupIntervalMinutes = 60; CleanupIntervalMinutes = 1440; LastBackupTime = (Get-Date).AddHours(-2); BackupStatus = 'Healthy'; Recommendations = @() }
-                [PSCustomObject]@{ ServerName = 'dhcp02.domain.com'; BackupEnabled = $false; BackupIntervalMinutes = 0; CleanupIntervalMinutes = 0; LastBackupTime = $null; BackupStatus = 'Critical'; Recommendations = @('Configure automated DHCP database backup', 'Set backup interval to 60 minutes', 'Set cleanup interval to 24 hours') }
-                [PSCustomObject]@{ ServerName = 'dc01.domain.com'; BackupEnabled = $true; BackupIntervalMinutes = 120; CleanupIntervalMinutes = 2880; LastBackupTime = (Get-Date).AddHours(-1); BackupStatus = 'Warning'; Recommendations = @('Reduce backup interval to 60 minutes for better recovery') }
-            )
-            AdvancedScopeAnalysis = @()
-        }
-    } else {
-        # Gather DHCP data
-        $GetWinADDHCPSummarySplat = @{
-            Extended = $true
-        }
-
-        if ($Forest) { $GetWinADDHCPSummarySplat.Forest = $Forest }
-        if ($ExcludeDomains) { $GetWinADDHCPSummarySplat.ExcludeDomains = $ExcludeDomains }
-        if ($ExcludeDomainControllers) { $GetWinADDHCPSummarySplat.ExcludeDomainControllers = $ExcludeDomainControllers }
-        if ($IncludeDomains) { $GetWinADDHCPSummarySplat.IncludeDomains = $IncludeDomains }
-        if ($IncludeDomainControllers) { $GetWinADDHCPSummarySplat.IncludeDomainControllers = $IncludeDomainControllers }
-        if ($ComputerName) { $GetWinADDHCPSummarySplat.ComputerName = $ComputerName }
-        if ($SkipRODC) { $GetWinADDHCPSummarySplat.SkipRODC = $SkipRODC }
-        if ($ExtendedForestInformation) { $GetWinADDHCPSummarySplat.ExtendedForestInformation = $ExtendedForestInformation }
-
-        $DHCPData = Get-WinADDHCPSummary @GetWinADDHCPSummarySplat
+    # Gather DHCP data using Get-WinADDHCPSummary (with TestMode if specified)
+    $GetWinADDHCPSummarySplat = @{
+        Forest                    = $Forest
+        ExcludeDomains            = $ExcludeDomains
+        ExcludeDomainControllers  = $ExcludeDomainControllers
+        IncludeDomains            = $IncludeDomains
+        IncludeDomainControllers  = $IncludeDomainControllers
+        ComputerName              = $ComputerName
+        SkipRODC                  = $SkipRODC
+        ExtendedForestInformation = $ExtendedForestInformation
     }
+
+    if ($TestMode) { $GetWinADDHCPSummarySplat.TestMode = $TestMode }
+    # Include optional parameters based on user input
+    # if ($IncludeDomainControllers) { $GetWinADDHCPSummarySplat.IncludeDomainControllers = $IncludeDomainControllers }
+    # if ($ComputerName) { $GetWinADDHCPSummarySplat.ComputerName = $ComputerName }
+    # if ($SkipRODC) { $GetWinADDHCPSummarySplat.SkipRODC = $SkipRODC }
+    # if ($ExtendedForestInformation) { $GetWinADDHCPSummarySplat.ExtendedForestInformation = $ExtendedForestInformation }
+    if ($TestMode) { $GetWinADDHCPSummarySplat.TestMode = $TestMode }
+
+    Write-Verbose "Show-WinADDHCPSummary - Gathering DHCP data from Get-WinADDHCPSummary"
+    $DHCPData = Get-WinADDHCPSummary @GetWinADDHCPSummarySplat
 
     if (-not $DHCPData) {
         Write-Warning "Show-WinADDHCPSummary - No DHCP data available to generate report"
         return
     }
 
-    # Safe access to statistics with null protection
-    $TotalServers = if ($DHCPData.Statistics.TotalServers) { $DHCPData.Statistics.TotalServers } else { 0 }
-    $ServersOnline = if ($DHCPData.Statistics.ServersOnline) { $DHCPData.Statistics.ServersOnline } else { 0 }
-    $ServersOffline = if ($DHCPData.Statistics.ServersOffline) { $DHCPData.Statistics.ServersOffline } else { 0 }
-    $ServersWithIssues = if ($DHCPData.Statistics.ServersWithIssues) { $DHCPData.Statistics.ServersWithIssues } else { 0 }
-    $TotalScopes = if ($DHCPData.Statistics.TotalScopes) { $DHCPData.Statistics.TotalScopes } else { 0 }
-    $ScopesActive = if ($DHCPData.Statistics.ScopesActive) { $DHCPData.Statistics.ScopesActive } else { 0 }
-    $ScopesInactive = if ($DHCPData.Statistics.ScopesInactive) { $DHCPData.Statistics.ScopesInactive } else { 0 }
-    $ScopesWithIssues = if ($DHCPData.Statistics.ScopesWithIssues) { $DHCPData.Statistics.ScopesWithIssues } else { 0 }
-    $TotalAddresses = if ($DHCPData.Statistics.TotalAddresses) { $DHCPData.Statistics.TotalAddresses } else { 0 }
-    $AddressesInUse = if ($DHCPData.Statistics.AddressesInUse) { $DHCPData.Statistics.AddressesInUse } else { 0 }
-    $AddressesFree = if ($DHCPData.Statistics.AddressesFree) { $DHCPData.Statistics.AddressesFree } else { 0 }
-    $OverallPercentageInUse = if ($DHCPData.Statistics.OverallPercentageInUse) { $DHCPData.Statistics.OverallPercentageInUse } else { 0 }
+    # Use statistics directly from Get function - no need for null protection as Get function handles this
+    $TotalServers = $DHCPData.Statistics.TotalServers
+    $ServersOnline = $DHCPData.Statistics.ServersOnline
+    $ServersOffline = $DHCPData.Statistics.ServersOffline
+    $ServersWithIssues = $DHCPData.Statistics.ServersWithIssues
+    $TotalScopes = $DHCPData.Statistics.TotalScopes
+    $ScopesActive = $DHCPData.Statistics.ScopesActive
+    $ScopesInactive = $DHCPData.Statistics.ScopesInactive
+    $ScopesWithIssues = $DHCPData.Statistics.ScopesWithIssues
+    $TotalAddresses = $DHCPData.Statistics.TotalAddresses
+    $AddressesInUse = $DHCPData.Statistics.AddressesInUse
+    $AddressesFree = $DHCPData.Statistics.AddressesFree
+    $OverallPercentageInUse = $DHCPData.Statistics.OverallPercentageInUse
 
     # Handle case where no DHCP servers are found
     if ($DHCPData.Statistics.TotalServers -eq 0) {
@@ -650,39 +580,20 @@
                 # Comprehensive Security and Best Practices Summary
                 if ($DHCPData.ServerSettings.Count -gt 0) {
                     New-HTMLSection -HeaderText "Security & Best Practices Summary" -CanCollapse {
-                        $SecuritySummary = $DHCPData.ServerSettings | ForEach-Object {
-                            [PSCustomObject]@{
-                                'Server'                 = $_.ServerName
-                                'Authorization Status'   = if ($null -ne $_.IsAuthorized) {
-                                    if ($_.IsAuthorized) { 'Authorized' } else { 'Not Authorized' }
-                                } else { 'Unknown' }
-                                'Domain Membership'      = if ($null -ne $_.IsDomainJoined) {
-                                    if ($_.IsDomainJoined) { 'Domain Joined' } else { 'Workgroup' }
-                                } else { 'Unknown' }
-                                'Policy Activation'      = if ($null -ne $_.ActivatePolicies) { $_.ActivatePolicies } else { 'Unknown' }
-                                'Conflict Detection'     = if ($_.ConflictDetectionAttempts -gt 0) { "$($_.ConflictDetectionAttempts) attempts" } else { 'Disabled' }
-                                'Dynamic Bootp'          = if ($null -ne $_.DynamicBootp) { $_.DynamicBootp } else { 'Unknown' }
-                                'NAP Integration'        = if ($null -ne $_.NapEnabled) { $_.NapEnabled } else { 'Unknown' }
-                                'Restore Status'         = if ($_.RestoreStatus) { $_.RestoreStatus } else { 'N/A' }
-                                'NPS Unreachable Action' = if ($_.NpsUnreachableAction) { $_.NpsUnreachableAction } else { 'N/A' }
-                            }
-                        }
-
-                        New-HTMLTable -DataTable $SecuritySummary -HideFooter {
-                            New-HTMLTableCondition -Name 'Authorization Status' -ComparisonType string -Operator eq -Value 'Authorized' -BackgroundColor LightGreen
-                            New-HTMLTableCondition -Name 'Authorization Status' -ComparisonType string -Operator eq -Value 'Not Authorized' -BackgroundColor Red -Color White
-                            New-HTMLTableCondition -Name 'Authorization Status' -ComparisonType string -Operator eq -Value 'Unknown' -BackgroundColor LightGray
-                            New-HTMLTableCondition -Name 'Policy Activation' -ComparisonType string -Operator eq -Value $true -BackgroundColor LightGreen
-                            New-HTMLTableCondition -Name 'Conflict Detection' -ComparisonType string -Operator eq -Value 'Disabled' -BackgroundColor Orange
-                            New-HTMLTableCondition -Name 'Domain Membership' -ComparisonType string -Operator eq -Value 'Domain Joined' -BackgroundColor LightGreen
-                            New-HTMLTableCondition -Name 'Domain Membership' -ComparisonType string -Operator eq -Value 'Workgroup' -BackgroundColor Orange
+                        # Use structured data directly from Get function
+                        New-HTMLTable -DataTable $DHCPData.ServerSettings -HideFooter {
+                            New-HTMLTableCondition -Name 'IsAuthorized' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightGreen -FailBackgroundColor Red
+                            New-HTMLTableCondition -Name 'ActivatePolicies' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightGreen
+                            New-HTMLTableCondition -Name 'ConflictDetectionAttempts' -ComparisonType number -Operator eq -Value 0 -BackgroundColor Orange -HighlightHeaders 'ConflictDetectionAttempts'
+                            New-HTMLTableCondition -Name 'IsDomainJoined' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightGreen -FailBackgroundColor Orange
                         } -Title "DHCP Server Security Configuration"
                     }
                 }
             }
 
             New-HTMLTab -TabName 'Validation Issues' {
-                # If no validation issues found
+                # If no validation issues found - calculate total issues
+                $TotalIssuesCount = $ServersWithIssues + $ScopesWithIssues + $ServersOffline
                 if ($TotalIssuesCount -eq 0) {
                     New-HTMLSection -HeaderText "Validation Status" {
                         New-HTMLPanel -Invisible {
@@ -842,20 +753,11 @@
                             }
 
                             foreach ($Performance in $DHCPData.PerformanceMetrics) {
-                                # Performance summary table
-                                $PerformanceSummary = [PSCustomObject]@{
-                                    'Total Servers'                      = $Performance.TotalServers
-                                    'Total Scopes'                       = $Performance.TotalScopes
-                                    'Average Utilization %'              = $Performance.AverageUtilization
-                                    'High Utilization Scopes (>80%)'     = $Performance.HighUtilizationScopes
-                                    'Critical Utilization Scopes (>95%)' = $Performance.CriticalUtilizationScopes
-                                    'Under-Utilized Scopes (<5%)'        = $Performance.UnderUtilizedScopes
-                                }
-
-                                New-HTMLTable -DataTable @($PerformanceSummary) -HideFooter {
-                                    New-HTMLTableCondition -Name 'High Utilization Scopes (>80%)' -ComparisonType number -Operator gt -Value 0 -BackgroundColor Orange -HighlightHeaders 'High Utilization Scopes (>80%)'
-                                    New-HTMLTableCondition -Name 'Critical Utilization Scopes (>95%)' -ComparisonType number -Operator gt -Value 0 -BackgroundColor Red -Color White -HighlightHeaders 'Critical Utilization Scopes (>95%)'
-                                    New-HTMLTableCondition -Name 'Under-Utilized Scopes (<5%)' -ComparisonType number -Operator gt -Value 0 -BackgroundColor LightBlue -HighlightHeaders 'Under-Utilized Scopes (<5%)'
+                                # Use structured data directly from Get function
+                                New-HTMLTable -DataTable @($Performance) -HideFooter {
+                                    New-HTMLTableCondition -Name 'HighUtilizationScopes' -ComparisonType number -Operator gt -Value 0 -BackgroundColor Orange -HighlightHeaders 'HighUtilizationScopes'
+                                    New-HTMLTableCondition -Name 'CriticalUtilizationScopes' -ComparisonType number -Operator gt -Value 0 -BackgroundColor Red -Color White -HighlightHeaders 'CriticalUtilizationScopes'
+                                    New-HTMLTableCondition -Name 'UnderUtilizedScopes' -ComparisonType number -Operator gt -Value 0 -BackgroundColor LightBlue -HighlightHeaders 'UnderUtilizedScopes'
                                 }
 
                                 # Capacity planning recommendations
@@ -869,51 +771,23 @@
                             }
 
                             # Server Performance Analysis Table
-                            if ($DHCPData.Servers.Count -gt 0) {
+                            if ($DHCPData.ServerPerformanceAnalysis.Count -gt 0) {
                                 New-HTMLSection -HeaderText "Server Performance Analysis" -CanCollapse {
-                                    $ServerPerformanceData = $DHCPData.Servers | ForEach-Object {
-                                        [PSCustomObject]@{
-                                            'Server Name'        = $_.ServerName
-                                            'Status'             = $_.Status
-                                            'Total Scopes'       = $_.ScopeCount
-                                            'Active Scopes'      = $_.ActiveScopeCount
-                                            'Scopes with Issues' = $_.ScopesWithIssues
-                                            'Total Addresses'    = $_.TotalAddresses.ToString("N0")
-                                            'Addresses In Use'   = $_.AddressesInUse.ToString("N0")
-                                            'Utilization %'      = $_.PercentageInUse
-                                            'Performance Rating' = if ($_.Status -ne 'Online') { 'Offline' }
-                                            elseif (-not $_.DHCPResponding) { 'Service Failed' }
-                                            elseif (-not $_.DNSResolvable) { 'DNS Issues' }
-                                            elseif (-not $_.PingSuccessful) { 'Network Issues' }
-                                            elseif ($_.PercentageInUse -gt 95) { 'Critical' }
-                                            elseif ($_.PercentageInUse -gt 80) { 'High Risk' }
-                                            elseif ($_.PercentageInUse -gt 60) { 'Moderate' }
-                                            elseif ($_.PercentageInUse -lt 5 -and $_.ScopeCount -gt 0) { 'Under-utilized' }
-                                            else { 'Optimal' }
-                                            'Capacity Status'    = if ($_.Status -ne 'Online') { 'Server Offline' }
-                                            elseif (-not $_.DHCPResponding) { 'Service Not Responding' }
-                                            elseif (-not $_.DNSResolvable) { 'DNS Resolution Failed' }
-                                            elseif (-not $_.PingSuccessful) { 'Network Unreachable' }
-                                            elseif ($_.PercentageInUse -gt 95) { 'Immediate Expansion Needed' }
-                                            elseif ($_.PercentageInUse -gt 80) { 'Plan Expansion' }
-                                            elseif ($_.PercentageInUse -lt 5 -and $_.ScopeCount -gt 0) { 'Review Necessity' }
-                                            else { 'Adequate' }
-                                        }
-                                    }
+                                    # Use structured data directly from Get function
 
-                                    New-HTMLTable -DataTable $ServerPerformanceData -Filtering {
+                                    New-HTMLTable -DataTable $DHCPData.ServerPerformanceAnalysis -Filtering {
                                         New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Online' -BackgroundColor LightGreen -FailBackgroundColor Salmon
-                                        New-HTMLTableCondition -Name 'Performance Rating' -ComparisonType string -Operator eq -Value 'Critical' -BackgroundColor Red -Color White
-                                        New-HTMLTableCondition -Name 'Performance Rating' -ComparisonType string -Operator eq -Value 'High Risk' -BackgroundColor Orange -Color White
-                                        New-HTMLTableCondition -Name 'Performance Rating' -ComparisonType string -Operator eq -Value 'Offline' -BackgroundColor Red -Color White
-                                        New-HTMLTableCondition -Name 'Performance Rating' -ComparisonType string -Operator eq -Value 'Service Failed' -BackgroundColor Red -Color White
-                                        New-HTMLTableCondition -Name 'Performance Rating' -ComparisonType string -Operator eq -Value 'DNS Issues' -BackgroundColor Orange -Color White
-                                        New-HTMLTableCondition -Name 'Performance Rating' -ComparisonType string -Operator eq -Value 'Network Issues' -BackgroundColor Orange -Color White
-                                        New-HTMLTableCondition -Name 'Performance Rating' -ComparisonType string -Operator eq -Value 'Under-utilized' -BackgroundColor LightBlue
-                                        New-HTMLTableCondition -Name 'Performance Rating' -ComparisonType string -Operator eq -Value 'Optimal' -BackgroundColor LightGreen
-                                        New-HTMLTableCondition -Name 'Utilization %' -ComparisonType number -Operator gt -Value 95 -BackgroundColor Red -Color White -HighlightHeaders 'Utilization %'
-                                        New-HTMLTableCondition -Name 'Utilization %' -ComparisonType number -Operator gt -Value 80 -BackgroundColor Orange -HighlightHeaders 'Utilization %'
-                                        New-HTMLTableCondition -Name 'Scopes with Issues' -ComparisonType number -Operator gt -Value 0 -BackgroundColor Yellow -HighlightHeaders 'Scopes with Issues'
+                                        New-HTMLTableCondition -Name 'PerformanceRating' -ComparisonType string -Operator eq -Value 'Critical' -BackgroundColor Red -Color White
+                                        New-HTMLTableCondition -Name 'PerformanceRating' -ComparisonType string -Operator eq -Value 'High Risk' -BackgroundColor Orange -Color White
+                                        New-HTMLTableCondition -Name 'PerformanceRating' -ComparisonType string -Operator eq -Value 'Offline' -BackgroundColor Red -Color White
+                                        New-HTMLTableCondition -Name 'PerformanceRating' -ComparisonType string -Operator eq -Value 'Service Failed' -BackgroundColor Red -Color White
+                                        New-HTMLTableCondition -Name 'PerformanceRating' -ComparisonType string -Operator eq -Value 'DNS Issues' -BackgroundColor Orange -Color White
+                                        New-HTMLTableCondition -Name 'PerformanceRating' -ComparisonType string -Operator eq -Value 'Network Issues' -BackgroundColor Orange -Color White
+                                        New-HTMLTableCondition -Name 'PerformanceRating' -ComparisonType string -Operator eq -Value 'Under-utilized' -BackgroundColor LightBlue
+                                        New-HTMLTableCondition -Name 'PerformanceRating' -ComparisonType string -Operator eq -Value 'Optimal' -BackgroundColor LightGreen
+                                        New-HTMLTableCondition -Name 'UtilizationPercent' -ComparisonType number -Operator gt -Value 95 -BackgroundColor Red -Color White -HighlightHeaders 'UtilizationPercent'
+                                        New-HTMLTableCondition -Name 'UtilizationPercent' -ComparisonType number -Operator gt -Value 80 -BackgroundColor Orange -HighlightHeaders 'UtilizationPercent'
+                                        New-HTMLTableCondition -Name 'ScopesWithIssues' -ComparisonType number -Operator gt -Value 0 -BackgroundColor Yellow -HighlightHeaders 'ScopesWithIssues'
                                     } -DataStore JavaScript -ScrollX -Title "Server-Level Performance Metrics"
                                 }
                             }
@@ -931,18 +805,11 @@
                             }
 
                             foreach ($NetworkDesign in $DHCPData.NetworkDesignAnalysis) {
-                                # Network design summary
-                                $DesignSummary = [PSCustomObject]@{
-                                    'Total Network Segments'  = $NetworkDesign.TotalNetworkSegments
-                                    'Scope Overlaps Detected' = $NetworkDesign.ScopeOverlaps.Count
-                                    'Redundancy Issues'       = $NetworkDesign.RedundancyAnalysis.Count
-                                    'Design Recommendations'  = $NetworkDesign.DesignRecommendations.Count
-                                }
-
-                                New-HTMLTable -DataTable @($DesignSummary) -HideFooter {
-                                    New-HTMLTableCondition -Name 'Scope Overlaps Detected' -ComparisonType number -Operator gt -Value 0 -BackgroundColor Red -Color White -HighlightHeaders 'Scope Overlaps Detected'
-                                    New-HTMLTableCondition -Name 'Redundancy Issues' -ComparisonType number -Operator gt -Value 0 -BackgroundColor Orange -HighlightHeaders 'Redundancy Issues'
-                                    New-HTMLTableCondition -Name 'Design Recommendations' -ComparisonType number -Operator gt -Value 0 -BackgroundColor LightBlue -HighlightHeaders 'Design Recommendations'
+                                # Use structured data directly from Get function
+                                New-HTMLTable -DataTable @($NetworkDesign) -HideFooter {
+                                    New-HTMLTableCondition -Name 'ScopeOverlapsCount' -ComparisonType number -Operator gt -Value 0 -BackgroundColor Red -Color White -HighlightHeaders 'ScopeOverlapsCount'
+                                    New-HTMLTableCondition -Name 'RedundancyIssuesCount' -ComparisonType number -Operator gt -Value 0 -BackgroundColor Orange -HighlightHeaders 'RedundancyIssuesCount'
+                                    New-HTMLTableCondition -Name 'DesignRecommendationsCount' -ComparisonType number -Operator gt -Value 0 -BackgroundColor LightBlue -HighlightHeaders 'DesignRecommendationsCount'
                                 }
 
                                 # Scope overlaps
@@ -974,85 +841,35 @@
                             }
 
                             # Server Network Configuration Analysis
-                            if ($DHCPData.Servers.Count -gt 0) {
+                            if ($DHCPData.ServerNetworkAnalysis.Count -gt 0) {
                                 New-HTMLSection -HeaderText "Server Network Configuration Analysis" -CanCollapse {
-                                    $ServerNetworkData = $DHCPData.Servers | ForEach-Object {
-                                        # Calculate redundancy notes
-                                        $RedundancyNotes = @()
+                                    # Use structured data directly from Get function
 
-                                        # Check if server is a domain controller (less critical for redundancy)
-                                        if ($_.IsADDomainController) {
-                                            $RedundancyNotes += "Domain Controller"
-                                        }
-
-                                        # Check scope count for redundancy assessment
-                                        if ($_.ScopeCount -gt 10) {
-                                            $RedundancyNotes += "High scope count - consider load balancing"
-                                        }
-
-                                        [PSCustomObject]@{
-                                            'Server Name'       = $_.ServerName
-                                            'IP Address'        = $_.IPAddress
-                                            'Status'            = $_.Status
-                                            'Domain Controller' = $_.IsADDomainController
-                                            'Total Scopes'      = $_.ScopeCount
-                                            'Active Scopes'     = $_.ActiveScopeCount
-                                            'Inactive Scopes'   = $_.InactiveScopeCount
-                                            'DNS Resolvable'    = $_.DNSResolvable
-                                            'Reverse DNS Valid' = $_.ReverseDNSValid
-                                            'Network Health'    = if (-not $_.PingSuccessful) { 'Network Issues' }
-                                            elseif (-not $_.DNSResolvable) { 'DNS Issues' }
-                                            elseif (-not $_.DHCPResponding) { 'DHCP Service Issues' }
-                                            else { 'Healthy' }
-                                            'Design Notes'      = if ($RedundancyNotes.Count -gt 0) { $RedundancyNotes -join ', ' } else { 'Standard Configuration' }
-                                        }
-                                    }
-
-                                    New-HTMLTable -DataTable $ServerNetworkData -Filtering {
+                                    New-HTMLTable -DataTable $DHCPData.ServerNetworkAnalysis -Filtering {
                                         New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Online' -BackgroundColor LightGreen -FailBackgroundColor Salmon
-                                        New-HTMLTableCondition -Name 'Network Health' -ComparisonType string -Operator eq -Value 'Healthy' -BackgroundColor LightGreen
-                                        New-HTMLTableCondition -Name 'Network Health' -ComparisonType string -Operator ne -Value 'Healthy' -BackgroundColor Red -Color White
-                                        New-HTMLTableCondition -Name 'DNS Resolvable' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightGreen -FailBackgroundColor Orange
-                                        New-HTMLTableCondition -Name 'Reverse DNS Valid' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightGreen -FailBackgroundColor Yellow
-                                        New-HTMLTableCondition -Name 'Domain Controller' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightBlue -HighlightHeaders 'Domain Controller'
-                                        New-HTMLTableCondition -Name 'Total Scopes' -ComparisonType number -Operator gt -Value 10 -BackgroundColor LightYellow -HighlightHeaders 'Total Scopes'
-                                        New-HTMLTableCondition -Name 'Inactive Scopes' -ComparisonType number -Operator gt -Value 0 -BackgroundColor Orange -HighlightHeaders 'Inactive Scopes'
+                                        New-HTMLTableCondition -Name 'NetworkHealth' -ComparisonType string -Operator eq -Value 'Healthy' -BackgroundColor LightGreen
+                                        New-HTMLTableCondition -Name 'NetworkHealth' -ComparisonType string -Operator ne -Value 'Healthy' -BackgroundColor Red -Color White
+                                        New-HTMLTableCondition -Name 'DNSResolvable' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightGreen -FailBackgroundColor Orange
+                                        New-HTMLTableCondition -Name 'ReverseDNSValid' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightGreen -FailBackgroundColor Yellow
+                                        New-HTMLTableCondition -Name 'IsDomainController' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightBlue -HighlightHeaders 'IsDomainController'
+                                        New-HTMLTableCondition -Name 'TotalScopes' -ComparisonType number -Operator gt -Value 10 -BackgroundColor LightYellow -HighlightHeaders 'TotalScopes'
+                                        New-HTMLTableCondition -Name 'InactiveScopes' -ComparisonType number -Operator gt -Value 0 -BackgroundColor Orange -HighlightHeaders 'InactiveScopes'
                                     } -DataStore JavaScript -ScrollX -Title "Server Network Design Assessment"
                                 }
                             }
 
                             # Scope Redundancy Analysis Table
-                            if ($DHCPData.Scopes.Count -gt 0) {
+                            if ($DHCPData.ScopeRedundancyAnalysis.Count -gt 0) {
                                 New-HTMLSection -HeaderText "Scope Redundancy & Failover Analysis" -CanCollapse {
-                                    $ScopeRedundancyData = $DHCPData.Scopes | ForEach-Object {
-                                        [PSCustomObject]@{
-                                            'Scope ID'          = $_.ScopeId
-                                            'Scope Name'        = $_.Name
-                                            'Server'            = $_.ServerName
-                                            'State'             = $_.State
-                                            'Utilization %'     = $_.PercentageInUse
-                                            'Failover Partner'  = if ([string]::IsNullOrEmpty($_.FailoverPartner)) { 'None' } else { $_.FailoverPartner }
-                                            'Redundancy Status' = if ([string]::IsNullOrEmpty($_.FailoverPartner)) {
-                                                if ($_.State -eq 'Active') { 'No Failover - Risk' } else { 'No Failover - Inactive' }
-                                            } else { 'Failover Configured' }
-                                            'Risk Level'        = if ([string]::IsNullOrEmpty($_.FailoverPartner) -and $_.State -eq 'Active' -and $_.PercentageInUse -gt 50) { 'High' }
-                                            elseif ([string]::IsNullOrEmpty($_.FailoverPartner) -and $_.State -eq 'Active') { 'Medium' }
-                                            else { 'Low' }
-                                            'Recommendation'    = if ([string]::IsNullOrEmpty($_.FailoverPartner) -and $_.State -eq 'Active') { 'Configure Failover' }
-                                            elseif ($_.State -ne 'Active') { 'Review Scope Status' }
-                                            else { 'Adequate' }
-                                        }
-                                    }
-
-                                    New-HTMLTable -DataTable $ScopeRedundancyData -Filtering {
+                                    New-HTMLTable -DataTable $DHCPData.ScopeRedundancyAnalysis -Filtering {
                                         New-HTMLTableCondition -Name 'State' -ComparisonType string -Operator eq -Value 'Active' -BackgroundColor LightGreen -FailBackgroundColor Orange
-                                        New-HTMLTableCondition -Name 'Redundancy Status' -ComparisonType string -Operator eq -Value 'Failover Configured' -BackgroundColor LightGreen
-                                        New-HTMLTableCondition -Name 'Redundancy Status' -ComparisonType string -Operator eq -Value 'No Failover - Risk' -BackgroundColor Red -Color White
-                                        New-HTMLTableCondition -Name 'Risk Level' -ComparisonType string -Operator eq -Value 'High' -BackgroundColor Red -Color White
-                                        New-HTMLTableCondition -Name 'Risk Level' -ComparisonType string -Operator eq -Value 'Medium' -BackgroundColor Orange
-                                        New-HTMLTableCondition -Name 'Risk Level' -ComparisonType string -Operator eq -Value 'Low' -BackgroundColor LightGreen
-                                        New-HTMLTableCondition -Name 'Utilization %' -ComparisonType number -Operator gt -Value 80 -BackgroundColor Orange -HighlightHeaders 'Utilization %'
-                                        New-HTMLTableCondition -Name 'Failover Partner' -ComparisonType string -Operator eq -Value 'None' -BackgroundColor LightYellow -HighlightHeaders 'Failover Partner'
+                                        New-HTMLTableCondition -Name 'RedundancyStatus' -ComparisonType string -Operator eq -Value 'Failover Configured' -BackgroundColor LightGreen
+                                        New-HTMLTableCondition -Name 'RedundancyStatus' -ComparisonType string -Operator eq -Value 'No Failover - Risk' -BackgroundColor Red -Color White
+                                        New-HTMLTableCondition -Name 'RiskLevel' -ComparisonType string -Operator eq -Value 'High' -BackgroundColor Red -Color White
+                                        New-HTMLTableCondition -Name 'RiskLevel' -ComparisonType string -Operator eq -Value 'Medium' -BackgroundColor Orange
+                                        New-HTMLTableCondition -Name 'RiskLevel' -ComparisonType string -Operator eq -Value 'Low' -BackgroundColor LightGreen
+                                        New-HTMLTableCondition -Name 'UtilizationPercent' -ComparisonType number -Operator gt -Value 80 -BackgroundColor Orange -HighlightHeaders 'UtilizationPercent'
+                                        New-HTMLTableCondition -Name 'FailoverPartner' -ComparisonType string -Operator eq -Value 'None' -BackgroundColor LightYellow -HighlightHeaders 'FailoverPartner'
                                     } -DataStore JavaScript -ScrollX -Title "Scope Redundancy Assessment"
                                 }
                             }
@@ -1100,25 +917,8 @@
                 # Server-level configuration summary
                 if ($DHCPData.Servers.Count -gt 0) {
                     New-HTMLSection -HeaderText "Server Configuration Summary" {
-                        $ServerConfigSummary = $DHCPData.Servers | ForEach-Object {
-                            # Extract domain name from server name if it's FQDN
-                            $DomainName = if ($_.ServerName -like "*.*") { ($_.ServerName -split '\.', 2)[1] } else { 'Unknown' }
-                            [PSCustomObject]@{
-                                ServerName = $_.ServerName
-                                DomainName = $DomainName
-                                IsADDomainController = $_.IsADDomainController
-                                IPAddress = $_.IPAddress
-                                Status = $_.Status
-                                ScopeCount = $_.ScopeCount
-                                ActiveScopeCount = $_.ActiveScopeCount
-                                InactiveScopeCount = $_.InactiveScopeCount
-                                ScopesWithIssues = $_.ScopesWithIssues
-                                ResponseTimeMs = $_.ResponseTimeMs
-                                DHCPRole = $_.DHCPRole
-                                ReverseDNSValid = $_.ReverseDNSValid
-                            }
-                        } | Sort-Object ServerName
-                        New-HTMLTable -DataTable $ServerConfigSummary -Filtering {
+                        # Use structured data directly from Get function - no transformation needed
+                        New-HTMLTable -DataTable $DHCPData.Servers -Filtering {
                             New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Online' -BackgroundColor LightGreen -FailBackgroundColor Salmon
                             New-HTMLTableCondition -Name 'IsADDomainController' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightBlue -HighlightHeaders 'IsADDomainController'
                             New-HTMLTableCondition -Name 'ReverseDNSValid' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightGreen -FailBackgroundColor Orange -HighlightHeaders 'ReverseDNSValid'
