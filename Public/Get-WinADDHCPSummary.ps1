@@ -1,4 +1,4 @@
-function Get-WinADDHCPSummary {
+﻿function Get-WinADDHCPSummary {
     <#
     .SYNOPSIS
     Retrieves comprehensive DHCP server information from Active Directory forest.
@@ -106,38 +106,135 @@ function Get-WinADDHCPSummary {
         [string[]] $ComputerName,
         [switch] $SkipRODC,
         [System.Collections.IDictionary] $ExtendedForestInformation,
-        [switch] $Extended
+        [switch] $Extended,
+        [switch] $TestMode
     )
 
     Write-Verbose "Get-WinADDHCPSummary - Starting DHCP information gathering"
 
+    # Test Mode: Generate sample data for quick testing
+    if ($TestMode) {
+        Write-Verbose "Get-WinADDHCPSummary - Running in test mode with sample data"
+        return @{
+            Servers                   = @(
+                [PSCustomObject]@{
+                    ServerName = 'dhcp01.domain.com'; ComputerName = 'dhcp01.domain.com'; Status = 'Online'; Version = '10.0'; PingSuccessful = $true; DNSResolvable = $true; DHCPResponding = $true
+                    ScopeCount = 15; ActiveScopeCount = 13; InactiveScopeCount = 2; TotalScopes = 15; ScopesActive = 13; ScopesInactive = 2; ScopesWithIssues = 2; TotalAddresses = 300; AddressesInUse = 135; AddressesFree = 165; PercentageInUse = 45
+                    IsADDomainController = $false; DomainName = 'domain.com'; IPAddress = '192.168.1.10'
+                    ReverseDNSName = 'dhcp01.domain.com'; ReverseDNSValid = $true; ResponseTimeMs = 5; DHCPRole = 'Primary'
+                }
+                [PSCustomObject]@{
+                    ServerName = 'dhcp02.domain.com'; ComputerName = 'dhcp02.domain.com'; Status = 'Unreachable'; Version = $null; PingSuccessful = $false; DNSResolvable = $true; DHCPResponding = $false
+                    ScopeCount = 0; ActiveScopeCount = 0; InactiveScopeCount = 0; TotalScopes = 0; ScopesActive = 0; ScopesInactive = 0; ScopesWithIssues = 0; TotalAddresses = 0; AddressesInUse = 0; AddressesFree = 0; PercentageInUse = 0
+                    IsADDomainController = $false; DomainName = 'domain.com'; IPAddress = $null
+                    ReverseDNSName = $null; ReverseDNSValid = $false; ResponseTimeMs = $null; DHCPRole = 'Unknown'
+                }
+                [PSCustomObject]@{
+                    ServerName = 'dc01.domain.com'; ComputerName = 'dc01.domain.com'; Status = 'Online'; Version = '10.0'; PingSuccessful = $true; DNSResolvable = $true; DHCPResponding = $true
+                    ScopeCount = 8; ActiveScopeCount = 8; InactiveScopeCount = 0; TotalScopes = 8; ScopesActive = 8; ScopesInactive = 0; ScopesWithIssues = 1; TotalAddresses = 150; AddressesInUse = 117; AddressesFree = 33; PercentageInUse = 78
+                    IsADDomainController = $true; DomainName = 'domain.com'; IPAddress = '192.168.1.5'
+                    ReverseDNSName = 'dc01.domain.com'; ReverseDNSValid = $true; ResponseTimeMs = 3; DHCPRole = 'Backup'
+                }
+            )
+            Scopes                    = @(
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '192.168.1.0'; Name = 'Corporate LAN'; State = 'Active'; PercentageInUse = 85; AddressesInUse = 170; AddressesFree = 30; HasIssues = $true; Issues = @('High utilization'); LeaseDurationHours = 8; FailoverPartner = $null }
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '10.1.0.0'; Name = 'Guest Network'; State = 'Active'; PercentageInUse = 25; AddressesInUse = 50; AddressesFree = 150; HasIssues = $false; Issues = @(); LeaseDurationHours = 24; FailoverPartner = 'dhcp02.domain.com' }
+                [PSCustomObject]@{ ServerName = 'dc01.domain.com'; ScopeId = '172.16.1.0'; Name = 'Server VLAN'; State = 'Active'; PercentageInUse = 92; AddressesInUse = 92; AddressesFree = 8; HasIssues = $true; Issues = @('Critical utilization', 'No failover configured'); LeaseDurationHours = 168; FailoverPartner = $null }
+            )
+            ScopesWithIssues          = @(
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '192.168.1.0'; Name = 'Corporate LAN'; State = 'Active'; PercentageInUse = 85; HasIssues = $true; Issues = @('High utilization'); LeaseDurationHours = 8; FailoverPartner = $null }
+                [PSCustomObject]@{ ServerName = 'dc01.domain.com'; ScopeId = '172.16.1.0'; Name = 'Server VLAN'; State = 'Active'; PercentageInUse = 92; HasIssues = $true; Issues = @('Critical utilization', 'No failover configured'); LeaseDurationHours = 168; FailoverPartner = $null }
+            )
+            IPv6Scopes                = @()
+            MulticastScopes           = @()
+            SecurityFilters           = @(
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; FilteringMode = 'Deny'; Allow = $false; Deny = $true }
+                [PSCustomObject]@{ ServerName = 'dc01.domain.com'; FilteringMode = 'None'; Allow = $false; Deny = $false }
+            )
+            Policies                  = @(
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; Name = 'Corporate Devices'; Enabled = $true; ProcessingOrder = 1; Condition = 'Vendor Class matches Corporate' }
+            )
+            ServerSettings            = @(
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; IsAuthorized = $true; IsDomainJoined = $true; ActivatePolicies = $true; ConflictDetectionAttempts = 2 }
+                [PSCustomObject]@{ ServerName = 'dc01.domain.com'; IsAuthorized = $true; IsDomainJoined = $true; ActivatePolicies = $false; ConflictDetectionAttempts = 0 }
+            )
+            NetworkBindings           = @(
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; InterfaceAlias = 'Ethernet'; IPAddress = '192.168.1.10'; State = $true }
+            )
+            Reservations              = @()
+            AuditLogs                 = @()
+            Databases                 = @()
+            Statistics                = @{
+                TotalServers = 3; ServersOnline = 2; ServersOffline = 1; ServersWithIssues = 1
+                TotalScopes = 3; ScopesActive = 3; ScopesInactive = 0; ScopesWithIssues = 2
+                TotalAddresses = 450; AddressesInUse = 312; AddressesFree = 138; OverallPercentageInUse = 69
+            }
+            SecurityAnalysis          = @(
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; IsAuthorized = $true; AuthorizationStatus = 'Authorized in AD'; AuditLoggingEnabled = $true; ServiceAccount = 'Network Service'; SecurityRiskLevel = 'Low'; SecurityRecommendations = @() }
+                [PSCustomObject]@{ ServerName = 'dhcp02.domain.com'; IsAuthorized = $false; AuthorizationStatus = 'Not authorized in AD'; AuditLoggingEnabled = $false; ServiceAccount = 'LocalSystem'; SecurityRiskLevel = 'Critical'; SecurityRecommendations = @('Authorize DHCP server in Active Directory immediately', 'Enable DHCP audit logging for security monitoring', 'Configure dedicated service account for DHCP service') }
+                [PSCustomObject]@{ ServerName = 'dc01.domain.com'; IsAuthorized = $true; AuthorizationStatus = 'Authorized in AD'; AuditLoggingEnabled = $false; ServiceAccount = 'LocalSystem'; SecurityRiskLevel = 'Medium'; SecurityRecommendations = @('Enable DHCP audit logging for security monitoring', 'Configure dedicated service account for DHCP service') }
+            )
+            PerformanceMetrics        = @(
+                [PSCustomObject]@{ TotalServers = 3; TotalScopes = 3; AverageUtilization = 67.33; HighUtilizationScopes = 2; CriticalUtilizationScopes = 1; UnderUtilizedScopes = 0; CapacityPlanningRecommendations = @('1 scope(s) require immediate expansion', '2 scope(s) need expansion planning') }
+            )
+            NetworkDesignAnalysis     = @(
+                [PSCustomObject]@{ TotalNetworkSegments = 3; ScopeOverlaps = @(); DesignRecommendations = @('Implement DHCP failover for high availability'); RedundancyAnalysis = @('2 scope(s) have no redundancy (single server)'); ScopeOverlapsCount = 0; RedundancyIssuesCount = 1; DesignRecommendationsCount = 1 }
+            )
+            BackupAnalysis            = @(
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; BackupEnabled = $true; BackupIntervalMinutes = 60; CleanupIntervalMinutes = 1440; LastBackupTime = (Get-Date).AddHours(-2); BackupStatus = 'Healthy'; Recommendations = @() }
+                [PSCustomObject]@{ ServerName = 'dhcp02.domain.com'; BackupEnabled = $false; BackupIntervalMinutes = 0; CleanupIntervalMinutes = 0; LastBackupTime = $null; BackupStatus = 'Critical'; Recommendations = @('Configure automated DHCP database backup', 'Set backup interval to 60 minutes', 'Set cleanup interval to 24 hours') }
+                [PSCustomObject]@{ ServerName = 'dc01.domain.com'; BackupEnabled = $true; BackupIntervalMinutes = 120; CleanupIntervalMinutes = 2880; LastBackupTime = (Get-Date).AddHours(-1); BackupStatus = 'Warning'; Recommendations = @('Reduce backup interval to 60 minutes for better recovery') }
+            )
+            ScopeRedundancyAnalysis   = @(
+                [PSCustomObject]@{ ScopeId = '192.168.1.0'; ScopeName = 'Corporate LAN'; ServerName = 'dhcp01.domain.com'; State = 'Active'; UtilizationPercent = 85; FailoverPartner = 'None'; RedundancyStatus = 'No Failover - Risk'; RiskLevel = 'High'; Recommendation = 'Configure Failover' }
+                [PSCustomObject]@{ ScopeId = '10.1.0.0'; ScopeName = 'Guest Network'; ServerName = 'dhcp01.domain.com'; State = 'Active'; UtilizationPercent = 25; FailoverPartner = 'dhcp02.domain.com'; RedundancyStatus = 'Failover Configured'; RiskLevel = 'Low'; Recommendation = 'Adequate' }
+                [PSCustomObject]@{ ScopeId = '172.16.0.0'; ScopeName = 'Management'; ServerName = 'dc01.domain.com'; State = 'Active'; UtilizationPercent = 78; FailoverPartner = 'None'; RedundancyStatus = 'No Failover - Risk'; RiskLevel = 'High'; Recommendation = 'Configure Failover' }
+            )
+            ServerPerformanceAnalysis = @(
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; Status = 'Online'; TotalScopes = 15; ActiveScopes = 13; ScopesWithIssues = 2; TotalAddresses = 300; AddressesInUse = 135; UtilizationPercent = 45; PerformanceRating = 'Moderate'; CapacityStatus = 'Adequate' }
+                [PSCustomObject]@{ ServerName = 'dhcp02.domain.com'; Status = 'Unreachable'; TotalScopes = 0; ActiveScopes = 0; ScopesWithIssues = 0; TotalAddresses = 0; AddressesInUse = 0; UtilizationPercent = 0; PerformanceRating = 'Offline'; CapacityStatus = 'Server Offline' }
+                [PSCustomObject]@{ ServerName = 'dc01.domain.com'; Status = 'Online'; TotalScopes = 8; ActiveScopes = 8; ScopesWithIssues = 1; TotalAddresses = 150; AddressesInUse = 117; UtilizationPercent = 78; PerformanceRating = 'Moderate'; CapacityStatus = 'Adequate' }
+            )
+            ServerNetworkAnalysis     = @(
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; IPAddress = '192.168.1.10'; Status = 'Online'; IsDomainController = $false; TotalScopes = 15; ActiveScopes = 13; InactiveScopes = 2; DNSResolvable = $true; ReverseDNSValid = $true; NetworkHealth = 'Healthy'; DesignNotes = 'Standard Configuration' }
+                [PSCustomObject]@{ ServerName = 'dhcp02.domain.com'; IPAddress = $null; Status = 'Unreachable'; IsDomainController = $false; TotalScopes = 0; ActiveScopes = 0; InactiveScopes = 0; DNSResolvable = $true; ReverseDNSValid = $false; NetworkHealth = 'Network Issues'; DesignNotes = 'Standard Configuration' }
+                [PSCustomObject]@{ ServerName = 'dc01.domain.com'; IPAddress = '192.168.1.5'; Status = 'Online'; IsDomainController = $true; TotalScopes = 8; ActiveScopes = 8; InactiveScopes = 0; DNSResolvable = $true; ReverseDNSValid = $true; NetworkHealth = 'Healthy'; DesignNotes = 'Domain Controller' }
+            )
+        }
+    }
+
     # Initialize result structure
     $DHCPSummary = [ordered] @{
-        Servers              = [System.Collections.Generic.List[Object]]::new()
-        Scopes               = [System.Collections.Generic.List[Object]]::new()
-        ScopesWithIssues     = [System.Collections.Generic.List[Object]]::new()
-        IPv6Scopes           = [System.Collections.Generic.List[Object]]::new()
-        IPv6ScopesWithIssues = [System.Collections.Generic.List[Object]]::new()
-        MulticastScopes      = [System.Collections.Generic.List[Object]]::new()
-        Reservations         = [System.Collections.Generic.List[Object]]::new()
-        Leases               = [System.Collections.Generic.List[Object]]::new()
-        Policies             = [System.Collections.Generic.List[Object]]::new()
-        SecurityFilters      = [System.Collections.Generic.List[Object]]::new()
-        ServerSettings       = [System.Collections.Generic.List[Object]]::new()
-        NetworkBindings      = [System.Collections.Generic.List[Object]]::new()
-        AuditLogs            = [System.Collections.Generic.List[Object]]::new()
-        Databases            = [System.Collections.Generic.List[Object]]::new()
-        Options              = [System.Collections.Generic.List[Object]]::new()
-        Errors               = [System.Collections.Generic.List[Object]]::new()
-        Warnings             = [System.Collections.Generic.List[Object]]::new()
+        Servers                   = [System.Collections.Generic.List[Object]]::new()
+        Scopes                    = [System.Collections.Generic.List[Object]]::new()
+        ScopesWithIssues          = [System.Collections.Generic.List[Object]]::new()
+        IPv6Scopes                = [System.Collections.Generic.List[Object]]::new()
+        IPv6ScopesWithIssues      = [System.Collections.Generic.List[Object]]::new()
+        MulticastScopes           = [System.Collections.Generic.List[Object]]::new()
+        Reservations              = [System.Collections.Generic.List[Object]]::new()
+        Leases                    = [System.Collections.Generic.List[Object]]::new()
+        Policies                  = [System.Collections.Generic.List[Object]]::new()
+        SecurityFilters           = [System.Collections.Generic.List[Object]]::new()
+        ServerSettings            = [System.Collections.Generic.List[Object]]::new()
+        NetworkBindings           = [System.Collections.Generic.List[Object]]::new()
+        AuditLogs                 = [System.Collections.Generic.List[Object]]::new()
+        Databases                 = [System.Collections.Generic.List[Object]]::new()
+        Options                   = [System.Collections.Generic.List[Object]]::new()
+        Errors                    = [System.Collections.Generic.List[Object]]::new()
+        Warnings                  = [System.Collections.Generic.List[Object]]::new()
         # Enhanced analysis collections
-        ScopeConflicts       = [System.Collections.Generic.List[Object]]::new()
-        PerformanceMetrics   = [System.Collections.Generic.List[Object]]::new()
-        SecurityAnalysis     = [System.Collections.Generic.List[Object]]::new()
-        BestPracticeViolations = [System.Collections.Generic.List[Object]]::new()
-        CapacityAnalysis     = [System.Collections.Generic.List[Object]]::new()
-        Statistics           = [ordered] @{}
-        ValidationResults    = [ordered] @{}
+        ScopeConflicts            = [System.Collections.Generic.List[Object]]::new()
+        PerformanceMetrics        = [System.Collections.Generic.List[Object]]::new()
+        SecurityAnalysis          = [System.Collections.Generic.List[Object]]::new()
+        BestPracticeViolations    = [System.Collections.Generic.List[Object]]::new()
+        CapacityAnalysis          = [System.Collections.Generic.List[Object]]::new()
+        NetworkDesignAnalysis     = [System.Collections.Generic.List[Object]]::new()
+        BackupAnalysis            = [System.Collections.Generic.List[Object]]::new()
+        ScopeRedundancyAnalysis   = [System.Collections.Generic.List[Object]]::new()
+        ServerPerformanceAnalysis = [System.Collections.Generic.List[Object]]::new()
+        ServerNetworkAnalysis     = [System.Collections.Generic.List[Object]]::new()
+        Statistics                = [ordered] @{}
+        ValidationResults         = [ordered] @{}
     }
 
     # Get DHCP servers from AD for discovery
@@ -347,35 +444,35 @@ function Get-WinADDHCPSummary {
             Write-Verbose "Get-WinADDHCPSummary - Processing scope $($Scope.ScopeId) on $Computer"
 
             $ScopeObject = [ordered] @{
-                ServerName         = $Computer
-                ScopeId            = $Scope.ScopeId
-                Name               = $Scope.Name
-                Description        = $Scope.Description
-                State              = $Scope.State
-                SubnetMask         = $Scope.SubnetMask
-                StartRange         = $Scope.StartRange
-                EndRange           = $Scope.EndRange
-                LeaseDuration      = $Scope.LeaseDuration
-                LeaseDurationHours = $Scope.LeaseDuration.TotalHours
-                Type               = $Scope.Type
-                SuperscopeName     = $Scope.SuperscopeName
-                AddressesInUse     = 0
-                AddressesFree      = 0
-                PercentageInUse    = 0
-                Reserved           = 0
-                HasIssues          = $false
-                Issues             = [System.Collections.Generic.List[string]]::new()
+                ServerName                 = $Computer
+                ScopeId                    = $Scope.ScopeId
+                Name                       = $Scope.Name
+                Description                = $Scope.Description
+                State                      = $Scope.State
+                SubnetMask                 = $Scope.SubnetMask
+                StartRange                 = $Scope.StartRange
+                EndRange                   = $Scope.EndRange
+                LeaseDuration              = $Scope.LeaseDuration
+                LeaseDurationHours         = $Scope.LeaseDuration.TotalHours
+                Type                       = $Scope.Type
+                SuperscopeName             = $Scope.SuperscopeName
+                AddressesInUse             = 0
+                AddressesFree              = 0
+                PercentageInUse            = 0
+                Reserved                   = 0
+                HasIssues                  = $false
+                Issues                     = [System.Collections.Generic.List[string]]::new()
                 # DNS Configuration fields
-                DomainName         = $null
-                DomainNameOption   = $null
-                DNSServers         = $null
+                DomainName                 = $null
+                DomainNameOption           = $null
+                DNSServers                 = $null
                 UpdateDnsRRForOlderClients = $null
-                DeleteDnsRROnLeaseExpiry = $null
-                DynamicUpdates     = $null
-                DNSSettings        = $null
-                FailoverPartner    = $null
-                GatheredFrom       = $Computer
-                GatheredDate       = Get-Date
+                DeleteDnsRROnLeaseExpiry   = $null
+                DynamicUpdates             = $null
+                DNSSettings                = $null
+                FailoverPartner            = $null
+                GatheredFrom               = $Computer
+                GatheredDate               = Get-Date
             }
 
             # Get scope statistics
@@ -392,42 +489,42 @@ function Get-WinADDHCPSummary {
                 $ServerAddressesInUse += $ScopeStats.AddressesInUse
                 $ServerAddressesFree += $ScopeStats.AddressesFree
 
-            # Enhanced scope analysis and best practice validation
-            $ScopeObject.TotalAddresses = $ScopeTotalAddresses
+                # Enhanced scope analysis and best practice validation
+                $ScopeObject.TotalAddresses = $ScopeTotalAddresses
 
-            # Calculate scope efficiency metrics
-            $ScopeRange = [System.Net.IPAddress]::Parse($Scope.EndRange).GetAddressBytes()[3] - [System.Net.IPAddress]::Parse($Scope.StartRange).GetAddressBytes()[3] + 1
-            $ScopeObject.DefinedRange = $ScopeRange
-            $ScopeObject.UtilizationEfficiency = if ($ScopeRange -gt 0) { [Math]::Round(($ScopeTotalAddresses / $ScopeRange) * 100, 2) } else { 0 }
+                # Calculate scope efficiency metrics
+                $ScopeRange = [System.Net.IPAddress]::Parse($Scope.EndRange).GetAddressBytes()[3] - [System.Net.IPAddress]::Parse($Scope.StartRange).GetAddressBytes()[3] + 1
+                $ScopeObject.DefinedRange = $ScopeRange
+                $ScopeObject.UtilizationEfficiency = if ($ScopeRange -gt 0) { [Math]::Round(($ScopeTotalAddresses / $ScopeRange) * 100, 2) } else { 0 }
 
-            # Best practice validations
-            $BestPracticeIssues = [System.Collections.Generic.List[string]]::new()
+                # Best practice validations
+                $BestPracticeIssues = [System.Collections.Generic.List[string]]::new()
 
-            # Check scope size best practices
-            if ($ScopeTotalAddresses -lt 10) {
-                $BestPracticeIssues.Add("Very small scope size ($ScopeTotalAddresses addresses) - consider consolidation")
-            } elseif ($ScopeTotalAddresses -gt 1000) {
-                $BestPracticeIssues.Add("Very large scope size ($ScopeTotalAddresses addresses) - consider segmentation")
-            }
-
-            # Check utilization thresholds
-            if ($ScopeObject.PercentageInUse -gt 95) {
-                $BestPracticeIssues.Add("Critical utilization level ($($ScopeObject.PercentageInUse)%) - immediate expansion needed")
-            } elseif ($ScopeObject.PercentageInUse -gt 80) {
-                $BestPracticeIssues.Add("High utilization level ($($ScopeObject.PercentageInUse)%) - expansion planning recommended")
-            } elseif ($ScopeObject.PercentageInUse -lt 5 -and $Scope.State -eq 'Active') {
-                $BestPracticeIssues.Add("Very low utilization ($($ScopeObject.PercentageInUse)%) - scope may be unnecessary")
-            }
-
-            # Add best practice issues to main issues list
-            foreach ($Issue in $BestPracticeIssues) {
-                $ScopeObject.Issues.Add($Issue)
-                if ($Issue -like "*Critical*" -or $Issue -like "*immediate*") {
-                    $ScopeObject.HasIssues = $true
+                # Check scope size best practices
+                if ($ScopeTotalAddresses -lt 10) {
+                    $BestPracticeIssues.Add("Very small scope size ($ScopeTotalAddresses addresses) - consider consolidation")
+                } elseif ($ScopeTotalAddresses -gt 1000) {
+                    $BestPracticeIssues.Add("Very large scope size ($ScopeTotalAddresses addresses) - consider segmentation")
                 }
-            }
 
-            Write-Verbose "Get-WinADDHCPSummary - Scope $($Scope.ScopeId) statistics: Total=$ScopeTotalAddresses, InUse=$($ScopeStats.AddressesInUse), Free=$($ScopeStats.AddressesFree), Utilization=$($ScopeObject.PercentageInUse)%"
+                # Check utilization thresholds
+                if ($ScopeObject.PercentageInUse -gt 95) {
+                    $BestPracticeIssues.Add("Critical utilization level ($($ScopeObject.PercentageInUse)%) - immediate expansion needed")
+                } elseif ($ScopeObject.PercentageInUse -gt 80) {
+                    $BestPracticeIssues.Add("High utilization level ($($ScopeObject.PercentageInUse)%) - expansion planning recommended")
+                } elseif ($ScopeObject.PercentageInUse -lt 5 -and $Scope.State -eq 'Active') {
+                    $BestPracticeIssues.Add("Very low utilization ($($ScopeObject.PercentageInUse)%) - scope may be unnecessary")
+                }
+
+                # Add best practice issues to main issues list
+                foreach ($Issue in $BestPracticeIssues) {
+                    $ScopeObject.Issues.Add($Issue)
+                    if ($Issue -like "*Critical*" -or $Issue -like "*immediate*") {
+                        $ScopeObject.HasIssues = $true
+                    }
+                }
+
+                Write-Verbose "Get-WinADDHCPSummary - Scope $($Scope.ScopeId) statistics: Total=$ScopeTotalAddresses, InUse=$($ScopeStats.AddressesInUse), Free=$($ScopeStats.AddressesFree), Utilization=$($ScopeObject.PercentageInUse)%"
             } catch {
                 Add-DHCPError -ServerName $Computer -ScopeId $Scope.ScopeId -Component 'Scope Statistics' -Operation 'Get-DhcpServerv4ScopeStatistics' -ErrorMessage $_.Exception.Message -Severity 'Warning'
             }
@@ -1214,12 +1311,12 @@ function Get-WinADDHCPSummary {
     Write-Verbose "Get-WinADDHCPSummary - Performing enhanced security analysis"
     foreach ($Server in $DHCPSummary.Servers) {
         $SecurityIssues = [PSCustomObject]@{
-            ServerName = $Server.ServerName
-            IsAuthorized = $Server.IsAuthorized
-            AuthorizationStatus = $Server.AuthorizationStatus
-            AuditLoggingEnabled = $null
-            ServiceAccount = $null
-            SecurityRiskLevel = 'Low'
+            ServerName              = $Server.ServerName
+            IsAuthorized            = $Server.IsAuthorized
+            AuthorizationStatus     = $Server.AuthorizationStatus
+            AuditLoggingEnabled     = $null
+            ServiceAccount          = $null
+            SecurityRiskLevel       = 'Low'
             SecurityRecommendations = [System.Collections.Generic.List[string]]::new()
         }
 
@@ -1243,14 +1340,14 @@ function Get-WinADDHCPSummary {
     # Enhanced Analysis: Performance Metrics
     Write-Verbose "Get-WinADDHCPSummary - Calculating performance metrics"
     $OverallPerformance = [PSCustomObject]@{
-        TotalServers = $DHCPSummary.Summary.TotalServers
-        TotalScopes = $DHCPSummary.Summary.TotalScopes
-        AverageUtilization = if ($DHCPSummary.Summary.TotalScopes -gt 0) {
+        TotalServers                    = $DHCPSummary.Summary.TotalServers
+        TotalScopes                     = $DHCPSummary.Summary.TotalScopes
+        AverageUtilization              = if ($DHCPSummary.Summary.TotalScopes -gt 0) {
             [Math]::Round(($DHCPSummary.Servers | ForEach-Object { $_.PercentageInUse } | Measure-Object -Average).Average, 2)
         } else { 0 }
-        HighUtilizationScopes = ($DHCPSummary.Scopes | Where-Object { $_.PercentageInUse -gt 80 }).Count
-        CriticalUtilizationScopes = ($DHCPSummary.Scopes | Where-Object { $_.PercentageInUse -gt 95 }).Count
-        UnderUtilizedScopes = ($DHCPSummary.Scopes | Where-Object { $_.PercentageInUse -lt 5 -and $_.State -eq 'Active' }).Count
+        HighUtilizationScopes           = ($DHCPSummary.Scopes | Where-Object { $_.PercentageInUse -gt 80 }).Count
+        CriticalUtilizationScopes       = ($DHCPSummary.Scopes | Where-Object { $_.PercentageInUse -gt 95 }).Count
+        UnderUtilizedScopes             = ($DHCPSummary.Scopes | Where-Object { $_.PercentageInUse -lt 5 -and $_.State -eq 'Active' }).Count
         CapacityPlanningRecommendations = [System.Collections.Generic.List[string]]::new()
     }
 
@@ -1269,10 +1366,13 @@ function Get-WinADDHCPSummary {
     # Enhanced Analysis: Network Design Analysis
     Write-Verbose "Get-WinADDHCPSummary - Analyzing network design"
     $NetworkDesign = [PSCustomObject]@{
-        TotalNetworkSegments = ($DHCPSummary.Scopes | Group-Object { [System.Net.IPAddress]::Parse($_.ScopeId).GetAddressBytes()[0..2] -join '.' }).Count
-        ScopeOverlaps = [System.Collections.Generic.List[string]]::new()
-        DesignRecommendations = [System.Collections.Generic.List[string]]::new()
-        RedundancyAnalysis = [System.Collections.Generic.List[string]]::new()
+        TotalNetworkSegments       = ($DHCPSummary.Scopes | Group-Object { [System.Net.IPAddress]::Parse($_.ScopeId).GetAddressBytes()[0..2] -join '.' }).Count
+        ScopeOverlaps              = [System.Collections.Generic.List[string]]::new()
+        DesignRecommendations      = [System.Collections.Generic.List[string]]::new()
+        RedundancyAnalysis         = [System.Collections.Generic.List[string]]::new()
+        ScopeOverlapsCount         = 0  # Will be updated after analysis
+        RedundancyIssuesCount      = 0  # Will be updated after analysis
+        DesignRecommendationsCount = 0  # Will be updated after analysis
     }
 
     # Check for potential scope overlaps (simplified check)
@@ -1295,7 +1395,113 @@ function Get-WinADDHCPSummary {
         $NetworkDesign.DesignRecommendations.Add("Implement DHCP failover for high availability")
     }
 
+    # Update count properties
+    $NetworkDesign.ScopeOverlapsCount = $NetworkDesign.ScopeOverlaps.Count
+    $NetworkDesign.RedundancyIssuesCount = $NetworkDesign.RedundancyAnalysis.Count
+    $NetworkDesign.DesignRecommendationsCount = $NetworkDesign.DesignRecommendations.Count
+
     $DHCPSummary.NetworkDesignAnalysis.Add($NetworkDesign)
+
+    # Enhanced Analysis: Scope Redundancy Analysis
+    Write-Verbose "Get-WinADDHCPSummary - Generating scope redundancy analysis"
+    foreach ($Scope in $DHCPSummary.Scopes) {
+        $ScopeRedundancy = [PSCustomObject]@{
+            'ScopeId'            = $Scope.ScopeId
+            'ScopeName'          = $Scope.Name
+            'ServerName'         = $Scope.ServerName
+            'State'              = $Scope.State
+            'UtilizationPercent' = $Scope.PercentageInUse
+            'FailoverPartner'    = if ([string]::IsNullOrEmpty($Scope.FailoverPartner)) { 'None' } else { $Scope.FailoverPartner }
+            'RedundancyStatus'   = if ([string]::IsNullOrEmpty($Scope.FailoverPartner)) {
+                if ($Scope.State -eq 'Active') { 'No Failover - Risk' } else { 'No Failover - Inactive' }
+            } else { 'Failover Configured' }
+            'RiskLevel'          = if ([string]::IsNullOrEmpty($Scope.FailoverPartner) -and $Scope.State -eq 'Active' -and $Scope.PercentageInUse -gt 50) { 'High' }
+            elseif ([string]::IsNullOrEmpty($Scope.FailoverPartner) -and $Scope.State -eq 'Active') { 'Medium' }
+            else { 'Low' }
+            'Recommendation'     = if ([string]::IsNullOrEmpty($Scope.FailoverPartner) -and $Scope.State -eq 'Active') { 'Configure Failover' }
+            elseif ($Scope.State -ne 'Active') { 'Review Scope Status' }
+            else { 'Adequate' }
+        }
+        $DHCPSummary.ScopeRedundancyAnalysis.Add($ScopeRedundancy)
+    }
+
+    # Enhanced Analysis: Server Performance Analysis
+    Write-Verbose "Get-WinADDHCPSummary - Generating server performance analysis"
+    foreach ($Server in $DHCPSummary.Servers) {
+        $ServerPerformance = [PSCustomObject]@{
+            'ServerName'         = $Server.ServerName
+            'Status'             = $Server.Status
+            'TotalScopes'        = $Server.ScopeCount
+            'ActiveScopes'       = $Server.ActiveScopeCount
+            'ScopesWithIssues'   = $Server.ScopesWithIssues
+            'TotalAddresses'     = $Server.TotalAddresses
+            'AddressesInUse'     = $Server.AddressesInUse
+            'UtilizationPercent' = $Server.PercentageInUse
+            'PerformanceRating'  = if ($Server.Status -ne 'Online') { 'Offline' }
+            elseif (-not $Server.DHCPResponding) { 'Service Failed' }
+            elseif (-not $Server.DNSResolvable) { 'DNS Issues' }
+            elseif (-not $Server.PingSuccessful) { 'Network Issues' }
+            elseif ($Server.PercentageInUse -gt 95) { 'Critical' }
+            elseif ($Server.PercentageInUse -gt 80) { 'High Risk' }
+            elseif ($Server.PercentageInUse -gt 60) { 'Moderate' }
+            elseif ($Server.PercentageInUse -lt 5 -and $Server.ScopeCount -gt 0) { 'Under-utilized' }
+            else { 'Optimal' }
+            'CapacityStatus'     = if ($Server.Status -ne 'Online') { 'Server Offline' }
+            elseif (-not $Server.DHCPResponding) { 'Service Not Responding' }
+            elseif (-not $Server.DNSResolvable) { 'DNS Resolution Failed' }
+            elseif (-not $Server.PingSuccessful) { 'Network Unreachable' }
+            elseif ($Server.PercentageInUse -gt 95) { 'Immediate Expansion Needed' }
+            elseif ($Server.PercentageInUse -gt 80) { 'Plan Expansion' }
+            elseif ($Server.PercentageInUse -lt 5 -and $Server.ScopeCount -gt 0) { 'Review Necessity' }
+            else { 'Adequate' }
+        }
+        $DHCPSummary.ServerPerformanceAnalysis.Add($ServerPerformance)
+    }
+
+    # Enhanced Analysis: Server Network Analysis
+    Write-Verbose "Get-WinADDHCPSummary - Generating server network analysis"
+    foreach ($Server in $DHCPSummary.Servers) {
+        $RedundancyNotes = @()
+        if ($Server.IsADDomainController) {
+            $RedundancyNotes += "Domain Controller"
+        }
+        if ($Server.ScopeCount -gt 10) {
+            $RedundancyNotes += "High scope count - consider load balancing"
+        }
+
+        $ServerNetwork = [PSCustomObject]@{
+            'ServerName'         = $Server.ServerName
+            'IPAddress'          = $Server.IPAddress
+            'Status'             = $Server.Status
+            'IsDomainController' = $Server.IsADDomainController
+            'TotalScopes'        = $Server.ScopeCount
+            'ActiveScopes'       = $Server.ActiveScopeCount
+            'InactiveScopes'     = $Server.InactiveScopeCount
+            'DNSResolvable'      = $Server.DNSResolvable
+            'ReverseDNSValid'    = $Server.ReverseDNSValid
+            'NetworkHealth'      = if (-not $Server.PingSuccessful) { 'Network Issues' }
+            elseif (-not $Server.DNSResolvable) { 'DNS Issues' }
+            elseif (-not $Server.DHCPResponding) { 'DHCP Service Issues' }
+            else { 'Healthy' }
+            'DesignNotes'        = if ($RedundancyNotes.Count -gt 0) { $RedundancyNotes -join ', ' } else { 'Standard Configuration' }
+        }
+        $DHCPSummary.ServerNetworkAnalysis.Add($ServerNetwork)
+    }
+
+    # Enhanced Analysis: Backup Analysis (placeholder - would need actual DHCP server access)
+    Write-Verbose "Get-WinADDHCPSummary - Generating backup analysis placeholder"
+    foreach ($Server in $DHCPSummary.Servers | Where-Object { $_.Status -eq 'Online' }) {
+        $BackupAnalysis = [PSCustomObject]@{
+            'ServerName'             = $Server.ServerName
+            'BackupEnabled'          = $null  # Would require Get-DhcpServerDatabase access
+            'BackupIntervalMinutes'  = $null  # Available in Database collection if populated
+            'CleanupIntervalMinutes' = $null # Available in Database collection if populated
+            'LastBackupTime'         = $null  # Would require additional queries
+            'BackupStatus'           = 'Unknown - Requires Server Access'
+            'Recommendations'        = @('Enable regular backup validation', 'Verify backup restoration procedures')
+        }
+        $DHCPSummary.BackupAnalysis.Add($BackupAnalysis)
+    }
 
     Write-Progress -Activity "Processing DHCP Servers" -Completed
     Write-Verbose "Get-WinADDHCPSummary - DHCP information gathering completed"

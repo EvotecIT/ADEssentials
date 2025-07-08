@@ -1,4 +1,4 @@
-# Example script for generating DHCP daily summary emails using PSWriteHTML EmailBody
+﻿# Example script for generating DHCP daily summary emails using PSWriteHTML EmailBody
 # This script demonstrates how to create rich email reports from DHCP validation data
 
 Import-Module ADEssentials -Force
@@ -70,7 +70,7 @@ $EmailBody = EmailBody {
         if ($DHCPData.ValidationResults.CriticalIssues.ServersOffline.Count -gt 0) {
             EmailText -Text "Offline DHCP Servers:" -Color Red -FontWeight bold
             EmailTable -DataTable $DHCPData.ValidationResults.CriticalIssues.ServersOffline {
-                EmailTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Unreachable' -BackgroundColor Salmon -Inline
+                EmailTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Unreachable' -BackGroundColor Salmon -Inline
             } -HideFooter -IncludeProperty 'ServerName', 'Status', 'ErrorMessage', 'IsDC'
         }
 
@@ -78,7 +78,7 @@ $EmailBody = EmailBody {
         if ($DHCPData.ValidationResults.CriticalIssues.PublicDNSWithUpdates.Count -gt 0) {
             EmailText -Text "Scopes with Public DNS and Dynamic Updates:" -Color Red -FontWeight bold
             EmailTable -DataTable $DHCPData.ValidationResults.CriticalIssues.PublicDNSWithUpdates {
-                EmailTableCondition -Name 'HasIssues' -ComparisonType bool -Operator eq -Value $true -BackgroundColor Salmon -Inline
+                EmailTableCondition -Name 'HasIssues' -ComparisonType bool -Operator eq -Value $true -BackGroundColor Salmon -Inline
             } -HideFooter -IncludeProperty 'ServerName', 'ScopeId', 'Name', 'State', 'Issues'
         }
 
@@ -86,7 +86,7 @@ $EmailBody = EmailBody {
         if ($DHCPData.ValidationResults.CriticalIssues.HighUtilization.Count -gt 0) {
             EmailText -Text "Scopes with Critical Utilization (>90%):" -Color Red -FontWeight bold
             EmailTable -DataTable $DHCPData.ValidationResults.CriticalIssues.HighUtilization {
-                EmailTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 90 -BackgroundColor Salmon -Inline
+                EmailTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 90 -BackGroundColor Salmon -Inline
             } -HideFooter -IncludeProperty 'ServerName', 'ScopeId', 'Name', 'PercentageInUse', 'AddressesInUse', 'AddressesFree'
         }
     }
@@ -99,7 +99,7 @@ $EmailBody = EmailBody {
         if ($DHCPData.ValidationResults.WarningIssues.MissingFailover.Count -gt 0) {
             EmailText -Text "Scopes Missing Failover Configuration:" -Color Orange -FontWeight bold
             EmailTable -DataTable $DHCPData.ValidationResults.WarningIssues.MissingFailover {
-                EmailTableCondition -Name 'FailoverPartner' -ComparisonType string -Operator eq -Value '' -BackgroundColor Orange -Inline
+                EmailTableCondition -Name 'FailoverPartner' -ComparisonType string -Operator eq -Value '' -BackGroundColor Orange -Inline
             } -HideFooter -IncludeProperty 'ServerName', 'ScopeId', 'Name', 'State', 'FailoverPartner'
         }
 
@@ -107,7 +107,7 @@ $EmailBody = EmailBody {
         if ($DHCPData.ValidationResults.WarningIssues.ExtendedLeaseDuration.Count -gt 0) {
             EmailText -Text "Scopes with Extended Lease Duration (>48 hours):" -Color Orange -FontWeight bold
             EmailTable -DataTable $DHCPData.ValidationResults.WarningIssues.ExtendedLeaseDuration {
-                EmailTableCondition -Name 'LeaseDurationHours' -ComparisonType number -Operator gt -Value 48 -BackgroundColor Orange -Inline
+                EmailTableCondition -Name 'LeaseDurationHours' -ComparisonType number -Operator gt -Value 48 -BackGroundColor Orange -Inline
             } -HideFooter -IncludeProperty 'ServerName', 'ScopeId', 'Name', 'LeaseDurationHours', 'Description'
         }
 
@@ -115,7 +115,7 @@ $EmailBody = EmailBody {
         if ($DHCPData.ValidationResults.WarningIssues.ModerateUtilization.Count -gt 0) {
             EmailText -Text "Scopes with Moderate Utilization (75-90%):" -Color Orange -FontWeight bold
             EmailTable -DataTable $DHCPData.ValidationResults.WarningIssues.ModerateUtilization {
-                EmailTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 75 -BackgroundColor Orange -Inline
+                EmailTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 75 -BackGroundColor Orange -Inline
             } -HideFooter -IncludeProperty 'ServerName', 'ScopeId', 'Name', 'PercentageInUse', 'AddressesFree'
         }
 
@@ -123,7 +123,7 @@ $EmailBody = EmailBody {
         if ($DHCPData.ValidationResults.WarningIssues.DNSRecordManagement.Count -gt 0) {
             EmailText -Text "Scopes with DNS Record Management Issues:" -Color Orange -FontWeight bold
             EmailTable -DataTable $DHCPData.ValidationResults.WarningIssues.DNSRecordManagement {
-                EmailTableCondition -Name 'HasIssues' -ComparisonType bool -Operator eq -Value $true -BackgroundColor Orange -Inline
+                EmailTableCondition -Name 'HasIssues' -ComparisonType bool -Operator eq -Value $true -BackGroundColor Orange -Inline
             } -HideFooter -IncludeProperty 'ServerName', 'ScopeId', 'Name', 'Issues'
         }
     }
@@ -139,7 +139,7 @@ $EmailBody = EmailBody {
         if ($DHCPData.ValidationResults.InfoIssues.MissingDomainName.Count -gt 0) {
             EmailText -Text "Scopes with Missing Domain Name Option:" -Color Blue -FontWeight bold
             EmailTable -DataTable $DHCPData.ValidationResults.InfoIssues.MissingDomainName {
-                EmailTableCondition -Name 'HasIssues' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightBlue -Inline
+                EmailTableCondition -Name 'HasIssues' -ComparisonType bool -Operator eq -Value $true -BackGroundColor LightBlue -Inline
             } -HideFooter -IncludeProperty 'ServerName', 'ScopeId', 'Name', 'Issues'
         }
     }
@@ -149,11 +149,11 @@ $EmailBody = EmailBody {
 
     $ServerProperties = 'ServerName', 'Status', 'ScopeCount', 'ScopesWithIssues', 'PercentageInUse', 'IsDC', 'DHCPRole'
     EmailTable -DataTable $DHCPData.Servers {
-        EmailTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Online' -BackgroundColor LightGreen -FailBackgroundColor Salmon -Inline
-        EmailTableCondition -Name 'ScopesWithIssues' -ComparisonType number -Operator gt -Value 0 -BackgroundColor Orange -Inline
-        EmailTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 80 -BackgroundColor Salmon -Inline
-        EmailTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 60 -BackgroundColor Orange -Inline
-        EmailTableCondition -Name 'IsDC' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightBlue -Inline
+        EmailTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Online' -BackGroundColor LightGreen -FailBackgroundColor Salmon -Inline
+        EmailTableCondition -Name 'ScopesWithIssues' -ComparisonType number -Operator gt -Value 0 -BackGroundColor Orange -Inline
+        EmailTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 80 -BackGroundColor Salmon -Inline
+        EmailTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 60 -BackGroundColor Orange -Inline
+        EmailTableCondition -Name 'IsDC' -ComparisonType bool -Operator eq -Value $true -BackGroundColor LightBlue -Inline
     } -HideFooter -IncludeProperty $ServerProperties
 
     # Recommendations Section

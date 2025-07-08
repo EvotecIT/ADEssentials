@@ -1,4 +1,4 @@
-function Invoke-WinADDHCPHealthCheck {
+﻿function Invoke-WinADDHCPHealthCheck {
     <#
     .SYNOPSIS
     Performs a quick health check of DHCP infrastructure and provides a health score.

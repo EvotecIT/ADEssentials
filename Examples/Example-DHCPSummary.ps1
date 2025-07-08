@@ -1,4 +1,4 @@
-# DHCP Daily Summary Email - Simple Version
+﻿# DHCP Daily Summary Email - Simple Version
 # Following the pattern from Example.79-LDAPSummary.ps1
 
 Import-Module .\ADEssentials.psd1 -Force
