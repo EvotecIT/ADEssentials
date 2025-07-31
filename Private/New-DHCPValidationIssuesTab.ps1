@@ -4,8 +4,9 @@
     Creates the Validation Issues tab content for DHCP HTML report.
 
     .DESCRIPTION
-    This private function generates the Validation Issues tab which includes scopes with issues,
-    high utilization scopes, critical utilization, scopes without failover, and inactive scopes.
+    This private function generates the Validation Issues tab which includes critical issues,
+    warning issues, and informational issues. Utilization issues are shown in the dedicated
+    Utilization tab for comprehensive analysis.
 
     .PARAMETER DHCPData
     The DHCP data object containing all server and scope information.
@@ -20,10 +21,9 @@
     )
 
     New-HTMLTab -TabName 'Validation Issues' {
-        # Calculate total issues from validation results
-        $TotalIssuesCount = $DHCPData.ValidationResults.Summary.TotalCriticalIssues + 
-                           $DHCPData.ValidationResults.Summary.TotalUtilizationIssues + 
-                           $DHCPData.ValidationResults.Summary.TotalWarningIssues + 
+        # Calculate total issues from validation results (excluding utilization which has its own tab)
+        $TotalIssuesCount = $DHCPData.ValidationResults.Summary.TotalCriticalIssues +
+                           $DHCPData.ValidationResults.Summary.TotalWarningIssues +
                            $DHCPData.ValidationResults.Summary.TotalInfoIssues
         
         if ($TotalIssuesCount -eq 0) {
@@ -31,13 +31,14 @@
                 New-HTMLPanel -Invisible {
                     New-HTMLText -Text "✅ No validation issues found" -Color Green -FontSize 16pt -FontWeight bold
                     New-HTMLText -Text "All DHCP servers and scopes appear to be properly configured and operating within normal parameters." -FontSize 12pt
+                    New-HTMLText -Text "Note: Check the Utilization tab for capacity planning and utilization analysis." -FontSize 11pt -Color Blue
                 }
             }
         }
 
         # Critical Issues Section
         if ($DHCPData.ValidationResults.Summary.TotalCriticalIssues -gt 0) {
-            New-HTMLSection -HeaderText "Critical Issues" -BackgroundColor '#ffe0e0' -HeaderTextColor '#8b0000' {
+            New-HTMLSection -HeaderText "Critical Issues" -BackgroundColor '#ffe0e0' -HeaderTextColor '#8b0000' -Density Compact {
                 # Public DNS with Updates
                 if ($DHCPData.ValidationResults.CriticalIssues.PublicDNSWithUpdates.Count -gt 0) {
                     New-HTMLContainer {
@@ -57,37 +58,21 @@
                 }
             }
         }
-
-        # Utilization Issues Section (new separate category)
+        
+        # Note about utilization
         if ($DHCPData.ValidationResults.Summary.TotalUtilizationIssues -gt 0) {
-            New-HTMLSection -HeaderText "Utilization Issues" -BackgroundColor '#fff3e0' -HeaderTextColor '#ff6600' {
-                # High Utilization (>90%)
-                if ($DHCPData.ValidationResults.UtilizationIssues.HighUtilization.Count -gt 0) {
-                    New-HTMLContainer {
-                        New-HTMLText -Text "🔴 Critical Utilization Scopes (>90%)" -FontSize 14pt -FontWeight bold -Color '#cc3300'
-                        New-HTMLTable -DataTable $DHCPData.ValidationResults.UtilizationIssues.HighUtilization -Filtering {
-                            New-HTMLTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 95 -BackgroundColor Red -HighlightHeaders 'PercentageInUse'
-                            New-HTMLTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 90 -BackgroundColor Salmon -HighlightHeaders 'PercentageInUse'
-                        } -DataStore JavaScript -ScrollX
-                    }
-                }
-                
-                # Moderate Utilization (75-90%)
-                if ($DHCPData.ValidationResults.UtilizationIssues.ModerateUtilization.Count -gt 0) {
-                    New-HTMLContainer {
-                        New-HTMLText -Text "🟠 High Utilization Scopes (75-90%)" -FontSize 14pt -FontWeight bold -Color '#ff6600'
-                        New-HTMLTable -DataTable $DHCPData.ValidationResults.UtilizationIssues.ModerateUtilization -Filtering {
-                            New-HTMLTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 85 -BackgroundColor Orange -HighlightHeaders 'PercentageInUse'
-                            New-HTMLTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 75 -BackgroundColor Yellow -HighlightHeaders 'PercentageInUse'
-                        } -DataStore JavaScript -ScrollX
-                    }
+            New-HTMLSection -HeaderText "Utilization Alert" -BackgroundColor '#fff3e0' -HeaderTextColor '#ff6600' {
+                New-HTMLPanel -Invisible {
+                    New-HTMLText -Text "🔴 $($DHCPData.ValidationResults.UtilizationIssues.HighUtilization.Count) scope(s) with critical utilization (>90%)" -FontSize 14pt -FontWeight bold -Color Red
+                    New-HTMLText -Text "🟠 $($DHCPData.ValidationResults.UtilizationIssues.ModerateUtilization.Count) scope(s) with high utilization (75-90%)" -FontSize 14pt -FontWeight bold -Color DarkOrange
+                    New-HTMLText -Text "➡️ See the Utilization tab for detailed analysis and capacity planning" -FontSize 12pt -Color Blue
                 }
             }
         }
 
         # Warning Issues Section
         if ($DHCPData.ValidationResults.Summary.TotalWarningIssues -gt 0) {
-            New-HTMLSection -HeaderText "Warning Issues" -BackgroundColor '#fff9e6' -HeaderTextColor '#cc8800' {
+            New-HTMLSection -HeaderText "Warning Issues" -BackgroundColor '#fff9e6' -HeaderTextColor '#cc8800' -Density Compact {
                 # Missing Failover
                 if ($DHCPData.ValidationResults.WarningIssues.MissingFailover.Count -gt 0) {
                     New-HTMLContainer {

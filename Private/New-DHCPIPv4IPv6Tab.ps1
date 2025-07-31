@@ -4,7 +4,7 @@
     Creates the IPv4/IPv6 tab content for DHCP HTML report with nested tabs.
 
     .DESCRIPTION
-    This private function generates the IPv4/IPv6 tab which uses nested tabs to separate 
+    This private function generates the IPv4/IPv6 tab which uses nested tabs to separate
     IPv4 and IPv6 scope management, with summaries at the top of each section.
 
     .PARAMETER DHCPData
@@ -27,14 +27,14 @@
                 $IPv4Configured = $DHCPData.Scopes.Count -gt 0
                 $IPv6Configured = $DHCPData.IPv6Scopes.Count -gt 0
                 $DualStack = $IPv4Configured -and $IPv6Configured
-                
+
                 New-HTMLSection -HeaderText "Protocol Status" -Invisible -Density Compact {
                     New-HTMLInfoCard -Title "IPv4 Status" -Number $(if ($IPv4Configured) { "Active" } else { "Not Configured" }) -Subtitle "$($DHCPData.Scopes.Count) Scopes" -Icon "🔵" -TitleColor $(if ($IPv4Configured) { "Green" } else { "Gray" }) -NumberColor $(if ($IPv4Configured) { "DarkGreen" } else { "DarkGray" })
                     New-HTMLInfoCard -Title "IPv6 Status" -Number $(if ($IPv6Configured) { "Active" } else { "Not Configured" }) -Subtitle "$($DHCPData.IPv6Scopes.Count) Scopes" -Icon "🔶" -TitleColor $(if ($IPv6Configured) { "Green" } else { "Gray" }) -NumberColor $(if ($IPv6Configured) { "DarkGreen" } else { "DarkGray" })
                     New-HTMLInfoCard -Title "Dual Stack" -Number $(if ($DualStack) { "Enabled" } else { "Disabled" }) -Subtitle "IPv4 & IPv6" -Icon "🔄" -TitleColor $(if ($DualStack) { "Blue" } else { "Orange" }) -NumberColor $(if ($DualStack) { "DarkBlue" } else { "DarkOrange" })
                     New-HTMLInfoCard -Title "Multicast" -Number "$($DHCPData.MulticastScopes.Count)" -Subtitle "Scopes" -Icon "📡" -TitleColor "Purple" -NumberColor "DarkMagenta"
                 }
-                
+
                 # Protocol deployment chart
                 New-HTMLChart -Title "Protocol Deployment Distribution" {
                     New-ChartBarOptions -Distributed
@@ -44,7 +44,7 @@
                 } -Height 300
             }
         }
-        
+
         # Create nested tabs for IPv4 and IPv6
         New-HTMLTabPanel {
             # IPv4 Tab
@@ -53,27 +53,28 @@
                 if ($DHCPData.Scopes.Count -gt 0) {
                     New-HTMLSection -HeaderText "🔵 IPv4 DHCP Summary" {
                         New-HTMLPanel -Invisible {
-                            # IPv4 Statistics
-                            $IPv4Stats = [PSCustomObject]@{
-                                'Total Scopes'      = $DHCPData.Scopes.Count
-                                'Active Scopes'     = ($DHCPData.Scopes | Where-Object { $_.State -eq 'Active' }).Count
-                                'Inactive Scopes'   = ($DHCPData.Scopes | Where-Object { $_.State -ne 'Active' }).Count
-                                'Total Addresses'   = "{0:N0}" -f $DHCPData.Statistics.TotalAddresses
-                                'In Use'           = "{0:N0}" -f $DHCPData.Statistics.AddressesInUse
-                                'Available'        = "{0:N0}" -f $DHCPData.Statistics.AddressesFree
-                                'Utilization %'    = "$($DHCPData.Statistics.OverallPercentageInUse)%"
-                            }
-                            
-                            New-HTMLTable -DataTable $IPv4Stats -HideFooter -DisableSearch -DisablePaging -DisableOrdering -Title "IPv4 Infrastructure Summary"
-                            
                             # Utilization gauge
                             New-HTMLChart -Title "IPv4 Overall Utilization" {
                                 New-ChartRadial -Name "Used" -Value $DHCPData.Statistics.OverallPercentageInUse
                                 New-ChartRadialOptions -CircleType SemiCircleGauge
-                            } -Height 200
+                            } -Height 500px
+                        }
+                        New-HTMLPanel -Invisible {
+                            # IPv4 Statistics
+                            $IPv4Stats = [PSCustomObject]@{
+                                'Total Scopes'    = $DHCPData.Scopes.Count
+                                'Active Scopes'   = ($DHCPData.Scopes | Where-Object { $_.State -eq 'Active' }).Count
+                                'Inactive Scopes' = ($DHCPData.Scopes | Where-Object { $_.State -ne 'Active' }).Count
+                                'Total Addresses' = "{0:N0}" -f $DHCPData.Statistics.TotalAddresses
+                                'In Use'          = "{0:N0}" -f $DHCPData.Statistics.AddressesInUse
+                                'Available'       = "{0:N0}" -f $DHCPData.Statistics.AddressesFree
+                                'Utilization %'   = "$($DHCPData.Statistics.OverallPercentageInUse)%"
+                            }
+
+                            New-HTMLTable -DataTable $IPv4Stats -HideFooter -DisableSearch -DisablePaging -DisableOrdering -Title "IPv4 Infrastructure Summary" -Buttons @()
                         }
                     }
-                    
+
                     # IPv4 Scopes Table
                     New-HTMLSection -HeaderText "📋 IPv4 Scopes Details" {
                         New-HTMLTable -DataTable $DHCPData.Scopes -Filtering {
@@ -91,7 +92,7 @@
                     }
                 }
             }
-            
+
             # IPv6 Tab
             New-HTMLTab -TabName '🔶 IPv6' {
                 # IPv6 Summary at the top
@@ -100,20 +101,20 @@
                         New-HTMLPanel -Invisible {
                             New-HTMLText -Text "IPv6 Scope Summary" -FontSize 16pt -FontWeight bold -Color DarkBlue
                             New-HTMLText -Text "IPv6 DHCP scopes are configured and operational." -FontSize 12pt -Color Green
-                            
+
                             # IPv6 Statistics
                             $ActiveIPv6 = ($DHCPData.IPv6Scopes | Where-Object { $_.State -eq 'Active' }).Count
                             $IPv6Stats = [PSCustomObject]@{
-                                'Total IPv6 Scopes'    = $DHCPData.IPv6Scopes.Count
-                                'Active Scopes'        = $ActiveIPv6
-                                'Inactive Scopes'      = $DHCPData.IPv6Scopes.Count - $ActiveIPv6
-                                'Deployment Status'    = 'Active'
+                                'Total IPv6 Scopes' = $DHCPData.IPv6Scopes.Count
+                                'Active Scopes'     = $ActiveIPv6
+                                'Inactive Scopes'   = $DHCPData.IPv6Scopes.Count - $ActiveIPv6
+                                'Deployment Status' = 'Active'
                             }
-                            
+
                             New-HTMLTable -DataTable $IPv6Stats -HideFooter -DisableSearch -DisablePaging -DisableOrdering
                         }
                     }
-                    
+
                     # IPv6 Scopes Table
                     New-HTMLSection -HeaderText "📋 IPv6 Scopes Details" {
                         New-HTMLTable -DataTable $DHCPData.IPv6Scopes -Filtering {
@@ -125,7 +126,7 @@
                         New-HTMLPanel -Invisible {
                             New-HTMLText -Text "IPv6 Status: Not Configured" -FontSize 16pt -FontWeight bold -Color Orange
                             New-HTMLText -Text "No IPv6 DHCP scopes are currently configured in your environment." -FontSize 12pt
-                            
+
                             New-HTMLText -Text "IPv6 Deployment Recommendations:" -FontSize 14pt -FontWeight bold -Color Blue
                             New-HTMLList {
                                 New-HTMLListItem -Text "Plan IPv6 implementation strategy aligned with business needs"
@@ -135,7 +136,7 @@
                                 New-HTMLListItem -Text "Test IPv6 deployment in a lab environment first"
                                 New-HTMLListItem -Text "Consider dual-stack approach for gradual migration"
                             }
-                            
+
                             New-HTMLText -Text "Common IPv6 Use Cases:" -FontSize 14pt -FontWeight bold -Color Blue
                             New-HTMLList {
                                 New-HTMLListItem -Text "Internet of Things (IoT) deployments requiring many addresses"
@@ -147,7 +148,7 @@
                     }
                 }
             }
-            
+
             # Multicast Tab
             New-HTMLTab -TabName '📡 Multicast' {
                 # Multicast Summary at the top
@@ -156,7 +157,7 @@
                         New-HTMLPanel -Invisible {
                             New-HTMLText -Text "Multicast Configuration Active" -FontSize 16pt -FontWeight bold -Color Green
                             New-HTMLText -Text "Multicast scopes enable dynamic IP allocation for multicast applications." -FontSize 12pt -Color DarkGray
-                            
+
                             # Multicast Statistics
                             $ActiveMulticast = ($DHCPData.MulticastScopes | Where-Object { $_.State -eq 'Active' }).Count
                             $MulticastStats = [PSCustomObject]@{
@@ -165,10 +166,10 @@
                                 'Inactive Scopes'        = $DHCPData.MulticastScopes.Count - $ActiveMulticast
                                 'Status'                 = 'Configured'
                             }
-                            
+
                             New-HTMLTable -DataTable $MulticastStats -HideFooter -DisableSearch -DisablePaging -DisableOrdering
                         }
-                        
+
                         # Multicast Scopes Table
                         New-HTMLSection -HeaderText "📋 Multicast Scopes Details" {
                             New-HTMLTable -DataTable $DHCPData.MulticastScopes -Filtering {
@@ -179,7 +180,7 @@
                         New-HTMLPanel -Invisible {
                             New-HTMLText -Text "No Multicast Scopes Configured" -FontSize 16pt -FontWeight bold -Color Gray
                             New-HTMLText -Text "Multicast DHCP (MADCAP) is specialized for automatic multicast address assignment." -FontSize 12pt
-                            
+
                             New-HTMLText -Text "Multicast DHCP Use Cases:" -FontSize 14pt -FontWeight bold -Color Blue
                             New-HTMLList {
                                 New-HTMLListItem -Text "Video streaming and IPTV deployments"
@@ -189,7 +190,7 @@
                                 New-HTMLListItem -Text "Network-based gaming applications"
                                 New-HTMLListItem -Text "Distance learning platforms"
                             }
-                            
+
                             New-HTMLText -Text "Benefits of Multicast DHCP:" -FontSize 14pt -FontWeight bold -Color Blue
                             New-HTMLList {
                                 New-HTMLListItem -Text "Automatic multicast address management"

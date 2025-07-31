@@ -2,14 +2,14 @@
     <#
     .SYNOPSIS
     Creates the Network Segmentation tab content for DHCP HTML report.
-    
+
     .DESCRIPTION
     This private function generates the Network Segmentation tab which focuses on network design,
     superscopes, network topology, and segmentation analysis.
-    
+
     .PARAMETER DHCPData
     The DHCP data object containing all server and scope information.
-    
+
     .OUTPUTS
     New-HTMLTab object containing the Network Segmentation tab content.
     #>
@@ -31,7 +31,7 @@
                             New-HTMLInfoCard -Title "Redundancy Issues" -Number $Analysis.RedundancyIssuesCount -Subtitle "Detected" -Icon "🔍" -TitleColor Orange -NumberColor DarkOrange
                             New-HTMLInfoCard -Title "Design Recommendations" -Number $Analysis.DesignRecommendationsCount -Subtitle "Generated" -Icon "💡" -TitleColor Purple -NumberColor DarkMagenta
                         }
-                        
+
                         # Network topology visualization placeholder
                         if ($Analysis.TotalNetworkSegments -gt 0) {
                             New-HTMLChart -Title "Network Segments Distribution" {
@@ -51,31 +51,34 @@
                 New-HTMLPanel -Invisible {
                     New-HTMLText -Text "Network Segmentation via Superscopes" -FontSize 18pt -FontWeight bold -Color DarkBlue
                     New-HTMLText -Text "Superscopes combine multiple IP ranges into logical units for multi-homed subnets or network expansion." -FontSize 12pt -Color DarkGray
-                    
+
                     # Superscopes summary
                     $SuperscopeGroups = $DHCPData.Superscopes | Group-Object SuperscopeName
                     $TotalSuperscopes = $SuperscopeGroups.Count
                     $TotalScopesInSuperscopes = $DHCPData.Superscopes.Count
                     $ServersWithSuperscopes = ($DHCPData.Superscopes | Group-Object ServerName).Count
-                    
+
                     New-HTMLSection -HeaderText "Superscopes Statistics" -Invisible -Density Compact {
                         New-HTMLInfoCard -Title "Superscopes" -Number $TotalSuperscopes -Subtitle "Configured" -Icon "🏗️" -TitleColor DodgerBlue -NumberColor Navy
                         New-HTMLInfoCard -Title "Member Scopes" -Number $TotalScopesInSuperscopes -Subtitle "In Superscopes" -Icon "📋" -TitleColor Purple -NumberColor DarkMagenta
                         New-HTMLInfoCard -Title "Servers" -Number $ServersWithSuperscopes -Subtitle "With Superscopes" -Icon "🖥️" -TitleColor Orange -NumberColor DarkOrange
                     }
-                    
+
                     # Superscope details
                     foreach ($SuperscopeGroup in $SuperscopeGroups) {
                         New-HTMLSection -HeaderText "🏢 Superscope: $($SuperscopeGroup.Name)" -CanCollapse {
-                            New-HTMLTable -DataTable $SuperscopeGroup.Group -HideFooter {
-                                New-HTMLTableCondition -Name 'SuperscopeState' -ComparisonType string -Operator eq -Value 'Active' -BackgroundColor LightGreen -FailBackgroundColor Orange
-                            } -Title "Member Scopes in $($SuperscopeGroup.Name)"
-                            
-                            # Show relationships
-                            New-HTMLText -Text "This superscope contains $($SuperscopeGroup.Group.Count) scope(s) across the following servers:" -FontSize 12pt
-                            $Servers = $SuperscopeGroup.Group | Select-Object -ExpandProperty ServerName -Unique
-                            foreach ($Server in $Servers) {
-                                New-HTMLText -Text "• $Server" -FontSize 11pt -Color DarkBlue
+                            New-HTMLPanel -Invisible {
+                                # Show relationships
+                                New-HTMLText -Text "This superscope contains $($SuperscopeGroup.Group.Count) scope(s) across the following servers:" -FontSize 12pt
+                                $Servers = $SuperscopeGroup.Group | Select-Object -ExpandProperty ServerName -Unique
+                                foreach ($Server in $Servers) {
+                                    New-HTMLText -Text "• $Server" -FontSize 11pt -Color DarkBlue
+                                }
+
+                                New-HTMLTable -DataTable $SuperscopeGroup.Group -HideFooter {
+                                    New-HTMLTableCondition -Name 'SuperscopeState' -ComparisonType string -Operator eq -Value 'Active' -BackgroundColor LightGreen -FailBackgroundColor Orange
+                                } -Title "Member Scopes in $($SuperscopeGroup.Name)"
+
                             }
                         }
                     }
@@ -86,7 +89,7 @@
                 New-HTMLPanel -Invisible {
                     New-HTMLText -Text "ℹ️ No superscopes configured" -Color Blue -FontWeight bold -FontSize 14pt
                     New-HTMLText -Text "Superscopes are used to combine multiple scopes into a single administrative unit." -Color Gray -FontSize 12px
-                    
+
                     New-HTMLText -Text "When to Use Superscopes:" -FontWeight bold -FontSize 14pt
                     New-HTMLList {
                         New-HTMLListItem -Text "Multi-homed subnets (multiple IP ranges on same physical network)"
@@ -123,7 +126,7 @@
                     New-HTMLListItem -Text "Implement RFC 1918 private addressing consistently across the organization"
                     New-HTMLListItem -Text "Document all network segments and their purposes"
                 }
-                
+
                 New-HTMLText -Text "🔒 Security Segmentation:" -FontSize 16pt -FontWeight bold -Color Blue
                 New-HTMLList {
                     New-HTMLListItem -Text "Isolate guest networks from corporate resources"
@@ -132,7 +135,7 @@
                     New-HTMLListItem -Text "Use separate management VLANs for infrastructure devices"
                     New-HTMLListItem -Text "Consider microsegmentation for critical assets"
                 }
-                
+
                 New-HTMLText -Text "📈 Scalability Considerations:" -FontSize 16pt -FontWeight bold -Color Blue
                 New-HTMLList {
                     New-HTMLListItem -Text "Plan for 30-50% growth when sizing subnets"
