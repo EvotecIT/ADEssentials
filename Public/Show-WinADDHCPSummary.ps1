@@ -101,7 +101,10 @@
         [switch] $Online,
         [switch] $HideHTML,
         [switch] $PassThru,
-        [switch] $TestMode
+        [switch] $TestMode,
+        [string[]] $IncludeTabs = @('Overview', 'IPv4/IPv6', 'Utilization', 'ValidationIssues', 'Infrastructure', 'Options&Classes', 'Failover', 'NetworkSegmentation', 'Performance', 'SecurityCompliance'),
+        [string[]] $ExcludeTabs = @(),
+        [switch] $ShowTimingStatistics
     )
 
     # Initialize reporting version info
@@ -214,17 +217,43 @@
             }
         }
 
+        # Determine which tabs to show
+        $TabsToShow = if ($ExcludeTabs.Count -gt 0) {
+            $IncludeTabs | Where-Object { $_ -notin $ExcludeTabs }
+        } else {
+            $IncludeTabs
+        }
+        
         New-HTMLTabPanel {
-            # Use private functions for each tab to improve maintainability
-            New-DHCPOverviewTab -DHCPData $DHCPData
-            New-DHCPInfrastructureTab -DHCPData $DHCPData
-            New-DHCPValidationIssuesTab -DHCPData $DHCPData
-            New-DHCPOptionsClassesTab -DHCPData $DHCPData
-            New-DHCPNetworkDesignTab -DHCPData $DHCPData
-            New-DHCPPerformanceTab -DHCPData $DHCPData
-            New-DHCPSecurityComplianceTab -DHCPData $DHCPData
-            New-DHCPScaleAnalysisTab -DHCPData $DHCPData  # Only shows for 500K+ lease environments
-            New-DHCPMonitoringTab -DHCPData $DHCPData     # Advanced monitoring and alerting
+            # Overview tab (always show)
+            if ('Overview' -in $TabsToShow) {
+                New-DHCPOverviewTab -DHCPData $DHCPData
+            }
+            
+            # Validation Issues tab
+            if ('ValidationIssues' -in $TabsToShow) {
+                New-DHCPValidationIssuesTab -DHCPData $DHCPData
+            }
+            
+            # Infrastructure main tab with nested tabs
+            if (@('Infrastructure', 'IPv4/IPv6', 'Failover', 'NetworkSegmentation') | Where-Object { $_ -in $TabsToShow }) {
+                New-DHCPInfrastructureMainTab -DHCPData $DHCPData -IncludeTabs $TabsToShow
+            }
+            
+            # Configuration main tab with nested tabs
+            if (@('Configuration', 'Options&Classes', 'Policies', 'ServerSettings') | Where-Object { $_ -in $TabsToShow }) {
+                New-DHCPConfigurationMainTab -DHCPData $DHCPData -IncludeTabs $TabsToShow
+            }
+            
+            # Analysis main tab with nested tabs
+            if (@('Analysis', 'Utilization', 'Performance', 'SecurityCompliance', 'ScaleAnalysis') | Where-Object { $_ -in $TabsToShow }) {
+                New-DHCPAnalysisMainTab -DHCPData $DHCPData -IncludeTabs $TabsToShow -ShowTimingStatistics:$ShowTimingStatistics
+            }
+            
+            # Monitoring tab (optional)
+            if ('Monitoring' -in $TabsToShow -and $DHCPData.Statistics.TotalAddresses -gt 50000) {
+                New-DHCPMonitoringTab -DHCPData $DHCPData
+            }
         }
 
     } -ShowHTML:(-not $HideHTML.IsPresent) -Online:$Online.IsPresent -TitleText "DHCP Infrastructure Report" -FilePath $FilePath

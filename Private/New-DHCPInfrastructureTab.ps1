@@ -35,67 +35,15 @@
             } -DataStore JavaScript -Title "DHCP Server Connectivity & Health Analysis"
         }
 
-        New-HTMLSection -HeaderText "DHCP Scopes Overview" {
-            New-HTMLTable -DataTable $DHCPData.Scopes -Filtering {
-                New-HTMLTableCondition -Name 'State' -ComparisonType string -Operator eq -Value 'Active' -BackgroundColor LightGreen -FailBackgroundColor Orange
-                New-HTMLTableCondition -Name 'HasIssues' -ComparisonType bool -Operator eq -Value $true -BackgroundColor Salmon -HighlightHeaders 'HasIssues', 'Issues'
-                New-HTMLTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 90 -BackgroundColor Salmon -HighlightHeaders 'PercentageInUse'
-                New-HTMLTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 75 -BackgroundColor Orange -HighlightHeaders 'PercentageInUse'
-                New-HTMLTableCondition -Name 'LeaseDurationHours' -ComparisonType number -Operator gt -Value 48 -BackgroundColor Orange -HighlightHeaders 'LeaseDurationHours'
-                New-HTMLTableCondition -Name 'FailoverPartner' -ComparisonType string -Operator eq -Value '' -BackgroundColor LightYellow -HighlightHeaders 'FailoverPartner'
-            } -DataStore JavaScript -ScrollX -Title "All DHCP Scopes Configuration"
-        }
-
-        # IPv6 Readiness & Status
-        New-HTMLSection -HeaderText "IPv6 DHCP Status" -CanCollapse {
-            New-HTMLPanel -Invisible {
-                if ($DHCPData.IPv6Scopes.Count -gt 0) {
-                    New-HTMLText -Text "✅ IPv6 DHCP is configured and active in this environment." -Color Green -FontWeight bold
-                    New-HTMLTable -DataTable $DHCPData.IPv6Scopes -ScrollX -HideFooter -PagingLength 10 {
-                        New-HTMLTableCondition -Name 'State' -ComparisonType string -Operator eq -Value 'Active' -BackgroundColor LightGreen -FailBackgroundColor Orange
-                        New-HTMLTableCondition -Name 'HasIssues' -ComparisonType bool -Operator eq -Value $true -BackgroundColor Salmon -HighlightHeaders 'HasIssues', 'Issues'
-                        New-HTMLTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 80 -BackgroundColor Orange -HighlightHeaders 'PercentageInUse'
-                    } -Title "IPv6 DHCP Scopes Configuration"
-                } else {
-                    New-HTMLText -Text "ℹ️ No IPv6 DHCP scopes found in this environment." -Color Blue -FontWeight bold
-                    New-HTMLText -Text "This is normal in most environments as IPv6 DHCP is rarely deployed. Most networks use IPv6 stateless autoconfiguration (SLAAC) instead of DHCP for IPv6 address assignment." -Color Gray -FontSize 12px
-
-                    New-HTMLPanel -Invisible {
-                        New-HTMLText -Text "IPv6 DHCP Deployment Considerations:" -FontWeight bold
-                        New-HTMLList {
-                            New-HTMLListItem -Text "Most environments use SLAAC (Stateless Address Autoconfiguration) for IPv6"
-                            New-HTMLListItem -Text "IPv6 DHCP is typically only needed for stateful configuration requirements"
-                            New-HTMLListItem -Text "Windows DHCP Server supports IPv6 starting with Windows Server 2008"
-                            New-HTMLListItem -Text "IPv6 DHCP requires separate scope configuration from IPv4"
-                        } -FontSize 11px
-                    }
-                }
-            }
-        }
-
-        # Multicast DHCP Status
-        New-HTMLSection -HeaderText "Multicast DHCP Status" -CanCollapse {
-            New-HTMLPanel -Invisible {
-                if ($DHCPData.MulticastScopes.Count -gt 0) {
-                    New-HTMLText -Text "✅ Multicast DHCP scopes are configured in this environment." -Color Green -FontWeight bold
-                    New-HTMLTable -DataTable $DHCPData.MulticastScopes -ScrollX -HideFooter -PagingLength 10 {
-                        New-HTMLTableCondition -Name 'State' -ComparisonType string -Operator eq -Value 'Active' -BackgroundColor LightGreen -FailBackgroundColor Orange
-                        New-HTMLTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 80 -BackgroundColor Orange -HighlightHeaders 'PercentageInUse'
-                    } -Title "Multicast DHCP Scopes"
-                } else {
-                    New-HTMLText -Text "ℹ️ No Multicast DHCP scopes found in this environment." -Color Blue -FontWeight bold
-                    New-HTMLText -Text "This is typical for most environments. Multicast DHCP is specialized for applications requiring automatic multicast address assignment, such as video streaming or specialized network applications." -Color Gray -FontSize 12px
-
-                    New-HTMLPanel -Invisible {
-                        New-HTMLText -Text "Multicast DHCP Use Cases:" -FontWeight bold
-                        New-HTMLList {
-                            New-HTMLListItem -Text "Automatic assignment of multicast IP addresses"
-                            New-HTMLListItem -Text "Video streaming and multimedia applications"
-                            New-HTMLListItem -Text "Network-based applications requiring group communication"
-                            New-HTMLListItem -Text "Reduces manual multicast address management"
-                        } -FontSize 11px
-                    }
-                }
+        # Server Settings Overview
+        if ($DHCPData.ServerSettings.Count -gt 0) {
+            New-HTMLSection -HeaderText "Server Configuration Settings" {
+                New-HTMLTable -DataTable $DHCPData.ServerSettings -Filtering {
+                    New-HTMLTableCondition -Name 'IsAuthorized' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightGreen -FailBackgroundColor Red -Color White
+                    New-HTMLTableCondition -Name 'IsDomainJoined' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightGreen -FailBackgroundColor Orange
+                    New-HTMLTableCondition -Name 'ActivatePolicies' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightGreen -FailBackgroundColor Yellow
+                    New-HTMLTableCondition -Name 'ConflictDetectionAttempts' -ComparisonType number -Operator gt -Value 0 -BackgroundColor LightGreen
+                } -DataStore JavaScript -Title "DHCP Server Configuration Settings"
             }
         }
 

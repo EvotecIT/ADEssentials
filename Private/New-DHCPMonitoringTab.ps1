@@ -1,4 +1,4 @@
-function New-DHCPMonitoringTab {
+﻿function New-DHCPMonitoringTab {
     <#
     .SYNOPSIS
     Creates an advanced monitoring tab for DHCP environments requiring real-time oversight.
