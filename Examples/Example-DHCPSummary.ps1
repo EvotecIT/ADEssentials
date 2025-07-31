@@ -26,6 +26,7 @@ $EmailBody = EmailBody {
 
     EmailList -FontSize 10pt {
         EmailListItem -Text "Critical Issues: ", $($Output.ValidationResults.Summary.TotalCriticalIssues) -Color None, $(if ($Output.ValidationResults.Summary.TotalCriticalIssues -eq 0) { 'LightGreen' } else { 'Red' }) -FontWeight normal, bold
+        EmailListItem -Text "Utilization Issues: ", $($Output.ValidationResults.Summary.TotalUtilizationIssues) -Color None, $(if ($Output.ValidationResults.Summary.TotalUtilizationIssues -eq 0) { 'LightGreen' } else { 'DarkOrange' }) -FontWeight normal, bold
         EmailListItem -Text "Warning Issues: ", $($Output.ValidationResults.Summary.TotalWarningIssues) -Color None, $(if ($Output.ValidationResults.Summary.TotalWarningIssues -eq 0) { 'LightGreen' } else { 'Orange' }) -FontWeight normal, bold
         EmailListItem -Text "Info Issues: ", $($Output.ValidationResults.Summary.TotalInfoIssues) -Color None, $(if ($Output.ValidationResults.Summary.TotalInfoIssues -eq 0) { 'LightGreen' } else { 'Yellow' }) -FontWeight normal, bold
         EmailListItem -Text "Overall IP Utilization: ", "$($Output.Statistics.OverallPercentageInUse)%" -Color None, $(if ($Output.Statistics.OverallPercentageInUse -gt 80) { 'Red' } elseif ($Output.Statistics.OverallPercentageInUse -gt 60) { 'Orange' } else { 'LightGreen' }) -FontWeight normal, bold

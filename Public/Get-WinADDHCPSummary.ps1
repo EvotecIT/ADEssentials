@@ -225,6 +225,56 @@
             OptionsAnalysis           = @(
                 [PSCustomObject]@{ AnalysisType = 'DHCP Options Configuration'; TotalServersAnalyzed = 2; TotalOptionsConfigured = 8; UniqueOptionTypes = 6; CriticalOptionsCovered = 3; MissingCriticalOptions = @('Option 3 (Router - Default Gateway)', 'Option 51 (Lease Time)', 'Option 66 (Boot Server Host Name)'); OptionIssues = @('Public DNS servers configured in scope Server-Level on dc01.domain.com'); OptionRecommendations = @('Configure missing critical DHCP options for proper client functionality', 'Consider configuring server-level options for common settings') }
             )
+            ValidationResults         = [ordered] @{
+                CriticalIssues = [ordered] @{
+                    PublicDNSWithUpdates = @(
+                        [PSCustomObject]@{ ServerName = 'dc01.domain.com'; ScopeId = 'Server-Level'; Name = 'Server-Level'; State = 'Active'; PercentageInUse = 0; HasIssues = $true; Issues = @('Public DNS servers configured with dynamic updates enabled'); LeaseDurationHours = 0; FailoverPartner = $null }
+                    )
+                    ServersOffline       = @(
+                        [PSCustomObject]@{ ServerName = 'dhcp02.domain.com'; ComputerName = 'dhcp02.domain.com'; Status = 'Unreachable'; Version = $null; PingSuccessful = $false; DNSResolvable = $true; DHCPResponding = $false }
+                    )
+                }
+                UtilizationIssues = [ordered] @{
+                    HighUtilization     = @(
+                        [PSCustomObject]@{ ServerName = 'dc01.domain.com'; ScopeId = '172.16.1.0'; Name = 'Server VLAN'; State = 'Active'; PercentageInUse = 92; AddressesInUse = 92; AddressesFree = 8; HasIssues = $true; Issues = @('Critical utilization'); LeaseDurationHours = 168; FailoverPartner = $null }
+                    )
+                    ModerateUtilization = @(
+                        [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '192.168.1.0'; Name = 'Corporate LAN'; State = 'Active'; PercentageInUse = 85; AddressesInUse = 170; AddressesFree = 30; HasIssues = $true; Issues = @('High utilization'); LeaseDurationHours = 8; FailoverPartner = $null }
+                    )
+                }
+                WarningIssues = [ordered] @{
+                    MissingFailover       = @(
+                        [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '192.168.1.0'; Name = 'Corporate LAN'; State = 'Active'; PercentageInUse = 85; HasIssues = $true; Issues = @('No failover configured'); LeaseDurationHours = 8; FailoverPartner = $null }
+                        [PSCustomObject]@{ ServerName = 'dc01.domain.com'; ScopeId = '172.16.1.0'; Name = 'Server VLAN'; State = 'Active'; PercentageInUse = 92; HasIssues = $true; Issues = @('No failover configured'); LeaseDurationHours = 168; FailoverPartner = $null }
+                    )
+                    ExtendedLeaseDuration = @(
+                        [PSCustomObject]@{ ServerName = 'dc01.domain.com'; ScopeId = '172.16.1.0'; Name = 'Server VLAN'; State = 'Active'; PercentageInUse = 92; HasIssues = $true; Issues = @('Extended lease duration'); LeaseDurationHours = 168; FailoverPartner = $null }
+                    )
+                    DNSRecordManagement   = @()
+                }
+                InfoIssues = [ordered] @{
+                    MissingDomainName = @()
+                    InactiveScopes    = @()
+                }
+                Summary = [ordered] @{
+                    TotalCriticalIssues    = 2
+                    TotalUtilizationIssues = 2
+                    TotalWarningIssues     = 3
+                    TotalInfoIssues        = 0
+                    ScopesWithCritical     = 2
+                    ScopesWithUtilization  = 2
+                    ScopesWithWarnings     = 2
+                    ScopesWithInfo         = 0
+                }
+            }
+            TimingStatistics = @(
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; Operation = 'Server Total Processing'; StartTime = (Get-Date).AddSeconds(-15); EndTime = (Get-Date).AddSeconds(-10); DurationMs = 5000; DurationSeconds = 5; ItemCount = 15; ItemsPerSecond = 3; Success = $true; Timestamp = (Get-Date) }
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; Operation = 'Scope Discovery'; StartTime = (Get-Date).AddSeconds(-15); EndTime = (Get-Date).AddSeconds(-14); DurationMs = 1000; DurationSeconds = 1; ItemCount = 15; ItemsPerSecond = 15; Success = $true; Timestamp = (Get-Date) }
+                [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; Operation = 'Scope Statistics'; StartTime = (Get-Date).AddSeconds(-14); EndTime = (Get-Date).AddSeconds(-12); DurationMs = 2000; DurationSeconds = 2; ItemCount = 15; ItemsPerSecond = 7.5; Success = $true; Timestamp = (Get-Date) }
+                [PSCustomObject]@{ ServerName = 'dc01.domain.com'; Operation = 'Server Total Processing'; StartTime = (Get-Date).AddSeconds(-10); EndTime = (Get-Date).AddSeconds(-5); DurationMs = 5000; DurationSeconds = 5; ItemCount = 8; ItemsPerSecond = 1.6; Success = $true; Timestamp = (Get-Date) }
+                [PSCustomObject]@{ ServerName = 'dc01.domain.com'; Operation = 'Scope Discovery'; StartTime = (Get-Date).AddSeconds(-10); EndTime = (Get-Date).AddSeconds(-9); DurationMs = 1000; DurationSeconds = 1; ItemCount = 8; ItemsPerSecond = 8; Success = $true; Timestamp = (Get-Date) }
+                [PSCustomObject]@{ ServerName = 'Overall'; Operation = 'Complete DHCP Discovery'; StartTime = (Get-Date).AddSeconds(-20); EndTime = (Get-Date); DurationMs = 20000; DurationSeconds = 20; ItemCount = 3; ItemsPerSecond = 0.15; Success = $true; Timestamp = (Get-Date) }
+            )
         }
     }
 
@@ -267,6 +317,7 @@
         OptionsAnalysis           = [System.Collections.Generic.List[Object]]::new()
         Statistics                = [ordered] @{}
         ValidationResults         = [ordered] @{}
+        TimingStatistics          = [System.Collections.Generic.List[Object]]::new()
     }
 
     # Get DHCP servers from AD for discovery
@@ -320,16 +371,19 @@
         # Initialize empty validation results
         $DHCPSummary.ValidationResults = [ordered] @{
             Summary  = [ordered] @{
-                TotalCriticalIssues = 0
-                TotalWarningIssues  = 0
-                TotalInfoIssues     = 0
-                ScopesWithCritical  = 0
-                ScopesWithWarnings  = 0
-                ScopesWithInfo      = 0
+                TotalCriticalIssues    = 0
+                TotalUtilizationIssues = 0
+                TotalWarningIssues     = 0
+                TotalInfoIssues        = 0
+                ScopesWithCritical     = 0
+                ScopesWithUtilization  = 0
+                ScopesWithWarnings     = 0
+                ScopesWithInfo         = 0
             }
-            Critical = @()
-            Warning  = @()
-            Info     = @()
+            Critical    = @()
+            Utilization = @()
+            Warning     = @()
+            Info        = @()
         }
 
         return $DHCPSummary
@@ -352,12 +406,18 @@
     $TotalScopes = 0
     $ScopesWithIssues = 0
 
+    # Track overall timing
+    $OverallStartTime = Get-Date
+    
     foreach ($DHCPServer in $DHCPServersFromAD) {
         $Computer = $DHCPServer.DnsName
         $ProcessedServers++
         Write-Progress -Activity "Processing DHCP Servers" -Status "Processing $Computer ($ProcessedServers of $TotalServers)" -PercentComplete (($ProcessedServers / $TotalServers) * 100) -Id 1
 
         Write-Verbose "Get-WinADDHCPSummary - Processing DHCP server: $Computer"
+        
+        # Start server timing
+        $ServerStartTime = Get-Date
 
         # Determine if this server should be analyzed in detail
         $ShouldAnalyze = $ServersToAnalyzeSet[$Computer.ToLower()] -eq $true
@@ -444,8 +504,10 @@
         }
 
         # Get DHCP scopes
+        $ScopeCollectionStart = Get-Date
         try {
             $Scopes = Get-DhcpServerv4Scope -ComputerName $Computer -ErrorAction Stop
+            Add-DHCPTimingStatistic -TimingList $DHCPSummary.TimingStatistics -ServerName $Computer -Operation 'Scope Discovery' -StartTime $ScopeCollectionStart -ItemCount $Scopes.Count
             $ServerInfo.ScopeCount = $Scopes.Count
             $TotalScopes += $Scopes.Count
 
@@ -508,8 +570,10 @@
             }
 
             # Get scope statistics
+            $StatsStart = Get-Date
             try {
                 $ScopeStats = Get-DhcpServerv4ScopeStatistics -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction Stop
+                Add-DHCPTimingStatistic -TimingList $DHCPSummary.TimingStatistics -ServerName $Computer -Operation 'Scope Statistics' -StartTime $StatsStart -ItemCount 1
                 $ScopeObject.AddressesInUse = $ScopeStats.AddressesInUse
                 $ScopeObject.AddressesFree = $ScopeStats.AddressesFree
                 $ScopeObject.PercentageInUse = [Math]::Round($ScopeStats.PercentageInUse, 2)
@@ -715,6 +779,10 @@
 
         # Add the successfully processed server to the collection
         $DHCPSummary.Servers.Add([PSCustomObject]$ServerInfo)
+        
+        # Track server processing time
+        Add-DHCPTimingStatistic -TimingList $DHCPSummary.TimingStatistics -ServerName $Computer -Operation 'Server Total Processing' -StartTime $ServerStartTime -ItemCount $ServerInfo.ScopeCount
+        
         Write-Verbose "Get-WinADDHCPSummary - Server $Computer processing completed: Scopes=$($ServerInfo.ScopeCount), Total Addresses=$($ServerInfo.TotalAddresses), Utilization=$($ServerInfo.PercentageInUse)%"
 
         # Get audit log information
@@ -1398,14 +1466,17 @@
         # Critical issues that require immediate attention
         CriticalIssues = [ordered] @{
             PublicDNSWithUpdates = $PublicDNSWithUpdates
-            HighUtilization      = $HighUtilization
             ServersOffline       = $ServersOffline
+        }
+        # Utilization issues that may need capacity planning
+        UtilizationIssues = [ordered] @{
+            HighUtilization     = $HighUtilization
+            ModerateUtilization = $ModerateUtilization
         }
         # Warning issues that should be addressed soon
         WarningIssues  = [ordered] @{
             MissingFailover       = $MissingFailover
             ExtendedLeaseDuration = $ExtendedLeaseDuration
-            ModerateUtilization   = $ModerateUtilization
             DNSRecordManagement   = $DNSRecordManagement
         }
         # Information issues that are good to know but not urgent
@@ -1415,12 +1486,14 @@
         }
         # Summary counters for quick overview
         Summary        = [ordered] @{
-            TotalCriticalIssues = 0
-            TotalWarningIssues  = 0
-            TotalInfoIssues     = 0
-            ScopesWithCritical  = 0
-            ScopesWithWarnings  = 0
-            ScopesWithInfo      = 0
+            TotalCriticalIssues    = 0
+            TotalUtilizationIssues = 0
+            TotalWarningIssues     = 0
+            TotalInfoIssues        = 0
+            ScopesWithCritical     = 0
+            ScopesWithUtilization  = 0
+            ScopesWithWarnings     = 0
+            ScopesWithInfo         = 0
         }
     }
 
@@ -1431,14 +1504,17 @@
     # Calculate validation summary counters efficiently
     $DHCPSummary.ValidationResults.Summary.TotalCriticalIssues = (
         $PublicDNSWithUpdates.Count +
-        $HighUtilization.Count +
         $ServersOffline.Count
+    )
+
+    $DHCPSummary.ValidationResults.Summary.TotalUtilizationIssues = (
+        $HighUtilization.Count +
+        $ModerateUtilization.Count
     )
 
     $DHCPSummary.ValidationResults.Summary.TotalWarningIssues = (
         $MissingFailover.Count +
         $ExtendedLeaseDuration.Count +
-        $ModerateUtilization.Count +
         $DNSRecordManagement.Count
     )
 
@@ -1450,14 +1526,18 @@
     # Calculate unique scope counts for each severity level using efficient single-pass array comprehension
     $CriticalScopes = @(
         $PublicDNSWithUpdates
-        $HighUtilization
     )
     $DHCPSummary.ValidationResults.Summary.ScopesWithCritical = ($CriticalScopes | Sort-Object -Property ScopeId -Unique).Count
+
+    $UtilizationScopes = @(
+        $HighUtilization
+        $ModerateUtilization
+    )
+    $DHCPSummary.ValidationResults.Summary.ScopesWithUtilization = ($UtilizationScopes | Sort-Object -Property ScopeId -Unique).Count
 
     $WarningScopes = @(
         $MissingFailover
         $ExtendedLeaseDuration
-        $ModerateUtilization
         $DNSRecordManagement
     )
     $DHCPSummary.ValidationResults.Summary.ScopesWithWarnings = ($WarningScopes | Sort-Object -Property ScopeId -Unique).Count
@@ -1748,6 +1828,12 @@
     }
 
     Write-Progress -Activity "Processing DHCP Servers" -Completed
+    
+    # Add overall timing summary
+    if ($OverallStartTime) {
+        Add-DHCPTimingStatistic -TimingList $DHCPSummary.TimingStatistics -ServerName 'Overall' -Operation 'Complete DHCP Discovery' -StartTime $OverallStartTime -ItemCount $ProcessedServers
+    }
+    
     Write-Verbose "Get-WinADDHCPSummary - DHCP information gathering completed"
 
     return $DHCPSummary

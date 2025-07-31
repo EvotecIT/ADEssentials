@@ -1,4 +1,4 @@
-function New-DHCPScaleAnalysisTab {
+﻿function New-DHCPScaleAnalysisTab {
     <#
     .SYNOPSIS
     Creates the Scale Analysis tab for DHCP environments requiring advanced monitoring.
