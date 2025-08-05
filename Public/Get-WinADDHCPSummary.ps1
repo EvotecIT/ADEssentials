@@ -371,7 +371,7 @@
         $DHCPServersFromAD = Get-DhcpServerInDC -ErrorAction Stop
         Write-Verbose "Get-WinADDHCPSummary - Found $($DHCPServersFromAD.Count) DHCP servers in AD"
     } catch {
-        Add-DHCPError -ServerName 'AD Discovery' -Component 'DHCP Server Discovery' -Operation 'Get-DhcpServerInDC' -ErrorMessage $_.Exception.Message -Severity 'Error'
+        Add-DHCPError -Summary $DHCPSummary -ServerName 'AD Discovery' -Component 'DHCP Server Discovery' -Operation 'Get-DhcpServerInDC' -ErrorMessage $_.Exception.Message -Severity 'Error'
         return $DHCPSummary
     }
 
@@ -393,7 +393,7 @@
     }
 
     if ($DHCPServersFromAD.Count -eq 0) {
-        Add-DHCPError -ServerName 'AD Discovery' -Component 'DHCP Server Discovery' -Operation 'Server Count Check' -ErrorMessage 'No DHCP servers found in Active Directory' -Severity 'Warning'
+        Add-DHCPError -Summary $DHCPSummary -ServerName 'AD Discovery' -Component 'DHCP Server Discovery' -Operation 'Server Count Check' -ErrorMessage 'No DHCP servers found in Active Directory' -Severity 'Warning'
 
         # Initialize statistics with zero values for empty environments
         $DHCPSummary.Statistics = [ordered] @{
@@ -558,7 +558,7 @@
             Write-Verbose "Get-WinADDHCPSummary - TimingStatistics type: $($DHCPSummary.TimingStatistics.GetType().FullName), Count: $($DHCPSummary.TimingStatistics.Count)"
 
             # Ensure TimingStatistics is properly initialized before adding timing info
-            if (-not $DHCPSummary.TimingStatistics) {
+            if ($null -eq $DHCPSummary.TimingStatistics) {
                 Write-Verbose "Get-WinADDHCPSummary - Reinitializing TimingStatistics for $Computer"
                 $DHCPSummary.TimingStatistics = [System.Collections.Generic.List[Object]]::new()
             }
@@ -577,13 +577,13 @@
             Write-Verbose "Get-WinADDHCPSummary - (Error branch) TimingStatistics type: $($DHCPSummary.TimingStatistics.GetType().FullName), Count: $($DHCPSummary.TimingStatistics.Count)"
 
             # Ensure TimingStatistics is properly initialized before adding timing info
-            if (-not $DHCPSummary.TimingStatistics) {
+            if ($null -eq $DHCPSummary.TimingStatistics) {
                 Write-Verbose "Get-WinADDHCPSummary - (Error branch) Reinitializing TimingStatistics for $Computer"
                 $DHCPSummary.TimingStatistics = [System.Collections.Generic.List[Object]]::new()
             }
 
             Add-DHCPTimingStatistic -TimingList $DHCPSummary.TimingStatistics -ServerName $Computer -Operation 'Scope Discovery' -StartTime $ScopeCollectionStart -ItemCount 0 -Success $false
-            Add-DHCPError -ServerName $Computer -Component 'DHCP Scope Discovery' -Operation 'Get-DhcpServerv4Scope' -ErrorMessage $_.Exception.Message -Severity 'Error'
+            Add-DHCPError -Summary $DHCPSummary -ServerName $Computer -Component 'DHCP Scope Discovery' -Operation 'Get-DhcpServerv4Scope' -ErrorMessage $_.Exception.Message -Severity 'Error'
             $ServerInfo.ErrorMessage = $_.Exception.Message
             $ServersWithIssues++
             $DHCPSummary.Servers.Add([PSCustomObject]$ServerInfo)
@@ -1917,9 +1917,13 @@
 
     Write-Progress -Activity "Processing DHCP Servers" -Completed
 
-    # Add overall timing summary
-    if ($OverallStartTime) {
-        Add-DHCPTimingStatistic -TimingList $DHCPSummary.TimingStatistics -ServerName 'Overall' -Operation 'Complete DHCP Discovery' -StartTime $OverallStartTime -ItemCount $ProcessedServers
+    # Add overall timing summary with safety checks
+    if ($OverallStartTime -and $DHCPSummary.TimingStatistics) {
+        try {
+            Add-DHCPTimingStatistic -TimingList $DHCPSummary.TimingStatistics -ServerName 'Overall' -Operation 'Complete DHCP Discovery' -StartTime $OverallStartTime -ItemCount $ProcessedServers
+        } catch {
+            Write-Warning "Get-WinADDHCPSummary - Failed to add final timing statistic: $($_.Exception.Message)"
+        }
     }
 
     Write-Verbose "Get-WinADDHCPSummary - DHCP information gathering completed"
