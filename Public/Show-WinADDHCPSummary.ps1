@@ -48,6 +48,11 @@
     Generates the HTML report using sample test data instead of querying real DHCP servers.
     Useful for quickly testing HTML layout and structure without running through all servers.
 
+    .PARAMETER SkipScopeDetails
+    When specified, skips collection of detailed scope information for faster report generation.
+    This improves performance significantly but reduces the detail level of the report.
+    Server-level information and basic scope counts will still be included.
+
     .EXAMPLE
     Show-WinADDHCPSummary
 
@@ -97,6 +102,7 @@
         [string[]] $ComputerName,
         [switch] $SkipRODC,
         [System.Collections.IDictionary] $ExtendedForestInformation,
+        [switch] $SkipScopeDetails,
         [string] $FilePath,
         [switch] $Online,
         [switch] $HideHTML,
@@ -128,6 +134,7 @@
         ComputerName              = $ComputerName
         SkipRODC                  = $SkipRODC
         ExtendedForestInformation = $ExtendedForestInformation
+        SkipScopeDetails          = $SkipScopeDetails
     }
 
     if ($TestMode) { $GetWinADDHCPSummarySplat.TestMode = $TestMode }
@@ -223,33 +230,33 @@
         } else {
             $IncludeTabs
         }
-        
+
         New-HTMLTabPanel {
             # Overview tab (always show)
             if ('Overview' -in $TabsToShow) {
                 New-DHCPOverviewTab -DHCPData $DHCPData
             }
-            
+
             # Validation Issues tab
             if ('ValidationIssues' -in $TabsToShow) {
                 New-DHCPValidationIssuesTab -DHCPData $DHCPData
             }
-            
+
             # Infrastructure main tab with nested tabs
             if (@('Infrastructure', 'IPv4/IPv6', 'Failover', 'NetworkSegmentation') | Where-Object { $_ -in $TabsToShow }) {
                 New-DHCPInfrastructureMainTab -DHCPData $DHCPData -IncludeTabs $TabsToShow
             }
-            
+
             # Configuration main tab with nested tabs
             if (@('Configuration', 'Options&Classes', 'Policies', 'ServerSettings') | Where-Object { $_ -in $TabsToShow }) {
                 New-DHCPConfigurationMainTab -DHCPData $DHCPData -IncludeTabs $TabsToShow
             }
-            
+
             # Analysis main tab with nested tabs
             if (@('Analysis', 'Utilization', 'Performance', 'SecurityCompliance', 'ScaleAnalysis') | Where-Object { $_ -in $TabsToShow }) {
                 New-DHCPAnalysisMainTab -DHCPData $DHCPData -IncludeTabs $TabsToShow -ShowTimingStatistics:$ShowTimingStatistics
             }
-            
+
             # Monitoring tab (optional)
             if ('Monitoring' -in $TabsToShow -and $DHCPData.Statistics.TotalAddresses -gt 50000) {
                 New-DHCPMonitoringTab -DHCPData $DHCPData
