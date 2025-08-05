@@ -38,6 +38,11 @@
     .PARAMETER ExtendedForestInformation
     Specifies additional extended forest information to include in the output.
 
+    .PARAMETER SkipScopeDetails
+    When specified, skips collection of detailed scope information for faster health checking.
+    This improves performance but reduces the granularity of scope-level health assessments.
+    Server-level health checks will still be performed.
+
     .PARAMETER Quiet
     When specified, suppresses console output and only returns the health check object.
 
@@ -90,6 +95,7 @@
         [string[]] $ComputerName,
         [switch] $SkipRODC,
         [System.Collections.IDictionary] $ExtendedForestInformation,
+        [switch] $SkipScopeDetails,
         [switch] $Quiet
     )
 
@@ -107,6 +113,7 @@
     if ($ComputerName) { $GetSummaryParams.ComputerName = $ComputerName }
     if ($SkipRODC) { $GetSummaryParams.SkipRODC = $SkipRODC }
     if ($ExtendedForestInformation) { $GetSummaryParams.ExtendedForestInformation = $ExtendedForestInformation }
+    if ($SkipScopeDetails) { $GetSummaryParams.SkipScopeDetails = $SkipScopeDetails }
 
     try {
         $Summary = Get-WinADDHCPSummary @GetSummaryParams
