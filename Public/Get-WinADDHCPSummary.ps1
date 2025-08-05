@@ -408,14 +408,14 @@
 
     # Track overall timing
     $OverallStartTime = Get-Date
-    
+
     foreach ($DHCPServer in $DHCPServersFromAD) {
         $Computer = $DHCPServer.DnsName
         $ProcessedServers++
         Write-Progress -Activity "Processing DHCP Servers" -Status "Processing $Computer ($ProcessedServers of $TotalServers)" -PercentComplete (($ProcessedServers / $TotalServers) * 100) -Id 1
 
         Write-Verbose "Get-WinADDHCPSummary - Processing DHCP server: $Computer"
-        
+
         # Start server timing
         $ServerStartTime = Get-Date
 
@@ -507,16 +507,37 @@
         $ScopeCollectionStart = Get-Date
         try {
             $Scopes = Get-DhcpServerv4Scope -ComputerName $Computer -ErrorAction Stop
-            Add-DHCPTimingStatistic -TimingList $DHCPSummary.TimingStatistics -ServerName $Computer -Operation 'Scope Discovery' -StartTime $ScopeCollectionStart -ItemCount $Scopes.Count
-            $ServerInfo.ScopeCount = $Scopes.Count
-            $TotalScopes += $Scopes.Count
+            $ScopeCount = if ($Scopes) { $Scopes.Count } else { 0 }
+
+            # Debug: Check TimingStatistics state
+            Write-Verbose "Get-WinADDHCPSummary - TimingStatistics type: $($DHCPSummary.TimingStatistics.GetType().FullName), Count: $($DHCPSummary.TimingStatistics.Count)"
+
+            # Ensure TimingStatistics is properly initialized before adding timing info
+            if (-not $DHCPSummary.TimingStatistics) {
+                Write-Verbose "Get-WinADDHCPSummary - Reinitializing TimingStatistics for $Computer"
+                $DHCPSummary.TimingStatistics = [System.Collections.Generic.List[Object]]::new()
+            }
+
+            Add-DHCPTimingStatistic -TimingList $DHCPSummary.TimingStatistics -ServerName $Computer -Operation 'Scope Discovery' -StartTime $ScopeCollectionStart -ItemCount $ScopeCount
+            $ServerInfo.ScopeCount = $ScopeCount
+            $TotalScopes += $ScopeCount
 
             $ActiveScopes = $Scopes | Where-Object { $_.State -eq 'Active' }
-            $ServerInfo.ActiveScopeCount = $ActiveScopes.Count
-            $ServerInfo.InactiveScopeCount = $Scopes.Count - $ActiveScopes.Count
+            $ServerInfo.ActiveScopeCount = if ($ActiveScopes) { $ActiveScopes.Count } else { 0 }
+            $ServerInfo.InactiveScopeCount = $ScopeCount - $ServerInfo.ActiveScopeCount
 
-            Write-Verbose "Get-WinADDHCPSummary - Found $($Scopes.Count) scopes on $Computer"
+            Write-Verbose "Get-WinADDHCPSummary - Found $ScopeCount scopes on $Computer"
         } catch {
+            # Debug: Check TimingStatistics state in catch block
+            Write-Verbose "Get-WinADDHCPSummary - (Error branch) TimingStatistics type: $($DHCPSummary.TimingStatistics.GetType().FullName), Count: $($DHCPSummary.TimingStatistics.Count)"
+
+            # Ensure TimingStatistics is properly initialized before adding timing info
+            if (-not $DHCPSummary.TimingStatistics) {
+                Write-Verbose "Get-WinADDHCPSummary - (Error branch) Reinitializing TimingStatistics for $Computer"
+                $DHCPSummary.TimingStatistics = [System.Collections.Generic.List[Object]]::new()
+            }
+
+            Add-DHCPTimingStatistic -TimingList $DHCPSummary.TimingStatistics -ServerName $Computer -Operation 'Scope Discovery' -StartTime $ScopeCollectionStart -ItemCount 0 -Success $false
             Add-DHCPError -ServerName $Computer -Component 'DHCP Scope Discovery' -Operation 'Get-DhcpServerv4Scope' -ErrorMessage $_.Exception.Message -Severity 'Error'
             $ServerInfo.ErrorMessage = $_.Exception.Message
             $ServersWithIssues++
@@ -779,10 +800,10 @@
 
         # Add the successfully processed server to the collection
         $DHCPSummary.Servers.Add([PSCustomObject]$ServerInfo)
-        
+
         # Track server processing time
         Add-DHCPTimingStatistic -TimingList $DHCPSummary.TimingStatistics -ServerName $Computer -Operation 'Server Total Processing' -StartTime $ServerStartTime -ItemCount $ServerInfo.ScopeCount
-        
+
         Write-Verbose "Get-WinADDHCPSummary - Server $Computer processing completed: Scopes=$($ServerInfo.ScopeCount), Total Addresses=$($ServerInfo.TotalAddresses), Utilization=$($ServerInfo.PercentageInUse)%"
 
         # Get audit log information
@@ -1828,12 +1849,12 @@
     }
 
     Write-Progress -Activity "Processing DHCP Servers" -Completed
-    
+
     # Add overall timing summary
     if ($OverallStartTime) {
         Add-DHCPTimingStatistic -TimingList $DHCPSummary.TimingStatistics -ServerName 'Overall' -Operation 'Complete DHCP Discovery' -StartTime $OverallStartTime -ItemCount $ProcessedServers
     }
-    
+
     Write-Verbose "Get-WinADDHCPSummary - DHCP information gathering completed"
 
     return $DHCPSummary
