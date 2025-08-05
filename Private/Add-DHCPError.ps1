@@ -6,6 +6,9 @@
     .DESCRIPTION
     Logs errors and warnings for DHCP operations.
 
+    .PARAMETER Summary
+    The DHCP summary object to add errors to. If not provided, attempts to use script scope $DHCPSummary.
+
     .PARAMETER ServerName
     The name of the DHCP server.
     This parameter is mandatory and should be the fully qualified domain name (FQDN) or IP address of the DHCP server.
@@ -27,13 +30,16 @@
     The severity level of the error (e.g., Error, Warning).
 
     .EXAMPLE
-     Add-DHCPError -ServerName 'AD Discovery' -Component 'DHCP Server Discovery' -Operation 'Get-DhcpServerInDC' -ErrorMessage $_.Exception.Message -Severity 'Error'
+     Add-DHCPError -Summary $DHCPSummary -ServerName 'AD Discovery' -Component 'DHCP Server Discovery' -Operation 'Get-DhcpServerInDC' -ErrorMessage $_.Exception.Message -Severity 'Error'
 
     .NOTES
     General notes
     #>
     [CmdletBinding()]
     param(
+        [Parameter(Mandatory = $false)]
+        [PSCustomObject]$Summary,
+
         [string]$ServerName,
         [string]$ScopeId = $null,
         [string]$Component,
@@ -41,6 +47,16 @@
         [string]$ErrorMessage,
         [string]$Severity = 'Error'
     )
+
+    # Use provided Summary object or fall back to script-scope $DHCPSummary
+    if (-not $Summary) {
+        if (Get-Variable -Name 'DHCPSummary' -Scope Script -ErrorAction SilentlyContinue) {
+            $Summary = $Script:DHCPSummary
+        } else {
+            Write-Warning "Add-DHCPError - No Summary object provided and no script-scope DHCPSummary found"
+            return
+        }
+    }
 
     $ErrorObject = [PSCustomObject] @{
         Timestamp    = Get-Date
@@ -54,10 +70,10 @@
     }
 
     if ($Severity -eq 'Warning') {
-        $DHCPSummary.Warnings.Add($ErrorObject)
+        $Summary.Warnings.Add($ErrorObject)
         Write-Warning "Get-WinADDHCPSummary - $Component on $ServerName$(if($ScopeId){" (Scope: $ScopeId)"}): $ErrorMessage"
     } else {
-        $DHCPSummary.Errors.Add($ErrorObject)
+        $Summary.Errors.Add($ErrorObject)
         Write-Warning "Get-WinADDHCPSummary - ERROR in $Component on $ServerName$(if($ScopeId){" (Scope: $ScopeId)"}): $ErrorMessage"
     }
 }

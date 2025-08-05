@@ -31,6 +31,7 @@ function Add-DHCPTimingStatistic {
     param(
         [Parameter(Mandatory = $true)]
         [AllowEmptyCollection()]
+        [AllowNull()]
         [System.Collections.Generic.List[Object]] $TimingList,
 
         [Parameter(Mandatory = $true)]
@@ -53,6 +54,12 @@ function Add-DHCPTimingStatistic {
     )
 
     try {
+        # Ensure we have a valid TimingList to add to
+        if ($null -eq $TimingList) {
+            Write-Warning "Add-DHCPTimingStatistic - TimingList is null for $ServerName / $Operation"
+            return
+        }
+
         $Duration = $EndTime - $StartTime
 
         $TimingObject = [PSCustomObject]@{
