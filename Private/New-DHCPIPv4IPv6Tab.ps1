@@ -51,15 +51,15 @@
             New-HTMLTab -TabName '🔵 IPv4' {
                 # IPv4 Summary at the top
                 if ($DHCPData.Scopes.Count -gt 0) {
-                    New-HTMLSection -HeaderText "🔵 IPv4 DHCP Summary" {
-                        New-HTMLPanel -Invisible {
+                    New-HTMLSection -HeaderText "🔵 IPv4 DHCP Summary" -Density Comfortable {
+                        New-HTMLSection -Invisible {
                             # Utilization gauge
                             New-HTMLChart -Title "IPv4 Overall Utilization" {
                                 New-ChartRadial -Name "Used" -Value $DHCPData.Statistics.OverallPercentageInUse
                                 New-ChartRadialOptions -CircleType SemiCircleGauge
                             } -Height 500px
                         }
-                        New-HTMLPanel -Invisible {
+                        New-HTMLSection -Invisible {
                             # IPv4 Statistics
                             $IPv4Stats = [PSCustomObject]@{
                                 'Total Scopes'    = $DHCPData.Scopes.Count
