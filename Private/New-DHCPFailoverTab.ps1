@@ -27,8 +27,8 @@
                 $TotalFailoverRelationships = $DHCPData.FailoverRelationships.Count
                 $ActiveFailovers = ($DHCPData.FailoverRelationships | Where-Object { $_.State -eq 'Normal' }).Count
                 $FailoverIssues = ($DHCPData.FailoverRelationships | Where-Object { $_.State -ne 'Normal' }).Count
-                $ScopesWithFailover = ($DHCPData.Scopes | Where-Object { $_.FailoverPartner -ne $null -and $_.FailoverPartner -ne '' }).Count
-                $ScopesWithoutFailover = ($DHCPData.Scopes | Where-Object { $_.State -eq 'Active' -and ($_.FailoverPartner -eq $null -or $_.FailoverPartner -eq '') }).Count
+                $ScopesWithFailover = ($DHCPData.Scopes | Where-Object { $null -ne $_.FailoverPartner -and $_.FailoverPartner -ne '' }).Count
+                $ScopesWithoutFailover = ($DHCPData.Scopes | Where-Object { $_.State -eq 'Active' -and ($null -eq $_.FailoverPartner -or $_.FailoverPartner -eq '') }).Count
 
                 New-HTMLSection -HeaderText "Failover Health Dashboard" -Invisible -Density Compact {
                     New-HTMLInfoCard -Title "Failover Relationships" -Number $TotalFailoverRelationships -Subtitle "Configured" -Icon "🔄" -TitleColor Blue -NumberColor DarkBlue
