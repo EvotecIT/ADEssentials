@@ -29,13 +29,13 @@
             }
         )
         $testScopes = @(
-            [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '192.168.1.0'; Name = 'Corporate LAN'; State = 'Active'; PercentageInUse = 0; AddressesInUse = 0; AddressesFree = 0; HasIssues = $true; Issues = @('High lease duration (168 hours) without documented exception'); LeaseDurationHours = 168; FailoverPartner = $null; DNSServers = '10.1.1.1, 10.1.1.2'; DomainName = 'domain.com'; DynamicUpdates = 'OnClientRequest' }
-            [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '10.1.0.0'; Name = 'Guest Network'; State = 'Active'; PercentageInUse = 0; AddressesInUse = 0; AddressesFree = 0; HasIssues = $false; Issues = @(); LeaseDurationHours = 24; FailoverPartner = 'dhcp02.domain.com'; DNSServers = '10.1.1.1, 10.1.1.2'; DomainName = 'guest.domain.com'; DynamicUpdates = 'Never' }
-            [PSCustomObject]@{ ServerName = 'dc01.domain.com'; ScopeId = '172.16.1.0'; Name = 'Server VLAN'; State = 'Active'; PercentageInUse = 0; AddressesInUse = 0; AddressesFree = 0; HasIssues = $true; Issues = @('No failover configured', 'UpdateDnsRRForOlderClients is disabled'); LeaseDurationHours = 168; FailoverPartner = $null; DNSServers = '10.1.1.1, 10.1.1.2'; DomainName = 'domain.com'; DynamicUpdates = 'OnClientRequest' }
+            [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '192.168.1.0'; Name = 'Corporate LAN'; State = 'Active'; PercentageInUse = 0; AddressesInUse = 0; AddressesFree = 0; HasIssues = $true; Issues = @('High lease duration (168 hours) without documented exception'); HasUtilizationIssues = $false; UtilizationIssues = @(); LeaseDurationHours = 168; FailoverPartner = $null; DNSServers = '10.1.1.1, 10.1.1.2'; DomainName = 'domain.com'; DynamicUpdates = 'OnClientRequest' }
+            [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '10.1.0.0'; Name = 'Guest Network'; State = 'Active'; PercentageInUse = 0; AddressesInUse = 0; AddressesFree = 0; HasIssues = $false; Issues = @(); HasUtilizationIssues = $false; UtilizationIssues = @(); LeaseDurationHours = 24; FailoverPartner = 'dhcp02.domain.com'; DNSServers = '10.1.1.1, 10.1.1.2'; DomainName = 'guest.domain.com'; DynamicUpdates = 'Never' }
+            [PSCustomObject]@{ ServerName = 'dc01.domain.com'; ScopeId = '172.16.1.0'; Name = 'Server VLAN'; State = 'Active'; PercentageInUse = 0; AddressesInUse = 0; AddressesFree = 0; HasIssues = $true; Issues = @('No failover configured', 'UpdateDnsRRForOlderClients is disabled'); HasUtilizationIssues = $false; UtilizationIssues = @(); LeaseDurationHours = 168; FailoverPartner = $null; DNSServers = '10.1.1.1, 10.1.1.2'; DomainName = 'domain.com'; DynamicUpdates = 'OnClientRequest' }
         )
         $testScopesWithIssues = @(
-            [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '192.168.1.0'; Name = 'Corporate LAN'; State = 'Active'; PercentageInUse = 0; HasIssues = $true; Issues = @('High lease duration (168 hours) without documented exception'); LeaseDurationHours = 168; FailoverPartner = $null }
-            [PSCustomObject]@{ ServerName = 'dc01.domain.com'; ScopeId = '172.16.1.0'; Name = 'Server VLAN'; State = 'Active'; PercentageInUse = 0; HasIssues = $true; Issues = @('No failover configured', 'UpdateDnsRRForOlderClients is disabled'); LeaseDurationHours = 168; FailoverPartner = $null }
+            [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '192.168.1.0'; Name = 'Corporate LAN'; State = 'Active'; PercentageInUse = 0; HasIssues = $true; Issues = @('High lease duration (168 hours) without documented exception'); HasUtilizationIssues = $false; UtilizationIssues = @(); LeaseDurationHours = 168; FailoverPartner = $null }
+            [PSCustomObject]@{ ServerName = 'dc01.domain.com'; ScopeId = '172.16.1.0'; Name = 'Server VLAN'; State = 'Active'; PercentageInUse = 0; HasIssues = $true; Issues = @('No failover configured', 'UpdateDnsRRForOlderClients is disabled'); HasUtilizationIssues = $false; UtilizationIssues = @(); LeaseDurationHours = 168; FailoverPartner = $null }
         )
     } else {
         $testServers = @(
@@ -59,13 +59,12 @@
             }
         )
         $testScopes = @(
-            [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '192.168.1.0'; Name = 'Corporate LAN'; State = 'Active'; PercentageInUse = 85; AddressesInUse = 170; AddressesFree = 30; HasIssues = $true; Issues = @('High utilization'); LeaseDurationHours = 8; FailoverPartner = $null }
-            [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '10.1.0.0'; Name = 'Guest Network'; State = 'Active'; PercentageInUse = 25; AddressesInUse = 50; AddressesFree = 150; HasIssues = $false; Issues = @(); LeaseDurationHours = 24; FailoverPartner = 'dhcp02.domain.com' }
-            [PSCustomObject]@{ ServerName = 'dc01.domain.com'; ScopeId = '172.16.1.0'; Name = 'Server VLAN'; State = 'Active'; PercentageInUse = 92; AddressesInUse = 92; AddressesFree = 8; HasIssues = $true; Issues = @('Critical utilization', 'No failover configured'); LeaseDurationHours = 168; FailoverPartner = $null }
+            [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '192.168.1.0'; Name = 'Corporate LAN'; State = 'Active'; PercentageInUse = 85; AddressesInUse = 170; AddressesFree = 30; HasIssues = $false; Issues = @(); HasUtilizationIssues = $true; UtilizationIssues = @('High utilization level (85%) - expansion planning recommended'); LeaseDurationHours = 8; FailoverPartner = $null }
+            [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '10.1.0.0'; Name = 'Guest Network'; State = 'Active'; PercentageInUse = 25; AddressesInUse = 50; AddressesFree = 150; HasIssues = $false; Issues = @(); HasUtilizationIssues = $false; UtilizationIssues = @(); LeaseDurationHours = 24; FailoverPartner = 'dhcp02.domain.com' }
+            [PSCustomObject]@{ ServerName = 'dc01.domain.com'; ScopeId = '172.16.1.0'; Name = 'Server VLAN'; State = 'Active'; PercentageInUse = 92; AddressesInUse = 92; AddressesFree = 8; HasIssues = $true; Issues = @('No failover configured'); HasUtilizationIssues = $true; UtilizationIssues = @('Critical utilization level (92%) - immediate expansion needed'); LeaseDurationHours = 168; FailoverPartner = $null }
         )
         $testScopesWithIssues = @(
-            [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '192.168.1.0'; Name = 'Corporate LAN'; State = 'Active'; PercentageInUse = 85; HasIssues = $true; Issues = @('High utilization'); LeaseDurationHours = 8; FailoverPartner = $null }
-            [PSCustomObject]@{ ServerName = 'dc01.domain.com'; ScopeId = '172.16.1.0'; Name = 'Server VLAN'; State = 'Active'; PercentageInUse = 92; HasIssues = $true; Issues = @('Critical utilization', 'No failover configured'); LeaseDurationHours = 168; FailoverPartner = $null }
+            [PSCustomObject]@{ ServerName = 'dc01.domain.com'; ScopeId = '172.16.1.0'; Name = 'Server VLAN'; State = 'Active'; PercentageInUse = 92; HasIssues = $true; Issues = @('No failover configured'); HasUtilizationIssues = $true; UtilizationIssues = @('Critical utilization level (92%) - immediate expansion needed'); LeaseDurationHours = 168; FailoverPartner = $null }
         )
     }
 
@@ -130,10 +129,11 @@
             [PSCustomObject]@{ ServerName = 'dhcp02.domain.com'; IPAddress = $null; Status = 'Unreachable'; IsDomainController = $false; TotalScopes = 0; ActiveScopes = 0; InactiveScopes = 0; DNSResolvable = $true; ReverseDNSValid = $false; NetworkHealth = 'Network Issues'; DesignNotes = 'Standard Configuration' }
             [PSCustomObject]@{ ServerName = 'dc01.domain.com'; IPAddress = '192.168.1.5'; Status = 'Online'; IsDomainController = $true; TotalScopes = 8; ActiveScopes = 8; InactiveScopes = 0; DNSResolvable = $true; ReverseDNSValid = $true; NetworkHealth = 'Healthy'; DesignNotes = 'Domain Controller' }
         )
-        # New safe, high-value test data
+        # New safe, high-value test data - Always populated since Extended mode is now default
         DHCPOptions               = @(
             [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = 'Server-Level'; OptionId = 6; Name = 'DNS Servers'; Value = '192.168.1.2, 192.168.1.3'; VendorClass = ''; UserClass = ''; PolicyName = ''; Level = 'Server'; GatheredFrom = 'dhcp01.domain.com'; GatheredDate = (Get-Date) }
             [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = 'Server-Level'; OptionId = 15; Name = 'Domain Name'; Value = 'domain.com'; VendorClass = ''; UserClass = ''; PolicyName = ''; Level = 'Server'; GatheredFrom = 'dhcp01.domain.com'; GatheredDate = (Get-Date) }
+            [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '192.168.1.0'; OptionId = 3; Name = 'Router'; Value = '192.168.1.1'; VendorClass = ''; UserClass = ''; PolicyName = ''; GatheredFrom = 'dhcp01.domain.com'; GatheredDate = (Get-Date) }
             [PSCustomObject]@{ ServerName = 'dc01.domain.com'; ScopeId = 'Server-Level'; OptionId = 6; Name = 'DNS Servers'; Value = '8.8.8.8, 1.1.1.1'; VendorClass = ''; UserClass = ''; PolicyName = ''; Level = 'Server'; GatheredFrom = 'dc01.domain.com'; GatheredDate = (Get-Date) }
         )
         DHCPClasses               = @(
@@ -153,7 +153,7 @@
             [PSCustomObject]@{ ServerName = 'dc01.domain.com'; TotalScopes = 8; ScopesWithDelay = 1; TotalAddresses = 1500; AddressesInUse = 1170; AddressesAvailable = 330; PercentageInUse = 78; PercentageAvailable = 22; Discovers = 1200; Offers = 1150; Requests = 1100; Acks = 1050; Naks = 50; Declines = 5; Releases = 80; ServerStartTime = (Get-Date).AddDays(-15); GatheredFrom = 'dc01.domain.com'; GatheredDate = (Get-Date) }
         )
         OptionsAnalysis           = @(
-            [PSCustomObject]@{ AnalysisType = 'DHCP Options Configuration'; TotalServersAnalyzed = 2; TotalOptionsConfigured = 8; UniqueOptionTypes = 6; CriticalOptionsCovered = 3; MissingCriticalOptions = @('Option 3 (Router - Default Gateway)', 'Option 51 (Lease Time)', 'Option 66 (Boot Server Host Name)'); OptionIssues = @('Public DNS servers configured in scope Server-Level on dc01.domain.com'); OptionRecommendations = @('Configure missing critical DHCP options for proper client functionality', 'Consider configuring server-level options for common settings') }
+            [PSCustomObject]@{ AnalysisType = 'DHCP Options Configuration'; TotalServersAnalyzed = 2; TotalOptionsConfigured = 8; UniqueOptionTypes = 6; CriticalOptionsCovered = 3; MissingCriticalOptions = @('Option 51 (Lease Time)', 'Option 66 (Boot Server Host Name)'); OptionIssues = @('Public DNS servers configured in scope Server-Level on dc01.domain.com'); OptionRecommendations = @('Configure missing critical DHCP options for proper client functionality', 'Consider configuring server-level options for common settings') }
         )
         ValidationResults         = [ordered] @{
             CriticalIssues    = [ordered] @{

@@ -11,7 +11,8 @@ $DHCPServers | Format-Table DNSName, IPAddress, IsDC, IsReachable, DHCPVersion, 
 
 # Example 2: Get comprehensive DHCP summary
 Write-Host "`n=== Comprehensive DHCP Summary ===" -ForegroundColor Green
-$DHCPSummary = Get-WinADDHCPSummary -Extended -Verbose
+# Extended mode is now default - all comprehensive data is collected automatically
+$DHCPSummary = Get-WinADDHCPSummary -Verbose
 
 # Display statistics
 Write-Host "DHCP Infrastructure Statistics:" -ForegroundColor Yellow
@@ -121,6 +122,6 @@ Write-Host "`n=== Targeted Health Check ===" -ForegroundColor Green
 Write-Host "`nDHCP Analysis Complete!" -ForegroundColor Green
 Write-Host "Use the following commands for more detailed analysis:" -ForegroundColor Cyan
 Write-Host "  Get-WinADDHCP -TestConnectivity" -ForegroundColor White
-Write-Host "  Get-WinADDHCPSummary -Extended" -ForegroundColor White
+Write-Host "  Get-WinADDHCPSummary" -ForegroundColor White
 Write-Host "  Invoke-WinADDHCPHealthCheck" -ForegroundColor White
 Write-Host "  Show-WinADDHCPSummary -FilePath 'C:\Reports\DHCP.html'" -ForegroundColor White

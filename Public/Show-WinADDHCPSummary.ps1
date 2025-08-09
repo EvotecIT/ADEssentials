@@ -53,11 +53,6 @@
     This improves performance significantly but reduces the detail level of the report.
     Server-level information and basic scope counts will still be included.
 
-    .PARAMETER Extended
-    When specified, collects extended DHCP configuration data including server options, classes,
-    network bindings, security filters, policies, reservations, and other advanced features.
-    This provides comprehensive DHCP server analysis but may increase collection time.
-
     .EXAMPLE
     Show-WinADDHCPSummary
 
@@ -108,7 +103,6 @@
         [switch] $SkipRODC,
         [System.Collections.IDictionary] $ExtendedForestInformation,
         [switch] $SkipScopeDetails,
-        [switch] $Extended,
         [string] $FilePath,
         [switch] $Online,
         [switch] $HideHTML,
@@ -141,11 +135,8 @@
         SkipRODC                  = $SkipRODC
         ExtendedForestInformation = $ExtendedForestInformation
         SkipScopeDetails          = $SkipScopeDetails
-        Extended                  = $Extended
     }
 
-    if ($TestMode) { $GetWinADDHCPSummarySplat.TestMode = $TestMode }
-    # Include optional parameters based on user input
     if ($TestMode) { $GetWinADDHCPSummarySplat.TestMode = $TestMode }
 
     Write-Verbose "Show-WinADDHCPSummary - Gathering DHCP data from Get-WinADDHCPSummary"

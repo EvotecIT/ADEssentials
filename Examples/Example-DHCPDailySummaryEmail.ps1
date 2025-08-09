@@ -3,8 +3,8 @@
 
 Import-Module ADEssentials -Force
 
-# Generate comprehensive DHCP summary
-$DHCPData = Get-WinADDHCPSummary -Extended -Verbose
+# Generate comprehensive DHCP summary (Extended mode is now default)
+$DHCPData = Get-WinADDHCPSummary -Verbose
 
 # Check if no DHCP servers were found
 if ($DHCPData.Statistics.TotalServers -eq 0) {

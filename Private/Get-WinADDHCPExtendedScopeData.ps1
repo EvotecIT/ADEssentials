@@ -3,7 +3,8 @@ function Get-WinADDHCPExtendedScopeData {
     param(
         [string] $Computer,
         [Object[]] $Scopes,
-        [System.Collections.IDictionary] $DHCPSummary
+        [System.Collections.IDictionary] $DHCPSummary,
+        [switch] $TestMode
     )
 
     Write-Verbose "Get-WinADDHCPExtendedScopeData - Starting scope-intensive extended data collection for $Computer"

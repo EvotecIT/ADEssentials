@@ -78,8 +78,15 @@
             }
         }
 
-        # Server Options Table
-        $ServerOptions = $DHCPData.DHCPOptions | Where-Object { $_.Level -eq 'Server' }
+        # Server Options Table - Check both DHCPOptions and Options
+        $ServerOptions = @()
+        if ($DHCPData.DHCPOptions) {
+            $ServerOptions = $DHCPData.DHCPOptions | Where-Object { $_.Level -eq 'Server' }
+        }
+        if ($ServerOptions.Count -eq 0 -and $DHCPData.Options) {
+            # If no server-level options in DHCPOptions, check Options
+            $ServerOptions = $DHCPData.Options | Where-Object { $_.ScopeId -eq 'Server-Level' }
+        }
         if ($ServerOptions.Count -gt 0) {
             New-HTMLSection -HeaderText "🖥️ Server-Level Options" -CanCollapse {
                 New-HTMLTable -DataTable $ServerOptions -Filtering {
