@@ -6,13 +6,18 @@ function Get-WinADDHCPScopeStatistics {
         [PSCustomObject] $ScopeObject,
         [System.Collections.Generic.List[Object]] $DHCPSummaryTimingStatistics,
         [System.Collections.Generic.List[Object]] $DHCPSummaryErrors,
-        [switch] $SkipScopeDetails
+        [switch] $SkipScopeDetails,
+        [switch] $TestMode
     )
 
     if (-not $SkipScopeDetails) {
         $StatsStart = Get-Date
         try {
-            $ScopeStats = Get-DhcpServerv4ScopeStatistics -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction Stop
+            if ($TestMode) {
+                $ScopeStats = Get-TestModeDHCPData -DataType 'DhcpServerv4ScopeStatistics' -ComputerName $Computer -ScopeId $Scope.ScopeId
+            } else {
+                $ScopeStats = Get-DhcpServerv4ScopeStatistics -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction Stop
+            }
             
             if ($DHCPSummaryTimingStatistics) {
                 Add-DHCPTimingStatistic -TimingList $DHCPSummaryTimingStatistics -ServerName $Computer -Operation 'Scope Statistics' -StartTime $StatsStart -ItemCount 1
@@ -42,21 +47,22 @@ function Get-WinADDHCPScopeStatistics {
                 $BestPracticeIssues.Add("Very large scope size ($ScopeTotalAddresses addresses) - consider segmentation")
             }
 
-            # Check utilization thresholds
+            # Check utilization thresholds - Add to UtilizationIssues instead of Issues
             if ($ScopeObject.PercentageInUse -gt 95) {
-                $BestPracticeIssues.Add("Critical utilization level ($($ScopeObject.PercentageInUse)%) - immediate expansion needed")
+                $ScopeObject.UtilizationIssues.Add("Critical utilization level ($($ScopeObject.PercentageInUse)%) - immediate expansion needed")
+                $ScopeObject.HasUtilizationIssues = $true
             } elseif ($ScopeObject.PercentageInUse -gt 80) {
-                $BestPracticeIssues.Add("High utilization level ($($ScopeObject.PercentageInUse)%) - expansion planning recommended")
+                $ScopeObject.UtilizationIssues.Add("High utilization level ($($ScopeObject.PercentageInUse)%) - expansion planning recommended")
+                $ScopeObject.HasUtilizationIssues = $true
             } elseif ($ScopeObject.PercentageInUse -lt 5 -and $Scope.State -eq 'Active') {
-                $BestPracticeIssues.Add("Very low utilization ($($ScopeObject.PercentageInUse)%) - scope may be unnecessary")
+                $ScopeObject.UtilizationIssues.Add("Very low utilization ($($ScopeObject.PercentageInUse)%) - scope may be unnecessary")
+                $ScopeObject.HasUtilizationIssues = $true
             }
 
-            # Add best practice issues to main issues list
+            # Add non-utilization best practice issues to main issues list
             foreach ($Issue in $BestPracticeIssues) {
                 $ScopeObject.Issues.Add($Issue)
-                if ($Issue -like "*Critical*" -or $Issue -like "*immediate*") {
-                    $ScopeObject.HasIssues = $true
-                }
+                $ScopeObject.HasIssues = $true
             }
 
             Write-Verbose "Get-WinADDHCPScopeStatistics - Scope $($Scope.ScopeId) statistics: Total=$ScopeTotalAddresses, InUse=$($ScopeStats.AddressesInUse), Free=$($ScopeStats.AddressesFree), Utilization=$($ScopeObject.PercentageInUse)%"

@@ -2,7 +2,8 @@ function Get-WinADDHCPExtendedServerData {
     [CmdletBinding()]
     param(
         [string] $Computer,
-        [System.Collections.IDictionary] $DHCPSummary
+        [System.Collections.IDictionary] $DHCPSummary,
+        [switch] $TestMode
     )
 
     Write-Verbose "Get-WinADDHCPExtendedServerData - Gathering extended server data for $Computer"
@@ -47,7 +48,11 @@ function Get-WinADDHCPExtendedServerData {
     # DHCP Server Options (global/server-level)
     try {
         Write-Verbose "Get-WinADDHCPExtendedServerData - Collecting server-level DHCP options for $Computer"
-        $ServerOptions = Get-DhcpServerv4OptionValue -ComputerName $Computer -All -ErrorAction Stop
+        if ($TestMode) {
+            $ServerOptions = Get-TestModeDHCPData -DataType 'DhcpServerv4OptionValueAll' -ComputerName $Computer
+        } else {
+            $ServerOptions = Get-DhcpServerv4OptionValue -ComputerName $Computer -All -ErrorAction Stop
+        }
         foreach ($Option in $ServerOptions) {
             $ServerOptionObject = [PSCustomObject] @{
                 ServerName   = $Computer
@@ -72,7 +77,11 @@ function Get-WinADDHCPExtendedServerData {
     # DHCP Classes (Vendor/User Classes)
     try {
         Write-Verbose "Get-WinADDHCPExtendedServerData - Collecting DHCP classes for $Computer"
-        $Classes = Get-DhcpServerv4Class -ComputerName $Computer -ErrorAction Stop
+        if ($TestMode) {
+            $Classes = Get-TestModeDHCPData -DataType 'DhcpServerv4Class' -ComputerName $Computer
+        } else {
+            $Classes = Get-DhcpServerv4Class -ComputerName $Computer -ErrorAction Stop
+        }
         foreach ($Class in $Classes) {
             $ClassObject = [PSCustomObject] @{
                 ServerName   = $Computer

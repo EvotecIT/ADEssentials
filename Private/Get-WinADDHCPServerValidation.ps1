@@ -3,7 +3,8 @@ function Get-WinADDHCPServerValidation {
     param(
         [string] $Computer,
         [System.Collections.IDictionary] $ForestInformation,
-        [System.Collections.Generic.List[Object]] $DHCPSummaryServers
+        [System.Collections.Generic.List[Object]] $DHCPSummaryServers,
+        [switch] $TestMode
     )
 
     Write-Verbose "Get-WinADDHCPServerValidation - Processing DHCP server: $Computer"
@@ -51,7 +52,7 @@ function Get-WinADDHCPServerValidation {
 
     # Test connectivity and get server information
     Write-Verbose "Get-WinADDHCPServerValidation - Performing comprehensive validation for $Computer"
-    $ValidationResult = Get-WinDHCPServerInfo -ComputerName $Computer
+    $ValidationResult = Get-WinDHCPServerInfo -ComputerName $Computer -TestMode:$TestMode
 
     # Update server info with comprehensive validation results
     $ServerInfo.IsReachable = $ValidationResult.IsReachable
@@ -69,7 +70,11 @@ function Get-WinADDHCPServerValidation {
     # DHCP Authorization Analysis
     try {
         Write-Verbose "Get-WinADDHCPServerValidation - Checking DHCP authorization for $Computer"
-        $AuthorizedServers = Get-DhcpServerInDC -ErrorAction SilentlyContinue | Where-Object { $_.DnsName -eq $Computer -or $_.IPAddress -eq $Computer }
+        if ($TestMode) {
+            $AuthorizedServers = Get-TestModeDHCPData -DataType 'DhcpServersInDC' | Where-Object { $_.DnsName -eq $Computer }
+        } else {
+            $AuthorizedServers = Get-DhcpServerInDC -ErrorAction SilentlyContinue | Where-Object { $_.DnsName -eq $Computer -or $_.IPAddress -eq $Computer }
+        }
         if ($AuthorizedServers) {
             $ServerInfo.IsAuthorized = $true
             $ServerInfo.AuthorizationStatus = "Authorized in AD"
@@ -90,7 +95,11 @@ function Get-WinADDHCPServerValidation {
         Write-Verbose "Get-WinADDHCPServerValidation - Performing security analysis for $Computer"
 
         # Check for DHCP service account configuration
-        $DHCPService = Get-WmiObject -Class Win32_Service -Filter "Name='DHCPServer'" -ComputerName $Computer -ErrorAction SilentlyContinue
+        if (-not $TestMode) {
+            $DHCPService = Get-WmiObject -Class Win32_Service -Filter "Name='DHCPServer'" -ComputerName $Computer -ErrorAction SilentlyContinue
+        } else {
+            $DHCPService = $null  # Skip service check in test mode
+        }
         if ($DHCPService) {
             if ($DHCPService.StartName -eq "LocalSystem") {
                 $ServerInfo.Issues.Add("DHCP service running as LocalSystem - consider using dedicated service account")
@@ -98,7 +107,12 @@ function Get-WinADDHCPServerValidation {
         }
 
         # Check for common security misconfigurations
-        $DHCPAuditSettings = Get-DhcpServerAuditLog -ComputerName $Computer -ErrorAction SilentlyContinue
+        if (-not $TestMode) {
+            $DHCPAuditSettings = Get-DhcpServerAuditLog -ComputerName $Computer -ErrorAction SilentlyContinue
+        } else {
+            # Simulate audit settings in test mode
+            $DHCPAuditSettings = [PSCustomObject]@{ Enable = $Computer -ne 'dc01.domain.com' }
+        }
         if ($DHCPAuditSettings) {
             if (-not $DHCPAuditSettings.Enable) {
                 $ServerInfo.Issues.Add("DHCP audit logging is disabled - enable for security monitoring")

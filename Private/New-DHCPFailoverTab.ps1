@@ -88,16 +88,16 @@
                 }
 
                 # Best practices
-                New-HTMLText -Text "✅ DHCP Failover Best Practices:" -FontSize 16pt -FontWeight bold -Color Blue
-                New-HTMLList {
-                    New-HTMLListItem -Text "Use Load Balance mode (50/50) for most scenarios to distribute load evenly"
-                    New-HTMLListItem -Text "Configure Hot Standby mode for scenarios requiring a primary/backup configuration"
-                    New-HTMLListItem -Text "Enable authentication between failover partners for security"
-                    New-HTMLListItem -Text "Monitor failover state regularly and configure alerts for state changes"
-                    New-HTMLListItem -Text "Test failover scenarios periodically to ensure proper configuration"
-                    New-HTMLListItem -Text "Keep Maximum Client Lead Time (MCLT) at default (1 hour) unless specific requirements exist"
-                    New-HTMLListItem -Text "Configure State Switchover Interval based on network reliability (default: 5 minutes)"
-                }
+                # New-HTMLText -Text "✅ DHCP Failover Best Practices:" -FontSize 16pt -FontWeight bold -Color Blue
+                # New-HTMLList {
+                #     New-HTMLListItem -Text "Use Load Balance mode (50/50) for most scenarios to distribute load evenly"
+                #     New-HTMLListItem -Text "Configure Hot Standby mode for scenarios requiring a primary/backup configuration"
+                #     New-HTMLListItem -Text "Enable authentication between failover partners for security"
+                #     New-HTMLListItem -Text "Monitor failover state regularly and configure alerts for state changes"
+                #     New-HTMLListItem -Text "Test failover scenarios periodically to ensure proper configuration"
+                #     New-HTMLListItem -Text "Keep Maximum Client Lead Time (MCLT) at default (1 hour) unless specific requirements exist"
+                #     New-HTMLListItem -Text "Configure State Switchover Interval based on network reliability (default: 5 minutes)"
+                # }
 
                 # Failover modes explanation
                 New-HTMLText -Text "📚 Failover Modes Explained:" -FontSize 16pt -FontWeight bold -Color Blue

@@ -44,9 +44,6 @@ function Get-WinADDHCPSummary {
     .PARAMETER ExtendedForestInformation
     Specifies additional extended forest information to include in the output.
 
-    .PARAMETER Extended
-    When specified, includes additional detailed information about scopes, reservations, and options.
-
     .PARAMETER SkipScopeDetails
     When specified, skips collection of scope utilization statistics (Get-DhcpServerv4ScopeStatistics).
     This significantly improves performance by avoiding expensive per-scope statistics calls.
@@ -111,17 +108,14 @@ function Get-WinADDHCPSummary {
         [string[]] $ComputerName,
         [switch] $SkipRODC,
         [System.Collections.IDictionary] $ExtendedForestInformation,
-        [switch] $Extended,
         [switch] $SkipScopeDetails,
         [switch] $TestMode
     )
 
     Write-Verbose "Get-WinADDHCPSummary - Starting DHCP information gathering"
 
-    # Test Mode: Generate sample data for quick testing
     if ($TestMode) {
-        $TestModeData = Get-WinADDHCPSummaryTestModeData -SkipScopeDetails:$SkipScopeDetails.IsPresent
-        return $TestModeData
+        Write-Verbose "Get-WinADDHCPSummary - Running in TEST MODE - using mock data for DHCP operations"
     }
 
     # Initialize result structure
@@ -169,7 +163,11 @@ function Get-WinADDHCPSummary {
     # Get DHCP servers from AD for discovery
     Write-Verbose "Get-WinADDHCPSummary - Discovering DHCP servers in forest"
     try {
-        $DHCPServersFromAD = Get-DhcpServerInDC -ErrorAction Stop
+        if ($TestMode) {
+            $DHCPServersFromAD = Get-TestModeDHCPData -DataType 'DhcpServersInDC'
+        } else {
+            $DHCPServersFromAD = Get-DhcpServerInDC -ErrorAction Stop
+        }
         Write-Verbose "Get-WinADDHCPSummary - Found $($DHCPServersFromAD.Count) DHCP servers in AD"
     } catch {
         Add-DHCPError -Summary $DHCPSummary -ServerName 'AD Discovery' -Component 'DHCP Server Discovery' -Operation 'Get-DhcpServerInDC' -ErrorMessage $_.Exception.Message -Severity 'Error'
@@ -271,7 +269,7 @@ function Get-WinADDHCPSummary {
         # Test connectivity and get server information only for servers to analyze
         if ($ShouldAnalyze) {
             # Get server validation info
-            $ServerInfo = Get-WinADDHCPServerValidation -Computer $Computer -ForestInformation $ForestInformation -DHCPSummaryServers $DHCPSummary.Servers
+            $ServerInfo = Get-WinADDHCPServerValidation -Computer $Computer -ForestInformation $ForestInformation -DHCPSummaryServers $DHCPSummary.Servers -TestMode:$TestMode
             
             # If DHCP service is not responding, mark as having issues and continue to next server
             if (-not $ServerInfo.DHCPResponding) {
@@ -329,7 +327,11 @@ function Get-WinADDHCPSummary {
         # Get DHCP scopes
         $ScopeCollectionStart = Get-Date
         try {
-            $Scopes = Get-DhcpServerv4Scope -ComputerName $Computer -ErrorAction Stop
+            if ($TestMode) {
+                $Scopes = Get-TestModeDHCPData -DataType 'DhcpServerv4Scope' -ComputerName $Computer
+            } else {
+                $Scopes = Get-DhcpServerv4Scope -ComputerName $Computer -ErrorAction Stop
+            }
             $ScopeCount = if ($Scopes) { $Scopes.Count } else { 0 }
 
             # Debug: Check TimingStatistics state
@@ -383,10 +385,10 @@ function Get-WinADDHCPSummary {
             Write-Verbose "Get-WinADDHCPSummary - Processing scope $($Scope.ScopeId) on $Computer"
 
             # Get scope configuration
-            $ScopeObject = Get-WinADDHCPScopeConfiguration -Computer $Computer -Scope $Scope -DHCPSummaryErrors $DHCPSummary.Errors
+            $ScopeObject = Get-WinADDHCPScopeConfiguration -Computer $Computer -Scope $Scope -DHCPSummaryErrors $DHCPSummary.Errors -TestMode:$TestMode
 
             # Get scope statistics
-            $ScopeStats = Get-WinADDHCPScopeStatistics -Computer $Computer -Scope $Scope -ScopeObject $ScopeObject -DHCPSummaryTimingStatistics $DHCPSummary.TimingStatistics -DHCPSummaryErrors $DHCPSummary.Errors -SkipScopeDetails:$SkipScopeDetails
+            $ScopeStats = Get-WinADDHCPScopeStatistics -Computer $Computer -Scope $Scope -ScopeObject $ScopeObject -DHCPSummaryTimingStatistics $DHCPSummary.TimingStatistics -DHCPSummaryErrors $DHCPSummary.Errors -SkipScopeDetails:$SkipScopeDetails -TestMode:$TestMode
             $ServerTotalAddresses += $ScopeStats.TotalAddresses
             $ServerAddressesInUse += $ScopeStats.AddressesInUse
             $ServerAddressesFree += $ScopeStats.AddressesFree
@@ -430,15 +432,13 @@ function Get-WinADDHCPSummary {
 
         Write-Verbose "Get-WinADDHCPSummary - Server $Computer processing completed: Scopes=$($ServerInfo.ScopeCount), Total Addresses=$($ServerInfo.TotalAddresses), Utilization=$($ServerInfo.PercentageInUse)%"
 
-        # Get extended server-level information (independent of scope details)
-        if ($Extended) {
-            Get-WinADDHCPExtendedServerData -Computer $Computer -DHCPSummary $DHCPSummary
-        }
+        # Get extended server-level information (always collected)
+        Get-WinADDHCPExtendedServerData -Computer $Computer -DHCPSummary $DHCPSummary -TestMode:$TestMode
 
 
         # Get scope-intensive extended information (only when scope details are not skipped)
-        if ($Extended -and -not $SkipScopeDetails) {
-            Get-WinADDHCPExtendedScopeData -Computer $Computer -Scopes $Scopes -DHCPSummary $DHCPSummary
+        if (-not $SkipScopeDetails) {
+            Get-WinADDHCPExtendedScopeData -Computer $Computer -Scopes $Scopes -DHCPSummary $DHCPSummary -TestMode:$TestMode
         }
     }
 

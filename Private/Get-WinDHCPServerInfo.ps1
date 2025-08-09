@@ -20,7 +20,8 @@ function Get-WinDHCPServerInfo {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
-        [string] $ComputerName
+        [string] $ComputerName,
+        [switch] $TestMode
     )
 
     $ServerInfo = [ordered] @{
@@ -42,9 +43,21 @@ function Get-WinDHCPServerInfo {
     # Step 1: DNS Resolution Test
     Write-Verbose "Get-WinDHCPServerInfo - Testing DNS resolution for $ComputerName"
     try {
-        $DNSResult = Resolve-DnsName -Name $ComputerName -Type A -ErrorAction Stop
-        $ServerInfo.DNSResolvable = $true
-        $ServerInfo.IPAddress = ($DNSResult | Where-Object { $_.Type -eq 'A' } | Select-Object -First 1).IPAddress
+        if ($TestMode) {
+            # In test mode, simulate successful DNS resolution
+            $TestServers = Get-TestModeDHCPData -DataType 'DhcpServersInDC'
+            $TestServer = $TestServers | Where-Object { $_.DnsName -eq $ComputerName }
+            if ($TestServer) {
+                $ServerInfo.DNSResolvable = $true
+                $ServerInfo.IPAddress = $TestServer.IPAddress
+            } else {
+                throw "DNS resolution failed"
+            }
+        } else {
+            $DNSResult = Resolve-DnsName -Name $ComputerName -Type A -ErrorAction Stop
+            $ServerInfo.DNSResolvable = $true
+            $ServerInfo.IPAddress = ($DNSResult | Where-Object { $_.Type -eq 'A' } | Select-Object -First 1).IPAddress
+        }
         Write-Verbose "Get-WinDHCPServerInfo - DNS resolution successful: $ComputerName -> $($ServerInfo.IPAddress)"
     } catch {
         $ServerInfo.ValidationIssues.Add("DNS resolution failed: $($_.Exception.Message)")
@@ -55,9 +68,19 @@ function Get-WinDHCPServerInfo {
     $PingTarget = if ($ServerInfo.IPAddress) { $ServerInfo.IPAddress } else { $ComputerName }
     Write-Verbose "Get-WinDHCPServerInfo - Testing ping connectivity to $PingTarget"
     try {
-        $PingResult = Test-Connection -ComputerName $PingTarget -Count 1 -ErrorAction Stop
-        $ServerInfo.PingSuccessful = $true
-        $ServerInfo.ResponseTimeMs = $PingResult.ResponseTime
+        if ($TestMode) {
+            # In test mode, simulate ping results
+            if ($ComputerName -eq 'dhcp02.domain.com') {
+                throw "Request timed out"
+            } else {
+                $ServerInfo.PingSuccessful = $true
+                $ServerInfo.ResponseTimeMs = 5
+            }
+        } else {
+            $PingResult = Test-Connection -ComputerName $PingTarget -Count 1 -ErrorAction Stop
+            $ServerInfo.PingSuccessful = $true
+            $ServerInfo.ResponseTimeMs = $PingResult.ResponseTime
+        }
         Write-Verbose "Get-WinDHCPServerInfo - Ping successful to $PingTarget ($($ServerInfo.ResponseTimeMs)ms)"
     } catch {
         $ServerInfo.ValidationIssues.Add("Ping failed: $($_.Exception.Message)")
@@ -68,7 +91,13 @@ function Get-WinDHCPServerInfo {
     if ($ServerInfo.IPAddress) {
         Write-Verbose "Get-WinDHCPServerInfo - Testing reverse DNS resolution for $($ServerInfo.IPAddress)"
         try {
-            $ReverseDNSResult = Resolve-DnsName -Name $ServerInfo.IPAddress -Type PTR -ErrorAction Stop
+            if ($TestMode) {
+                # In test mode, simulate reverse DNS
+                $ServerInfo.ReverseDNSName = $ComputerName
+                $ServerInfo.ReverseDNSValid = $true
+            } else {
+                $ReverseDNSResult = Resolve-DnsName -Name $ServerInfo.IPAddress -Type PTR -ErrorAction Stop
+            }
             if ($ReverseDNSResult -and $ReverseDNSResult.NameHost) {
                 $ServerInfo.ReverseDNSName = $ReverseDNSResult.NameHost
                 $ServerInfo.ReverseDNSValid = $true
@@ -92,7 +121,11 @@ function Get-WinDHCPServerInfo {
     # Step 4: DHCP Service Test
     Write-Verbose "Get-WinDHCPServerInfo - Testing DHCP service on $ComputerName"
     try {
-        $DHCPServerInfo = Get-DhcpServerVersion -ComputerName $ComputerName -ErrorAction Stop
+        if ($TestMode) {
+            $DHCPServerInfo = Get-TestModeDHCPData -DataType 'DhcpServerVersion' -ComputerName $ComputerName
+        } else {
+            $DHCPServerInfo = Get-DhcpServerVersion -ComputerName $ComputerName -ErrorAction Stop
+        }
         $ServerInfo.DHCPResponding = $true
         $ServerInfo.IsReachable = $true
         $ServerInfo.Version = "$($DHCPServerInfo.MajorVersion).$($DHCPServerInfo.MinorVersion)"

@@ -90,13 +90,13 @@
                     New-HTMLText -Text "ℹ️ No superscopes configured" -Color Blue -FontWeight bold -FontSize 14pt
                     New-HTMLText -Text "Superscopes are used to combine multiple scopes into a single administrative unit." -Color Gray -FontSize 12px
 
-                    New-HTMLText -Text "When to Use Superscopes:" -FontWeight bold -FontSize 14pt
-                    New-HTMLList {
-                        New-HTMLListItem -Text "Multi-homed subnets (multiple IP ranges on same physical network)"
-                        New-HTMLListItem -Text "Network expansion without re-addressing"
-                        New-HTMLListItem -Text "Simplified scope management for related networks"
-                        New-HTMLListItem -Text "Supporting legacy and new IP ranges simultaneously"
-                    }
+                    # New-HTMLText -Text "When to Use Superscopes:" -FontWeight bold -FontSize 14pt
+                    # New-HTMLList {
+                    #     New-HTMLListItem -Text "Multi-homed subnets (multiple IP ranges on same physical network)"
+                    #     New-HTMLListItem -Text "Network expansion without re-addressing"
+                    #     New-HTMLListItem -Text "Simplified scope management for related networks"
+                    #     New-HTMLListItem -Text "Supporting legacy and new IP ranges simultaneously"
+                    # }
                 }
             }
         }
@@ -116,35 +116,35 @@
         }
 
         # Network Segmentation Best Practices
-        New-HTMLSection -HeaderText "💡 Network Segmentation Best Practices" {
-            New-HTMLPanel -Invisible {
-                New-HTMLText -Text "📋 VLAN and Subnet Design:" -FontSize 16pt -FontWeight bold -Color Blue
-                New-HTMLList {
-                    New-HTMLListItem -Text "Implement VLANs to separate different types of traffic (users, servers, IoT, guests)"
-                    New-HTMLListItem -Text "Use /24 subnets for user segments (254 hosts) unless larger segments are required"
-                    New-HTMLListItem -Text "Reserve smaller subnets (/28, /29) for server farms and management networks"
-                    New-HTMLListItem -Text "Implement RFC 1918 private addressing consistently across the organization"
-                    New-HTMLListItem -Text "Document all network segments and their purposes"
-                }
+        # New-HTMLSection -HeaderText "💡 Network Segmentation Best Practices" {
+        #     New-HTMLPanel -Invisible {
+        #         New-HTMLText -Text "📋 VLAN and Subnet Design:" -FontSize 16pt -FontWeight bold -Color Blue
+        #         New-HTMLList {
+        #             New-HTMLListItem -Text "Implement VLANs to separate different types of traffic (users, servers, IoT, guests)"
+        #             New-HTMLListItem -Text "Use /24 subnets for user segments (254 hosts) unless larger segments are required"
+        #             New-HTMLListItem -Text "Reserve smaller subnets (/28, /29) for server farms and management networks"
+        #             New-HTMLListItem -Text "Implement RFC 1918 private addressing consistently across the organization"
+        #             New-HTMLListItem -Text "Document all network segments and their purposes"
+        #         }
 
-                New-HTMLText -Text "🔒 Security Segmentation:" -FontSize 16pt -FontWeight bold -Color Blue
-                New-HTMLList {
-                    New-HTMLListItem -Text "Isolate guest networks from corporate resources"
-                    New-HTMLListItem -Text "Create separate segments for IoT and building automation devices"
-                    New-HTMLListItem -Text "Implement DMZ segments for public-facing services"
-                    New-HTMLListItem -Text "Use separate management VLANs for infrastructure devices"
-                    New-HTMLListItem -Text "Consider microsegmentation for critical assets"
-                }
+        #         New-HTMLText -Text "🔒 Security Segmentation:" -FontSize 16pt -FontWeight bold -Color Blue
+        #         New-HTMLList {
+        #             New-HTMLListItem -Text "Isolate guest networks from corporate resources"
+        #             New-HTMLListItem -Text "Create separate segments for IoT and building automation devices"
+        #             New-HTMLListItem -Text "Implement DMZ segments for public-facing services"
+        #             New-HTMLListItem -Text "Use separate management VLANs for infrastructure devices"
+        #             New-HTMLListItem -Text "Consider microsegmentation for critical assets"
+        #         }
 
-                New-HTMLText -Text "📈 Scalability Considerations:" -FontSize 16pt -FontWeight bold -Color Blue
-                New-HTMLList {
-                    New-HTMLListItem -Text "Plan for 30-50% growth when sizing subnets"
-                    New-HTMLListItem -Text "Use superscopes for network expansion without re-addressing"
-                    New-HTMLListItem -Text "Implement consistent addressing schemes across locations"
-                    New-HTMLListItem -Text "Reserve address space for future expansion"
-                    New-HTMLListItem -Text "Document IP allocation policies and procedures"
-                }
-            }
-        }
+        #         New-HTMLText -Text "📈 Scalability Considerations:" -FontSize 16pt -FontWeight bold -Color Blue
+        #         New-HTMLList {
+        #             New-HTMLListItem -Text "Plan for 30-50% growth when sizing subnets"
+        #             New-HTMLListItem -Text "Use superscopes for network expansion without re-addressing"
+        #             New-HTMLListItem -Text "Implement consistent addressing schemes across locations"
+        #             New-HTMLListItem -Text "Reserve address space for future expansion"
+        #             New-HTMLListItem -Text "Document IP allocation policies and procedures"
+        #         }
+        #     }
+        # }
     }
 }

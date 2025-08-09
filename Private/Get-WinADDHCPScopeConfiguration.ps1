@@ -3,7 +3,8 @@ function Get-WinADDHCPScopeConfiguration {
     param(
         [string] $Computer,
         [Object] $Scope,
-        [System.Collections.Generic.List[Object]] $DHCPSummaryErrors
+        [System.Collections.Generic.List[Object]] $DHCPSummaryErrors,
+        [switch] $TestMode
     )
 
     Write-Verbose "Get-WinADDHCPScopeConfiguration - Processing scope $($Scope.ScopeId) on $Computer"
@@ -27,6 +28,8 @@ function Get-WinADDHCPScopeConfiguration {
         Reserved                   = 0
         HasIssues                  = $false
         Issues                     = [System.Collections.Generic.List[string]]::new()
+        HasUtilizationIssues       = $false
+        UtilizationIssues          = [System.Collections.Generic.List[string]]::new()
         # DNS Configuration fields
         DomainName                 = $null
         DomainNameOption           = $null
@@ -46,7 +49,11 @@ function Get-WinADDHCPScopeConfiguration {
 
     # Check DNS settings
     try {
-        $DNSSettings = Get-DhcpServerv4DnsSetting -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction Stop
+        if ($TestMode) {
+            $DNSSettings = Get-TestModeDHCPData -DataType 'DhcpServerv4DnsSetting' -ComputerName $Computer -ScopeId $Scope.ScopeId
+        } else {
+            $DNSSettings = Get-DhcpServerv4DnsSetting -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction Stop
+        }
         $ScopeObject.DNSSettings = $DNSSettings
 
         # Populate DNS configuration fields
@@ -56,7 +63,11 @@ function Get-WinADDHCPScopeConfiguration {
 
         # Get DHCP options for this scope
         try {
-            $Options = Get-DhcpServerv4OptionValue -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction Stop
+            if ($TestMode) {
+                $Options = Get-TestModeDHCPData -DataType 'DhcpServerv4OptionValue' -ComputerName $Computer -ScopeId $Scope.ScopeId
+            } else {
+                $Options = Get-DhcpServerv4OptionValue -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction Stop
+            }
             $Option6 = $Options | Where-Object { $_.OptionId -eq 6 }  # DNS Servers
             $Option15 = $Options | Where-Object { $_.OptionId -eq 15 } # Domain Name
 
@@ -78,7 +89,11 @@ function Get-WinADDHCPScopeConfiguration {
 
     # Check DHCP failover configuration
     try {
-        $Failover = Get-DhcpServerv4Failover -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction SilentlyContinue
+        if ($TestMode) {
+            $Failover = Get-TestModeDHCPData -DataType 'DhcpServerv4Failover' -ComputerName $Computer -ScopeId $Scope.ScopeId
+        } else {
+            $Failover = Get-DhcpServerv4Failover -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction SilentlyContinue
+        }
         if ($Failover) {
             $ScopeObject.FailoverPartner = $Failover.PartnerServer
         }
