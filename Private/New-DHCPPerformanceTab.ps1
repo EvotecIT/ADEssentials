@@ -67,13 +67,13 @@
                             New-HTMLTableCondition -Name 'UnderUtilizedScopes' -ComparisonType number -Operator gt -Value 0 -BackgroundColor LightBlue -HighlightHeaders 'UnderUtilizedScopes'
                         }
 
-                        if ($Performance.CapacityPlanningRecommendations.Count -gt 0) {
-                            New-HTMLSection -HeaderText "📈 Capacity Planning Recommendations" -CanCollapse {
-                                foreach ($Recommendation in $Performance.CapacityPlanningRecommendations) {
-                                    New-HTMLText -Text "• $Recommendation" -Color DarkBlue
-                                }
-                            }
-                        }
+                        # if ($Performance.CapacityPlanningRecommendations.Count -gt 0) {
+                        #     New-HTMLSection -HeaderText "📈 Capacity Planning Recommendations" -CanCollapse {
+                        #         foreach ($Recommendation in $Performance.CapacityPlanningRecommendations) {
+                        #             New-HTMLText -Text "• $Recommendation" -Color DarkBlue
+                        #         }
+                        #     }
+                        # }
                     }
                 }
             }

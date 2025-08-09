@@ -80,7 +80,6 @@
                 # Scope-Level Options
                 if ($DHCPData.Options.Count -gt 0) {
                     New-HTMLSection -HeaderText "📁 Scope-Level DHCP Options" -CanCollapse {
-                        $ScopeOptions = $DHCPData.Options | Group-Object ScopeId | Sort-Object Name
                         New-HTMLTable -DataTable $DHCPData.Options -Filtering {
                             New-HTMLTableCondition -Name 'OptionId' -ComparisonType number -Operator eq -Value 6 -BackgroundColor LightBlue -HighlightHeaders 'OptionId', 'Name'
                             New-HTMLTableCondition -Name 'OptionId' -ComparisonType number -Operator eq -Value 3 -BackgroundColor LightGreen -HighlightHeaders 'OptionId', 'Name'

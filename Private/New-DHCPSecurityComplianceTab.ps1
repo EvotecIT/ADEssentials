@@ -95,25 +95,30 @@
                     $SecurityRecommendations = $DHCPData.SecurityAnalysis | Where-Object { $_.SecurityRecommendations.Count -gt 0 }
                     if ($SecurityRecommendations.Count -gt 0) {
                         New-HTMLSection -HeaderText "🚨 Immediate Security Actions Required" -CanCollapse {
-                            foreach ($Server in $SecurityRecommendations) {
-                                New-HTMLSection -HeaderText "🖥️ $($Server.ServerName)" -CanCollapse {
-                                    New-HTMLPanel {
-                                        New-HTMLText -Text "Risk Level: " -FontWeight bold -Color DarkRed
-                                        New-HTMLText -Text $Server.SecurityRiskLevel -FontWeight bold -Color $(
-                                            switch ($Server.SecurityRiskLevel) {
-                                                'Critical' { 'Red' }
-                                                'High' { 'Orange' }
-                                                'Medium' { 'GoldenRod' }
-                                                'Low' { 'Green' }
-                                                default { 'Black' }
-                                            }
-                                        )
-                                        foreach ($Recommendation in $Server.SecurityRecommendations) {
-                                            New-HTMLText -Text "🔴 $Recommendation" -Color Red -FontSize 12px
+                            # Transform recommendations into table format
+                            $SecurityRecommendationTable = foreach ($Server in $SecurityRecommendations) {
+                                foreach ($Recommendation in $Server.SecurityRecommendations) {
+                                    [PSCustomObject]@{
+                                        ServerName = $Server.ServerName
+                                        RiskLevel = $Server.SecurityRiskLevel
+                                        Recommendation = $Recommendation
+                                        Priority = switch ($Server.SecurityRiskLevel) {
+                                            'Critical' { 1 }
+                                            'High' { 2 }
+                                            'Medium' { 3 }
+                                            'Low' { 4 }
+                                            default { 5 }
                                         }
                                     }
                                 }
                             }
+                            
+                            New-HTMLTable -DataTable ($SecurityRecommendationTable | Sort-Object Priority, ServerName | Select-Object ServerName, RiskLevel, Recommendation) -Filtering {
+                                New-HTMLTableCondition -Name 'RiskLevel' -ComparisonType string -Operator eq -Value 'Critical' -BackgroundColor Red -Color White
+                                New-HTMLTableCondition -Name 'RiskLevel' -ComparisonType string -Operator eq -Value 'High' -BackgroundColor Orange
+                                New-HTMLTableCondition -Name 'RiskLevel' -ComparisonType string -Operator eq -Value 'Medium' -BackgroundColor Yellow
+                                New-HTMLTableCondition -Name 'RiskLevel' -ComparisonType string -Operator eq -Value 'Low' -BackgroundColor LightGreen
+                            } -DataStore JavaScript -Title "Security Recommendations by Server"
                         }
                     }
                 }
@@ -249,14 +254,22 @@
                     $BackupRecommendations = $DHCPData.BackupAnalysis | Where-Object { $_.Recommendations.Count -gt 0 }
                     if ($BackupRecommendations.Count -gt 0) {
                         New-HTMLSection -HeaderText "🔧 Backup Recommendations" -Density Compact {
-                            foreach ($Server in $BackupRecommendations) {
-                                New-HTMLPanel {
-                                    New-HTMLText -Text "Server: $($Server.ServerName)" -FontWeight bold -Color DarkRed
-                                    foreach ($Recommendation in $Server.Recommendations) {
-                                        New-HTMLText -Text "• $Recommendation" -Color Red
+                            # Transform backup recommendations into table format
+                            $BackupRecommendationTable = foreach ($Server in $BackupRecommendations) {
+                                foreach ($Recommendation in $Server.Recommendations) {
+                                    [PSCustomObject]@{
+                                        ServerName = $Server.ServerName
+                                        BackupStatus = $Server.BackupStatus
+                                        Recommendation = $Recommendation
                                     }
                                 }
                             }
+                            
+                            New-HTMLTable -DataTable ($BackupRecommendationTable | Sort-Object ServerName) -Filtering {
+                                New-HTMLTableCondition -Name 'BackupStatus' -ComparisonType string -Operator contains -Value 'Not' -BackgroundColor Orange
+                                New-HTMLTableCondition -Name 'BackupStatus' -ComparisonType string -Operator contains -Value 'Failed' -BackgroundColor Red -Color White
+                                New-HTMLTableCondition -Name 'BackupStatus' -ComparisonType string -Operator contains -Value 'Warning' -BackgroundColor Yellow
+                            } -DataStore JavaScript -Title "Backup Configuration Recommendations"
                         }
                     }
                 }
