@@ -25,7 +25,7 @@
         $TotalIssuesCount = $DHCPData.ValidationResults.Summary.TotalCriticalIssues +
                            $DHCPData.ValidationResults.Summary.TotalWarningIssues +
                            $DHCPData.ValidationResults.Summary.TotalInfoIssues
-        
+
         if ($TotalIssuesCount -eq 0) {
             New-HTMLSection -HeaderText "Validation Status" {
                 New-HTMLPanel -Invisible {
@@ -48,7 +48,7 @@
                         } -DataStore JavaScript -ScrollX
                     }
                 }
-                
+
                 # Servers Offline
                 if ($DHCPData.ValidationResults.CriticalIssues.ServersOffline.Count -gt 0) {
                     New-HTMLContainer {
@@ -58,7 +58,7 @@
                 }
             }
         }
-        
+
         # Note about utilization
         if ($DHCPData.ValidationResults.Summary.TotalUtilizationIssues -gt 0) {
             New-HTMLSection -HeaderText "Utilization Alert" -BackgroundColor '#fff3e0' -HeaderTextColor '#ff6600' {
@@ -83,7 +83,7 @@
                         } -DataStore JavaScript -ScrollX
                     }
                 }
-                
+
                 # Extended Lease Duration
                 if ($DHCPData.ValidationResults.WarningIssues.ExtendedLeaseDuration.Count -gt 0) {
                     New-HTMLContainer {
@@ -94,7 +94,7 @@
                         } -DataStore JavaScript -ScrollX
                     }
                 }
-                
+
                 # DNS Record Management Issues
                 if ($DHCPData.ValidationResults.WarningIssues.DNSRecordManagement.Count -gt 0) {
                     New-HTMLContainer {
@@ -107,7 +107,7 @@
 
         # Information Issues Section
         if ($DHCPData.ValidationResults.Summary.TotalInfoIssues -gt 0) {
-            New-HTMLSection -HeaderText "Information Issues" -BackgroundColor '#e6f3ff' -HeaderTextColor '#0066cc' {
+            New-HTMLSection -HeaderText "Information Issues" -BackgroundColor '#e6f3ff' -HeaderTextColor '#0066cc' -Density Compact {
                 # Missing Domain Name
                 if ($DHCPData.ValidationResults.InfoIssues.MissingDomainName.Count -gt 0) {
                     New-HTMLContainer {
@@ -115,7 +115,7 @@
                         New-HTMLTable -DataTable $DHCPData.ValidationResults.InfoIssues.MissingDomainName -Filtering -DataStore JavaScript -ScrollX
                     }
                 }
-                
+
                 # Inactive Scopes
                 if ($DHCPData.ValidationResults.InfoIssues.InactiveScopes.Count -gt 0) {
                     New-HTMLContainer {
