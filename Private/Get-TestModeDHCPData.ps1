@@ -85,6 +85,42 @@ function Get-TestModeDHCPData {
                             State = 'Active'
                             Type = 'Dhcp'
                             SuperscopeName = $null
+                        },
+                        [PSCustomObject]@{
+                            ScopeId = [System.Net.IPAddress]::Parse('10.2.0.0')
+                            Name = 'DMZ Network'
+                            Description = 'DMZ for public services'  # No documented exception
+                            SubnetMask = [System.Net.IPAddress]::Parse('255.255.255.0')
+                            StartRange = [System.Net.IPAddress]::Parse('10.2.0.10')
+                            EndRange = [System.Net.IPAddress]::Parse('10.2.0.250')
+                            LeaseDuration = [timespan]::FromDays(3)  # Triggers lease > 48h issue
+                            State = 'Active'
+                            Type = 'Dhcp'
+                            SuperscopeName = $null
+                        },
+                        [PSCustomObject]@{
+                            ScopeId = [System.Net.IPAddress]::Parse('10.3.0.0')
+                            Name = 'IoT Network'
+                            Description = 'IoT devices - DHCP lease time=7d'  # Has documented exception
+                            SubnetMask = [System.Net.IPAddress]::Parse('255.255.255.0')
+                            StartRange = [System.Net.IPAddress]::Parse('10.3.0.10')
+                            EndRange = [System.Net.IPAddress]::Parse('10.3.0.250')
+                            LeaseDuration = [timespan]::FromDays(7)  # Won't trigger issue due to description
+                            State = 'Active'
+                            Type = 'Dhcp'
+                            SuperscopeName = $null
+                        },
+                        [PSCustomObject]@{
+                            ScopeId = [System.Net.IPAddress]::Parse('10.4.0.0')
+                            Name = 'Public DNS Test'
+                            Description = 'Testing public DNS with updates'
+                            SubnetMask = [System.Net.IPAddress]::Parse('255.255.255.0')
+                            StartRange = [System.Net.IPAddress]::Parse('10.4.0.10')
+                            EndRange = [System.Net.IPAddress]::Parse('10.4.0.100')
+                            LeaseDuration = [timespan]::FromHours(12)
+                            State = 'Active'
+                            Type = 'Dhcp'
+                            SuperscopeName = $null
                         }
                     )
                 }
@@ -101,6 +137,18 @@ function Get-TestModeDHCPData {
                             StartRange = [System.Net.IPAddress]::Parse('172.16.1.10')
                             EndRange = [System.Net.IPAddress]::Parse('172.16.1.100')
                             LeaseDuration = [timespan]::FromDays(7)
+                            State = 'Active'
+                            Type = 'Dhcp'
+                            SuperscopeName = $null
+                        },
+                        [PSCustomObject]@{
+                            ScopeId = [System.Net.IPAddress]::Parse('172.16.2.0')
+                            Name = 'Management VLAN'
+                            Description = 'Network management systems'
+                            SubnetMask = [System.Net.IPAddress]::Parse('255.255.255.0')
+                            StartRange = [System.Net.IPAddress]::Parse('172.16.2.10')
+                            EndRange = [System.Net.IPAddress]::Parse('172.16.2.50')
+                            LeaseDuration = [timespan]::FromHours(24)
                             State = 'Active'
                             Type = 'Dhcp'
                             SuperscopeName = $null
@@ -140,6 +188,45 @@ function Get-TestModeDHCPData {
                         SuperscopeName = $null
                     }
                 }
+                'dhcp01.domain.com-10.2.0.0' {
+                    return [PSCustomObject]@{
+                        ScopeId = $ScopeId
+                        Free = 10
+                        InUse = 230
+                        Reserved = 0
+                        Pending = 0
+                        AddressesFree = 10
+                        AddressesInUse = 230
+                        PercentageInUse = 95.83  # Very high utilization
+                        SuperscopeName = $null
+                    }
+                }
+                'dhcp01.domain.com-10.3.0.0' {
+                    return [PSCustomObject]@{
+                        ScopeId = $ScopeId
+                        Free = 100
+                        InUse = 140
+                        Reserved = 10
+                        Pending = 0
+                        AddressesFree = 100
+                        AddressesInUse = 140
+                        PercentageInUse = 58.33
+                        SuperscopeName = $null
+                    }
+                }
+                'dhcp01.domain.com-10.4.0.0' {
+                    return [PSCustomObject]@{
+                        ScopeId = $ScopeId
+                        Free = 20
+                        InUse = 70
+                        Reserved = 0
+                        Pending = 0
+                        AddressesFree = 20
+                        AddressesInUse = 70
+                        PercentageInUse = 77.78  # Moderate-high utilization
+                        SuperscopeName = $null
+                    }
+                }
                 'dc01.domain.com-172.16.1.0' {
                     return [PSCustomObject]@{
                         ScopeId = $ScopeId
@@ -150,6 +237,19 @@ function Get-TestModeDHCPData {
                         AddressesFree = 8
                         AddressesInUse = 82
                         PercentageInUse = 91.11
+                        SuperscopeName = $null
+                    }
+                }
+                'dc01.domain.com-172.16.2.0' {
+                    return [PSCustomObject]@{
+                        ScopeId = $ScopeId
+                        Free = 30
+                        InUse = 10
+                        Reserved = 0
+                        Pending = 0
+                        AddressesFree = 30
+                        AddressesInUse = 10
+                        PercentageInUse = 25.00
                         SuperscopeName = $null
                     }
                 }
@@ -190,10 +290,46 @@ function Get-TestModeDHCPData {
                         DisableDnsPtrRRUpdate = $true
                     }
                 }
+                'dhcp01.domain.com-10.2.0.0' {
+                    return [PSCustomObject]@{
+                        DynamicUpdates = 'OnClientRequest'
+                        UpdateDnsRRForOlderClients = $false  # Issue
+                        DeleteDnsRROnLeaseExpiry = $false     # Issue - both disabled
+                        NameProtection = $false
+                        DisableDnsPtrRRUpdate = $false
+                    }
+                }
+                'dhcp01.domain.com-10.3.0.0' {
+                    return [PSCustomObject]@{
+                        DynamicUpdates = 'Always'
+                        UpdateDnsRRForOlderClients = $true
+                        DeleteDnsRROnLeaseExpiry = $false     # Issue
+                        NameProtection = $false
+                        DisableDnsPtrRRUpdate = $false
+                    }
+                }
+                'dhcp01.domain.com-10.4.0.0' {
+                    return [PSCustomObject]@{
+                        DynamicUpdates = 'Always'             # DNS updates enabled with public DNS
+                        UpdateDnsRRForOlderClients = $true
+                        DeleteDnsRROnLeaseExpiry = $true
+                        NameProtection = $false
+                        DisableDnsPtrRRUpdate = $false
+                    }
+                }
                 'dc01.domain.com-172.16.1.0' {
                     return [PSCustomObject]@{
                         DynamicUpdates = 'Always'
                         UpdateDnsRRForOlderClients = $false  # This will trigger an issue
+                        DeleteDnsRROnLeaseExpiry = $true
+                        NameProtection = $true
+                        DisableDnsPtrRRUpdate = $false
+                    }
+                }
+                'dc01.domain.com-172.16.2.0' {
+                    return [PSCustomObject]@{
+                        DynamicUpdates = 'OnClientRequest'
+                        UpdateDnsRRForOlderClients = $true
                         DeleteDnsRROnLeaseExpiry = $true
                         NameProtection = $true
                         DisableDnsPtrRRUpdate = $false
@@ -263,6 +399,59 @@ function Get-TestModeDHCPData {
                         # Missing domain name option - will trigger issue
                     )
                 }
+                'dhcp01.domain.com-10.2.0.0' {
+                    return @(
+                        [PSCustomObject]@{
+                            OptionId = 6
+                            Name = 'DNS Servers'
+                            Value = @('10.1.1.1', '10.1.1.2')  # Private DNS
+                            VendorClass = ''
+                            UserClass = ''
+                            PolicyName = ''
+                        }
+                        # Missing domain name option 15 - will trigger issue with DNS updates enabled
+                    )
+                }
+                'dhcp01.domain.com-10.3.0.0' {
+                    return @(
+                        [PSCustomObject]@{
+                            OptionId = 6
+                            Name = 'DNS Servers'
+                            Value = @('192.168.1.53', '192.168.1.54')
+                            VendorClass = ''
+                            UserClass = ''
+                            PolicyName = ''
+                        },
+                        [PSCustomObject]@{
+                            OptionId = 15
+                            Name = 'Domain Name'
+                            Value = @('iot.local')
+                            VendorClass = ''
+                            UserClass = ''
+                            PolicyName = ''
+                        }
+                    )
+                }
+                'dhcp01.domain.com-10.4.0.0' {
+                    return @(
+                        [PSCustomObject]@{
+                            OptionId = 6
+                            Name = 'DNS Servers'
+                            Value = @('1.1.1.1', '1.0.0.1')  # Cloudflare Public DNS - will trigger issue
+                            VendorClass = ''
+                            UserClass = ''
+                            PolicyName = ''
+                        },
+                        [PSCustomObject]@{
+                            OptionId = 15
+                            Name = 'Domain Name'
+                            Value = @('')  # Empty domain name - will trigger issue
+                            VendorClass = ''
+                            UserClass = ''
+                            PolicyName = ''
+                        }
+                    )
+                }
                 'dc01.domain.com-172.16.1.0' {
                     return @(
                         [PSCustomObject]@{
@@ -285,6 +474,34 @@ function Get-TestModeDHCPData {
                             OptionId = 15
                             Name = 'DNS Domain Name'
                             Value = @('domain.com')
+                            VendorClass = ''
+                            UserClass = ''
+                            PolicyName = ''
+                        }
+                    )
+                }
+                'dc01.domain.com-172.16.2.0' {
+                    return @(
+                        [PSCustomObject]@{
+                            OptionId = 3
+                            Name = 'Router'
+                            Value = @('172.16.2.1')
+                            VendorClass = ''
+                            UserClass = ''
+                            PolicyName = ''
+                        },
+                        [PSCustomObject]@{
+                            OptionId = 6
+                            Name = 'DNS Servers'
+                            Value = @('172.16.1.10', '172.16.1.11')
+                            VendorClass = ''
+                            UserClass = ''
+                            PolicyName = ''
+                        },
+                        [PSCustomObject]@{
+                            OptionId = 15
+                            Name = 'Domain Name'
+                            Value = @('mgmt.domain.com')
                             VendorClass = ''
                             UserClass = ''
                             PolicyName = ''

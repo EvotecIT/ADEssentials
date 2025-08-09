@@ -60,20 +60,6 @@
 
         }
 
-        # Scope Redundancy Analysis
-        if ($DHCPData.ScopeRedundancyAnalysis.Count -gt 0) {
-            New-HTMLSection -HeaderText "📊 Scope Redundancy Analysis" {
-                New-HTMLTable -DataTable $DHCPData.ScopeRedundancyAnalysis -Filtering {
-                    New-HTMLTableCondition -Name 'RedundancyStatus' -ComparisonType string -Operator eq -Value 'Failover Configured' -BackgroundColor LightGreen
-                    New-HTMLTableCondition -Name 'RedundancyStatus' -ComparisonType string -Operator contains -Value 'Risk' -BackgroundColor Salmon
-                    New-HTMLTableCondition -Name 'RiskLevel' -ComparisonType string -Operator eq -Value 'High' -BackgroundColor Red -Color White
-                    New-HTMLTableCondition -Name 'RiskLevel' -ComparisonType string -Operator eq -Value 'Medium' -BackgroundColor Orange
-                    New-HTMLTableCondition -Name 'RiskLevel' -ComparisonType string -Operator eq -Value 'Low' -BackgroundColor LightGreen
-                    New-HTMLTableCondition -Name 'UtilizationPercent' -ComparisonType number -Operator gt -Value 80 -BackgroundColor Orange -HighlightHeaders 'UtilizationPercent'
-                } -DataStore JavaScript -ScrollX -Title "Scope-Level Redundancy Status"
-            }
-        }
-
         # High Availability Recommendations
         New-HTMLSection -HeaderText "💡 High Availability Recommendations" {
             New-HTMLPanel -Invisible {
@@ -100,8 +86,8 @@
                 # }
 
                 # Failover modes explanation
-                New-HTMLText -Text "📚 Failover Modes Explained:" -FontSize 16pt -FontWeight bold -Color Blue
-                New-HTMLContainer {
+                # New-HTMLText -Text "📚 Failover Modes Explained:" -FontSize 16pt -FontWeight bold -Color Blue
+                New-HTMLSection -Invisible {
                     New-HTMLPanel {
                         New-HTMLText -Text "Load Balance Mode" -FontSize 14pt -FontWeight bold -Color DarkBlue
                         New-HTMLText -Text "Both servers actively respond to DHCP requests based on configured percentage" -FontSize 12pt
@@ -122,6 +108,20 @@
                         }
                     } -Width '48%'
                 }
+            }
+        }
+
+        # Scope Redundancy Analysis
+        if ($DHCPData.ScopeRedundancyAnalysis.Count -gt 0) {
+            New-HTMLSection -HeaderText "📊 Scope Redundancy Analysis" {
+                New-HTMLTable -DataTable $DHCPData.ScopeRedundancyAnalysis -Filtering {
+                    New-HTMLTableCondition -Name 'RedundancyStatus' -ComparisonType string -Operator eq -Value 'Failover Configured' -BackgroundColor LightGreen
+                    New-HTMLTableCondition -Name 'RedundancyStatus' -ComparisonType string -Operator contains -Value 'Risk' -BackgroundColor Salmon
+                    New-HTMLTableCondition -Name 'RiskLevel' -ComparisonType string -Operator eq -Value 'High' -BackgroundColor Red -Color White
+                    New-HTMLTableCondition -Name 'RiskLevel' -ComparisonType string -Operator eq -Value 'Medium' -BackgroundColor Orange
+                    New-HTMLTableCondition -Name 'RiskLevel' -ComparisonType string -Operator eq -Value 'Low' -BackgroundColor LightGreen
+                    New-HTMLTableCondition -Name 'UtilizationPercent' -ComparisonType number -Operator gt -Value 80 -BackgroundColor Orange -HighlightHeaders 'UtilizationPercent'
+                } -DataStore JavaScript -ScrollX -Title "Scope-Level Redundancy Status"
             }
         }
     }
