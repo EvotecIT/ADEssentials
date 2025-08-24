@@ -237,7 +237,7 @@ foreach (`$Server in `$ServersToRemove) {
                     New-HTMLTableCondition -Name 'LoadRating' -ComparisonType string -Operator eq -Value 'Overloaded' -BackgroundColor Red -Color White
                     New-HTMLTableCondition -Name 'LoadRating' -ComparisonType string -Operator eq -Value 'High Load' -BackgroundColor Orange -Color White
                     New-HTMLTableCondition -Name 'UtilizationPercent' -ComparisonType number -Operator gt -Value 85 -BackgroundColor Orange -HighlightHeaders 'UtilizationPercent'
-                    New-HTMLTableCondition -Name 'RecommendedAction' -ComparisonType string -Operator like -Value '*URGENT*' -BackgroundColor Red -Color White
+                    New-HTMLTableCondition -Name 'RecommendedAction' -ComparisonType string -Operator contains -Value 'URGENT' -BackgroundColor Red -Color White
                 } -DataStore JavaScript -ScrollX -Title "Server Load Distribution Analysis"
             }
         }
