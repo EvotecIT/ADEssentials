@@ -25,9 +25,47 @@ function Get-WinADDHCPValidationResults {
         }
     }
 
-    # Scope-level validations only available when scope details were collected
+    # Single pass through scopes with issues for detailed validations (always available)
+    foreach ($Scope in $DHCPSummary.ScopesWithIssues) {
+        foreach ($Issue in $Scope.Issues) {
+            if ($Issue -like "*public DNS servers*" -or $Issue -like "*non-private DNS servers*") {
+                if ($PublicDNSWithUpdates -notcontains $Scope) {
+                    $PublicDNSWithUpdates.Add($Scope)
+                }
+            } 
+            if ($Issue -like "*Failover not configured*") {
+                if ($MissingFailover -notcontains $Scope) {
+                    $MissingFailover.Add($Scope)
+                }
+            }
+            if ($Issue -like "*exceeds 48 hours*") {
+                if ($ExtendedLeaseDuration -notcontains $Scope) {
+                    $ExtendedLeaseDuration.Add($Scope)
+                }
+            }
+            if ($Issue -like "*UpdateDnsRRForOlderClients*" -or $Issue -like "*DeleteDnsRROnLeaseExpiry*") {
+                if ($DNSRecordManagement -notcontains $Scope) {
+                    $DNSRecordManagement.Add($Scope)
+                }
+            }
+            if ($Issue -like "*Domain name option*") {
+                if ($MissingDomainName -notcontains $Scope) {
+                    $MissingDomainName.Add($Scope)
+                }
+            }
+        }
+    }
+
+    # Scope state validations - only check inactive scopes (doesn't need statistics)
+    foreach ($Scope in $DHCPSummary.Scopes) {
+        if ($Scope.State -eq 'Inactive') {
+            $InactiveScopes.Add($Scope)
+        }
+    }
+
+    # Utilization validations only available when scope details were collected
     if (-not $SkipScopeDetails) {
-        # Single pass through scopes for all validations
+        # Single pass through scopes for utilization validations
         foreach ($Scope in $DHCPSummary.Scopes) {
             # Check utilization levels
             if ($Scope.State -eq 'Active') {
@@ -37,46 +75,10 @@ function Get-WinADDHCPValidationResults {
                     $ModerateUtilization.Add($Scope)
                 }
             }
-
-            # Check inactive scopes
-            if ($Scope.State -eq 'Inactive') {
-                $InactiveScopes.Add($Scope)
-            }
-        }
-
-        # Single pass through scopes with issues for detailed validations
-        foreach ($Scope in $DHCPSummary.ScopesWithIssues) {
-            foreach ($Issue in $Scope.Issues) {
-                if ($Issue -like "*public DNS servers*" -or $Issue -like "*non-private DNS servers*") {
-                    if ($PublicDNSWithUpdates -notcontains $Scope) {
-                        $PublicDNSWithUpdates.Add($Scope)
-                    }
-                } 
-                if ($Issue -like "*Failover not configured*") {
-                    if ($MissingFailover -notcontains $Scope) {
-                        $MissingFailover.Add($Scope)
-                    }
-                }
-                if ($Issue -like "*exceeds 48 hours*") {
-                    if ($ExtendedLeaseDuration -notcontains $Scope) {
-                        $ExtendedLeaseDuration.Add($Scope)
-                    }
-                }
-                if ($Issue -like "*UpdateDnsRRForOlderClients*" -or $Issue -like "*DeleteDnsRROnLeaseExpiry*") {
-                    if ($DNSRecordManagement -notcontains $Scope) {
-                        $DNSRecordManagement.Add($Scope)
-                    }
-                }
-                if ($Issue -like "*Domain name option*") {
-                    if ($MissingDomainName -notcontains $Scope) {
-                        $MissingDomainName.Add($Scope)
-                    }
-                }
-            }
         }
     } else {
         # When SkipScopeDetails is used, inform about limitations
-        Write-Verbose "Get-WinADDHCPValidationResults - Scope-level validations skipped due to SkipScopeDetails parameter"
+        Write-Verbose "Get-WinADDHCPValidationResults - Utilization validations skipped due to SkipScopeDetails parameter"
     }
 
     $ValidationResults = [ordered] @{

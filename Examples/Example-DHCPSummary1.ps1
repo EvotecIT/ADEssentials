@@ -3,8 +3,16 @@
 
 Import-Module .\ADEssentials.psd1 -Force
 
-# Generate DHCP summary data
+# Example 1: Generate minimal validation report (fast, focused on V2 validator requirements)
+# Use -Minimal for quick validation checks similar to DHCL_validatorV2.ps1
+# $Output = Show-WinADDHCPSummary -Minimal -Verbose -FilePath "$PSScriptRoot\Reports\DHCPValidation.html" -PassThru
+
+# Example 2: Generate full comprehensive report (complete infrastructure analysis)
 $Output = Show-WinADDHCPSummary -Verbose -FilePath "$PSScriptRoot\Reports\DHCPSummary.html" -PassThru
+
+# Example 3: Test mode - verify HTML layout without querying real servers
+# Works with both minimal and full modes
+# $Output = Show-WinADDHCPSummary -Minimal -TestMode -Verbose -FilePath "$PSScriptRoot\Reports\DHCPTest.html" -PassThru
 
 # Email way
 $EmailBody = EmailBody {

@@ -83,7 +83,7 @@
                             New-HTMLTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 75 -BackgroundColor Orange -HighlightHeaders 'PercentageInUse'
                             New-HTMLTableCondition -Name 'LeaseDurationHours' -ComparisonType number -Operator gt -Value 48 -BackgroundColor Yellow -HighlightHeaders 'LeaseDurationHours'
                             New-HTMLTableCondition -Name 'FailoverPartner' -ComparisonType string -Operator eq -Value '' -BackgroundColor LightYellow -HighlightHeaders 'FailoverPartner'
-                        } -DataStore JavaScript -ScrollX -Title "All IPv4 Scopes"
+                        } -DataStore JavaScript -ScrollX -Title "All IPv4 Scopes" -ExcludeProperty 'DNSSettings'
                     }
                 } else {
                     New-HTMLPanel -Invisible {

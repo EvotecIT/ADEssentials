@@ -435,21 +435,22 @@ function Get-TestModeDHCPData {
                 'dhcp01.domain.com-10.4.0.0' {
                     return @(
                         [PSCustomObject]@{
-                            OptionId = 6
-                            Name = 'DNS Servers'
-                            Value = @('1.1.1.1', '1.0.0.1')  # Cloudflare Public DNS - will trigger issue
+                            OptionId = 3
+                            Name = 'Router'
+                            Value = @('10.4.0.1')
                             VendorClass = ''
                             UserClass = ''
                             PolicyName = ''
                         },
                         [PSCustomObject]@{
-                            OptionId = 15
-                            Name = 'Domain Name'
-                            Value = @('')  # Empty domain name - will trigger issue
+                            OptionId = 6
+                            Name = 'DNS Servers'
+                            Value = @('8.8.8.8', '1.1.1.1')  # Public DNS servers - will trigger issue with DNS updates enabled
                             VendorClass = ''
                             UserClass = ''
                             PolicyName = ''
                         }
+                        # Note: Missing option 15 (Domain Name) - will trigger issue since DNS updates are enabled
                     )
                 }
                 'dc01.domain.com-172.16.1.0' {

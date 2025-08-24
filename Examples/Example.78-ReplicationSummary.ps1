@@ -45,7 +45,7 @@ $EmailBody = EmailBody {
     EmailText -Text "For more details please check the table below:"
 
     EmailTable -DataTable $ReplicationSummary {
-        EmailTableCondition -Inline -Name "Fail" -HighlightHeaders 'Fails', 'Total', 'PercentageError' -ComparisonType number -Operator gt 0 -BackGroundColor Salmon -FailBackgroundColor SpringGreen
+        EmailTableCondition -Inline -Name "Fail" -HighlightHeaders 'Fails', 'Total', 'PercentageError' -ComparisonType number -Operator gt 0 -BackgroundColor Salmon -FailBackgroundColor SpringGreen
     } -HideFooter
 
     EmailText -LineBreak

@@ -49,6 +49,11 @@ function Get-WinADDHCPSummary {
     This significantly improves performance by avoiding expensive per-scope statistics calls.
     Scope configuration data (DNS settings, options, failover) will still be collected for validation.
 
+    .PARAMETER Minimal
+    When specified, collects only the minimum data required for validation similar to DHCL_validatorV2.ps1.
+    Focuses on lease duration, DNS configuration, and failover validation.
+    This mode significantly improves performance by collecting only validation-critical data.
+
     .EXAMPLE
     Get-WinADDHCPSummary
 
@@ -109,10 +114,19 @@ function Get-WinADDHCPSummary {
         [switch] $SkipRODC,
         [System.Collections.IDictionary] $ExtendedForestInformation,
         [switch] $SkipScopeDetails,
-        [switch] $TestMode
+        [switch] $TestMode,
+        [switch] $Minimal
     )
 
-    Write-Verbose "Get-WinADDHCPSummary - Starting DHCP information gathering"
+    if ($Minimal) {
+        Write-Verbose "Get-WinADDHCPSummary - Starting DHCP information gathering (Minimal Mode - Validation Only)"
+        # In minimal mode, automatically enable SkipScopeDetails for performance
+        # Gathering statistics for millions of addresses would be extremely slow
+        $SkipScopeDetails = $true
+        Write-Verbose "Get-WinADDHCPSummary - SkipScopeDetails enabled for minimal mode - address statistics not collected for performance"
+    } else {
+        Write-Verbose "Get-WinADDHCPSummary - Starting DHCP information gathering"
+    }
 
     if ($TestMode) {
         Write-Verbose "Get-WinADDHCPSummary - Running in TEST MODE - using mock data for DHCP operations"
@@ -432,12 +446,13 @@ function Get-WinADDHCPSummary {
 
         Write-Verbose "Get-WinADDHCPSummary - Server $Computer processing completed: Scopes=$($ServerInfo.ScopeCount), Total Addresses=$($ServerInfo.TotalAddresses), Utilization=$($ServerInfo.PercentageInUse)%"
 
-        # Get extended server-level information (always collected)
-        Get-WinADDHCPExtendedServerData -Computer $Computer -DHCPSummary $DHCPSummary -TestMode:$TestMode
+        # Get extended server-level information (skip in minimal mode)
+        if (-not $Minimal) {
+            Get-WinADDHCPExtendedServerData -Computer $Computer -DHCPSummary $DHCPSummary -TestMode:$TestMode
+        }
 
-
-        # Get scope-intensive extended information (only when scope details are not skipped)
-        if (-not $SkipScopeDetails) {
+        # Get scope-intensive extended information (only when scope details are not skipped and not in minimal mode)
+        if (-not $SkipScopeDetails -and -not $Minimal) {
             Get-WinADDHCPExtendedScopeData -Computer $Computer -Scopes $Scopes -DHCPSummary $DHCPSummary -TestMode:$TestMode
         }
     }
@@ -448,8 +463,10 @@ function Get-WinADDHCPSummary {
     # Categorize validation results
     $DHCPSummary.ValidationResults = Get-WinADDHCPValidationResults -DHCPSummary $DHCPSummary -SkipScopeDetails:$SkipScopeDetails
 
-    # Enhanced Analysis
-    Get-WinADDHCPEnhancedAnalysis -DHCPSummary $DHCPSummary
+    # Enhanced Analysis (skip in minimal mode)
+    if (-not $Minimal) {
+        Get-WinADDHCPEnhancedAnalysis -DHCPSummary $DHCPSummary
+    }
 
     Write-Progress -Activity "Processing DHCP Servers" -Completed
 

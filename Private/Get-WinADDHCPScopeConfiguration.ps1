@@ -37,6 +37,8 @@ function Get-WinADDHCPScopeConfiguration {
         UpdateDnsRRForOlderClients = $null
         DeleteDnsRROnLeaseExpiry   = $null
         DynamicUpdates             = $null
+        NameProtection             = $null
+        DisableDnsPtrRRUpdate      = $null
         DNSSettings                = $null
         FailoverPartner            = $null
         GatheredFrom               = $Computer
@@ -60,6 +62,8 @@ function Get-WinADDHCPScopeConfiguration {
         $ScopeObject.DynamicUpdates = $DNSSettings.DynamicUpdates
         $ScopeObject.UpdateDnsRRForOlderClients = $DNSSettings.UpdateDnsRRForOlderClients
         $ScopeObject.DeleteDnsRROnLeaseExpiry = $DNSSettings.DeleteDnsRROnLeaseExpiry
+        $ScopeObject.NameProtection = $DNSSettings.NameProtection
+        $ScopeObject.DisableDnsPtrRRUpdate = $DNSSettings.DisableDnsPtrRRUpdate
 
         # Get DHCP options for this scope
         try {

@@ -53,6 +53,11 @@
     This improves performance significantly but reduces the detail level of the report.
     Server-level information and basic scope counts will still be included.
 
+    .PARAMETER Minimal
+    Generates a minimal validation report focusing only on configuration issues similar to DHCL_validatorV2.ps1.
+    This includes lease duration validation, DNS configuration checks, and failover validation.
+    Automatically sets SkipScopeDetails for performance and adjusts tabs to show only validation-relevant data.
+
     .EXAMPLE
     Show-WinADDHCPSummary
 
@@ -108,6 +113,7 @@
         [switch] $HideHTML,
         [switch] $PassThru,
         [switch] $TestMode,
+        [switch] $Minimal,
         [string[]] $IncludeTabs = @('Overview', 'IPv4/IPv6', 'Utilization', 'ValidationIssues', 'Infrastructure', 'Options&Classes', 'Failover', 'NetworkSegmentation', 'Performance', 'SecurityCompliance'),
         [string[]] $ExcludeTabs = @(),
         [switch] $ShowTimingStatistics
@@ -122,7 +128,20 @@
         $FilePath = Get-FileName -Extension 'html' -Temporary
     }
 
-    Write-Verbose "Show-WinADDHCPSummary - Starting DHCP report generation"
+    if ($Minimal) {
+        Write-Verbose "Show-WinADDHCPSummary - Starting DHCP report generation (Minimal Mode)"
+    } else {
+        Write-Verbose "Show-WinADDHCPSummary - Starting DHCP report generation"
+    }
+
+    # Adjust parameters for minimal mode
+    if ($Minimal) {
+        # For minimal mode, focus on validation-relevant tabs only
+        $IncludeTabs = @('Overview', 'ValidationIssues', 'Failover')
+        # Enable SkipScopeDetails for performance unless we need full validation
+        # Note: We still need some scope details for validation
+        Write-Verbose "Show-WinADDHCPSummary - Minimal mode enabled: focusing on validation data only"
+    }
 
     # Gather DHCP data using Get-WinADDHCPSummary (with TestMode if specified)
     $GetWinADDHCPSummarySplat = @{
@@ -138,6 +157,7 @@
     }
 
     if ($TestMode) { $GetWinADDHCPSummarySplat.TestMode = $TestMode }
+    if ($Minimal) { $GetWinADDHCPSummarySplat.Minimal = $Minimal }
 
     Write-Verbose "Show-WinADDHCPSummary - Gathering DHCP data from Get-WinADDHCPSummary"
     $DHCPData = Get-WinADDHCPSummary @GetWinADDHCPSummarySplat
@@ -226,38 +246,53 @@
         }
 
         New-HTMLTabPanel {
-            # Overview tab (always show)
-            if ('Overview' -in $TabsToShow) {
-                New-DHCPOverviewTab -DHCPData $DHCPData
-            }
+            if ($Minimal) {
+                # Minimal mode - only validation-focused tabs
+                New-DHCPMinimalOverviewTab -DHCPData $DHCPData
+                New-DHCPMinimalValidationTab -DHCPData $DHCPData
+                New-DHCPMinimalFailoverTab -DHCPData $DHCPData
+                New-DHCPMinimalAllScopesTab -DHCPData $DHCPData
+            } else {
+                # Full mode - all tabs based on configuration
+                # Overview tab (always show)
+                if ('Overview' -in $TabsToShow) {
+                    New-DHCPOverviewTab -DHCPData $DHCPData
+                }
 
-            # Validation Issues tab
-            if ('ValidationIssues' -in $TabsToShow) {
-                New-DHCPValidationIssuesTab -DHCPData $DHCPData
-            }
+                # Validation Issues tab
+                if ('ValidationIssues' -in $TabsToShow) {
+                    New-DHCPValidationIssuesTab -DHCPData $DHCPData
+                }
 
-            # Infrastructure main tab with nested tabs
-            if (@('Infrastructure', 'IPv4/IPv6', 'Failover', 'NetworkSegmentation') | Where-Object { $_ -in $TabsToShow }) {
-                New-DHCPInfrastructureMainTab -DHCPData $DHCPData -IncludeTabs $TabsToShow
-            }
+                # Infrastructure main tab with nested tabs
+                if (@('Infrastructure', 'IPv4/IPv6', 'Failover', 'NetworkSegmentation') | Where-Object { $_ -in $TabsToShow }) {
+                    New-DHCPInfrastructureMainTab -DHCPData $DHCPData -IncludeTabs $TabsToShow
+                }
 
-            # Configuration main tab with nested tabs
-            if (@('Configuration', 'Options&Classes', 'Policies', 'ServerSettings') | Where-Object { $_ -in $TabsToShow }) {
-                New-DHCPConfigurationMainTab -DHCPData $DHCPData -IncludeTabs $TabsToShow
-            }
+                # Configuration main tab with nested tabs
+                if (@('Configuration', 'Options&Classes', 'Policies', 'ServerSettings') | Where-Object { $_ -in $TabsToShow }) {
+                    New-DHCPConfigurationMainTab -DHCPData $DHCPData -IncludeTabs $TabsToShow
+                }
 
-            # Analysis main tab with nested tabs
-            if (@('Analysis', 'Utilization', 'Performance', 'SecurityCompliance', 'ScaleAnalysis') | Where-Object { $_ -in $TabsToShow }) {
-                New-DHCPAnalysisMainTab -DHCPData $DHCPData -IncludeTabs $TabsToShow -ShowTimingStatistics:$ShowTimingStatistics
-            }
+                # Analysis main tab with nested tabs
+                if (@('Analysis', 'Utilization', 'Performance', 'SecurityCompliance', 'ScaleAnalysis') | Where-Object { $_ -in $TabsToShow }) {
+                    New-DHCPAnalysisMainTab -DHCPData $DHCPData -IncludeTabs $TabsToShow -ShowTimingStatistics:$ShowTimingStatistics
+                }
 
-            # Monitoring tab (optional)
-            if ('Monitoring' -in $TabsToShow -and $DHCPData.Statistics.TotalAddresses -gt 50000) {
-                New-DHCPMonitoringTab -DHCPData $DHCPData
+                # Monitoring tab (optional)
+                if ('Monitoring' -in $TabsToShow -and $DHCPData.Statistics.TotalAddresses -gt 50000) {
+                    New-DHCPMonitoringTab -DHCPData $DHCPData
+                }
             }
         }
 
-    } -ShowHTML:(-not $HideHTML.IsPresent) -Online:$Online.IsPresent -TitleText "DHCP Infrastructure Report" -FilePath $FilePath
+        # Set report title based on mode
+        if ($Minimal) {
+            $ReportTitle = "DHCP Validation Report"
+        } else {
+            $ReportTitle = "DHCP Infrastructure Report"
+        }
+    } -ShowHTML:(-not $HideHTML.IsPresent) -Online:$Online.IsPresent -TitleText $ReportTitle -FilePath $FilePath
 
     Write-Verbose "Show-WinADDHCPSummary - HTML report generated: $FilePath"
 
