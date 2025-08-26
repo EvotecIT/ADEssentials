@@ -1,4 +1,4 @@
-function Get-WinADDHCPScopeValidation {
+﻿function Get-WinADDHCPScopeValidation {
     [CmdletBinding()]
     param(
         [Object] $Scope,

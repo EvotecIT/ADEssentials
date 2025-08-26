@@ -1,4 +1,4 @@
-function Get-WinADDHCPValidationResults {
+﻿function Get-WinADDHCPValidationResults {
     [CmdletBinding()]
     param(
         [System.Collections.IDictionary] $DHCPSummary,

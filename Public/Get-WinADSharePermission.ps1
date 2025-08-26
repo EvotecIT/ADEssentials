@@ -1,4 +1,4 @@
-function Get-WinADSharePermission {
+﻿function Get-WinADSharePermission {
     <#
     .SYNOPSIS
     Retrieves the permissions for a specified Windows Active Directory share or shares based on type.

@@ -1,4 +1,4 @@
-# Example script demonstrating the new DHCP functions in ADEssentials
+﻿# Example script demonstrating the new DHCP functions in ADEssentials
 # This script shows how to use the DHCP functions to analyze your DHCP infrastructure
 
 # Import the ADEssentials module (assuming it's installed)

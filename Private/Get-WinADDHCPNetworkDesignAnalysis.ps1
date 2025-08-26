@@ -1,4 +1,4 @@
-function Get-WinADDHCPNetworkDesignAnalysis {
+﻿function Get-WinADDHCPNetworkDesignAnalysis {
     [CmdletBinding()]
     param(
         [System.Collections.IDictionary] $DHCPSummary

@@ -1,4 +1,4 @@
-function New-DHCPMinimalOverviewTab {
+﻿function New-DHCPMinimalOverviewTab {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][System.Collections.IDictionary] $DHCPData

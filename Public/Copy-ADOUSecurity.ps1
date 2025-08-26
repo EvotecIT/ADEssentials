@@ -1,4 +1,4 @@
-function Copy-ADOUSecurity {
+﻿function Copy-ADOUSecurity {
     <#
     .SYNOPSIS
         Copy AD security from one OU to another.

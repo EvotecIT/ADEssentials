@@ -1,0 +1,1 @@
+﻿Convert-ProjectEncoding -Path 'C:\Support\GitHub\ADEssentials' -ProjectType PowerShell -TargetEncoding UTF8BOM -WhatIf:$false -ExcludeDirectories 'Artefacts', 'Ignore'

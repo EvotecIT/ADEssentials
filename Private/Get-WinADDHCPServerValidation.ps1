@@ -1,4 +1,4 @@
-function Get-WinADDHCPServerValidation {
+﻿function Get-WinADDHCPServerValidation {
     [CmdletBinding()]
     param(
         [string] $Computer,

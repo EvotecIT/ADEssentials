@@ -1,4 +1,4 @@
-function Repair-WinADForestControllerInformation {
+﻿function Repair-WinADForestControllerInformation {
     <#
     .SYNOPSIS
     Repairs the Active Directory forest controller information by fixing ownership and management settings for domain controllers.

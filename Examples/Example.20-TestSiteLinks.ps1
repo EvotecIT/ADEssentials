@@ -1,3 +1,3 @@
-Import-Module .\ADEssentials.psd1 -Force
+﻿Import-Module .\ADEssentials.psd1 -Force
 
 Test-ADSiteLinks | Format-Table *

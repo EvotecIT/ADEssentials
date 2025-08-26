@@ -1,4 +1,4 @@
-function Get-WinDHCPScopeDetails {
+﻿function Get-WinDHCPScopeDetails {
     <#
     .SYNOPSIS
     Internal helper function to gather detailed DHCP scope information.

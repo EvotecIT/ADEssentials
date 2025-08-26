@@ -1,4 +1,4 @@
-function Get-WinADDHCPScopeRedundancyAnalysis {
+﻿function Get-WinADDHCPScopeRedundancyAnalysis {
     [CmdletBinding()]
     param(
         [System.Collections.IDictionary] $DHCPSummary

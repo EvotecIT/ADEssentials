@@ -1,4 +1,4 @@
-function Get-WinADForestControllerInformation {
+﻿function Get-WinADForestControllerInformation {
     <#
     .SYNOPSIS
     Retrieves information about domain controllers in a specified Active Directory forest.

@@ -1,4 +1,4 @@
-function Get-TestModeDHCPData {
+﻿function Get-TestModeDHCPData {
     <#
     .SYNOPSIS
     Provides test data for DHCP cmdlet mocking when TestMode is enabled.

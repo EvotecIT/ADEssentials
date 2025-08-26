@@ -1,4 +1,4 @@
-function Add-DHCPTimingStatistic {
+﻿function Add-DHCPTimingStatistic {
     <#
     .SYNOPSIS
     Adds timing statistics for DHCP data collection operations.

@@ -1,8 +1,8 @@
-Import-Module .\ADEssentials.psd1 -Force
+﻿Import-Module .\ADEssentials.psd1 -Force
 
 # Get DHCP validation data using minimal mode (focused on V2 validator requirements)
 # This is much faster than full report as it only collects validation-critical data
-$Output = Show-WinADDHCPSummary -Minimal -Verbose -FilePath "$PSScriptRoot\Reports\DHCPValidation.html" -PassThru -TestMode
+$Output = Show-WinADDHCPSummary -Minimal -Verbose -FilePath "$PSScriptRoot\Reports\DHCPValidation.html" -PassThru -TestMode -
 
 # To test with real servers (requires appropriate permissions)
 # $Output = Show-WinADDHCPSummary -Minimal -Verbose -FilePath "$PSScriptRoot\Reports\DHCPValidation.html" -PassThru

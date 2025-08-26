@@ -1,4 +1,4 @@
-#requires -Module ADEssentials, PSWriteHTML
+﻿#requires -Module ADEssentials, PSWriteHTML
 
 <#
 .SYNOPSIS

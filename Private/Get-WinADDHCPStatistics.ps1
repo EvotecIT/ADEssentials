@@ -1,4 +1,4 @@
-function Get-WinADDHCPStatistics {
+﻿function Get-WinADDHCPStatistics {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]

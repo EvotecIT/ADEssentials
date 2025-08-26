@@ -1,4 +1,4 @@
-function New-ADSite {
+﻿function New-ADSite {
     <#
     .SYNOPSIS
     Creates a new Active Directory site and configures its properties.

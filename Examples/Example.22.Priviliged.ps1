@@ -1,4 +1,4 @@
-Import-Module $PSScriptRoot\..\ADEssentials.psd1 -Force
+﻿Import-Module $PSScriptRoot\..\ADEssentials.psd1 -Force
 
 #$Objects = Get-WinADPrivilegedObjects -Verbose
 #$Objects | Format-Table *
