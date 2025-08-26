@@ -1,4 +1,4 @@
-function New-DHCPMinimalFailoverTab {
+﻿function New-DHCPMinimalFailoverTab {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][System.Collections.IDictionary] $DHCPData

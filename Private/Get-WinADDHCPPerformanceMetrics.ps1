@@ -1,4 +1,4 @@
-function Get-WinADDHCPPerformanceMetrics {
+﻿function Get-WinADDHCPPerformanceMetrics {
     [CmdletBinding()]
     param(
         [System.Collections.IDictionary] $DHCPSummary

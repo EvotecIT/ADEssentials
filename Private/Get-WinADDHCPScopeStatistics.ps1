@@ -1,4 +1,4 @@
-function Get-WinADDHCPScopeStatistics {
+﻿function Get-WinADDHCPScopeStatistics {
     [CmdletBinding()]
     param(
         [string] $Computer,

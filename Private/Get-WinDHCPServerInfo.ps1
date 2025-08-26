@@ -1,4 +1,4 @@
-function Get-WinDHCPServerInfo {
+﻿function Get-WinDHCPServerInfo {
     <#
     .SYNOPSIS
     Internal helper function to gather basic DHCP server information with comprehensive validation.

@@ -1,4 +1,4 @@
-function Get-WinADDHCPSecurityAnalysis {
+﻿function Get-WinADDHCPSecurityAnalysis {
     [CmdletBinding()]
     param(
         [System.Collections.IDictionary] $DHCPSummary

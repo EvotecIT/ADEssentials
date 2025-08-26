@@ -1,4 +1,4 @@
-function Test-WinDHCPScopeConfiguration {
+﻿function Test-WinDHCPScopeConfiguration {
     <#
     .SYNOPSIS
     Internal helper function to validate DHCP scope configuration.

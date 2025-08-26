@@ -1,4 +1,4 @@
-function Get-WinADDHCPSummary {
+﻿function Get-WinADDHCPSummary {
     <#
     .SYNOPSIS
     Retrieves comprehensive DHCP server information from Active Directory forest.

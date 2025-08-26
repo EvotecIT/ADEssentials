@@ -1,4 +1,4 @@
-function New-DHCPMinimalValidationTab {
+﻿function New-DHCPMinimalValidationTab {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][System.Collections.IDictionary] $DHCPData

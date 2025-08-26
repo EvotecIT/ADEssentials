@@ -1,4 +1,4 @@
-function Get-WinADDHCPScopeConfiguration {
+﻿function Get-WinADDHCPScopeConfiguration {
     [CmdletBinding()]
     param(
         [string] $Computer,

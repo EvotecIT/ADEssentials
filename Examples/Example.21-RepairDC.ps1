@@ -1,4 +1,4 @@
-Import-Module .\ADEssentials.psd1 -Force
+﻿Import-Module .\ADEssentials.psd1 -Force
 
 Get-WinADForestControllerInformation | Format-Table *
 
