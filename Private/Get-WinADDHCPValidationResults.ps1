@@ -18,9 +18,10 @@
     $MissingDomainName = [System.Collections.Generic.List[Object]]::new()
     $InactiveScopes = [System.Collections.Generic.List[Object]]::new()
 
-    # Single pass through servers for offline check (always available)
+    # Single pass through servers for offline/unhealthy check (always available)
     foreach ($Server in $DHCPSummary.Servers) {
-        if ($Server.Status -eq 'Unreachable') {
+        # Treat any non-Online, analyzed status as offline/unhealthy
+        if ($Server.Status -in @('Reachable but DHCP not responding', 'DNS OK but unreachable', 'DNS resolution failed')) {
             $ServersOffline.Add($Server)
         }
     }
