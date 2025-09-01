@@ -21,7 +21,8 @@
     foreach ($Server in $DHCPSummary.Servers) {
         if ($Server.Status -eq 'Online' -or ($Server.DHCPResponding -eq $true)) {
             $ServersOnlineCount++
-        } elseif ($Server.Status -eq 'Unreachable' -or ($Server.DHCPResponding -eq $false)) {
+        } elseif ($Server.Status -in @('Reachable but DHCP not responding', 'DNS OK but unreachable', 'DNS resolution failed') -or ($Server.DHCPResponding -eq $false)) {
+            # Count only clearly unhealthy statuses as offline. 'Not Analyzed' stays neutral.
             $ServersOfflineCount++
         }
     }
