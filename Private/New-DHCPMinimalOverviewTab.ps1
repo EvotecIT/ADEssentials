@@ -89,7 +89,7 @@
             New-HTMLSection -HeaderText "Server Validation Results" {
                 $ServerSummary = foreach ($Server in $DHCPData.Servers) {
                     $ServerScopesCount = @($DHCPData.Scopes | Where-Object { $_.ServerName -eq $Server.ServerName }).Count
-                    $ServerIssuesList  = @($DHCPData.ScopesWithIssues | Where-Object { $_.ServerName -eq $Server.ServerName })
+                    $ServerIssuesList = @($DHCPData.ScopesWithIssues | Where-Object { $_.ServerName -eq $Server.ServerName })
                     $ServerIssuesCount = @($ServerIssuesList).Count
 
                     # Derive validation status factoring in server connectivity
@@ -98,9 +98,9 @@
                             if ($ServerIssuesCount -eq 0) { '✅ Passed' } else { "⚠️ $ServerIssuesCount Issues" }
                         }
                         'Reachable but DHCP not responding' { '❌ DHCP not responding' }
-                        'DNS OK but unreachable'            { '❌ Unreachable' }
-                        'DNS resolution failed'             { '❌ DNS resolution failed' }
-                        Default                             { if ($ServerIssuesCount -eq 0) { 'ℹ️ Not analyzed' } else { "⚠️ $ServerIssuesCount Issues" } }
+                        'DNS OK but unreachable' { '❌ Unreachable' }
+                        'DNS resolution failed' { '❌ DNS resolution failed' }
+                        default { if ($ServerIssuesCount -eq 0) { 'ℹ️ Not analyzed' } else { "⚠️ $ServerIssuesCount Issues" } }
                     }
 
                     [PSCustomObject]@{
@@ -120,13 +120,17 @@
                 }
 
                 New-HTMLTable -DataTable $ServerSummary {
-                    New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Online' -BackgroundColor LightGreen
-                    New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator ne -Value 'Online' -BackgroundColor Salmon
-                    # Color-code validation status directly to avoid misleading highlights when server is offline
-                    New-HTMLTableCondition -Name 'ValidationStatus' -ComparisonType string -Operator like -Value '✅*' -BackgroundColor LightGreen
-                    New-HTMLTableCondition -Name 'ValidationStatus' -ComparisonType string -Operator like -Value '⚠️*' -BackgroundColor Yellow
-                    New-HTMLTableCondition -Name 'ValidationStatus' -ComparisonType string -Operator like -Value '❌*' -BackgroundColor Salmon
-                    New-HTMLTableCondition -Name 'ValidationStatus' -ComparisonType string -Operator like -Value 'ℹ️*' -BackgroundColor LightBlue
+                    # Only color the ValidationStatus cell based on its emoji-coded state
+                    # This avoids full-row red highlight caused by non-Online server status
+                    New-HTMLTableCondition -Name 'ValidationStatus' -ComparisonType string -Operator like -Value '✅' -BackgroundColor LightGreen
+                    New-HTMLTableCondition -Name 'ValidationStatus' -ComparisonType string -Operator like -Value '⚠️' -BackgroundColor Yellow
+                    New-HTMLTableCondition -Name 'ValidationStatus' -ComparisonType string -Operator like -Value '❌' -BackgroundColor Salmon
+                    New-HTMLTableCondition -Name 'ValidationStatus' -ComparisonType string -Operator like -Value 'ℹ️' -BackgroundColor LightBlue
+                    # Fallbacks in case emoji variants differ on some systems
+                    #New-HTMLTableCondition -Name 'ValidationStatus' -ComparisonType string -Operator like -Value '*Passed*' -BackgroundColor LightGreen
+                    #New-HTMLTableCondition -Name 'ValidationStatus' -ComparisonType string -Operator like -Value '*Issues*' -BackgroundColor Yellow
+                    #New-HTMLTableCondition -Name 'ValidationStatus' -ComparisonType string -Operator like -Value '*Unreachable*' -BackgroundColor Salmon
+                    #New-HTMLTableCondition -Name 'ValidationStatus' -ComparisonType string -Operator like -Value '*DNS resolution failed*' -BackgroundColor Salmon
                 } -ScrollX -Title "Server Validation Summary"
             }
         }

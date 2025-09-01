@@ -15,7 +15,7 @@ $Output = Show-WinADDHCPSummary -Minimal -Verbose -FilePath "$PSScriptRoot\Repor
 
 # Email report using PSWriteHTML patterns
 $EmailBody = EmailBody {
-    EmailImage -Source 'https://evotec.xyz/wp-content/uploads/2021/04/Logo-evotec-bb.png' -UrlLink '' -AlternativeText 'Logo' -Width 181 -Heigh 57 -Inline
+    #EmailImage -Source 'https://evotec.xyz/wp-content/uploads/2021/04/Logo-evotec-bb.png' -UrlLink '' -AlternativeText 'Logo' -Width 181 -Heigh 57 -Inline
 
     EmailText -Text "Dear ", "Network Team," -LineBreak
 
