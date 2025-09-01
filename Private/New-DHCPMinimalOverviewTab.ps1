@@ -9,7 +9,7 @@
             New-HTMLSection -HeaderText "DHCP Validation Summary" {
                 New-HTMLPanel -Invisible {
                     New-HTMLText -Text "Validation Report Focus" -FontSize 16px -FontWeight bold
-                    New-HTMLText -Text "This minimal report focuses on critical DHCP configuration validation based on DHCL_validatorV2.ps1 requirements:" -FontSize 12px
+                    New-HTMLText -Text "This minimal report focuses on critical DHCP configuration validation based on essential requirements:" -FontSize 12px
                     New-HTMLList {
                         New-HTMLListItem -Text "Lease Duration: ", "Validates scopes with lease time > 48 hours" -FontWeight bold, normal
                         New-HTMLListItem -Text "DNS Configuration: ", "Checks for public DNS servers and missing domain options" -FontWeight bold, normal
@@ -83,25 +83,37 @@
                 }
             }
         }
-        
+
         # Server validation summary
         New-HTMLSection -Invisible {
             New-HTMLSection -HeaderText "Server Validation Results" {
                 $ServerSummary = foreach ($Server in $DHCPData.Servers) {
-                    $ServerScopes = $DHCPData.Scopes | Where-Object { $_.ServerName -eq $Server.ServerName }
-                    $ServerIssues = $DHCPData.ScopesWithIssues | Where-Object { $_.ServerName -eq $Server.ServerName }
+                    $ServerScopesCount = @($DHCPData.Scopes | Where-Object { $_.ServerName -eq $Server.ServerName }).Count
+                    $ServerIssuesList  = @($DHCPData.ScopesWithIssues | Where-Object { $_.ServerName -eq $Server.ServerName })
+                    $ServerIssuesCount = @($ServerIssuesList).Count
+
+                    # Derive validation status factoring in server connectivity
+                    $validation = switch ($Server.Status) {
+                        'Online' {
+                            if ($ServerIssuesCount -eq 0) { '✅ Passed' } else { "⚠️ $ServerIssuesCount Issues" }
+                        }
+                        'Reachable but DHCP not responding' { '❌ DHCP not responding' }
+                        'DNS OK but unreachable'            { '❌ Unreachable' }
+                        'DNS resolution failed'             { '❌ DNS resolution failed' }
+                        Default                             { if ($ServerIssuesCount -eq 0) { 'ℹ️ Not analyzed' } else { "⚠️ $ServerIssuesCount Issues" } }
+                    }
 
                     [PSCustomObject]@{
                         ServerName       = $Server.ServerName
                         Status           = $Server.Status
-                        TotalScopes      = $ServerScopes.Count
-                        ScopesWithIssues = $ServerIssues.Count
-                        ValidationStatus = if ($ServerIssues.Count -eq 0) { '✅ Passed' } else { "⚠️ $($ServerIssues.Count) Issues" }
-                        IssueTypes       = if ($ServerIssues.Count -gt 0) {
+                        TotalScopes      = $ServerScopesCount
+                        ScopesWithIssues = $ServerIssuesCount
+                        ValidationStatus = $validation
+                        IssueTypes       = if ($ServerIssuesCount -gt 0) {
                             $Types = @()
-                            if ($ServerIssues | Where-Object { $_.Issues -contains 'Lease duration greater than 48 hours' }) { $Types += 'Lease' }
-                            if ($ServerIssues | Where-Object { $_.Issues -match 'DNS' }) { $Types += 'DNS' }
-                            if ($ServerIssues | Where-Object { $_.Issues -match 'failover' }) { $Types += 'Failover' }
+                            if ($ServerIssuesList | Where-Object { $_.Issues -contains 'Lease duration greater than 48 hours' }) { $Types += 'Lease' }
+                            if ($ServerIssuesList | Where-Object { $_.Issues -match 'DNS' }) { $Types += 'DNS' }
+                            if ($ServerIssuesList | Where-Object { $_.Issues -match 'failover' }) { $Types += 'Failover' }
                             $Types -join ', '
                         } else { 'None' }
                     }
@@ -110,9 +122,11 @@
                 New-HTMLTable -DataTable $ServerSummary {
                     New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Online' -BackgroundColor LightGreen
                     New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator ne -Value 'Online' -BackgroundColor Salmon
-                    New-HTMLTableCondition -Name 'ScopesWithIssues' -ComparisonType number -Operator eq -Value 0 -BackgroundColor LightGreen -HighlightHeaders 'ValidationStatus'
-                    New-HTMLTableCondition -Name 'ScopesWithIssues' -ComparisonType number -Operator gt -Value 0 -BackgroundColor Yellow -HighlightHeaders 'ValidationStatus'
-                    New-HTMLTableCondition -Name 'ScopesWithIssues' -ComparisonType number -Operator gt -Value 5 -BackgroundColor Orange -HighlightHeaders 'ValidationStatus'
+                    # Color-code validation status directly to avoid misleading highlights when server is offline
+                    New-HTMLTableCondition -Name 'ValidationStatus' -ComparisonType string -Operator like -Value '✅*' -BackgroundColor LightGreen
+                    New-HTMLTableCondition -Name 'ValidationStatus' -ComparisonType string -Operator like -Value '⚠️*' -BackgroundColor Yellow
+                    New-HTMLTableCondition -Name 'ValidationStatus' -ComparisonType string -Operator like -Value '❌*' -BackgroundColor Salmon
+                    New-HTMLTableCondition -Name 'ValidationStatus' -ComparisonType string -Operator like -Value 'ℹ️*' -BackgroundColor LightBlue
                 } -ScrollX -Title "Server Validation Summary"
             }
         }
