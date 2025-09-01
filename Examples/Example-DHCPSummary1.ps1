@@ -4,7 +4,7 @@
 Import-Module .\ADEssentials.psd1 -Force
 
 # Example 1: Generate minimal validation report (fast, focused on V2 validator requirements)
-# Use -Minimal for quick validation checks similar to DHCL_validatorV2.ps1
+# Use -Minimal for quick validation checks
 # $Output = Show-WinADDHCPSummary -Minimal -Verbose -FilePath "$PSScriptRoot\Reports\DHCPValidation.html" -PassThru
 
 # Example 2: Generate full comprehensive report (complete infrastructure analysis)

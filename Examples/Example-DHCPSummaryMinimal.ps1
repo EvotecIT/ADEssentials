@@ -2,7 +2,7 @@
 
 # Get DHCP validation data using minimal mode (focused on V2 validator requirements)
 # This is much faster than full report as it only collects validation-critical data
-$Output = Show-WinADDHCPSummary -Minimal -Verbose -FilePath "$PSScriptRoot\Reports\DHCPValidation.html" -PassThru -TestMode -
+$Output = Show-WinADDHCPSummary -Minimal -Verbose -FilePath "$PSScriptRoot\Reports\DHCPValidation.html" -PassThru -TestMode
 
 # To test with real servers (requires appropriate permissions)
 # $Output = Show-WinADDHCPSummary -Minimal -Verbose -FilePath "$PSScriptRoot\Reports\DHCPValidation.html" -PassThru
@@ -22,9 +22,10 @@ $EmailBody = EmailBody {
     EmailText -Text "DHCP Validation Summary" -Color Blue -FontSize 10pt -FontWeight bold
 
     # Use data from $Output directly
-    $TotalIssues = $Output.ScopesWithIssues.Count
     $CriticalCount = $Output.ValidationResults.CriticalIssues.PublicDNSWithUpdates.Count + $Output.ValidationResults.CriticalIssues.ServersOffline.Count
     $WarningCount = $Output.ValidationResults.WarningIssues.MissingFailover.Count + $Output.ValidationResults.WarningIssues.ExtendedLeaseDuration.Count + $Output.ValidationResults.WarningIssues.DNSRecordManagement.Count
+    # Total issues include scope-level issues and server-level/warning issues
+    $TotalIssues = (@($Output.ScopesWithIssues).Count) + $CriticalCount + $WarningCount
 
     EmailList -FontSize 10pt {
         EmailListItem -Text "Total DHCP Servers: ", $($Output.Servers.Count) -Color None, DodgerBlue -FontWeight normal, bold
@@ -46,6 +47,16 @@ $EmailBody = EmailBody {
                 EmailTableCondition -Name 'DNSServers' -ComparisonType string -Operator like -Value '*8.8*' -BackGroundColor Salmon -Inline
                 EmailTableCondition -Name 'DNSServers' -ComparisonType string -Operator like -Value '*1.1*' -BackGroundColor Salmon -Inline
             } -HideFooter -IncludeProperty 'ServerName', 'ScopeId', 'Name', 'DNSServers', 'DynamicUpdates'
+            EmailText -LineBreak
+        }
+
+        # Offline/unreachable servers
+        if ($Output.ValidationResults.CriticalIssues.ServersOffline.Count -gt 0) {
+            EmailText -Text "🔴 Critical: DHCP Servers Offline / Unreachable" -Color Red -FontWeight bold -LineBreak
+            EmailTable -DataTable $Output.ValidationResults.CriticalIssues.ServersOffline {
+                EmailTableCondition -Name 'Status' -ComparisonType string -Operator like -Value 'DNS*' -BackGroundColor Salmon -Inline
+                EmailTableCondition -Name 'DHCPResponding' -ComparisonType bool -Operator eq -Value $false -BackGroundColor Salmon -Inline
+            } -HideFooter -IncludeProperty 'ServerName','Status','ErrorMessage','IPAddress','DNSResolvable','PingSuccessful','DHCPResponding'
             EmailText -LineBreak
         }
 
@@ -85,4 +96,4 @@ $EmailSplat = @{
 }
 
 # Connect-MgGraph -Scopes 'Mail.Send'
-Send-EmailMessage @EmailSplat
+#Send-EmailMessage @EmailSplat
