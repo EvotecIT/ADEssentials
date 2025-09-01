@@ -54,7 +54,7 @@
     Server-level information and basic scope counts will still be included.
 
     .PARAMETER Minimal
-    Generates a minimal validation report focusing only on configuration issues similar to DHCL_validatorV2.ps1.
+    Generates a minimal validation report focusing only on configuration issues and essential statistics.
     This includes lease duration validation, DNS configuration checks, and failover validation.
     Automatically sets SkipScopeDetails for performance and adjusts tabs to show only validation-relevant data.
 
