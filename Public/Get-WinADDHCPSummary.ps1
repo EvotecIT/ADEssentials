@@ -50,7 +50,7 @@
     Scope configuration data (DNS settings, options, failover) will still be collected for validation.
 
     .PARAMETER Minimal
-    When specified, collects only the minimum data required for validation similar to DHCL_validatorV2.ps1.
+    When specified, collects only the minimum data required for validation.
     Focuses on lease duration, DNS configuration, and failover validation.
     This mode significantly improves performance by collecting only validation-critical data.
 
@@ -284,7 +284,7 @@
         if ($ShouldAnalyze) {
             # Get server validation info
             $ServerInfo = Get-WinADDHCPServerValidation -Computer $Computer -ForestInformation $ForestInformation -DHCPSummaryServers $DHCPSummary.Servers -TestMode:$TestMode
-            
+
             # If DHCP service is not responding, mark as having issues and continue to next server
             if (-not $ServerInfo.DHCPResponding) {
                 Add-DHCPError -Summary $DHCPSummary -ServerName $Computer -Component 'DHCP Service Validation' -Operation 'Service Connectivity Test' -ErrorMessage "DHCP service not responding: $($ServerInfo.ErrorMessage)" -Severity 'Error'
@@ -324,7 +324,7 @@
                 GatheredFrom         = $Computer
                 GatheredDate         = Get-Date
             }
-            
+
             # Check if server is a domain controller
             if ($ForestInformation) {
                 $DC = $ForestInformation.ForestDomainControllers | Where-Object { $_.HostName -eq $Computer }
@@ -333,7 +333,7 @@
                     $ServerInfo.DHCPRole = 'Domain Controller'
                 }
             }
-            
+
             $DHCPSummary.Servers.Add([PSCustomObject]$ServerInfo)
             continue
         }
