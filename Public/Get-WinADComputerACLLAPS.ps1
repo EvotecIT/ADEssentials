@@ -42,8 +42,8 @@
             $WindowsLAPSExpirationTime = $false
             $WindowsLAPSEncryptedPassword = $false
             #$WindowsLAPSEncryptedPasswordHistory = $false
-            #$WindowsLAPSEncryptedDSRMPassword = $false
-            # $WindowsLAPSEncryptedDSRMPasswordHistory = $false
+            $WindowsLAPSEncryptedDSRMPassword = $false
+            $WindowsLAPSEncryptedDSRMPasswordHistory = $false
 
             <#
             msLAPS-PasswordExpirationTime
@@ -79,20 +79,15 @@
                     if ($ACL.AccessControlType -eq 'Allow' -and $ACL.ActiveDirectoryRights -like '*WriteProperty*') {
                         $WindowsLAPSEncryptedPassword = $true
                     }
+                } elseif ($ACL.ObjectTypeName -eq 'ms-LAPS-EncryptedDSRMPassword') {
+                    if ($ACL.AccessControlType -eq 'Allow' -and $ACL.ActiveDirectoryRights -like '*WriteProperty*') {
+                        $WindowsLAPSEncryptedDSRMPassword = $true
+                    }
+                } elseif ($ACL.ObjectTypeName -eq 'ms-LAPS-EncryptedDSRMPasswordHistory') {
+                    if ($ACL.AccessControlType -eq 'Allow' -and $ACL.ActiveDirectoryRights -like '*WriteProperty*') {
+                        $WindowsLAPSEncryptedDSRMPasswordHistory = $true
+                    }
                 }
-                #  elseif ($ACL.ObjectTypeName -eq 'ms-LAPS-EncryptedPasswordHistory') {
-                #     if ($ACL.AccessControlType -eq 'Allow' -and $ACL.ActiveDirectoryRights -like '*WriteProperty*') {
-                #         $WindowsLAPSEncryptedPasswordHistory = $true
-                #     }
-                # } elseif ($ACL.ObjectTypeName -eq 'ms-LAPS-EncryptedDSRMPassword') {
-                #     if ($ACL.AccessControlType -eq 'Allow' -and $ACL.ActiveDirectoryRights -like '*WriteProperty*') {
-                #         $WindowsLAPSEncryptedDSRMPassword = $true
-                #     }
-                # } elseif ($ACL.ObjectTypeName -eq 'ms-LAPS-EncryptedDSRMPasswordHistory') {
-                #     if ($ACL.AccessControlType -eq 'Allow' -and $ACL.ActiveDirectoryRights -like '*WriteProperty*') {
-                #         $WindowsLAPSEncryptedDSRMPasswordHistory = $true
-                #     }
-                # }
             }
             if ($ACLMissingOnly -and $LAPS -eq $true) {
                 continue
@@ -109,10 +104,10 @@
                 LapsExpirationACL            = $LAPSExpirationTime
                 WindowsLAPSACL               = $WindowsLAPS
                 WindowsLAPSExpirationACL     = $WindowsLAPSExpirationTime
-                WindowsLAPSEncryptedPassword = $WindowsLAPSEncryptedPassword
-                #WindowsLAPSEncryptedPasswordHistory = $WindowsLAPSEncryptedPasswordHistory
-                #WindowsLAPSEncryptedDSRMPassword        = $WindowsLAPSEncryptedDSRMPassword
-                #WindowsLAPSEncryptedDSRMPasswordHistory = $WindowsLAPSEncryptedDSRMPasswordHistory
+                WindowsLAPSEncryptedPassword             = $WindowsLAPSEncryptedPassword
+                #WindowsLAPSEncryptedPasswordHistory     = $WindowsLAPSEncryptedPasswordHistory
+                WindowsLAPSEncryptedDSRMPassword         = $WindowsLAPSEncryptedDSRMPassword
+                WindowsLAPSEncryptedDSRMPasswordHistory  = $WindowsLAPSEncryptedDSRMPasswordHistory
                 OperatingSystem              = $Computer.OperatingSystem
                 Level0                       = $Region
                 Level1                       = $Country

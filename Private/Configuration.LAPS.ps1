@@ -94,6 +94,35 @@
                     $Script:Reporting['LAPS']['Variables']['ComputersOtherDisabled']++
                 }
             }
+
+            # Windows LAPS specific tracking
+            if ($Computer.WindowsLaps -eq $true) {
+                $Script:Reporting['LAPS']['Variables']['WindowsLapsAny']++
+            }
+
+            # Migration view (non-DC Windows)
+            if ($Computer.IsDC -eq $false -and $Computer.System -like "Windows*") {
+                $hasLegacy = ($Computer.Laps -eq $true)
+                $hasWin    = ($Computer.WindowsLaps -eq $true)
+                if ($hasLegacy -and -not $hasWin) {
+                    $Script:Reporting['LAPS']['Variables']['MigrationLegacyOnly']++
+                } elseif (-not $hasLegacy -and $hasWin) {
+                    $Script:Reporting['LAPS']['Variables']['MigrationWindowsOnly']++
+                } elseif ($hasLegacy -and $hasWin) {
+                    $Script:Reporting['LAPS']['Variables']['MigrationBoth']++
+                } else {
+                    $Script:Reporting['LAPS']['Variables']['MigrationNeither']++
+                }
+            }
+
+            # DC/DSRM view
+            if ($Computer.IsDC -eq $true) {
+                if ($Computer.WindowsLaps -eq $true) {
+                    $Script:Reporting['LAPS']['Variables']['DCsWithDSRMWindowsLAPS']++
+                } else {
+                    $Script:Reporting['LAPS']['Variables']['DCsWithoutDSRMWindowsLAPS']++
+                }
+            }
         }
     }
     Summary    = {
@@ -102,10 +131,11 @@
             "It shows how many computers are enabled, disabled, have LAPS enabled, disabled, expired, etc."
             "It's perfectly normal that some LAPS passwords are expired, due to working over VPN etc."
         ) -FontSize 10pt -LineBreak
-        New-HTMLText -Text "Following computer resources are exempt from LAPS: " -FontSize 10pt
+        New-HTMLText -Text "Notes on applicability: " -FontSize 10pt
         New-HTMLList {
-            New-HTMLListItem -Text "Domain Controllers and Read Only Domain Controllers"
-            New-HTMLListItem -Text 'Computer Service accounts such as AZUREADSSOACC$'
+            New-HTMLListItem -Text "Legacy LAPS does not apply to Domain Controllers (no local SAM)."
+            New-HTMLListItem -Text "Windows LAPS applies to Domain Controllers for the DSRM account."
+            New-HTMLListItem -Text 'Computer Service accounts such as AZUREADSSOACC$ are not applicable.'
         } -FontSize 10pt
         New-HTMLText -Text "Here's an overview of some statistics about computers:" -FontSize 10pt
         New-HTMLList {
@@ -124,6 +154,13 @@
             New-HTMLListItem -Text "Total number of servers (disabled): ", $($Script:Reporting['LAPS']['Variables'].ComputersServerDisabled) -Color None, BlueMarguerite -FontWeight normal, bold
             New-HTMLListItem -Text "Total number of workstations (enabled) with LAPS: ", $($Script:Reporting['LAPS']['Variables'].ComputersWorkstationLapsEnabled) -Color None, BlueMarguerite -FontWeight normal, bold
             New-HTMLListItem -Text "Total number of workstations (enabled) without LAPS: ", $($Script:Reporting['LAPS']['Variables'].ComputersWorkstationLapsDisabled) -Color None, BlueMarguerite -FontWeight normal, bold
+            New-HTMLListItem -Text "Total number of computers with Windows LAPS: ", $($Script:Reporting['LAPS']['Variables'].WindowsLapsAny) -Color None, BlueMarguerite -FontWeight normal, bold
+            New-HTMLListItem -Text "Migration (non-DC Windows) - Legacy only: ", $($Script:Reporting['LAPS']['Variables'].MigrationLegacyOnly) -Color None, BlueMarguerite -FontWeight normal, bold
+            New-HTMLListItem -Text "Migration (non-DC Windows) - Windows LAPS only: ", $($Script:Reporting['LAPS']['Variables'].MigrationWindowsOnly) -Color None, BlueMarguerite -FontWeight normal, bold
+            New-HTMLListItem -Text "Migration (non-DC Windows) - Both: ", $($Script:Reporting['LAPS']['Variables'].MigrationBoth) -Color None, BlueMarguerite -FontWeight normal, bold
+            New-HTMLListItem -Text "Migration (non-DC Windows) - Neither: ", $($Script:Reporting['LAPS']['Variables'].MigrationNeither) -Color None, BlueMarguerite -FontWeight normal, bold
+            New-HTMLListItem -Text "Domain Controllers with DSRM (Windows LAPS): ", $($Script:Reporting['LAPS']['Variables'].DCsWithDSRMWindowsLAPS) -Color None, BlueMarguerite -FontWeight normal, bold
+            New-HTMLListItem -Text "Domain Controllers without DSRM (Windows LAPS): ", $($Script:Reporting['LAPS']['Variables'].DCsWithoutDSRMWindowsLAPS) -Color None, BlueMarguerite -FontWeight normal, bold
         } -FontSize 10pt
     }
     Variables  = @{
@@ -162,6 +199,19 @@
         ComputersOver30days              = 0
         ComputersOver15days              = 0
         ComputersRecent                  = 0
+
+        # Windows LAPS tracking
+        WindowsLapsAny                   = 0
+
+        # Migration (non-DC Windows)
+        MigrationLegacyOnly              = 0
+        MigrationWindowsOnly             = 0
+        MigrationBoth                    = 0
+        MigrationNeither                 = 0
+
+        # DC/DSRM coverage
+        DCsWithDSRMWindowsLAPS           = 0
+        DCsWithoutDSRMWindowsLAPS        = 0
     }
     Solution   = {
         if ($Script:Reporting['LAPS']['Data']) {
@@ -254,6 +304,20 @@
                                 New-ChartPie -Name 'Without LAPS' -Value $Script:Reporting['LAPS']['Variables'].ComputersServerLapsDisabled -Color 'Salmon'
                             } -Title "Servers with LAPS"
                         }
+                        New-CarouselSlide -Height auto {
+                            New-HTMLChart -Gradient {
+                                New-ChartPie -Name 'Legacy LAPS only' -Value $Script:Reporting['LAPS']['Variables'].MigrationLegacyOnly -Color '#9ecae1'
+                                New-ChartPie -Name 'Windows LAPS only' -Value $Script:Reporting['LAPS']['Variables'].MigrationWindowsOnly -Color '#6baed6'
+                                New-ChartPie -Name 'Both' -Value $Script:Reporting['LAPS']['Variables'].MigrationBoth -Color '#31a354'
+                                New-ChartPie -Name 'Neither' -Value $Script:Reporting['LAPS']['Variables'].MigrationNeither -Color '#fd8d3c'
+                            } -Title "Migration (non-DC Windows)"
+                        }
+                        New-CarouselSlide -Height auto {
+                            New-HTMLChart -Gradient {
+                                New-ChartPie -Name 'DCs with DSRM (Windows LAPS)' -Value $Script:Reporting['LAPS']['Variables'].DCsWithDSRMWindowsLAPS -Color '#94ffc8'
+                                New-ChartPie -Name 'DCs without DSRM (Windows LAPS)' -Value $Script:Reporting['LAPS']['Variables'].DCsWithoutDSRMWindowsLAPS -Color 'Salmon'
+                            } -Title "Windows LAPS DSRM on Domain Controllers"
+                        }
                     }
                 }
             }
@@ -274,6 +338,16 @@
             New-HTMLTableCondition -Name 'WindowsLaps' -ComparisonType string -Operator eq -Value $true -BackgroundColor LimeGreen -FailBackgroundColor Alizarin
             New-HTMLTableCondition -Name 'WindowsLaps' -ComparisonType string -Operator eq -Value $false -BackgroundColor Alizarin -HighlightHeaders WindowsLaps, WindowsLapsExpirationDays, WindowsLapsExpirationTime
             New-HTMLTableCondition -Name 'WindowsLaps' -ComparisonType string -Operator eq -Value "" -BackgroundColor BlizzardBlue -HighlightHeaders WindowsLaps, WindowsLapsExpirationDays, WindowsLapsExpirationTime
+
+            # Highlight DSRM Windows LAPS coverage only for DCs
+            New-HTMLTableConditionGroup -Logic AND {
+                New-HTMLTableCondition -Name 'IsDC' -ComparisonType string -Operator eq -Value $true
+                New-HTMLTableCondition -Name 'WindowsLaps' -ComparisonType string -Operator eq -Value $true
+            } -BackgroundColor LimeGreen -HighlightHeaders WindowsLaps
+            New-HTMLTableConditionGroup -Logic AND {
+                New-HTMLTableCondition -Name 'IsDC' -ComparisonType string -Operator eq -Value $true
+                New-HTMLTableCondition -Name 'WindowsLaps' -ComparisonType string -Operator eq -Value $false
+            } -BackgroundColor Alizarin -HighlightHeaders WindowsLaps
         }
     }
 }
