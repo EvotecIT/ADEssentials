@@ -158,17 +158,37 @@
             }
 
             if ($WindowsLapsAvailable) {
+                # Standard Windows LAPS (local Administrator) - applicable to non-DCs
+                $WindowsLapsStandard = $false
                 if ($C.'msLAPS-PasswordExpirationTime') {
-                    $WindowsLaps = $true
+                    $WindowsLapsStandard = $true
                     $WindowsLapsExpirationDays = Convert-TimeToDays -StartTime ($CurrentDate) -EndTime (Convert-ToDateTime -Timestring ($C.'msLAPS-PasswordExpirationTime'))
                     $WindowsLapsExpirationTime = Convert-ToDateTime -Timestring ($C.'msLAPS-PasswordExpirationTime')
-                    $WindowsLapsHistoryCount = $C.'msLAPS-EncryptedPasswordHistory'.Count
+                } else {
+                    $WindowsLapsExpirationDays = $null
+                    $WindowsLapsExpirationTime = $null
+                }
+
+                # Windows LAPS for DSRM (Domain Controllers)
+                $WindowsLapsDSRM = $false
+                if ($C.'msLAPS-EncryptedDSRMPassword') {
+                    $WindowsLapsDSRM = $true
+                }
+
+                if ($WindowsLapsStandard -or $WindowsLapsDSRM) {
+                    $WindowsLaps = $true
+                    # History count: use standard history for non-DCs else DSRM history for DCs
+                    if ($WindowsLapsStandard) {
+                        $WindowsLapsHistoryCount = $C.'msLAPS-EncryptedPasswordHistory'.Count
+                    } elseif ($WindowsLapsDSRM) {
+                        $WindowsLapsHistoryCount = $C.'msLAPS-EncryptedDSRMPasswordHistory'.Count
+                    } else {
+                        $WindowsLapsHistoryCount = 0
+                    }
                     $WindowsLapsSetTime = Get-LAPSADUpdateTimeComputer -ADComputer $C
                     $WindowsLapsSetTimeDays = - (Convert-TimeToDays -StartTime ($CurrentDate) -EndTime $WindowsLapsSetTime)
                 } else {
                     $WindowsLaps = $false
-                    $WindowsLapsExpirationDays = $null
-                    $WindowsLapsExpirationTime = $null
                     $WindowsLapsHistoryCount = 0
                     $WindowsLapsSetTime = $null
                     $WindowsLapsSetTimeDays = $null
