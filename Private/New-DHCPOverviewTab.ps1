@@ -180,8 +180,8 @@
                 }
             }
 
-            New-HTMLSection -HeaderText "Address Pool Utilization" -Invisible -Density Compact {
-                New-HTMLInfoCard -Title "Total IP Addresses" -Number $TotalAddresses.ToString("N0") -Subtitle "Pool Capacity" -Icon "🚀" -TitleColor 'DodgerBlue' -NumberColor 'Navy' -ShadowColor 'rgba(30, 144, 255, 0.15)'
+        New-HTMLSection -HeaderText "Address Pool Utilization" -Invisible -Density Compact {
+            New-HTMLInfoCard -Title "Total IP Addresses" -Number $TotalAddresses.ToString("N0") -Subtitle "Pool Capacity" -Icon "🚀" -TitleColor 'DodgerBlue' -NumberColor 'Navy' -ShadowColor 'rgba(30, 144, 255, 0.15)'
 
                 if ($OverallPercentageInUse -gt 80) {
                     New-HTMLInfoCard -Title "Addresses In Use" -Number $AddressesInUse.ToString("N0") -Subtitle "High Utilization" -Icon "🚨" -TitleColor 'Crimson' -NumberColor 'DarkRed' -ShadowColor 'rgba(220, 20, 60, 0.25)' -ShadowIntensity ExtraBold
@@ -202,6 +202,21 @@
                 } else {
                     New-HTMLInfoCard -Title "Overall Utilization" -Number "$OverallPercentageInUse%" -Subtitle "Low Usage" -Icon "🌱" -TitleColor 'LimeGreen' -NumberColor 'DarkGreen' -ShadowColor 'rgba(50, 205, 50, 0.15)'
                 }
+            }
+        }
+
+        # Failover Overview (new) - show critical failover coverage and mismatches
+        if ($DHCPData.FailoverRelationships.Count -ge 0) {
+            New-HTMLSection -HeaderText "Failover Overview" -Invisible -Density Compact {
+                $ScopesWithoutFailover = ($DHCPData.Scopes | Where-Object { $_.State -eq 'Active' -and (-not $_.HasFailover) }).Count
+                $OnlyOnPrimary   = if ($DHCPData.FailoverAnalysis) { $DHCPData.FailoverAnalysis.OnlyOnPrimary.Count } else { 0 }
+                $OnlyOnSecondary = if ($DHCPData.FailoverAnalysis) { $DHCPData.FailoverAnalysis.OnlyOnSecondary.Count } else { 0 }
+                $MissingOnBoth   = if ($DHCPData.FailoverAnalysis) { $DHCPData.FailoverAnalysis.MissingOnBoth.Count } else { 0 }
+
+                New-HTMLInfoCard -Title "Unprotected Scopes" -Number $ScopesWithoutFailover -Subtitle "No Failover" -Icon "🚨" -TitleColor $(if ($ScopesWithoutFailover -gt 0) { 'Orange' } else { 'Green' }) -NumberColor $(if ($ScopesWithoutFailover -gt 0) { 'DarkOrange' } else { 'DarkGreen' })
+                New-HTMLInfoCard -Title "Only on Primary" -Number $OnlyOnPrimary -Subtitle "Mismatch" -Icon "🟠" -TitleColor 'DarkOrange' -NumberColor 'DarkOrange'
+                New-HTMLInfoCard -Title "Only on Secondary" -Number $OnlyOnSecondary -Subtitle "Mismatch" -Icon "🟠" -TitleColor 'DarkOrange' -NumberColor 'DarkOrange'
+                New-HTMLInfoCard -Title "Missing on Both" -Number $MissingOnBoth -Subtitle "Gap" -Icon "⚠️" -TitleColor 'OrangeRed' -NumberColor 'OrangeRed'
             }
         }
 

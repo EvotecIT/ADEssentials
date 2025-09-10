@@ -114,6 +114,10 @@
         [switch] $PassThru,
         [switch] $TestMode,
         [switch] $Minimal,
+        # Validation policy toggles
+        [switch] $ConsiderMissingFailoverCritical,
+        [switch] $ConsiderDNSConfigCritical,
+        [switch] $IncludeServerAvailabilityIssues,
         [string[]] $IncludeTabs = @('Overview', 'IPv4/IPv6', 'Utilization', 'ValidationIssues', 'Infrastructure', 'Options&Classes', 'Failover', 'NetworkSegmentation', 'Performance', 'SecurityCompliance'),
         [string[]] $ExcludeTabs = @(),
         [switch] $ShowTimingStatistics
@@ -158,6 +162,9 @@
 
     if ($TestMode) { $GetWinADDHCPSummarySplat.TestMode = $TestMode }
     if ($Minimal) { $GetWinADDHCPSummarySplat.Minimal = $Minimal }
+    if ($ConsiderMissingFailoverCritical) { $GetWinADDHCPSummarySplat.ConsiderMissingFailoverCritical = $true }
+    if ($ConsiderDNSConfigCritical) { $GetWinADDHCPSummarySplat.ConsiderDNSConfigCritical = $true }
+    if ($IncludeServerAvailabilityIssues) { $GetWinADDHCPSummarySplat.IncludeServerAvailabilityIssues = $true }
 
     Write-Verbose "Show-WinADDHCPSummary - Gathering DHCP data from Get-WinADDHCPSummary"
     $DHCPData = Get-WinADDHCPSummary @GetWinADDHCPSummarySplat

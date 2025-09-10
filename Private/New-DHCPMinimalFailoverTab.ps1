@@ -6,7 +6,7 @@
 
     New-HTMLTab -TabName 'Failover Status' {
         # Get failover data
-        $FailoverRelationships = $DHCPData.Failover | Where-Object { $_ }
+        $FailoverRelationships = if ($DHCPData.FailoverRelationships) { $DHCPData.FailoverRelationships } else { @() }
         $ScopesWithFailover = $DHCPData.Scopes | Where-Object { $_.FailoverPartner }
         $ScopesWithoutFailover = $DHCPData.Scopes | Where-Object { -not $_.FailoverPartner -and $_.State -eq 'Active' }
         $CoveragePercent = if ($DHCPData.Scopes.Count -gt 0) {
@@ -30,14 +30,14 @@
         }
 
         # Failover relationships table
-        New-HTMLSection -Invisible {
+        New-HTMLSection -Invisible -Wrap wrap {
             if ($FailoverRelationships.Count -gt 0) {
                 New-HTMLSection -HeaderText "Failover Relationships" {
                     New-HTMLPanel -Invisible {
                         $FailoverSummary = foreach ($Failover in $FailoverRelationships) {
                             [PSCustomObject]@{
                                 Name = $Failover.Name
-                                PrimaryServer = $Failover.PrimaryServerName
+                                PrimaryServer = if ($Failover.PrimaryServerName) { $Failover.PrimaryServerName } else { $Failover.ServerName }
                                 SecondaryServer = $Failover.PartnerServer
                                 Mode = $Failover.Mode
                                 State = $Failover.State
@@ -69,6 +69,7 @@
                                 State = $Scope.State
                                 LeaseDuration = if ($Scope.LeaseDurationHours) { "$($Scope.LeaseDurationHours) hours" } else { 'N/A' }
                                 HasFailover = 'No'
+                                FailoverConfiguration = 'missing on both'
                                 Issues = if ($Scope.HasIssues) { 'Yes' } else { 'No' }
                             }
                         }
@@ -92,44 +93,56 @@
                 }
             }
 
-            # Failover scope mismatch detection
-            $FailoverMismatches = @()
-            foreach ($Failover in $FailoverRelationships) {
-                if ($Failover.PartnerServer) {
-                    # Check if partner has same failover configuration
-                    $PartnerFailover = $FailoverRelationships | Where-Object {
-                        $_.PrimaryServerName -eq $Failover.PartnerServer -and
-                        $_.Name -eq $Failover.Name
-                    }
+            # Failover analysis (uses precomputed results if available)
+            $hasAnalysis = ($DHCPData.FailoverAnalysis -and (
+                $DHCPData.FailoverAnalysis.OnlyOnPrimary.Count -gt 0 -or
+                $DHCPData.FailoverAnalysis.OnlyOnSecondary.Count -gt 0 -or
+                $DHCPData.FailoverAnalysis.MissingOnBoth.Count -gt 0))
 
-                    if ($PartnerFailover) {
-                        # Compare scope lists
-                        $PrimaryScopes = if ($Failover.ScopeId -is [Array]) { $Failover.ScopeId } else { @($Failover.ScopeId) }
-                        $PartnerScopes = if ($PartnerFailover.ScopeId -is [Array]) { $PartnerFailover.ScopeId } else { @($PartnerFailover.ScopeId) }
-
-                        $Differences = Compare-Object $PrimaryScopes $PartnerScopes
-                        if ($Differences) {
-                            foreach ($Diff in $Differences) {
-                                $FailoverMismatches += [PSCustomObject]@{
-                                    FailoverName = $Failover.Name
-                                    Scope = $Diff.InputObject
-                                    Issue = if ($Diff.SideIndicator -eq '<=') { "Missing on $($Failover.PartnerServer)" } else { "Missing on $($Failover.PrimaryServerName)" }
-                                }
+            if ($hasAnalysis) {
+                if ($DHCPData.FailoverAnalysis.OnlyOnPrimary.Count -gt 0) {
+                    New-HTMLSection -HeaderText '🔶 Mismatches: Present only on Primary' {
+                        $data = $DHCPData.FailoverAnalysis.OnlyOnPrimary | ForEach-Object {
+                            [PSCustomObject]@{
+                                Relationship        = $_.Relationship
+                                PrimaryServer       = $_.PrimaryServer
+                                SecondaryServer     = $_.SecondaryServer
+                                ScopeId             = $_.ScopeId
+                                FailoverConfiguration = 'missing on secondary'
+                                Issue               = $_.Issue
                             }
                         }
+                        New-HTMLTable -DataTable $data -ScrollX -Filtering
                     }
                 }
-            }
-
-            if ($FailoverMismatches.Count -gt 0) {
-                New-HTMLSection -HeaderText '🔴 Critical: Failover Configuration Mismatches' {
-                    New-HTMLPanel -Invisible {
-                        New-HTMLText -Text 'Failover scope mismatches detected between partners' -FontSize 14px -FontWeight bold -Color Red
-                        New-HTMLTable -DataTable $FailoverMismatches {
-                            New-HTMLTableCondition -Name 'Issue' -ComparisonType string -Operator contains -Value 'Missing' -BackgroundColor Red -Color White
-                        } -ScrollX
-                        New-HTMLText -Text 'Action Required:' -FontSize 12px -FontWeight bold -Color Red
-                        New-HTMLText -Text 'Synchronize failover configurations between partner servers immediately.' -FontSize 11px -Color Red
+                if ($DHCPData.FailoverAnalysis.OnlyOnSecondary.Count -gt 0) {
+                    New-HTMLSection -HeaderText '🔶 Mismatches: Present only on Secondary' {
+                        $data = $DHCPData.FailoverAnalysis.OnlyOnSecondary | ForEach-Object {
+                            [PSCustomObject]@{
+                                Relationship        = $_.Relationship
+                                PrimaryServer       = $_.PrimaryServer
+                                SecondaryServer     = $_.SecondaryServer
+                                ScopeId             = $_.ScopeId
+                                FailoverConfiguration = 'missing on primary'
+                                Issue               = $_.Issue
+                            }
+                        }
+                        New-HTMLTable -DataTable $data -ScrollX -Filtering
+                    }
+                }
+                if ($DHCPData.FailoverAnalysis.MissingOnBoth.Count -gt 0) {
+                    New-HTMLSection -HeaderText '⚠️ Scopes Missing on Both Partners' {
+                        $data = $DHCPData.FailoverAnalysis.MissingOnBoth | ForEach-Object {
+                            [PSCustomObject]@{
+                                Relationship        = $_.Relationship
+                                PrimaryServer       = $_.PrimaryServer
+                                SecondaryServer     = $_.SecondaryServer
+                                ScopeId             = $_.ScopeId
+                                FailoverConfiguration = 'missing on both'
+                                Issue               = $_.Issue
+                            }
+                        }
+                        New-HTMLTable -DataTable $data -ScrollX -Filtering
                     }
                 }
             }

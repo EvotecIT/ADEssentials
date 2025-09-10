@@ -115,7 +115,10 @@
         [System.Collections.IDictionary] $ExtendedForestInformation,
         [switch] $SkipScopeDetails,
         [switch] $TestMode,
-        [switch] $Minimal
+        [switch] $Minimal,
+        [switch] $ConsiderMissingFailoverCritical,
+        [switch] $ConsiderDNSConfigCritical,
+        [switch] $IncludeServerAvailabilityIssues
     )
 
     if ($Minimal) {
@@ -267,6 +270,21 @@
     # Track overall timing
     $OverallStartTime = Get-Date
 
+    # Collect failover relationships upfront for all servers (once)
+    foreach ($s in $DHCPServersFromAD) {
+        Get-WinADDHCPFailoverRelationships -Computer $s.DnsName -DHCPSummary $DHCPSummary -TestMode:$TestMode
+    }
+    # Index failover relationships by server for fast lookup
+    $FailoverByServer = @{}
+    foreach ($rel in $DHCPSummary.FailoverRelationships) {
+        if (-not $rel) { continue }
+        $key = $rel.ServerName.ToLower()
+        if (-not $FailoverByServer.ContainsKey($key)) {
+            $FailoverByServer[$key] = New-Object System.Collections.Generic.List[object]
+        }
+        [void] $FailoverByServer[$key].Add($rel)
+    }
+
     foreach ($DHCPServer in $DHCPServersFromAD) {
         $Computer = $DHCPServer.DnsName
         $ProcessedServers++
@@ -279,6 +297,9 @@
 
         # Determine if this server should be analyzed in detail
         $ShouldAnalyze = $ServersToAnalyzeSet[$Computer.ToLower()] -eq $true
+
+        # Reset per-server failover map
+        $ServerFailoverMap = $null
 
         # Test connectivity and get server information only for servers to analyze
         if ($ShouldAnalyze) {
@@ -398,8 +419,20 @@
             Write-Progress -Activity "Processing Scopes on $Computer" -Status "Scope $($Scope.ScopeId) ($ScopeCounter of $($Scopes.Count))" -PercentComplete (($ScopeCounter / $Scopes.Count) * 100) -ParentId 1 -Id 2
             Write-Verbose "Get-WinADDHCPSummary - Processing scope $($Scope.ScopeId) on $Computer"
 
-            # Get scope configuration
-            $ScopeObject = Get-WinADDHCPScopeConfiguration -Computer $Computer -Scope $Scope -DHCPSummaryErrors $DHCPSummary.Errors -TestMode:$TestMode
+        # Build failover map once per server (collect relationships, then map ScopeId->Partner)
+        if (-not $ServerFailoverMap) {
+            $ServerFailoverMap = @{}
+            $key = $Computer.ToLower()
+            if ($FailoverByServer.ContainsKey($key)) {
+                foreach ($rel in $FailoverByServer[$key]) {
+                    $scopeList = if ($rel.ScopeId -is [Array]) { $rel.ScopeId } else { @($rel.ScopeId) }
+                    foreach ($sid in $scopeList) { if ($sid) { $ServerFailoverMap[[string]$sid] = $rel.PartnerServer } }
+                }
+            }
+        }
+
+        # Get scope configuration
+        $ScopeObject = Get-WinADDHCPScopeConfiguration -Computer $Computer -Scope $Scope -DHCPSummaryErrors $DHCPSummary.Errors -TestMode:$TestMode -ServerFailoverMap $ServerFailoverMap
 
             # Get scope statistics
             $ScopeStats = Get-WinADDHCPScopeStatistics -Computer $Computer -Scope $Scope -ScopeObject $ScopeObject -DHCPSummaryTimingStatistics $DHCPSummary.TimingStatistics -DHCPSummaryErrors $DHCPSummary.Errors -SkipScopeDetails:$SkipScopeDetails -TestMode:$TestMode
@@ -457,11 +490,14 @@
         }
     }
 
+    # Analyze failover coverage and mismatches before computing validation results
+    Get-WinADDHCPFailoverAnalysis -DHCPSummary $DHCPSummary
+
     # Calculate overall statistics
     $DHCPSummary.Statistics = Get-WinADDHCPStatistics -DHCPSummary $DHCPSummary -TotalServers $TotalServers -ServersWithIssues $ServersWithIssues -TotalScopes $TotalScopes -ScopesWithIssues $ScopesWithIssues -SkipScopeDetails:$SkipScopeDetails
 
     # Categorize validation results
-    $DHCPSummary.ValidationResults = Get-WinADDHCPValidationResults -DHCPSummary $DHCPSummary -SkipScopeDetails:$SkipScopeDetails
+    $DHCPSummary.ValidationResults = Get-WinADDHCPValidationResults -DHCPSummary $DHCPSummary -SkipScopeDetails:$SkipScopeDetails -ConsiderMissingFailoverCritical:$ConsiderMissingFailoverCritical -ConsiderDNSConfigCritical:$ConsiderDNSConfigCritical -IncludeServerAvailabilityIssues:$IncludeServerAvailabilityIssues
 
     # Enhanced Analysis (skip in minimal mode)
     if (-not $Minimal) {

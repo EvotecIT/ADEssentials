@@ -4,7 +4,8 @@
         [string] $Computer,
         [Object] $Scope,
         [System.Collections.Generic.List[Object]] $DHCPSummaryErrors,
-        [switch] $TestMode
+        [switch] $TestMode,
+        [hashtable] $ServerFailoverMap
     )
 
     Write-Verbose "Get-WinADDHCPScopeConfiguration - Processing scope $($Scope.ScopeId) on $Computer"
@@ -30,6 +31,8 @@
         Issues                     = [System.Collections.Generic.List[string]]::new()
         HasUtilizationIssues       = $false
         UtilizationIssues          = [System.Collections.Generic.List[string]]::new()
+        HasFailover                = $false
+        FailoverConfiguration      = $null
         # DNS Configuration fields
         DomainName                 = $null
         DomainNameOption           = $null
@@ -91,19 +94,37 @@
         }
     }
 
-    # Check DHCP failover configuration
-    try {
-        if ($TestMode) {
-            $Failover = Get-TestModeDHCPData -DataType 'DhcpServerv4Failover' -ComputerName $Computer -ScopeId $Scope.ScopeId
+    # Determine DHCP failover configuration using pre-fetched mapping (preferred)
+    if ($ServerFailoverMap) {
+        $key = [string]$Scope.ScopeId
+        if ($ServerFailoverMap.ContainsKey($key)) {
+            $ScopeObject.FailoverPartner = $ServerFailoverMap[$key]
+            $ScopeObject.HasFailover = $true
+            $ScopeObject.FailoverConfiguration = 'configured'
         } else {
-            $Failover = Get-DhcpServerv4Failover -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction SilentlyContinue
+            $ScopeObject.HasFailover = $false
+            $ScopeObject.FailoverConfiguration = 'missing'
         }
-        if ($Failover) {
-            $ScopeObject.FailoverPartner = $Failover.PartnerServer
+    } else {
+        # Fallback (should rarely be used): per-scope query
+        try {
+            if ($TestMode) {
+                $Failover = Get-TestModeDHCPData -DataType 'DhcpServerv4Failover' -ComputerName $Computer -ScopeId $Scope.ScopeId
+            } else {
+                $Failover = Get-DhcpServerv4Failover -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction SilentlyContinue
+            }
+            if ($Failover) {
+                $ScopeObject.FailoverPartner = $Failover.PartnerServer
+                $ScopeObject.HasFailover = $true
+                $ScopeObject.FailoverConfiguration = 'configured'
+            } else {
+                $ScopeObject.HasFailover = $false
+                $ScopeObject.FailoverConfiguration = 'missing'
+            }
+        } catch {
+            # Not an error if not configured
+            Write-Verbose "Get-WinADDHCPScopeConfiguration - No failover configuration for scope $($Scope.ScopeId) on $Computer"
         }
-    } catch {
-        # Failover may not be configured, which is not necessarily an error
-        Write-Verbose "Get-WinADDHCPScopeConfiguration - No failover configuration for scope $($Scope.ScopeId) on $Computer"
     }
 
     return [PSCustomObject]$ScopeObject

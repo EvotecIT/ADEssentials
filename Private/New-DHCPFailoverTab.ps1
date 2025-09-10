@@ -35,6 +35,11 @@
                     New-HTMLInfoCard -Title "Active Failovers" -Number $ActiveFailovers -Subtitle "Normal State" -Icon "✅" -TitleColor Green -NumberColor DarkGreen
                     New-HTMLInfoCard -Title "Failover Issues" -Number $FailoverIssues -Subtitle "Need Attention" -Icon "⚠️" -TitleColor $(if ($FailoverIssues -gt 0) { "Red" } else { "Green" }) -NumberColor $(if ($FailoverIssues -gt 0) { "DarkRed" } else { "DarkGreen" })
                     New-HTMLInfoCard -Title "Unprotected Scopes" -Number $ScopesWithoutFailover -Subtitle "No Failover" -Icon "🚨" -TitleColor $(if ($ScopesWithoutFailover -gt 0) { "Orange" } else { "Green" }) -NumberColor $(if ($ScopesWithoutFailover -gt 0) { "DarkOrange" } else { "DarkGreen" })
+                    if ($DHCPData.FailoverAnalysis) {
+                        New-HTMLInfoCard -Title "Only on Primary" -Number $($DHCPData.FailoverAnalysis.OnlyOnPrimary.Count) -Subtitle "Mismatch" -Icon "🟠" -TitleColor 'DarkOrange' -NumberColor 'DarkOrange'
+                        New-HTMLInfoCard -Title "Only on Secondary" -Number $($DHCPData.FailoverAnalysis.OnlyOnSecondary.Count) -Subtitle "Mismatch" -Icon "🟠" -TitleColor 'DarkOrange' -NumberColor 'DarkOrange'
+                        New-HTMLInfoCard -Title "Missing on Both" -Number $($DHCPData.FailoverAnalysis.MissingOnBoth.Count) -Subtitle "Gap" -Icon "⚠️" -TitleColor 'OrangeRed' -NumberColor 'OrangeRed'
+                    }
                 }
 
                 # Failover coverage chart
@@ -56,6 +61,70 @@
                     New-HTMLTableCondition -Name 'Mode' -ComparisonType string -Operator eq -Value 'HotStandby' -BackgroundColor LightYellow -HighlightHeaders 'Mode'
                     New-HTMLTableCondition -Name 'EnableAuth' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightGreen -FailBackgroundColor Red -Color White
                 } -DataStore JavaScript -ScrollX -Title "All Failover Relationships"
+            }
+
+            # Pair-wise analysis views
+            New-HTMLSection -HeaderText "🔎 Relationship Pair View" -CanCollapse {
+                # Build pairs keyed by normalized server tuple + relationship name
+                $Pairs = @{}
+                foreach ($rel in $DHCPData.FailoverRelationships) {
+                    $a = $rel.ServerName.ToLower()
+                    $b = $rel.PartnerServer.ToLower()
+                    $sorted = @($a, $b) | Sort-Object
+                    $key = "$($rel.Name.ToLower())|$($sorted -join '↔')"
+                    if (-not $Pairs.ContainsKey($key)) {
+                        $Pairs[$key] = [ordered]@{
+                            Name    = $rel.Name
+                            ServerA = $sorted[0]
+                            ServerB = $sorted[1]
+                            RelA    = $null
+                            RelB    = $null
+                        }
+                    }
+                    if ($rel.ServerName.ToLower() -eq $Pairs[$key].ServerA) { $Pairs[$key].RelA = $rel } else { $Pairs[$key].RelB = $rel }
+                }
+
+                foreach ($pair in $Pairs.Values) {
+                    $relA = $pair.RelA
+                    $relB = $pair.RelB
+                    $scopesA = if ($relA -and $relA.ScopeId) { @($relA.ScopeId) } else { @() }
+                    $scopesB = if ($relB -and $relB.ScopeId) { @($relB.ScopeId) } else { @() }
+
+                    # All scopes hosted on both servers (for missing-on-both detection)
+                    $serverScopes = $DHCPData.Scopes | Where-Object { $_.ServerName -and ($_.ServerName.ToLower() -in @($pair.ServerA, $pair.ServerB)) }
+                    $scopesOnServers = @($serverScopes | Select-Object -ExpandProperty ScopeId -Unique)
+                    $allScopes = @($scopesA + $scopesB + $scopesOnServers) | Select-Object -Unique
+
+                    $rows = foreach ($s in $allScopes) {
+                        $onA = $scopesA -contains $s
+                        $onB = $scopesB -contains $s
+                        $status = if ($onA -and $onB) { 'On both' } elseif ($onA) { 'Only on Primary' } elseif ($onB) { 'Only on Secondary' } else { 'Missing on both' }
+                        $failoverConfig = switch ($status) {
+                            'Only on Primary' { 'missing on secondary' }
+                            'Only on Secondary' { 'missing on primary' }
+                            'Missing on both' { 'missing on both' }
+                            default { 'configured' }
+                        }
+                        [PSCustomObject]@{
+                            Relationship          = $pair.Name
+                            PrimaryServer         = $pair.ServerA
+                            SecondaryServer       = $pair.ServerB
+                            ScopeId               = $s
+                            OnPrimary             = $onA
+                            OnSecondary           = $onB
+                            Status                = $status
+                            FailoverConfiguration = $failoverConfig
+                        }
+                    }
+
+                    New-HTMLSection -HeaderText "$($pair.Name) — $($pair.ServerA) ↔ $($pair.ServerB)" {
+                        New-HTMLTable -DataTable $rows -Filtering {
+                            New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Only on Primary' -BackgroundColor LightYellow
+                            New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Only on Secondary' -BackgroundColor LightYellow
+                            New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Missing on both' -BackgroundColor Orange
+                        } -DataStore JavaScript -ScrollX -Title "Scope Assignment Comparison"
+                    }
+                }
             }
 
         }
