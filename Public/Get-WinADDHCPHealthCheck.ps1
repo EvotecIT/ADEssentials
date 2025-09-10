@@ -185,6 +185,23 @@
     if ($Summary.ValidationResults.Summary.TotalWarningIssues -gt 0) {
         if ($Summary.ValidationResults.WarningIssues.MissingFailover.Count -gt 0) {
             $Recommendations += "⚠️ Configure DHCP failover for high-availability scopes"
+            $Issues += "⚠️ $($Summary.ValidationResults.WarningIssues.MissingFailover.Count) scope(s) missing failover"
+            $HealthScore -= [Math]::Min(10, $Summary.ValidationResults.WarningIssues.MissingFailover.Count)
+        }
+        if ($Summary.ValidationResults.WarningIssues.FailoverOnlyOnPrimary.Count -gt 0) {
+            $Recommendations += "⚠️ Synchronize failover scope lists: present only on primary"
+            $Issues += "⚠️ $($Summary.ValidationResults.WarningIssues.FailoverOnlyOnPrimary.Count) scope(s) only on primary failover list"
+            $HealthScore -= [Math]::Min(10, $Summary.ValidationResults.WarningIssues.FailoverOnlyOnPrimary.Count)
+        }
+        if ($Summary.ValidationResults.WarningIssues.FailoverOnlyOnSecondary.Count -gt 0) {
+            $Recommendations += "⚠️ Synchronize failover scope lists: present only on secondary"
+            $Issues += "⚠️ $($Summary.ValidationResults.WarningIssues.FailoverOnlyOnSecondary.Count) scope(s) only on secondary failover list"
+            $HealthScore -= [Math]::Min(10, $Summary.ValidationResults.WarningIssues.FailoverOnlyOnSecondary.Count)
+        }
+        if ($Summary.ValidationResults.WarningIssues.FailoverMissingOnBoth.Count -gt 0) {
+            $Recommendations += "⚠️ Add scopes to failover on both partners"
+            $Issues += "⚠️ $($Summary.ValidationResults.WarningIssues.FailoverMissingOnBoth.Count) scope(s) missing on both failover lists"
+            $HealthScore -= [Math]::Min(15, $Summary.ValidationResults.WarningIssues.FailoverMissingOnBoth.Count)
         }
         if ($Summary.ValidationResults.WarningIssues.ExtendedLeaseDuration.Count -gt 0) {
             $Recommendations += "⚠️ Review extended lease durations for potential optimization"

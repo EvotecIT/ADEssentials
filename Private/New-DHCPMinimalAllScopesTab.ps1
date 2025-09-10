@@ -36,7 +36,7 @@
                         'ServerName', 'ScopeId', 'Name', 'State', 'LeaseDurationHours',
                         'DNSServers', 'DomainNameOption', 'DynamicUpdates',
                         'UpdateDnsRRForOlderClients', 'DeleteDnsRROnLeaseExpiry',
-                        'FailoverPartner'
+                        'FailoverPartner', 'HasFailover', 'FailoverConfiguration'
                     )
                 }
             }
@@ -60,7 +60,7 @@
                         'ServerName', 'ScopeId', 'Name', 'State', 'LeaseDurationHours',
                         'DNSServers', 'DomainNameOption', 'DynamicUpdates',
                         'UpdateDnsRRForOlderClients', 'DeleteDnsRROnLeaseExpiry',
-                        'FailoverPartner', 'Issues'
+                        'FailoverPartner', 'HasFailover', 'FailoverConfiguration', 'Issues'
                     )
                 }
             }

@@ -2,7 +2,10 @@
     [CmdletBinding()]
     param(
         [System.Collections.IDictionary] $DHCPSummary,
-        [switch] $SkipScopeDetails
+        [switch] $SkipScopeDetails,
+        [switch] $ConsiderMissingFailoverCritical,
+        [switch] $ConsiderDNSConfigCritical,
+        [switch] $IncludeServerAvailabilityIssues
     )
 
     Write-Verbose "Get-WinADDHCPValidationResults - Categorizing validation results"
@@ -11,100 +14,102 @@
     $PublicDNSWithUpdates = [System.Collections.Generic.List[Object]]::new()
     $HighUtilization = [System.Collections.Generic.List[Object]]::new()
     $ServersOffline = [System.Collections.Generic.List[Object]]::new()
+    $ServersDNSFailed = [System.Collections.Generic.List[Object]]::new()
+    $ServersPingFailed = [System.Collections.Generic.List[Object]]::new()
+    $ServersDHCPNotResponding = [System.Collections.Generic.List[Object]]::new()
     $MissingFailover = [System.Collections.Generic.List[Object]]::new()
+    $FailoverOnlyOnPrimary = [System.Collections.Generic.List[Object]]::new()
+    $FailoverOnlyOnSecondary = [System.Collections.Generic.List[Object]]::new()
+    $FailoverMissingOnBoth = [System.Collections.Generic.List[Object]]::new()
     $ExtendedLeaseDuration = [System.Collections.Generic.List[Object]]::new()
     $ModerateUtilization = [System.Collections.Generic.List[Object]]::new()
     $DNSRecordManagement = [System.Collections.Generic.List[Object]]::new()
     $MissingDomainName = [System.Collections.Generic.List[Object]]::new()
     $InactiveScopes = [System.Collections.Generic.List[Object]]::new()
 
-    # Single pass through servers for offline/unhealthy check (always available)
+    # Server availability categorization
     foreach ($Server in $DHCPSummary.Servers) {
-        # Treat any non-Online, analyzed status as offline/unhealthy
-        if ($Server.Status -in @('Reachable but DHCP not responding', 'DNS OK but unreachable', 'DNS resolution failed')) {
-            $ServersOffline.Add($Server)
+        switch ($Server.Status) {
+            'DNS resolution failed'             { $ServersDNSFailed.Add($Server) }
+            'DNS OK but unreachable'            { $ServersPingFailed.Add($Server) }
+            'Reachable but DHCP not responding' { $ServersDHCPNotResponding.Add($Server) }
         }
     }
+    if ($IncludeServerAvailabilityIssues) {
+        foreach ($s in $ServersDNSFailed) { $ServersOffline.Add($s) }
+        foreach ($s in $ServersPingFailed) { $ServersOffline.Add($s) }
+        foreach ($s in $ServersDHCPNotResponding) { $ServersOffline.Add($s) }
+    }
 
-    # Single pass through scopes with issues for detailed validations (always available)
+    # Scope issues categorization
     foreach ($Scope in $DHCPSummary.ScopesWithIssues) {
         foreach ($Issue in $Scope.Issues) {
             if ($Issue -like "*public DNS servers*" -or $Issue -like "*non-private DNS servers*") {
-                if ($PublicDNSWithUpdates -notcontains $Scope) {
-                    $PublicDNSWithUpdates.Add($Scope)
-                }
-            } 
+                if ($PublicDNSWithUpdates -notcontains $Scope) { $PublicDNSWithUpdates.Add($Scope) }
+            }
             if ($Issue -like "*Failover not configured*") {
-                if ($MissingFailover -notcontains $Scope) {
-                    $MissingFailover.Add($Scope)
-                }
+                if ($MissingFailover -notcontains $Scope) { $MissingFailover.Add($Scope) }
             }
             if ($Issue -like "*exceeds 48 hours*") {
-                if ($ExtendedLeaseDuration -notcontains $Scope) {
-                    $ExtendedLeaseDuration.Add($Scope)
-                }
+                if ($ExtendedLeaseDuration -notcontains $Scope) { $ExtendedLeaseDuration.Add($Scope) }
             }
             if ($Issue -like "*UpdateDnsRRForOlderClients*" -or $Issue -like "*DeleteDnsRROnLeaseExpiry*") {
-                if ($DNSRecordManagement -notcontains $Scope) {
-                    $DNSRecordManagement.Add($Scope)
-                }
+                if ($DNSRecordManagement -notcontains $Scope) { $DNSRecordManagement.Add($Scope) }
             }
             if ($Issue -like "*Domain name option*") {
-                if ($MissingDomainName -notcontains $Scope) {
-                    $MissingDomainName.Add($Scope)
-                }
+                if ($MissingDomainName -notcontains $Scope) { $MissingDomainName.Add($Scope) }
             }
         }
     }
 
-    # Scope state validations - only check inactive scopes (doesn't need statistics)
-    foreach ($Scope in $DHCPSummary.Scopes) {
-        if ($Scope.State -eq 'Inactive') {
-            $InactiveScopes.Add($Scope)
-        }
+    # Failover mismatches from precomputed analysis
+    if ($DHCPSummary.FailoverAnalysis) {
+        if ($DHCPSummary.FailoverAnalysis.OnlyOnPrimary)   { foreach ($i in $DHCPSummary.FailoverAnalysis.OnlyOnPrimary)   { $FailoverOnlyOnPrimary.Add($i) } }
+        if ($DHCPSummary.FailoverAnalysis.OnlyOnSecondary) { foreach ($i in $DHCPSummary.FailoverAnalysis.OnlyOnSecondary) { $FailoverOnlyOnSecondary.Add($i) } }
+        if ($DHCPSummary.FailoverAnalysis.MissingOnBoth)   { foreach ($i in $DHCPSummary.FailoverAnalysis.MissingOnBoth)   { $FailoverMissingOnBoth.Add($i) } }
     }
 
-    # Utilization validations only available when scope details were collected
+    # Inactive scopes
+    foreach ($Scope in $DHCPSummary.Scopes) { if ($Scope.State -eq 'Inactive') { $InactiveScopes.Add($Scope) } }
+
+    # Utilization checks
     if (-not $SkipScopeDetails) {
-        # Single pass through scopes for utilization validations
         foreach ($Scope in $DHCPSummary.Scopes) {
-            # Check utilization levels
             if ($Scope.State -eq 'Active') {
-                if ($Scope.PercentageInUse -gt 90) {
-                    $HighUtilization.Add($Scope)
-                } elseif ($Scope.PercentageInUse -gt 75) {
-                    $ModerateUtilization.Add($Scope)
-                }
+                if ($Scope.PercentageInUse -gt 90) { $HighUtilization.Add($Scope) }
+                elseif ($Scope.PercentageInUse -gt 75) { $ModerateUtilization.Add($Scope) }
             }
         }
     } else {
-        # When SkipScopeDetails is used, inform about limitations
         Write-Verbose "Get-WinADDHCPValidationResults - Utilization validations skipped due to SkipScopeDetails parameter"
     }
 
+    # Build result structure
     $ValidationResults = [ordered] @{
-        # Critical issues that require immediate attention
         CriticalIssues    = [ordered] @{
-            PublicDNSWithUpdates = $PublicDNSWithUpdates
-            ServersOffline       = $ServersOffline
+            PublicDNSWithUpdates     = $PublicDNSWithUpdates
+            DNSConfigurationProblems = @()
+            ServersOffline           = $ServersOffline
+            ServersDNSFailed         = $ServersDNSFailed
+            ServersPingFailed        = $ServersPingFailed
+            ServersDHCPNotResponding = $ServersDHCPNotResponding
         }
-        # Utilization issues that may need capacity planning
         UtilizationIssues = [ordered] @{
             HighUtilization     = $HighUtilization
             ModerateUtilization = $ModerateUtilization
         }
-        # Warning issues that should be addressed soon
         WarningIssues     = [ordered] @{
-            MissingFailover       = $MissingFailover
-            ExtendedLeaseDuration = $ExtendedLeaseDuration
-            DNSRecordManagement   = $DNSRecordManagement
+            MissingFailover         = $MissingFailover
+            FailoverOnlyOnPrimary   = $FailoverOnlyOnPrimary
+            FailoverOnlyOnSecondary = $FailoverOnlyOnSecondary
+            FailoverMissingOnBoth   = $FailoverMissingOnBoth
+            ExtendedLeaseDuration   = $ExtendedLeaseDuration
+            DNSRecordManagement     = $DNSRecordManagement
         }
-        # Information issues that are good to know but not urgent
         InfoIssues        = [ordered] @{
             MissingDomainName = $MissingDomainName
             InactiveScopes    = $InactiveScopes
         }
-        # Summary counters for quick overview
         Summary           = [ordered] @{
             TotalCriticalIssues    = 0
             TotalUtilizationIssues = 0
@@ -117,51 +122,70 @@
         }
     }
 
-    # Calculate validation summary counters efficiently
+    # Escalate DNS config issues to critical when requested (readable & efficient)
+    if ($ConsiderDNSConfigCritical) {
+        # Aggregate
+        $dnsAgg = New-Object 'System.Collections.Generic.List[object]'
+        if ($PublicDNSWithUpdates -and $PublicDNSWithUpdates.Count -gt 0) { [void] $dnsAgg.AddRange($PublicDNSWithUpdates) }
+        if ($DNSRecordManagement   -and $DNSRecordManagement.Count   -gt 0) { [void] $dnsAgg.AddRange($DNSRecordManagement) }
+        if ($MissingDomainName     -and $MissingDomainName.Count     -gt 0) { [void] $dnsAgg.AddRange($MissingDomainName) }
+
+        # Deduplicate by (ServerName|ScopeId)
+        $seen = @{}
+        $dnsUnique = New-Object 'System.Collections.Generic.List[object]'
+        foreach ($item in $dnsAgg) {
+            $id = "$($item.ServerName)|$($item.ScopeId)"
+            if (-not $seen.ContainsKey($id)) {
+                $seen[$id] = $true
+                [void] $dnsUnique.Add($item)
+            }
+        }
+
+        $ValidationResults.CriticalIssues.DNSConfigurationProblems = $dnsUnique
+        # Prevent double-counting when summarizing
+        $DNSRecordManagement = [System.Collections.Generic.List[Object]]::new()
+        $MissingDomainName   = [System.Collections.Generic.List[Object]]::new()
+    }
+
+    # Counters
     $ValidationResults.Summary.TotalCriticalIssues = (
-        $PublicDNSWithUpdates.Count +
-        $ServersOffline.Count
+        $ValidationResults.CriticalIssues.PublicDNSWithUpdates.Count +
+        $ValidationResults.CriticalIssues.DNSConfigurationProblems.Count +
+        $ValidationResults.CriticalIssues.ServersOffline.Count +
+        $(if ($ConsiderMissingFailoverCritical) { $MissingFailover.Count } else { 0 })
     )
 
-    $ValidationResults.Summary.TotalUtilizationIssues = (
-        $HighUtilization.Count +
-        $ModerateUtilization.Count
-    )
+    $ValidationResults.Summary.TotalUtilizationIssues = ($HighUtilization.Count + $ModerateUtilization.Count)
 
     $ValidationResults.Summary.TotalWarningIssues = (
-        $MissingFailover.Count +
+        $(if ($ConsiderMissingFailoverCritical) { 0 } else { $MissingFailover.Count }) +
+        $FailoverOnlyOnPrimary.Count +
+        $FailoverOnlyOnSecondary.Count +
+        $FailoverMissingOnBoth.Count +
         $ExtendedLeaseDuration.Count +
         $DNSRecordManagement.Count
     )
 
-    $ValidationResults.Summary.TotalInfoIssues = (
-        $MissingDomainName.Count +
-        $InactiveScopes.Count
-    )
+    $ValidationResults.Summary.TotalInfoIssues = ($MissingDomainName.Count + $InactiveScopes.Count)
 
-    # Calculate unique scope counts for each severity level using efficient single-pass array comprehension
-    $CriticalScopes = @(
-        $PublicDNSWithUpdates
-    )
+    # Unique scope counters
+    $CriticalScopes = @($ValidationResults.CriticalIssues.PublicDNSWithUpdates; $ValidationResults.CriticalIssues.DNSConfigurationProblems)
     $ValidationResults.Summary.ScopesWithCritical = ($CriticalScopes | Sort-Object -Property ScopeId -Unique).Count
 
-    $UtilizationScopes = @(
-        $HighUtilization
-        $ModerateUtilization
-    )
+    $UtilizationScopes = @($HighUtilization; $ModerateUtilization)
     $ValidationResults.Summary.ScopesWithUtilization = ($UtilizationScopes | Sort-Object -Property ScopeId -Unique).Count
 
     $WarningScopes = @(
-        $MissingFailover
+        $(if ($ConsiderMissingFailoverCritical) { @() } else { $MissingFailover })
+        $FailoverOnlyOnPrimary
+        $FailoverOnlyOnSecondary
+        $FailoverMissingOnBoth
         $ExtendedLeaseDuration
         $DNSRecordManagement
     )
     $ValidationResults.Summary.ScopesWithWarnings = ($WarningScopes | Sort-Object -Property ScopeId -Unique).Count
 
-    $InfoScopes = @(
-        $MissingDomainName
-        $InactiveScopes
-    )
+    $InfoScopes = @($MissingDomainName; $InactiveScopes)
     $ValidationResults.Summary.ScopesWithInfo = ($InfoScopes | Sort-Object -Property ScopeId -Unique).Count
 
     return $ValidationResults
