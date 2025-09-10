@@ -23,8 +23,8 @@
     New-HTMLTab -TabName 'Validation Issues' {
         # Calculate total issues from validation results (excluding utilization which has its own tab)
         $TotalIssuesCount = $DHCPData.ValidationResults.Summary.TotalCriticalIssues +
-                           $DHCPData.ValidationResults.Summary.TotalWarningIssues +
-                           $DHCPData.ValidationResults.Summary.TotalInfoIssues
+        $DHCPData.ValidationResults.Summary.TotalWarningIssues +
+        $DHCPData.ValidationResults.Summary.TotalInfoIssues
 
         if ($TotalIssuesCount -eq 0) {
             New-HTMLSection -HeaderText "Validation Status" {
@@ -38,15 +38,23 @@
 
         # Critical Issues Section
         if ($DHCPData.ValidationResults.Summary.TotalCriticalIssues -gt 0) {
-            New-HTMLSection -HeaderText "Critical Issues" -BackgroundColor '#ffe0e0' -HeaderTextColor '#8b0000' -Density Compact {
+            New-HTMLSection -HeaderText "Critical Issues" -HeaderTextColor '#8b0000' -Density Compact {
                 # Public DNS with Updates
                 if ($DHCPData.ValidationResults.CriticalIssues.PublicDNSWithUpdates.Count -gt 0) {
-                    New-HTMLContainer {
-                        New-HTMLText -Text "⚠️ Public DNS Servers with Dynamic Updates Enabled" -FontSize 14pt -FontWeight bold -Color '#cc0000'
-                        New-HTMLTable -DataTable $DHCPData.ValidationResults.CriticalIssues.PublicDNSWithUpdates -Filtering {
-                            New-HTMLTableCondition -Name 'State' -ComparisonType string -Operator eq -Value 'Active' -BackgroundColor LightGreen -FailBackgroundColor Orange
-                        } -DataStore JavaScript -ScrollX
-                    }
+                    # New-HTMLSection -Invisible {
+                    New-HTMLText -Text "⚠️ Public DNS Servers with Dynamic Updates Enabled" -FontSize 14pt -FontWeight bold -Color '#cc0000'
+                    New-HTMLTable -DataTable $DHCPData.ValidationResults.CriticalIssues.PublicDNSWithUpdates -Filtering {
+                        New-HTMLTableCondition -Name 'State' -ComparisonType string -Operator eq -Value 'Active' -BackgroundColor LightGreen -FailBackgroundColor Orange
+                    } -DataStore JavaScript -ScrollX
+                    # }
+                }
+
+                # DNS configuration problems (aggregated when policy enabled)
+                if ($DHCPData.ValidationResults.CriticalIssues.DNSConfigurationProblems.Count -gt 0) {
+                    #New-HTMLSection -Invisible {
+                    New-HTMLText -Text "⚠️ Scopes with DNS Configuration Problems" -FontSize 14pt -FontWeight bold -Color '#cc0000'
+                    New-HTMLTable -DataTable $DHCPData.ValidationResults.CriticalIssues.DNSConfigurationProblems -Filtering -DataStore JavaScript -ScrollX
+                    #}
                 }
 
                 # Servers Offline
@@ -59,24 +67,12 @@
             }
         }
 
-        # Note about utilization
-        if ($DHCPData.ValidationResults.Summary.TotalUtilizationIssues -gt 0) {
-            New-HTMLSection -HeaderText "Utilization Alert" -BackgroundColor '#fff3e0' -HeaderTextColor '#ff6600' {
-                New-HTMLPanel -Invisible {
-                    New-HTMLText -Text "🔴 $($DHCPData.ValidationResults.UtilizationIssues.HighUtilization.Count) scope(s) with critical utilization (>90%)" -FontSize 14pt -FontWeight bold -Color Red
-                    New-HTMLText -Text "🟠 $($DHCPData.ValidationResults.UtilizationIssues.ModerateUtilization.Count) scope(s) with high utilization (75-90%)" -FontSize 14pt -FontWeight bold -Color DarkOrange
-                    New-HTMLText -Text "➡️ See the Utilization tab for detailed analysis and capacity planning" -FontSize 12pt -Color Blue
-                }
-            }
-        }
-
         # Warning Issues Section
         if ($DHCPData.ValidationResults.Summary.TotalWarningIssues -gt 0) {
-            New-HTMLSection -HeaderText "Warning Issues" -BackgroundColor '#fff9e6' -HeaderTextColor '#cc8800' -Density Compact {
+            New-HTMLSection -HeaderText "Warning Issues" -HeaderTextColor '#cc8800' -Density Compact {
                 # Missing Failover
                 if ($DHCPData.ValidationResults.WarningIssues.MissingFailover.Count -gt 0) {
-                    New-HTMLContainer {
-                        New-HTMLText -Text "⚡ Active Scopes without Failover Configuration" -FontSize 14pt -FontWeight bold -Color DarkOrange
+                    New-HTMLSection -HeaderText "⚡ Active Scopes without Failover Configuration" -CanCollapse {
                         New-HTMLTable -DataTable $DHCPData.ValidationResults.WarningIssues.MissingFailover -Filtering {
                             New-HTMLTableCondition -Name 'State' -ComparisonType string -Operator eq -Value 'Active' -BackgroundColor LightGreen
                             New-HTMLTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 75 -BackgroundColor Orange -HighlightHeaders 'PercentageInUse'
@@ -84,10 +80,57 @@
                     }
                 }
 
+                # Failover only on primary
+                if ($DHCPData.ValidationResults.WarningIssues.FailoverOnlyOnPrimary.Count -gt 0) {
+                    New-HTMLSection -HeaderText "🔄 Failover Scope Mismatches: Present only on Primary" -CanCollapse {
+                        $data = $DHCPData.ValidationResults.WarningIssues.FailoverOnlyOnPrimary | ForEach-Object {
+                            [PSCustomObject]@{
+                                Relationship          = $_.Relationship
+                                PrimaryServer         = $_.PrimaryServer
+                                SecondaryServer       = $_.SecondaryServer
+                                ScopeId               = $_.ScopeId
+                                FailoverConfiguration = 'missing on secondary'
+                                Issue                 = $_.Issue
+                            }
+                        }
+                        New-HTMLTable -DataTable $data -Filtering {
+                            New-HTMLTableCondition -Name 'FailoverConfiguration' -ComparisonType string -Operator contains -Value 'missing' -BackgroundColor LightYellow
+                        } -DataStore JavaScript -ScrollX
+                    }
+                }
+
+                # Failover only on secondary
+                if ($DHCPData.ValidationResults.WarningIssues.FailoverOnlyOnSecondary.Count -gt 0) {
+                    New-HTMLSection -HeaderText "🔄 Failover Scope Mismatches: Present only on Secondary" -CanCollapse {
+                        $data = $DHCPData.ValidationResults.WarningIssues.FailoverOnlyOnSecondary | ForEach-Object {
+                            [PSCustomObject]@{
+                                Relationship          = $_.Relationship
+                                PrimaryServer         = $_.PrimaryServer
+                                SecondaryServer       = $_.SecondaryServer
+                                ScopeId               = $_.ScopeId
+                                FailoverConfiguration = 'missing on primary'
+                                Issue                 = $_.Issue
+                            }
+                        }
+                        New-HTMLTable -DataTable $data -Filtering {
+                            New-HTMLTableCondition -Name 'FailoverConfiguration' -ComparisonType string -Operator contains -Value 'missing' -BackgroundColor LightYellow
+                        } -DataStore JavaScript -ScrollX
+                    }
+                }
+
+                # Missing on both partners
+                if ($DHCPData.ValidationResults.WarningIssues.FailoverMissingOnBoth.Count -gt 0) {
+                    New-HTMLSection -HeaderText "⚠️ Scopes Missing from Failover on Both Partners" -CanCollapse {
+                        New-HTMLTable -DataTable $DHCPData.ValidationResults.WarningIssues.FailoverMissingOnBoth -Filtering {
+                            New-HTMLTableCondition -Name 'Issue' -ComparisonType string -Operator contains -Value 'both' -BackgroundColor Orange -HighlightHeaders 'Issue'
+                        } -DataStore JavaScript -ScrollX
+                    }
+                }
+
                 # Extended Lease Duration
                 if ($DHCPData.ValidationResults.WarningIssues.ExtendedLeaseDuration.Count -gt 0) {
-                    New-HTMLContainer {
-                        New-HTMLText -Text "⏱️ Scopes with Extended Lease Duration (>48 hours)" -FontSize 14pt -FontWeight bold -Color DarkOrange
+                    New-HTMLSection -HeaderText "Scopes with Extended Lease Duration (>48 hours)" -CanCollapse {
+                        # Title moved to section header
                         New-HTMLTable -DataTable $DHCPData.ValidationResults.WarningIssues.ExtendedLeaseDuration -Filtering {
                             New-HTMLTableCondition -Name 'LeaseDurationHours' -ComparisonType number -Operator gt -Value 168 -BackgroundColor Salmon -HighlightHeaders 'LeaseDurationHours'
                             New-HTMLTableCondition -Name 'LeaseDurationHours' -ComparisonType number -Operator gt -Value 48 -BackgroundColor Orange -HighlightHeaders 'LeaseDurationHours'
@@ -97,8 +140,8 @@
 
                 # DNS Record Management Issues
                 if ($DHCPData.ValidationResults.WarningIssues.DNSRecordManagement.Count -gt 0) {
-                    New-HTMLContainer {
-                        New-HTMLText -Text "🔧 DNS Record Management Issues" -FontSize 14pt -FontWeight bold -Color DarkOrange
+                    New-HTMLSection -HeaderText "DNS Record Management Issues" -CanCollapse {
+                        # Title moved to section header
                         New-HTMLTable -DataTable $DHCPData.ValidationResults.WarningIssues.DNSRecordManagement -Filtering -DataStore JavaScript -ScrollX
                     }
                 }

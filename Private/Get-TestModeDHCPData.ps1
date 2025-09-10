@@ -551,6 +551,37 @@
             }
             return $null
         }
+
+        'DhcpServerv4FailoverAll' {
+            # Simulate full failover relationship listing per server
+            switch ($ComputerName) {
+                'dhcp01.domain.com' {
+                    return @(
+                        [PSCustomObject]@{
+                            Name          = 'dhcp01-dhcp02-failover'
+                            PartnerServer = 'dhcp02.domain.com'
+                            Mode          = 'LoadBalance'
+                            State         = 'Normal'
+                            # Scopes on primary list: include 192.168.1.0 and 10.1.0.0; exclude 10.3.0.0 and 10.4.0.0
+                            ScopeId       = @('192.168.1.0','10.1.0.0')
+                        }
+                    )
+                }
+                'dhcp02.domain.com' {
+                    return @(
+                        [PSCustomObject]@{
+                            Name          = 'dhcp01-dhcp02-failover'
+                            PartnerServer = 'dhcp01.domain.com'
+                            Mode          = 'LoadBalance'
+                            State         = 'Normal'
+                            # Scopes on secondary list: include 192.168.1.0 and 10.3.0.0; exclude 10.1.0.0 and 10.4.0.0
+                            ScopeId       = @('192.168.1.0','10.3.0.0')
+                        }
+                    )
+                }
+                default { return @() }
+            }
+        }
         
         'DhcpServerv4Class' {
             if ($ComputerName -eq 'dhcp01.domain.com') {
