@@ -1,99 +1,62 @@
 ﻿Import-Module .\ADEssentials.psd1 -Force
 
-# Get DHCP validation data using minimal mode (focused on V2 validator requirements)
-# This is much faster than full report as it only collects validation-critical data
-$Output = Show-WinADDHCPSummary -Minimal -Verbose -FilePath "$PSScriptRoot\Reports\DHCPValidation.html" -PassThru -TestMode
+# Policy toggles (applied in Get/Validation; email logic stays minimal)
+$ConsiderMissingFailoverCritical = $true
+$ConsiderDNSConfigCritical = $true
+$IncludeServerAvailabilityIssues = $false
+$SendOnCriticalOnly = $true
 
-# To test with real servers (requires appropriate permissions)
-# $Output = Show-WinADDHCPSummary -Minimal -Verbose -FilePath "$PSScriptRoot\Reports\DHCPValidation.html" -PassThru
+# Get DHCP validation data (minimal mode)
+$Output = Show-WinADDHCPSummary -Minimal -Verbose -FilePath "$PSScriptRoot\Reports\DHCPValidation.html" -PassThru -TestMode -ConsiderMissingFailoverCritical:$ConsiderMissingFailoverCritical -ConsiderDNSConfigCritical:$ConsiderDNSConfigCritical -IncludeServerAvailabilityIssues:$IncludeServerAvailabilityIssues
+#return
+# Counters
+$CriticalCount = $Output.ValidationResults.Summary.TotalCriticalIssues
+$WarningCount = $Output.ValidationResults.Summary.TotalWarningIssues
+$TotalIssues = (@($Output.ScopesWithIssues).Count) + $CriticalCount + $WarningCount
 
-# The $Output variable contains all validation data already categorized:
-# - $Output.ScopesWithIssues - All scopes that have validation issues
-# - $Output.ValidationResults.CriticalIssues - Public DNS with updates, Servers offline
-# - $Output.ValidationResults.WarningIssues - Missing failover, Extended lease duration, DNS record management
-# - $Output.ValidationResults.InfoIssues - Missing domain name, Inactive scopes
+if ($SendOnCriticalOnly -and $CriticalCount -eq 0) {
+    Write-Host 'No critical issues detected. Skipping email send.'
+    return
+}
 
-# Email report using PSWriteHTML patterns
+# Build email
 $EmailBody = EmailBody {
-    #EmailImage -Source 'https://evotec.xyz/wp-content/uploads/2021/04/Logo-evotec-bb.png' -UrlLink '' -AlternativeText 'Logo' -Width 181 -Heigh 57 -Inline
-
     EmailText -Text "Dear ", "Network Team," -LineBreak
-
     EmailText -Text "DHCP Validation Summary" -Color Blue -FontSize 10pt -FontWeight bold
-
-    # Use data from $Output directly
-    $CriticalCount = $Output.ValidationResults.CriticalIssues.PublicDNSWithUpdates.Count + $Output.ValidationResults.CriticalIssues.ServersOffline.Count
-    $WarningCount = $Output.ValidationResults.WarningIssues.MissingFailover.Count + $Output.ValidationResults.WarningIssues.ExtendedLeaseDuration.Count + $Output.ValidationResults.WarningIssues.DNSRecordManagement.Count
-    # Total issues include scope-level issues and server-level/warning issues
-    $TotalIssues = (@($Output.ScopesWithIssues).Count) + $CriticalCount + $WarningCount
 
     EmailList -FontSize 10pt {
         EmailListItem -Text "Total DHCP Servers: ", $($Output.Servers.Count) -Color None, DodgerBlue -FontWeight normal, bold
         EmailListItem -Text "Total Scopes: ", $($Output.Scopes.Count) -Color None, DodgerBlue -FontWeight normal, bold
-        EmailListItem -Text "Scopes with Issues: ", $TotalIssues -Color None, $(if ($TotalIssues -eq 0) { 'LightGreen' } else { 'Salmon' }) -FontWeight normal, bold
-        if ($CriticalCount -gt 0) {
-            EmailListItem -Text "Critical Issues: ", $CriticalCount -Color None, Red -FontWeight normal, bold
-        }
-        if ($WarningCount -gt 0) {
-            EmailListItem -Text "Warning Issues: ", $WarningCount -Color None, Orange -FontWeight normal, bold
-        }
+        if ($CriticalCount -gt 0) { EmailListItem -Text "Critical Issues: ", $CriticalCount -Color None, Red -FontWeight normal, bold }
     }
 
-    if ($TotalIssues -gt 0) {
-        # Show critical issues first
-        if ($Output.ValidationResults.CriticalIssues.PublicDNSWithUpdates.Count -gt 0) {
-            EmailText -Text "🔴 Critical: Public DNS Servers with Dynamic Updates Enabled" -Color Red -FontWeight bold -LineBreak
-            EmailTable -DataTable $Output.ValidationResults.CriticalIssues.PublicDNSWithUpdates {
-                EmailTableCondition -Name 'DNSServers' -ComparisonType string -Operator like -Value '*8.8*' -BackGroundColor Salmon -Inline
-                EmailTableCondition -Name 'DNSServers' -ComparisonType string -Operator like -Value '*1.1*' -BackGroundColor Salmon -Inline
-            } -HideFooter -IncludeProperty 'ServerName', 'ScopeId', 'Name', 'DNSServers', 'DynamicUpdates'
-            EmailText -LineBreak
-        }
-
-        # Offline/unreachable servers
-        if ($Output.ValidationResults.CriticalIssues.ServersOffline.Count -gt 0) {
-            EmailText -Text "🔴 Critical: DHCP Servers Offline / Unreachable" -Color Red -FontWeight bold -LineBreak
-            EmailTable -DataTable $Output.ValidationResults.CriticalIssues.ServersOffline {
-                EmailTableCondition -Name 'Status' -ComparisonType string -Operator like -Value 'DNS*' -BackGroundColor Salmon -Inline
-                EmailTableCondition -Name 'DHCPResponding' -ComparisonType bool -Operator eq -Value $false -BackGroundColor Salmon -Inline
-            } -HideFooter -IncludeProperty 'ServerName','Status','ErrorMessage','IPAddress','DNSResolvable','PingSuccessful','DHCPResponding'
-            EmailText -LineBreak
-        }
-
-        # Show warning issues
-        if ($Output.ValidationResults.WarningIssues.ExtendedLeaseDuration.Count -gt 0) {
-            EmailText -Text "⚠️ Warning: Extended Lease Duration (>48 hours)" -Color Orange -FontWeight bold -LineBreak
-            EmailTable -DataTable $Output.ValidationResults.WarningIssues.ExtendedLeaseDuration {
-                EmailTableCondition -Name 'LeaseDurationHours' -ComparisonType number -Operator gt -Value 168 -BackGroundColor Salmon -Inline
-            } -HideFooter -IncludeProperty 'ServerName', 'ScopeId', 'Name', 'LeaseDurationHours'
-            EmailText -LineBreak
-        }
-
-        if ($Output.ValidationResults.WarningIssues.MissingFailover.Count -gt 0) {
-            EmailText -Text "⚠️ Warning: Scopes Without Failover Protection" -Color Orange -FontWeight bold -LineBreak
-            EmailTable -DataTable $Output.ValidationResults.WarningIssues.MissingFailover -HideFooter -IncludeProperty 'ServerName', 'ScopeId', 'Name', 'State'
-        }
-    } else {
-        EmailText -Text "✅ All DHCP configurations passed validation!" -Color LightGreen -FontWeight bold
+    # Critical: Scopes without failover (treated as critical by policy)
+    if ($ConsiderMissingFailoverCritical -and $Output.ValidationResults.WarningIssues.MissingFailover.Count -gt 0) {
+        EmailText -Text "🔴 Critical: Scopes Without Failover Protection" -Color Red -FontWeight bold -LineBreak
+        EmailTable -DataTable $Output.ValidationResults.WarningIssues.MissingFailover -HideFooter -IncludeProperty 'ServerName', 'ScopeId', 'Name', 'State'
+        EmailText -LineBreak
     }
 
-    EmailText -LineBreak
-    EmailText -Text "Kind regards,"
-    EmailText -Text "Your automation friend"
+    # Critical: DNS configuration problems (aggregated)
+    if ($ConsiderDNSConfigCritical -and $Output.ValidationResults.CriticalIssues.DNSConfigurationProblems.Count -gt 0) {
+        EmailText -Text "🔴 Critical: Scopes with DNS Configuration Problems" -Color Red -FontWeight bold -LineBreak
+        EmailTable -DataTable $Output.ValidationResults.CriticalIssues.DNSConfigurationProblems -HideFooter -IncludeProperty 'ServerName', 'ScopeId', 'Name', 'DNSServers', 'DomainNameOption', 'DynamicUpdates'
+        EmailText -LineBreak
+    }
 }
 
 Connect-MgGraph -Scopes 'Mail.Send' -NoWelcome
 
 $EmailSplat = @{
-    From     = 'przemyslaw.klys@company.pl'
-    To       = 'przemyslaw.klys@company.pl'
+    From     = 'przemyslaw.klys@evotec.pl'
+    To       = 'przemyslaw.klys@evotec.pl'
     Body     = $EmailBody
-    Priority = if ($TotalIssues -gt 0) { 'High' } else { 'Low' }
-    Subject  = if ($TotalIssues -gt 0) { "DHCP Validation Issues 👎 - $TotalIssues problems found" } else { 'DHCP Validation Results 💖' }
+    Priority = if ($CriticalCount -gt 0) { 'High' } else { 'Low' }
+    Subject  = if ($CriticalCount -gt 0) { "DHCP Validation: Critical issues found ($CriticalCount)" } else { 'DHCP Validation: OK' }
     Verbose  = $true
     WhatIf   = $true
     MgGraph  = $true
 }
 
 # Connect-MgGraph -Scopes 'Mail.Send'
-#Send-EmailMessage @EmailSplat
+Send-EmailMessage @EmailSplat
