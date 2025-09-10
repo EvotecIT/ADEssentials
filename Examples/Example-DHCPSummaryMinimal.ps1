@@ -48,8 +48,8 @@ $EmailBody = EmailBody {
 Connect-MgGraph -Scopes 'Mail.Send' -NoWelcome
 
 $EmailSplat = @{
-    From     = 'przemyslaw.klys@evotec.pl'
-    To       = 'przemyslaw.klys@evotec.pl'
+    From     = 'przemyslaw.klys@company.pl'
+    To       = 'przemyslaw.klys@company.pl'
     Body     = $EmailBody
     Priority = if ($CriticalCount -gt 0) { 'High' } else { 'Low' }
     Subject  = if ($CriticalCount -gt 0) { "DHCP Validation: Critical issues found ($CriticalCount)" } else { 'DHCP Validation: OK' }
