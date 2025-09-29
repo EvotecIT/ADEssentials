@@ -93,6 +93,9 @@
             ServersDNSFailed         = $ServersDNSFailed
             ServersPingFailed        = $ServersPingFailed
             ServersDHCPNotResponding = $ServersDHCPNotResponding
+            # Reclassified failover risks per request
+            FailoverOnlyOnPrimary    = $FailoverOnlyOnPrimary      # "missing on secondary" => critical
+            FailoverMissingOnBoth    = $FailoverMissingOnBoth      # "missing on both" => critical
         }
         UtilizationIssues = [ordered] @{
             HighUtilization     = $HighUtilization
@@ -100,9 +103,8 @@
         }
         WarningIssues     = [ordered] @{
             MissingFailover         = $MissingFailover
-            FailoverOnlyOnPrimary   = $FailoverOnlyOnPrimary
+            # Keep as warning: "missing on primary" => present only on secondary
             FailoverOnlyOnSecondary = $FailoverOnlyOnSecondary
-            FailoverMissingOnBoth   = $FailoverMissingOnBoth
             ExtendedLeaseDuration   = $ExtendedLeaseDuration
             DNSRecordManagement     = $DNSRecordManagement
         }
@@ -152,6 +154,8 @@
         $ValidationResults.CriticalIssues.PublicDNSWithUpdates.Count +
         $ValidationResults.CriticalIssues.DNSConfigurationProblems.Count +
         $ValidationResults.CriticalIssues.ServersOffline.Count +
+        $ValidationResults.CriticalIssues.FailoverOnlyOnPrimary.Count +
+        $ValidationResults.CriticalIssues.FailoverMissingOnBoth.Count +
         $(if ($ConsiderMissingFailoverCritical) { $MissingFailover.Count } else { 0 })
     )
 
@@ -159,9 +163,7 @@
 
     $ValidationResults.Summary.TotalWarningIssues = (
         $(if ($ConsiderMissingFailoverCritical) { 0 } else { $MissingFailover.Count }) +
-        $FailoverOnlyOnPrimary.Count +
         $FailoverOnlyOnSecondary.Count +
-        $FailoverMissingOnBoth.Count +
         $ExtendedLeaseDuration.Count +
         $DNSRecordManagement.Count
     )
@@ -169,7 +171,12 @@
     $ValidationResults.Summary.TotalInfoIssues = ($MissingDomainName.Count + $InactiveScopes.Count)
 
     # Unique scope counters
-    $CriticalScopes = @($ValidationResults.CriticalIssues.PublicDNSWithUpdates; $ValidationResults.CriticalIssues.DNSConfigurationProblems)
+    $CriticalScopes = @(
+        $ValidationResults.CriticalIssues.PublicDNSWithUpdates;
+        $ValidationResults.CriticalIssues.DNSConfigurationProblems;
+        $ValidationResults.CriticalIssues.FailoverOnlyOnPrimary;
+        $ValidationResults.CriticalIssues.FailoverMissingOnBoth
+    )
     $ValidationResults.Summary.ScopesWithCritical = ($CriticalScopes | Sort-Object -Property ScopeId -Unique).Count
 
     $UtilizationScopes = @($HighUtilization; $ModerateUtilization)
@@ -177,9 +184,7 @@
 
     $WarningScopes = @(
         $(if ($ConsiderMissingFailoverCritical) { @() } else { $MissingFailover })
-        $FailoverOnlyOnPrimary
         $FailoverOnlyOnSecondary
-        $FailoverMissingOnBoth
         $ExtendedLeaseDuration
         $DNSRecordManagement
     )
