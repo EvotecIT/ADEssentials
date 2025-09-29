@@ -112,7 +112,9 @@
                                 Issue               = $_.Issue
                             }
                         }
-                        New-HTMLTable -DataTable $data -ScrollX -Filtering
+                        New-HTMLTable -DataTable $data -ScrollX -Filtering {
+                            New-HTMLTableCondition -Name 'FailoverConfiguration' -ComparisonType string -Operator eq -Value 'missing on secondary' -BackgroundColor Salmon -Color White
+                        }
                     }
                 }
                 if ($DHCPData.FailoverAnalysis.OnlyOnSecondary.Count -gt 0) {
@@ -127,7 +129,9 @@
                                 Issue               = $_.Issue
                             }
                         }
-                        New-HTMLTable -DataTable $data -ScrollX -Filtering
+                        New-HTMLTable -DataTable $data -ScrollX -Filtering {
+                            New-HTMLTableCondition -Name 'FailoverConfiguration' -ComparisonType string -Operator eq -Value 'missing on primary' -BackgroundColor Orange
+                        }
                     }
                 }
                 if ($DHCPData.FailoverAnalysis.MissingOnBoth.Count -gt 0) {
@@ -142,7 +146,9 @@
                                 Issue               = $_.Issue
                             }
                         }
-                        New-HTMLTable -DataTable $data -ScrollX -Filtering
+                        New-HTMLTable -DataTable $data -ScrollX -Filtering {
+                            New-HTMLTableCondition -Name 'FailoverConfiguration' -ComparisonType string -Operator eq -Value 'missing on both' -BackgroundColor Salmon -Color White
+                        }
                     }
                 }
             }

@@ -90,10 +90,11 @@
                     $scopesA = if ($relA -and $relA.ScopeId) { @($relA.ScopeId) } else { @() }
                     $scopesB = if ($relB -and $relB.ScopeId) { @($relB.ScopeId) } else { @() }
 
-                    # All scopes hosted on both servers (for missing-on-both detection)
-                    $serverScopes = $DHCPData.Scopes | Where-Object { $_.ServerName -and ($_.ServerName.ToLower() -in @($pair.ServerA, $pair.ServerB)) }
-                    $scopesOnServers = @($serverScopes | Select-Object -ExpandProperty ScopeId -Unique)
-                    $allScopes = @($scopesA + $scopesB + $scopesOnServers) | Select-Object -Unique
+                    # Only include common scopes on both servers to detect 'Missing on both'
+                    $scopesOnA = @($DHCPData.Scopes | Where-Object { $_.ServerName -and $_.ServerName.ToLower() -eq $pair.ServerA } | Select-Object -ExpandProperty ScopeId -Unique)
+                    $scopesOnB = @($DHCPData.Scopes | Where-Object { $_.ServerName -and $_.ServerName.ToLower() -eq $pair.ServerB } | Select-Object -ExpandProperty ScopeId -Unique)
+                    $commonScopes = @($scopesOnA | Where-Object { $scopesOnB -contains $_ })
+                    $allScopes = @($scopesA + $scopesB + $commonScopes) | Select-Object -Unique
 
                     $rows = foreach ($s in $allScopes) {
                         $onA = $scopesA -contains $s
@@ -119,9 +120,11 @@
 
                     New-HTMLSection -HeaderText "$($pair.Name) — $($pair.ServerA) ↔ $($pair.ServerB)" {
                         New-HTMLTable -DataTable $rows -Filtering {
-                            New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Only on Primary' -BackgroundColor LightYellow
+                            # Critical
+                            New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Only on Primary' -BackgroundColor Salmon
+                            New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Missing on both' -BackgroundColor Salmon
+                            # Warning
                             New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Only on Secondary' -BackgroundColor LightYellow
-                            New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Missing on both' -BackgroundColor Orange
                         } -DataStore JavaScript -ScrollX -Title "Scope Assignment Comparison"
                     }
                 }
