@@ -64,6 +64,34 @@
                         New-HTMLTable -DataTable $DHCPData.ValidationResults.CriticalIssues.ServersOffline -Filtering -DataStore JavaScript
                     }
                 }
+
+                # Failover only on primary (means missing on secondary) — critical
+                if ($DHCPData.ValidationResults.CriticalIssues.FailoverOnlyOnPrimary.Count -gt 0) {
+                    New-HTMLSection -HeaderText "🔴 Failover Scope Mismatches: Present only on Primary (missing on secondary)" -CanCollapse {
+                        $data = $DHCPData.ValidationResults.CriticalIssues.FailoverOnlyOnPrimary | ForEach-Object {
+                            [PSCustomObject]@{
+                                Relationship          = $_.Relationship
+                                PrimaryServer         = $_.PrimaryServer
+                                SecondaryServer       = $_.SecondaryServer
+                                ScopeId               = $_.ScopeId
+                                FailoverConfiguration = 'missing on secondary'
+                                Issue                 = $_.Issue
+                            }
+                        }
+                        New-HTMLTable -DataTable $data -Filtering {
+                            New-HTMLTableCondition -Name 'FailoverConfiguration' -ComparisonType string -Operator contains -Value 'missing' -BackgroundColor Salmon
+                        } -DataStore JavaScript -ScrollX
+                    }
+                }
+
+                # Missing on both partners — critical
+                if ($DHCPData.ValidationResults.CriticalIssues.FailoverMissingOnBoth.Count -gt 0) {
+                    New-HTMLSection -HeaderText "🔴 Scopes Missing from Failover on Both Partners" -CanCollapse {
+                        New-HTMLTable -DataTable $DHCPData.ValidationResults.CriticalIssues.FailoverMissingOnBoth -Filtering {
+                            New-HTMLTableCondition -Name 'Issue' -ComparisonType string -Operator contains -Value 'both' -BackgroundColor Salmon -HighlightHeaders 'Issue'
+                        } -DataStore JavaScript -ScrollX
+                    }
+                }
             }
         }
 
@@ -80,24 +108,7 @@
                     }
                 }
 
-                # Failover only on primary
-                if ($DHCPData.ValidationResults.WarningIssues.FailoverOnlyOnPrimary.Count -gt 0) {
-                    New-HTMLSection -HeaderText "🔄 Failover Scope Mismatches: Present only on Primary" -CanCollapse {
-                        $data = $DHCPData.ValidationResults.WarningIssues.FailoverOnlyOnPrimary | ForEach-Object {
-                            [PSCustomObject]@{
-                                Relationship          = $_.Relationship
-                                PrimaryServer         = $_.PrimaryServer
-                                SecondaryServer       = $_.SecondaryServer
-                                ScopeId               = $_.ScopeId
-                                FailoverConfiguration = 'missing on secondary'
-                                Issue                 = $_.Issue
-                            }
-                        }
-                        New-HTMLTable -DataTable $data -Filtering {
-                            New-HTMLTableCondition -Name 'FailoverConfiguration' -ComparisonType string -Operator contains -Value 'missing' -BackgroundColor LightYellow
-                        } -DataStore JavaScript -ScrollX
-                    }
-                }
+                # NOTE: 'Failover only on primary' moved to Critical section
 
                 # Failover only on secondary
                 if ($DHCPData.ValidationResults.WarningIssues.FailoverOnlyOnSecondary.Count -gt 0) {
@@ -118,14 +129,7 @@
                     }
                 }
 
-                # Missing on both partners
-                if ($DHCPData.ValidationResults.WarningIssues.FailoverMissingOnBoth.Count -gt 0) {
-                    New-HTMLSection -HeaderText "⚠️ Scopes Missing from Failover on Both Partners" -CanCollapse {
-                        New-HTMLTable -DataTable $DHCPData.ValidationResults.WarningIssues.FailoverMissingOnBoth -Filtering {
-                            New-HTMLTableCondition -Name 'Issue' -ComparisonType string -Operator contains -Value 'both' -BackgroundColor Orange -HighlightHeaders 'Issue'
-                        } -DataStore JavaScript -ScrollX
-                    }
-                }
+                # NOTE: 'Missing on both' moved to Critical section
 
                 # Extended Lease Duration
                 if ($DHCPData.ValidationResults.WarningIssues.ExtendedLeaseDuration.Count -gt 0) {
