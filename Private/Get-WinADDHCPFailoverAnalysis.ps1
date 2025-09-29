@@ -77,18 +77,20 @@ function Get-WinADDHCPFailoverAnalysis {
             }
         }
 
-        # Missing on both: scopes that exist on either server as DHCP scopes but are not assigned to failover on A nor B
-        $allScopesForPair = @()
-        $allScopesForPair += ($DHCPSummary.Scopes | Where-Object { $_.ServerName -and ($_.ServerName.ToLower() -in @($pair.ServerA, $pair.ServerB)) } | Select-Object -ExpandProperty ScopeId -Unique)
+        # Missing on both (refined): only consider scopes that are present on BOTH servers
+        # and are not assigned to failover on either partner for this relationship
+        $scopesOnA = @($DHCPSummary.Scopes | Where-Object { $_.ServerName -and $_.ServerName.ToLower() -eq $pair.ServerA } | Select-Object -ExpandProperty ScopeId -Unique)
+        $scopesOnB = @($DHCPSummary.Scopes | Where-Object { $_.ServerName -and $_.ServerName.ToLower() -eq $pair.ServerB } | Select-Object -ExpandProperty ScopeId -Unique)
+        $commonScopes = @($scopesOnA | Where-Object { $scopesOnB -contains $_ })
         $assignedUnion = @($scopesA + $scopesB) | Select-Object -Unique
-        foreach ($s in $allScopesForPair) {
+        foreach ($s in $commonScopes) {
             if ($assignedUnion -notcontains $s) {
                 $MissingOnBoth.Add([PSCustomObject]@{
-                    Relationship   = $pair.Name
-                    PrimaryServer  = $pair.ServerA
-                    SecondaryServer= $pair.ServerB
-                    ScopeId        = $s
-                    Issue          = 'Missing from both partners'
+                    Relationship    = $pair.Name
+                    PrimaryServer   = $pair.ServerA
+                    SecondaryServer = $pair.ServerB
+                    ScopeId         = $s
+                    Issue           = 'Missing from both partners'
                 })
             }
         }
