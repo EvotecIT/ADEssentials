@@ -63,6 +63,36 @@
                 } -DataStore JavaScript -ScrollX -Title "All Failover Relationships"
             }
 
+            # Consolidated per-subnet failover issues (simplified view)
+            if ($DHCPData.FailoverAnalysis -and $DHCPData.FailoverAnalysis.PerSubnetIssues -and $DHCPData.FailoverAnalysis.PerSubnetIssues.Count -gt 0) {
+                New-HTMLSection -HeaderText "🚦 Per-Subnet Failover Issues" {
+                    $perSubnet = $DHCPData.FailoverAnalysis.PerSubnetIssues | ForEach-Object {
+                        [PSCustomObject]@{
+                            ScopeId           = $_.ScopeId
+                            PrimaryServer     = $_.PrimaryServer
+                            SecondaryServer   = $_.SecondaryServer
+                            FailoverName      = if ($_.Relationship) { $_.Relationship } else { '' }
+                            Status            = $_.Issue
+                        }
+                    }
+                    New-HTMLTable -DataTable $perSubnet -ScrollX -Filtering {
+                        New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Present only on primary' -BackgroundColor Orange
+                        New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Present only on secondary' -BackgroundColor Orange
+                        New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Missing from both partners' -BackgroundColor Salmon -Color White
+                        New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'No failover configured' -BackgroundColor Salmon -Color White
+                    } -Title 'Subnets requiring attention'
+                }
+            }
+
+            # Stale failover relationships (no subnets)
+            if ($DHCPData.FailoverAnalysis -and $DHCPData.FailoverAnalysis.StaleRelationships -and $DHCPData.FailoverAnalysis.StaleRelationships.Count -gt 0) {
+                New-HTMLSection -HeaderText "🧹 Stale Failover Relationships (no subnets)" {
+                    New-HTMLTable -DataTable $DHCPData.FailoverAnalysis.StaleRelationships -ScrollX -Filtering {
+                        New-HTMLTableCondition -Name 'ScopeCount' -ComparisonType number -Operator eq -Value 0 -BackgroundColor Yellow
+                    }
+                }
+            }
+
             # Pair-wise analysis views
             New-HTMLSection -HeaderText "🔎 Relationship Pair View" -CanCollapse {
                 # Build pairs keyed by normalized server tuple + relationship name
