@@ -47,9 +47,6 @@
         
         'DhcpServerVersion' {
             # Mimics Get-DhcpServerVersion output
-            if ($ComputerName -eq 'dhcp02.domain.com') {
-                throw "Unable to contact DHCP server"
-            }
             return [PSCustomObject]@{
                 MajorVersion = 10
                 MinorVersion = 0
@@ -125,7 +122,44 @@
                     )
                 }
                 'dhcp02.domain.com' {
-                    throw "Unable to contact DHCP server"
+                    return @(
+                        [PSCustomObject]@{
+                            ScopeId = [System.Net.IPAddress]::Parse('192.168.1.0')
+                            Name = 'Corporate LAN (Partner)'
+                            Description = 'Partner server for corporate network'
+                            SubnetMask = [System.Net.IPAddress]::Parse('255.255.255.0')
+                            StartRange = [System.Net.IPAddress]::Parse('192.168.1.10')
+                            EndRange = [System.Net.IPAddress]::Parse('192.168.1.250')
+                            LeaseDuration = [timespan]::FromHours(8)
+                            State = 'Active'
+                            Type = 'Dhcp'
+                            SuperscopeName = $null
+                        },
+                        [PSCustomObject]@{
+                            ScopeId = [System.Net.IPAddress]::Parse('10.3.0.0')
+                            Name = 'IoT Network (Partner)'
+                            Description = 'IoT partner scope'
+                            SubnetMask = [System.Net.IPAddress]::Parse('255.255.255.0')
+                            StartRange = [System.Net.IPAddress]::Parse('10.3.0.10')
+                            EndRange = [System.Net.IPAddress]::Parse('10.3.0.250')
+                            LeaseDuration = [timespan]::FromDays(7)
+                            State = 'Active'
+                            Type = 'Dhcp'
+                            SuperscopeName = $null
+                        },
+                        [PSCustomObject]@{
+                            ScopeId = [System.Net.IPAddress]::Parse('10.4.0.0')
+                            Name = 'Public DNS Test (Partner)'
+                            Description = 'Partner scope present but not in failover'
+                            SubnetMask = [System.Net.IPAddress]::Parse('255.255.255.0')
+                            StartRange = [System.Net.IPAddress]::Parse('10.4.0.10')
+                            EndRange = [System.Net.IPAddress]::Parse('10.4.0.100')
+                            LeaseDuration = [timespan]::FromHours(12)
+                            State = 'Active'
+                            Type = 'Dhcp'
+                            SuperscopeName = $null
+                        }
+                    )
                 }
                 'dc01.domain.com' {
                     return @(
@@ -557,25 +591,57 @@
             switch ($ComputerName) {
                 'dhcp01.domain.com' {
                     return @(
+                        # Relationship A (subset of scopes)
                         [PSCustomObject]@{
-                            Name          = 'dhcp01-dhcp02-failover'
+                            Name          = 'FO-GroupA'
                             PartnerServer = 'dhcp02.domain.com'
                             Mode          = 'LoadBalance'
                             State         = 'Normal'
-                            # Scopes on primary list: include 192.168.1.0 and 10.1.0.0; exclude 10.3.0.0 and 10.4.0.0
-                            ScopeId       = @('192.168.1.0','10.1.0.0')
+                            ScopeId       = @('192.168.1.0')
+                        },
+                        # Relationship B (different name, remaining scope on same pair)
+                        [PSCustomObject]@{
+                            Name          = 'FO-Branch'
+                            PartnerServer = 'dhcp02.domain.com'
+                            Mode          = 'HotStandby'
+                            State         = 'Normal'
+                            ScopeId       = @('10.1.0.0')
+                        },
+                        # Stale relationship with no scopes
+                        [PSCustomObject]@{
+                            Name          = 'FO-Stale-NoScopes'
+                            PartnerServer = 'dhcp02.domain.com'
+                            Mode          = 'LoadBalance'
+                            State         = 'Normal'
+                            ScopeId       = @()
                         }
                     )
                 }
                 'dhcp02.domain.com' {
                     return @(
+                        # Relationship A counterpart (only 192.168.1.0 common)
                         [PSCustomObject]@{
-                            Name          = 'dhcp01-dhcp02-failover'
+                            Name          = 'FO-GroupA'
                             PartnerServer = 'dhcp01.domain.com'
                             Mode          = 'LoadBalance'
                             State         = 'Normal'
-                            # Scopes on secondary list: include 192.168.1.0 and 10.3.0.0; exclude 10.1.0.0 and 10.4.0.0
-                            ScopeId       = @('192.168.1.0','10.3.0.0')
+                            ScopeId       = @('192.168.1.0')
+                        },
+                        # Relationship B counterpart but using a different name intentionally (to prove name-insensitive matching)
+                        [PSCustomObject]@{
+                            Name          = 'FO-Branch-Alt'
+                            PartnerServer = 'dhcp01.domain.com'
+                            Mode          = 'HotStandby'
+                            State         = 'Normal'
+                            ScopeId       = @('10.3.0.0')
+                        },
+                        # Stale relationship on partner
+                        [PSCustomObject]@{
+                            Name          = 'FO-Stale-NoScopes'
+                            PartnerServer = 'dhcp01.domain.com'
+                            Mode          = 'LoadBalance'
+                            State         = 'Normal'
+                            ScopeId       = @()
                         }
                     )
                 }
