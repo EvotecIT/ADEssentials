@@ -69,13 +69,9 @@
     Write-Verbose "Get-WinDHCPServerInfo - Testing ping connectivity to $PingTarget"
     try {
         if ($TestMode) {
-            # In test mode, simulate ping results
-            if ($ComputerName -eq 'dhcp02.domain.com') {
-                throw "Request timed out"
-            } else {
-                $ServerInfo.PingSuccessful = $true
-                $ServerInfo.ResponseTimeMs = 5
-            }
+            # In test mode, simulate ping results (all online for demo)
+            $ServerInfo.PingSuccessful = $true
+            $ServerInfo.ResponseTimeMs = 5
         } else {
             $PingResult = Test-Connection -ComputerName $PingTarget -Count 1 -ErrorAction Stop
             $ServerInfo.PingSuccessful = $true
