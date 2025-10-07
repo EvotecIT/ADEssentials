@@ -44,7 +44,7 @@ $EmailBody = EmailBody {
         EmailText -LineBreak
     }
 }
-
+return
 Connect-MgGraph -Scopes 'Mail.Send' -NoWelcome
 
 $EmailSplat = @{
