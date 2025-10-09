@@ -65,14 +65,14 @@
                     }
                 }
 
-                # Failover only on primary (means missing on secondary) — critical
+                # Scopes assigned only to Partner A (missing on Partner B) — critical
                 if ($DHCPData.ValidationResults.CriticalIssues.FailoverOnlyOnPrimary.Count -gt 0) {
-                    New-HTMLSection -HeaderText "🔴 Failover Scope Mismatches: Present only on Primary (missing on secondary)" -CanCollapse {
+                    New-HTMLSection -HeaderText "🔴 Failover Scope Mismatches: Assigned on Partner A only (missing on Partner B)" -CanCollapse {
                         $data = $DHCPData.ValidationResults.CriticalIssues.FailoverOnlyOnPrimary | ForEach-Object {
                             [PSCustomObject]@{
                                 Relationship          = $_.Relationship
-                                PrimaryServer         = $_.PrimaryServer
-                                SecondaryServer       = $_.SecondaryServer
+                                PartnerA              = $_.PrimaryServer
+                                PartnerB              = $_.SecondaryServer
                                 ScopeId               = $_.ScopeId
                                 FailoverConfiguration = 'missing on secondary'
                                 Issue                 = $_.Issue
@@ -110,14 +110,14 @@
 
                 # NOTE: 'Failover only on primary' moved to Critical section
 
-                # Failover only on secondary
+                # Scopes assigned only to Partner B (missing on Partner A)
                 if ($DHCPData.ValidationResults.WarningIssues.FailoverOnlyOnSecondary.Count -gt 0) {
-                    New-HTMLSection -HeaderText "🔄 Failover Scope Mismatches: Present only on Secondary" -CanCollapse {
+                    New-HTMLSection -HeaderText "🔄 Failover Scope Mismatches: Assigned on Partner B only (missing on Partner A)" -CanCollapse {
                         $data = $DHCPData.ValidationResults.WarningIssues.FailoverOnlyOnSecondary | ForEach-Object {
                             [PSCustomObject]@{
                                 Relationship          = $_.Relationship
-                                PrimaryServer         = $_.PrimaryServer
-                                SecondaryServer       = $_.SecondaryServer
+                                PartnerA              = $_.PrimaryServer
+                                PartnerB              = $_.SecondaryServer
                                 ScopeId               = $_.ScopeId
                                 FailoverConfiguration = 'missing on primary'
                                 Issue                 = $_.Issue

@@ -214,8 +214,8 @@
                 $MissingOnBoth   = if ($DHCPData.FailoverAnalysis) { $DHCPData.FailoverAnalysis.MissingOnBoth.Count } else { 0 }
 
                 New-HTMLInfoCard -Title "Unprotected Scopes" -Number $ScopesWithoutFailover -Subtitle "No Failover" -Icon "🚨" -TitleColor $(if ($ScopesWithoutFailover -gt 0) { 'Orange' } else { 'Green' }) -NumberColor $(if ($ScopesWithoutFailover -gt 0) { 'DarkOrange' } else { 'DarkGreen' })
-                New-HTMLInfoCard -Title "Only on Primary" -Number $OnlyOnPrimary -Subtitle "Mismatch" -Icon "🟠" -TitleColor 'DarkOrange' -NumberColor 'DarkOrange'
-                New-HTMLInfoCard -Title "Only on Secondary" -Number $OnlyOnSecondary -Subtitle "Mismatch" -Icon "🟠" -TitleColor 'DarkOrange' -NumberColor 'DarkOrange'
+                New-HTMLInfoCard -Title "Missing on Partner B" -Number $OnlyOnPrimary -Subtitle "Scopes assigned on A only" -Icon "🟠" -TitleColor 'DarkOrange' -NumberColor 'DarkOrange'
+                New-HTMLInfoCard -Title "Missing on Partner A" -Number $OnlyOnSecondary -Subtitle "Scopes assigned on B only" -Icon "🟠" -TitleColor 'DarkOrange' -NumberColor 'DarkOrange'
                 New-HTMLInfoCard -Title "Missing on Both" -Number $MissingOnBoth -Subtitle "Gap" -Icon "⚠️" -TitleColor 'OrangeRed' -NumberColor 'OrangeRed'
             }
         }
