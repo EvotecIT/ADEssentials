@@ -35,21 +35,13 @@ function Get-WinADDHCPFailoverAnalysis {
         return
     }
 
-    # Helpers
-    function _NormName([string]$n) { if ($null -eq $n) { return $null } return $n.Trim().ToLower() }
-    function _IssueKey([string]$a,[string]$b,[string]$sid,[string]$issue) {
-        # Stable key for deduplication of per-subnet rows
-        $x = @($a,$b) | Sort-Object
-        return ($x -join '↔') + '|' + $sid + '|' + $issue
-    }
-
     # Build aggregated view by normalized server pair (ignore relationship Name for matching)
     # Also track per-scope relationship names on each side for better reporting
     $byPair = @{}
     foreach ($rel in $DHCPSummary.FailoverRelationships) {
         if (-not $rel) { continue }
-        $a = _NormName $rel.ServerName
-        $b = _NormName $rel.PartnerServer
+        $a = ConvertTo-NormalizedName $rel.ServerName
+        $b = ConvertTo-NormalizedName $rel.PartnerServer
         $sorted = @($a,$b) | Sort-Object
         $pairKey = $sorted -join '↔'
         if (-not $byPair.ContainsKey($pairKey)) {
@@ -111,7 +103,7 @@ function Get-WinADDHCPFailoverAnalysis {
                     ScopeId          = $scopeId
                     Issue            = "Missing on $($pair.ServerB)"
                 }
-                if ($perSubnetKeys.Add((_IssueKey $pair.ServerA $pair.ServerB $scopeId $obj.Issue))) {
+                if ($perSubnetKeys.Add((Get-FailoverIssueKey -ServerA $pair.ServerA -ServerB $pair.ServerB -ScopeId $scopeId -Issue $obj.Issue))) {
                     $OnlyOnPrimary.Add($obj)
                     $PerSubnetIssues.Add($obj)
                 }
@@ -124,7 +116,7 @@ function Get-WinADDHCPFailoverAnalysis {
                     ScopeId          = $scopeId
                     Issue            = "Missing on $($pair.ServerA)"
                 }
-                if ($perSubnetKeys.Add((_IssueKey $pair.ServerA $pair.ServerB $scopeId $obj.Issue))) {
+                if ($perSubnetKeys.Add((Get-FailoverIssueKey -ServerA $pair.ServerA -ServerB $pair.ServerB -ScopeId $scopeId -Issue $obj.Issue))) {
                     $OnlyOnSecondary.Add($obj)
                     $PerSubnetIssues.Add($obj)
                 }
@@ -145,7 +137,7 @@ function Get-WinADDHCPFailoverAnalysis {
                     ScopeId          = $sStr
                     Issue            = 'Missing from both partners'
                 }
-                if ($perSubnetKeys.Add((_IssueKey $pair.ServerA $pair.ServerB $sStr $obj.Issue))) {
+                if ($perSubnetKeys.Add((Get-FailoverIssueKey -ServerA $pair.ServerA -ServerB $pair.ServerB -ScopeId $sStr -Issue $obj.Issue))) {
                     $MissingOnBoth.Add($obj)
                     $PerSubnetIssues.Add($obj)
                 }
@@ -157,7 +149,7 @@ function Get-WinADDHCPFailoverAnalysis {
     foreach ($scope in $DHCPSummary.Scopes) {
         if ($scope.State -ne 'Active' -or $scope.FailoverPartner) { continue }
         $sid = ([string]$scope.ScopeId).Trim()
-        $srv = (_NormName $scope.ServerName)
+        $srv = (ConvertTo-NormalizedName $scope.ServerName)
         $exists = $false
         foreach ($i in $PerSubnetIssues) {
             if ($i.ScopeId -eq $sid -and ($i.PrimaryServer -eq $srv -or $i.SecondaryServer -eq $srv)) { $exists = $true; break }
@@ -170,7 +162,7 @@ function Get-WinADDHCPFailoverAnalysis {
                 ScopeId          = $sid
                 Issue            = 'No failover configured'
             }
-            if ($perSubnetKeys.Add((_IssueKey $srv $null $sid $obj.Issue))) {
+            if ($perSubnetKeys.Add((Get-FailoverIssueKey -ServerA $srv -ServerB $null -ScopeId $sid -Issue $obj.Issue))) {
                 $PerSubnetIssues.Add($obj)
             }
         }
