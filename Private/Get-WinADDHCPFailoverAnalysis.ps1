@@ -40,8 +40,9 @@ function Get-WinADDHCPFailoverAnalysis {
     $byPair = @{}
     foreach ($rel in $DHCPSummary.FailoverRelationships) {
         if (-not $rel) { continue }
-        $a = ConvertTo-NormalizedName $rel.ServerName
-        $b = ConvertTo-NormalizedName $rel.PartnerServer
+        # Canonicalize partner names to FQDNs where possible to avoid short/FQDN mismatches
+        $a = Resolve-DHCPServerName -Name $rel.ServerName -DHCPSummary $DHCPSummary
+        $b = Resolve-DHCPServerName -Name $rel.PartnerServer -DHCPSummary $DHCPSummary
         $sorted = @($a,$b) | Sort-Object
         $pairKey = $sorted -join '↔'
         if (-not $byPair.ContainsKey($pairKey)) {
@@ -71,7 +72,8 @@ function Get-WinADDHCPFailoverAnalysis {
 
         foreach ($sid in $scopeList) {
             $sidStr = [string]$sid
-            if ($rel.ServerName.ToLower() -eq $byPair[$pairKey].ServerA) {
+            # Use canonicalized name for side selection as well
+            if ($a -eq $byPair[$pairKey].ServerA) {
                 [void]$byPair[$pairKey].ScopesA.Add($sidStr)
                 if (-not $byPair[$pairKey].NameMapA.ContainsKey($sidStr)) { $byPair[$pairKey].NameMapA[$sidStr] = New-Object System.Collections.Generic.HashSet[string] }
                 [void]$byPair[$pairKey].NameMapA[$sidStr].Add([string]$rel.Name)
@@ -149,7 +151,7 @@ function Get-WinADDHCPFailoverAnalysis {
     foreach ($scope in $DHCPSummary.Scopes) {
         if ($scope.State -ne 'Active' -or $scope.FailoverPartner) { continue }
         $sid = ([string]$scope.ScopeId).Trim()
-        $srv = (ConvertTo-NormalizedName $scope.ServerName)
+        $srv = (Resolve-DHCPServerName -Name $scope.ServerName -DHCPSummary $DHCPSummary)
         $exists = $false
         foreach ($i in $PerSubnetIssues) {
             if ($i.ScopeId -eq $sid -and ($i.PrimaryServer -eq $srv -or $i.SecondaryServer -eq $srv)) { $exists = $true; break }
