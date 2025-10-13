@@ -607,6 +607,14 @@
                             State         = 'Normal'
                             ScopeId       = @('10.1.0.0')
                         },
+                        # Duplicate relationship using short/upper partner name to validate normalization
+                        [PSCustomObject]@{
+                            Name          = 'FO-ShortName'
+                            PartnerServer = 'DHCP02'
+                            Mode          = 'LoadBalance'
+                            State         = 'Normal'
+                            ScopeId       = @('10.1.0.0')
+                        },
                         # Stale relationship with no scopes
                         [PSCustomObject]@{
                             Name          = 'FO-Stale-NoScopes'

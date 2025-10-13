@@ -57,8 +57,9 @@
             $rels = $DHCPData.FailoverRelationships
             $pairs = @{}
             foreach ($rel in $rels) {
-                $a = ([string]$rel.ServerName).Trim().ToLower()
-                $b = ([string]$rel.PartnerServer).Trim().ToLower()
+                # Canonicalize names (prefer FQDN) to avoid short/FQDN mismatches
+                $a = Resolve-DHCPServerName -Name $rel.ServerName -DHCPSummary $DHCPData
+                $b = Resolve-DHCPServerName -Name $rel.PartnerServer -DHCPSummary $DHCPData
                 $sorted = @($a, $b) | Sort-Object
                 $key = $sorted -join '↔'
                 if (-not $pairs.ContainsKey($key)) {
@@ -154,8 +155,25 @@
                 $scopesB = if ($relB -and $relB.ScopeId) { @($relB.ScopeId) } else { @() }
 
                 # Only include common scopes on both servers to detect 'Missing on both'
-                $scopesOnA = @($DHCPData.Scopes | Where-Object { $_.ServerName -and $_.ServerName.ToLower() -eq $pair.ServerA } | Select-Object -ExpandProperty ScopeId -Unique)
-                $scopesOnB = @($DHCPData.Scopes | Where-Object { $_.ServerName -and $_.ServerName.ToLower() -eq $pair.ServerB } | Select-Object -ExpandProperty ScopeId -Unique)
+                # Use canonicalized names to avoid short/FQDN mismatches
+                $scopesOnA = @(
+                    $DHCPData.Scopes |
+                        Where-Object {
+                            if (-not $_.ServerName) { return $false }
+                            $srv = Resolve-DHCPServerName -Name $_.ServerName -DHCPSummary $DHCPData
+                            return ($srv -eq $pair.ServerA)
+                        } |
+                        Select-Object -ExpandProperty ScopeId -Unique
+                )
+                $scopesOnB = @(
+                    $DHCPData.Scopes |
+                        Where-Object {
+                            if (-not $_.ServerName) { return $false }
+                            $srv = Resolve-DHCPServerName -Name $_.ServerName -DHCPSummary $DHCPData
+                            return ($srv -eq $pair.ServerB)
+                        } |
+                        Select-Object -ExpandProperty ScopeId -Unique
+                )
                 $commonScopes = @($scopesOnA | Where-Object { $scopesOnB -contains $_ })
                 $allScopes = @($scopesA + $scopesB + $commonScopes) | Select-Object -Unique
 

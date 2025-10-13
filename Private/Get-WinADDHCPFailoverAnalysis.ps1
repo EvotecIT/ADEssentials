@@ -126,8 +126,25 @@ function Get-WinADDHCPFailoverAnalysis {
         }
 
         # Missing on both: scope exists on both servers but is not assigned to any relationship on either side
-        $scopesOnA = @($DHCPSummary.Scopes | Where-Object { $_.ServerName -and $_.ServerName.ToLower() -eq $pair.ServerA } | Select-Object -ExpandProperty ScopeId -Unique)
-        $scopesOnB = @($DHCPSummary.Scopes | Where-Object { $_.ServerName -and $_.ServerName.ToLower() -eq $pair.ServerB } | Select-Object -ExpandProperty ScopeId -Unique)
+        # Use canonicalized server names for comparison to avoid short vs FQDN mismatches
+        $scopesOnA = @(
+            $DHCPSummary.Scopes |
+                Where-Object {
+                    if (-not $_.ServerName) { return $false }
+                    $srv = Resolve-DHCPServerName -Name $_.ServerName -DHCPSummary $DHCPSummary
+                    return ($srv -eq $pair.ServerA)
+                } |
+                Select-Object -ExpandProperty ScopeId -Unique
+        )
+        $scopesOnB = @(
+            $DHCPSummary.Scopes |
+                Where-Object {
+                    if (-not $_.ServerName) { return $false }
+                    $srv = Resolve-DHCPServerName -Name $_.ServerName -DHCPSummary $DHCPSummary
+                    return ($srv -eq $pair.ServerB)
+                } |
+                Select-Object -ExpandProperty ScopeId -Unique
+        )
         $commonScopes = @($scopesOnA | Where-Object { $scopesOnB -contains $_ })
         foreach ($s in $commonScopes) {
             $sStr = [string]$s
