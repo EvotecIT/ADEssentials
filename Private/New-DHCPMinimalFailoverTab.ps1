@@ -37,8 +37,9 @@
                         # Aggregate by partner pair, union scope sets from both sides
                         $pairs = @{}
                         foreach ($rel in $FailoverRelationships) {
-                            $a = ([string]$rel.ServerName).Trim().ToLower()
-                            $b = ([string]$rel.PartnerServer).Trim().ToLower()
+                            # Canonicalize names (prefer FQDN) to avoid short/FQDN mismatches
+                            $a = Resolve-DHCPServerName -Name $rel.ServerName -DHCPSummary $DHCPData
+                            $b = Resolve-DHCPServerName -Name $rel.PartnerServer -DHCPSummary $DHCPData
                             $sorted = @($a,$b) | Sort-Object
                             $key = $sorted -join '↔'
                             if (-not $pairs.ContainsKey($key)) {
