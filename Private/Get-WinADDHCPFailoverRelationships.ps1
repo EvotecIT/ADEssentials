@@ -61,6 +61,9 @@ function Get-WinADDHCPFailoverRelationships {
             $DHCPSummary.FailoverRelationships.Add($obj)
         }
     } catch {
-        Add-DHCPError -Summary $DHCPSummary -ServerName $Computer -Component 'Failover Relationships' -Operation 'Get-DhcpServerv4Failover' -ErrorMessage $_.Exception.Message -Severity 'Warning'
+        $msg = $_.Exception.Message
+        # Treat access problems as Errors to surface visibility; others remain Warnings
+        $sev = if ($msg -match '(?i)(access is denied|permissiondenied|win32\s*5|unauthorized)') { 'Error' } else { 'Warning' }
+        Add-DHCPError -Summary $DHCPSummary -ServerName $Computer -Component 'Failover Relationships' -Operation 'Get-DhcpServerv4Failover' -ErrorMessage $msg -Severity $sev
     }
 }

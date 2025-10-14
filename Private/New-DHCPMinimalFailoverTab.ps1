@@ -13,6 +13,10 @@
         $CoveragePercentRaw = if ($DHCPData.Scopes.Count -gt 0) { (100.0 * $ScopesWithFailover.Count / $DHCPData.Scopes.Count) } else { 0 }
         $CoveragePercent = [Math]::Round($CoveragePercentRaw, 2)
 
+        # Failover enumeration issues (from centralized error log)
+        $FailoverEnumWarnings = @($DHCPData.Warnings | Where-Object { $_.Component -eq 'Failover Relationships' -and $_.Operation -eq 'Get-DhcpServerv4Failover' })
+        $FailoverEnumErrors   = @($DHCPData.Errors   | Where-Object { $_.Component -eq 'Failover Relationships' -and $_.Operation -eq 'Get-DhcpServerv4Failover' })
+
         # Summary Info Cards
         New-HTMLSection -HeaderText "Failover Coverage Statistics" -Wrap wrap {
             New-HTMLSection -HeaderText "Failover Metrics" -Invisible -Density Compact {
@@ -26,6 +30,14 @@
                 $CoverageColor = if ($CoveragePercent -ge 90) { 'Green' } elseif ($CoveragePercent -ge 70) { 'Orange' } else { 'Red' }
                 $CoverageIcon  = if ($CoveragePercent -ge 90) { '🎆' } elseif ($CoveragePercent -ge 70) { '📋' } else { '📉' }
                 New-HTMLInfoCard -Title "Failover Coverage" -Number "$CoveragePercent%" -Subtitle "Scope Protection Rate" -Icon $CoverageIcon -TitleColor $CoverageColor -NumberColor $CoverageColor -ShadowColor 'rgba(0, 0, 0, 0.15)'
+
+                # Surface enumeration problems prominently
+                if ($FailoverEnumWarnings.Count -gt 0 -or $FailoverEnumErrors.Count -gt 0) {
+                    $warnColor = if ($FailoverEnumWarnings.Count -gt 0) { 'Orange' } else { 'Green' }
+                    $errColor  = if ($FailoverEnumErrors.Count   -gt 0) { 'Red'    } else { 'Green' }
+                    New-HTMLInfoCard -Title "Failover Enum Warnings" -Number $FailoverEnumWarnings.Count -Subtitle "Query issues" -Icon "⚠️" -TitleColor $warnColor -NumberColor $warnColor -ShadowColor 'rgba(255, 165, 0, 0.15)'
+                    New-HTMLInfoCard -Title "Failover Enum Errors"   -Number $FailoverEnumErrors.Count   -Subtitle "Query failures" -Icon "❌" -TitleColor $errColor  -NumberColor $errColor  -ShadowColor 'rgba(255, 0, 0, 0.15)'
+                }
             }
         }
 
@@ -50,16 +62,20 @@
                                     Modes        = New-Object System.Collections.Generic.HashSet[string]
                                     States       = New-Object System.Collections.Generic.HashSet[string]
                                     ScopesUnion  = New-Object System.Collections.Generic.HashSet[string]
+                                    Sources      = New-Object System.Collections.Generic.HashSet[string]
                                 }
                             }
                             if ($rel.Name) { [void]$pairs[$key].NameSet.Add([string]$rel.Name) }
                             if ($rel.Mode) { [void]$pairs[$key].Modes.Add([string]$rel.Mode) }
                             if ($rel.State) { [void]$pairs[$key].States.Add([string]$rel.State) }
                             foreach ($sid in @($rel.ScopeId)) { if ($sid) { [void]$pairs[$key].ScopesUnion.Add(([string]$sid).Trim()) } }
+                            if ($rel.GatheredFrom) { [void]$pairs[$key].Sources.Add((([string]$rel.GatheredFrom).Trim().ToLower())) }
                         }
 
                         $FailoverSummary = foreach ($p in $pairs.Values) {
                             $state = if ($p.States.Count -eq 1) { @($p.States)[0] } elseif ($p.States.Count -eq 0) { '' } else { 'Mixed' }
+                            $complete = ($p.Sources.Contains($p.ServerA) -and $p.Sources.Contains($p.ServerB))
+                            $dataSrc  = if ($complete) { 'Both partners' } elseif ($p.Sources.Contains($p.ServerA)) { "Only $($p.ServerA)" } elseif ($p.Sources.Contains($p.ServerB)) { "Only $($p.ServerB)" } else { 'Unknown' }
                             [PSCustomObject]@{
                                 Name       = (@($p.NameSet) -join ', ')
                                 PartnerA   = $p.ServerA  # alphabetical label
@@ -67,6 +83,7 @@
                                 Mode       = (@($p.Modes) -join ', ')
                                 State      = $state
                                 ScopeCount = @($p.ScopesUnion).Count
+                                DataSource = $dataSrc
                                 Status     = if ($state -eq 'Normal') { '✅ Healthy' } elseif ([string]::IsNullOrWhiteSpace($state)) { '⚠️ Unknown' } else { "⚠️ $state" }
                             }
                         }
@@ -75,6 +92,7 @@
                             New-HTMLTableCondition -Name 'State' -ComparisonType string -Operator eq -Value 'Normal' -BackgroundColor LightGreen
                             New-HTMLTableCondition -Name 'State' -ComparisonType string -Operator ne -Value 'Normal' -BackgroundColor Yellow
                             New-HTMLTableCondition -Name 'ScopeCount' -ComparisonType number -Operator eq -Value 0 -BackgroundColor Red -Color White
+                            New-HTMLTableCondition -Name 'DataSource' -ComparisonType string -Operator like -Value 'Only *' -BackgroundColor LightYellow
                         } -ScrollX -Filtering
                     }
                 }
@@ -107,6 +125,27 @@
                     New-HTMLTable -DataTable $DHCPData.FailoverAnalysis.StaleRelationships -ScrollX -Filtering {
                         New-HTMLTableCondition -Name 'ScopeCount' -ComparisonType number -Operator eq -Value 0 -BackgroundColor Yellow
                     }
+                }
+            }
+
+            # Enumeration problems table
+            if ($FailoverEnumWarnings.Count -gt 0 -or $FailoverEnumErrors.Count -gt 0) {
+                New-HTMLSection -HeaderText "🚨 Failover Enumeration Issues" {
+                    $enumIssues = @($FailoverEnumWarnings + $FailoverEnumErrors) | Sort-Object -Property Timestamp
+                    $enumDisplay = $enumIssues | ForEach-Object {
+                        [PSCustomObject]@{
+                            Time       = $_.Timestamp
+                            Server     = $_.ServerName
+                            Severity   = $_.Severity
+                            Component  = $_.Component
+                            Operation  = $_.Operation
+                            Message    = $_.ErrorMessage
+                        }
+                    }
+                    New-HTMLTable -DataTable $enumDisplay -ScrollX -Filtering {
+                        New-HTMLTableCondition -Name 'Severity' -ComparisonType string -Operator eq -Value 'Warning' -BackgroundColor Yellow
+                        New-HTMLTableCondition -Name 'Severity' -ComparisonType string -Operator eq -Value 'Error'   -BackgroundColor Red -Color White
+                    } -Title 'Enumeration errors/warnings when calling Get-DhcpServerv4Failover'
                 }
             }
 

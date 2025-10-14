@@ -30,6 +30,10 @@
                 $ScopesWithFailover = ($DHCPData.Scopes | Where-Object { $null -ne $_.FailoverPartner -and $_.FailoverPartner -ne '' }).Count
                 $ScopesWithoutFailover = ($DHCPData.Scopes | Where-Object { $_.State -eq 'Active' -and ($null -eq $_.FailoverPartner -or $_.FailoverPartner -eq '') }).Count
 
+                # Failover enumeration issues (from centralized error log)
+                $FailoverEnumWarnings = @($DHCPData.Warnings | Where-Object { $_.Component -eq 'Failover Relationships' -and $_.Operation -eq 'Get-DhcpServerv4Failover' })
+                $FailoverEnumErrors   = @($DHCPData.Errors   | Where-Object { $_.Component -eq 'Failover Relationships' -and $_.Operation -eq 'Get-DhcpServerv4Failover' })
+
                 New-HTMLSection -HeaderText "Failover Health Dashboard" -Invisible -Density Compact {
                     New-HTMLInfoCard -Title "Failover Relationships" -Number $TotalFailoverRelationships -Subtitle "Configured" -Icon "🔄" -TitleColor Blue -NumberColor DarkBlue
                     New-HTMLInfoCard -Title "Active Failovers" -Number $ActiveFailovers -Subtitle "Normal State" -Icon "✅" -TitleColor Green -NumberColor DarkGreen
@@ -39,6 +43,12 @@
                         New-HTMLInfoCard -Title "Missing on Partner B" -Number $($DHCPData.FailoverAnalysis.OnlyOnPrimary.Count) -Subtitle "Scopes assigned on A only" -Icon "🟠" -TitleColor 'DarkOrange' -NumberColor 'DarkOrange'
                         New-HTMLInfoCard -Title "Missing on Partner A" -Number $($DHCPData.FailoverAnalysis.OnlyOnSecondary.Count) -Subtitle "Scopes assigned on B only" -Icon "🟠" -TitleColor 'DarkOrange' -NumberColor 'DarkOrange'
                         New-HTMLInfoCard -Title "Missing on Both" -Number $($DHCPData.FailoverAnalysis.MissingOnBoth.Count) -Subtitle "Gap" -Icon "⚠️" -TitleColor 'OrangeRed' -NumberColor 'OrangeRed'
+                        if ($FailoverEnumWarnings.Count -gt 0 -or $FailoverEnumErrors.Count -gt 0) {
+                            $warnColor = if ($FailoverEnumWarnings.Count -gt 0) { 'Orange' } else { 'Green' }
+                            $errColor  = if ($FailoverEnumErrors.Count   -gt 0) { 'Red'    } else { 'Green' }
+                            New-HTMLInfoCard -Title "Enum Warnings" -Number $FailoverEnumWarnings.Count -Subtitle "Get-DhcpServerv4Failover" -Icon "⚠️" -TitleColor $warnColor -NumberColor $warnColor
+                            New-HTMLInfoCard -Title "Enum Errors"   -Number $FailoverEnumErrors.Count   -Subtitle "Get-DhcpServerv4Failover" -Icon "❌" -TitleColor $errColor  -NumberColor $errColor
+                        }
                     }
                 }
 
@@ -70,16 +80,20 @@
                         Modes       = New-Object System.Collections.Generic.HashSet[string]
                         States      = New-Object System.Collections.Generic.HashSet[string]
                         ScopesUnion = New-Object System.Collections.Generic.HashSet[string]
+                        Sources     = New-Object System.Collections.Generic.HashSet[string]
                     }
                 }
                 if ($rel.Name) { [void]$pairs[$key].NameSet.Add([string]$rel.Name) }
                 if ($rel.Mode) { [void]$pairs[$key].Modes.Add([string]$rel.Mode) }
                 if ($rel.State) { [void]$pairs[$key].States.Add([string]$rel.State) }
                 foreach ($sid in @($rel.ScopeId)) { if ($sid) { [void]$pairs[$key].ScopesUnion.Add(([string]$sid).Trim()) } }
+                if ($rel.GatheredFrom) { [void]$pairs[$key].Sources.Add((([string]$rel.GatheredFrom).Trim().ToLower())) }
             }
 
             $FailoverSummary = foreach ($p in $pairs.Values) {
                 $state = if ($p.States.Count -eq 1) { @($p.States)[0] } elseif ($p.States.Count -eq 0) { '' } else { 'Mixed' }
+                $complete = ($p.Sources.Contains($p.ServerA) -and $p.Sources.Contains($p.ServerB))
+                $dataSrc  = if ($complete) { 'Both partners' } elseif ($p.Sources.Contains($p.ServerA)) { "Only $($p.ServerA)" } elseif ($p.Sources.Contains($p.ServerB)) { "Only $($p.ServerB)" } else { 'Unknown' }
                 [PSCustomObject]@{
                     Name       = (@($p.NameSet) -join ', ')
                     PartnerA   = $p.ServerA
@@ -87,6 +101,7 @@
                     Mode       = (@($p.Modes) -join ', ')
                     State      = $state
                     ScopeCount = @($p.ScopesUnion).Count
+                    DataSource = $dataSrc
                 }
             }
 
@@ -94,6 +109,7 @@
                 New-HTMLTableCondition -Name 'State' -ComparisonType string -Operator eq -Value 'Normal' -BackgroundColor LightGreen -FailBackgroundColor Orange
                 New-HTMLTableCondition -Name 'State' -ComparisonType string -Operator ne -Value 'Normal' -BackgroundColor Yellow
                 New-HTMLTableCondition -Name 'ScopeCount' -ComparisonType number -Operator eq -Value 0 -BackgroundColor Red -Color White
+                New-HTMLTableCondition -Name 'DataSource' -ComparisonType string -Operator like -Value 'Only *' -BackgroundColor LightYellow
             } -DataStore JavaScript -ScrollX -Title "Failover Relationships by Partner Pair"
         }
 
@@ -153,6 +169,7 @@
                 $relB = $pair.RelB
                 $scopesA = if ($relA -and $relA.ScopeId) { @($relA.ScopeId) } else { @() }
                 $scopesB = if ($relB -and $relB.ScopeId) { @($relB.ScopeId) } else { @() }
+                $verified = ($relA -ne $null -and $relB -ne $null)
 
                 # Only include common scopes on both servers to detect 'Missing on both'
                 # Use canonicalized names to avoid short/FQDN mismatches
@@ -180,7 +197,8 @@
                 $rows = foreach ($s in $allScopes) {
                     $onA = $scopesA -contains $s
                     $onB = $scopesB -contains $s
-                    $status = if ($onA -and $onB) { 'On both partners' } elseif ($onA) { "Missing on $($pair.ServerB)" } elseif ($onB) { "Missing on $($pair.ServerA)" } else { 'Missing on both' }
+                    $statusBase = if ($onA -and $onB) { 'On both partners' } elseif ($onA) { "Missing on $($pair.ServerB)" } elseif ($onB) { "Missing on $($pair.ServerA)" } else { 'Missing on both' }
+                    $status = $statusBase + $(if (-not $verified -and $statusBase -ne 'On both partners') { ' (Unverified)' } else { '' })
                     $failoverConfig = switch ($status) {
                         { $_ -like 'Missing on *' } { 'missing on one partner' }
                         'Missing on both' { 'missing on both' }
@@ -256,6 +274,27 @@
                         }
                     } -Width '48%'
                 }
+            }
+        }
+
+        # Failover enumeration issues table (if any)
+        if (($FailoverEnumWarnings.Count -gt 0) -or ($FailoverEnumErrors.Count -gt 0)) {
+            New-HTMLSection -HeaderText "🚨 Failover Enumeration Issues" -CanCollapse {
+                $enumIssues = @($FailoverEnumWarnings + $FailoverEnumErrors) | Sort-Object -Property Timestamp
+                $enumDisplay = $enumIssues | ForEach-Object {
+                    [PSCustomObject]@{
+                        Time       = $_.Timestamp
+                        Server     = $_.ServerName
+                        Severity   = $_.Severity
+                        Component  = $_.Component
+                        Operation  = $_.Operation
+                        Message    = $_.ErrorMessage
+                    }
+                }
+                New-HTMLTable -DataTable $enumDisplay -Filtering -ScrollX {
+                    New-HTMLTableCondition -Name 'Severity' -ComparisonType string -Operator eq -Value 'Warning' -BackgroundColor Yellow
+                    New-HTMLTableCondition -Name 'Severity' -ComparisonType string -Operator eq -Value 'Error'   -BackgroundColor Red -Color White
+                } -Title 'Enumeration errors/warnings when calling Get-DhcpServerv4Failover'
             }
         }
 
