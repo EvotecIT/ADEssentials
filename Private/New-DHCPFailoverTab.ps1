@@ -288,6 +288,11 @@
                         Severity   = $_.Severity
                         Component  = $_.Component
                         Operation  = $_.Operation
+                        Category   = $_.Category
+                        Reason     = $_.Reason
+                        ErrorId    = $_.ErrorId
+                        Target     = $_.Target
+                        HResult    = $_.HResult
                         Message    = $_.ErrorMessage
                     }
                 }
@@ -295,6 +300,26 @@
                     New-HTMLTableCondition -Name 'Severity' -ComparisonType string -Operator eq -Value 'Warning' -BackgroundColor Yellow
                     New-HTMLTableCondition -Name 'Severity' -ComparisonType string -Operator eq -Value 'Error'   -BackgroundColor Red -Color White
                 } -Title 'Enumeration errors/warnings when calling Get-DhcpServerv4Failover'
+            }
+        }
+
+        # Standalone DHCP servers (no failover relationships and no enumeration error recorded)
+        $allServers = @($DHCPData.Servers | ForEach-Object { ([string]$_.ServerName).Trim().ToLower() })
+        $mentioned  = @()
+        foreach ($rel in $DHCPData.FailoverRelationships) {
+            if ($rel.ServerName)   { $mentioned += ([string]$rel.ServerName).Trim().ToLower() }
+            if ($rel.PartnerServer){ $mentioned += ([string]$rel.PartnerServer).Trim().ToLower() }
+        }
+        $mentioned = $mentioned | Select-Object -Unique
+        $enumFailed = @(@($FailoverEnumWarnings + $FailoverEnumErrors) | ForEach-Object { ([string]$_.ServerName).Trim().ToLower() }) | Select-Object -Unique
+        $standalone = @($allServers | Where-Object { ($_ -notin $mentioned) -and ($_ -notin $enumFailed) })
+        if ($standalone.Count -gt 0) {
+            New-HTMLSection -HeaderText "ℹ️ Servers Without Any Failover Relationships (Standalone)" -CanCollapse {
+                $rows = foreach ($srv in $standalone) {
+                    $active = @($DHCPData.Scopes | Where-Object { $_.ServerName -and $_.ServerName.ToLower() -eq $srv -and $_.State -eq 'Active' }).Count
+                    [PSCustomObject]@{ Server = $srv; ActiveScopes = $active }
+                }
+                New-HTMLTable -DataTable $rows -Filtering -ScrollX -Title 'Standalone DHCP Servers'
             }
         }
 
