@@ -45,7 +45,13 @@
         [string]$Component,
         [string]$Operation,
         [string]$ErrorMessage,
-        [string]$Severity = 'Error'
+        [string]$Severity = 'Error',
+        # Optional richer error metadata (if available)
+        [string]$Reason,
+        [string]$Category,
+        [string]$ErrorId,
+        [string]$Target,
+        [string]$HResult
     )
 
     # Use provided Summary object or fall back to script-scope $DHCPSummary
@@ -67,6 +73,11 @@
         Severity     = $Severity
         ErrorMessage = $ErrorMessage
         GatheredFrom = $env:COMPUTERNAME
+        Reason       = $Reason
+        Category     = $Category
+        ErrorId      = $ErrorId
+        Target       = $Target
+        HResult      = $HResult
     }
 
     if ($Severity -eq 'Warning') {
