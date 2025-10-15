@@ -62,8 +62,16 @@ function Get-WinADDHCPFailoverRelationships {
         }
     } catch {
         $msg = $_.Exception.Message
+        # Extract richer details when available
+        $reason   = $null; $category = $null; $target = $null; $fid = $null; $hresult = $null
+        try { $reason   = [string]$_.CategoryInfo.Reason } catch {}
+        try { $category = [string]$_.CategoryInfo.Category } catch {}
+        try { $target   = [string]$_.CategoryInfo.TargetName } catch {}
+        try { $fid      = [string]$_.FullyQualifiedErrorId } catch {}
+        try { if ($_.Exception -and $null -ne $_.Exception.HResult) { $hresult = ('0x{0:X8}' -f ($_.Exception.HResult)) } } catch {}
+
         # Treat access problems as Errors to surface visibility; others remain Warnings
         $sev = if ($msg -match '(?i)(access is denied|permissiondenied|win32\s*5|unauthorized)') { 'Error' } else { 'Warning' }
-        Add-DHCPError -Summary $DHCPSummary -ServerName $Computer -Component 'Failover Relationships' -Operation 'Get-DhcpServerv4Failover' -ErrorMessage $msg -Severity $sev
+        Add-DHCPError -Summary $DHCPSummary -ServerName $Computer -Component 'Failover Relationships' -Operation 'Get-DhcpServerv4Failover' -ErrorMessage $msg -Severity $sev -Reason $reason -Category $category -ErrorId $fid -Target $target -HResult $hresult
     }
 }
