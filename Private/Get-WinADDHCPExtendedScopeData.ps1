@@ -4,12 +4,14 @@
         [string] $Computer,
         [Object[]] $Scopes,
         [System.Collections.IDictionary] $DHCPSummary,
-        [switch] $TestMode
+        [switch] $TestMode,
+        [hashtable] $Components
     )
 
     Write-Verbose "Get-WinADDHCPExtendedScopeData - Starting scope-intensive extended data collection for $Computer"
 
     # Reservations analysis for each scope (SCOPE-INTENSIVE)
+    if (($null -eq $Components) -or $Components['Reservations']) {
     Write-Verbose "Get-WinADDHCPExtendedScopeData - Starting reservations analysis for $($Scopes.Count) scopes on $Computer"
     $ScopeReservationCounter = 0
     foreach ($Scope in $Scopes) {
@@ -39,6 +41,7 @@
         }
 
         # Active leases analysis (sample for high utilization scopes) (SCOPE-INTENSIVE)
+        if (($null -eq $Components) -or $Components['Leases']) {
         try {
             Write-Verbose "Get-WinADDHCPExtendedScopeData - Checking lease information for scope $($Scope.ScopeId) on $Computer"
             $CurrentScopeStats = Get-DhcpServerv4ScopeStatistics -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction Stop
@@ -68,8 +71,10 @@
         } catch {
             Add-DHCPError -Summary $DHCPSummary -ServerName $Computer -ScopeId $Scope.ScopeId -Component 'DHCP Leases' -Operation 'Get-DhcpServerv4Lease' -ErrorMessage $_.Exception.Message -Severity 'Warning'
         }
+        }
 
         # Enhanced options collection per scope (SCOPE-INTENSIVE)
+        if (($null -eq $Components) -or $Components['Options']) {
         Write-Verbose "Get-WinADDHCPExtendedScopeData - Collecting DHCP options for scope $($Scope.ScopeId) on $Computer"
         try {
             $ScopeOptions = Get-DhcpServerv4OptionValue -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction Stop
@@ -93,6 +98,8 @@
         } catch {
             Add-DHCPError -Summary $DHCPSummary -ServerName $Computer -ScopeId $Scope.ScopeId -Component 'DHCP Options Collection' -Operation 'Get-DhcpServerv4OptionValue' -ErrorMessage $_.Exception.Message -Severity 'Warning'
         }
+        }
     }
     Write-Verbose "Get-WinADDHCPExtendedScopeData - Completed scope-intensive extended data collection for $Computer"
+    }
 }
