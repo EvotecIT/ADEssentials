@@ -3,12 +3,14 @@
     param(
         [string] $Computer,
         [System.Collections.IDictionary] $DHCPSummary,
-        [switch] $TestMode
+        [switch] $TestMode,
+        [hashtable] $Components
     )
 
     Write-Verbose "Get-WinADDHCPExtendedServerData - Gathering extended server data for $Computer"
 
     # Get audit log information
+    if (($null -eq $Components) -or $Components['AuditLogs']) {
     try {
         $AuditLog = Get-DhcpServerAuditLog -ComputerName $Computer -ErrorAction Stop
         $AuditLogObject = [PSCustomObject] @{
@@ -25,8 +27,10 @@
     } catch {
         Add-DHCPError -Summary $DHCPSummary -ServerName $Computer -Component 'Audit Log Configuration' -Operation 'Get-DhcpServerAuditLog' -ErrorMessage $_.Exception.Message -Severity 'Warning'
     }
+    }
 
     # Get database information
+    if (($null -eq $Components) -or $Components['Databases']) {
     try {
         $Database = Get-DhcpServerDatabase -ComputerName $Computer -ErrorAction Stop
         $DatabaseObject = [PSCustomObject] @{
@@ -44,8 +48,10 @@
     } catch {
         Add-DHCPError -Summary $DHCPSummary -ServerName $Computer -Component 'Database Configuration' -Operation 'Get-DhcpServerDatabase' -ErrorMessage $_.Exception.Message -Severity 'Warning'
     }
+    }
 
     # DHCP Server Options (global/server-level)
+    if (($null -eq $Components) -or $Components['Options']) {
     try {
         Write-Verbose "Get-WinADDHCPExtendedServerData - Collecting server-level DHCP options for $Computer"
         if ($TestMode) {
@@ -73,8 +79,10 @@
     } catch {
         Add-DHCPError -Summary $DHCPSummary -ServerName $Computer -Component 'Server Options' -Operation 'Get-DhcpServerv4OptionValue -All' -ErrorMessage $_.Exception.Message -Severity 'Warning'
     }
+    }
 
     # DHCP Classes (Vendor/User Classes)
+    if (($null -eq $Components) -or $Components['Classes']) {
     try {
         Write-Verbose "Get-WinADDHCPExtendedServerData - Collecting DHCP classes for $Computer"
         if ($TestMode) {
@@ -98,8 +106,10 @@
     } catch {
         Add-DHCPError -Summary $DHCPSummary -ServerName $Computer -Component 'DHCP Classes' -Operation 'Get-DhcpServerv4Class' -ErrorMessage $_.Exception.Message -Severity 'Warning'
     }
+    }
 
     # Server settings
+    if (($null -eq $Components) -or $Components['ServerSettings']) {
     try {
         $ServerSettings = Get-DhcpServerSetting -ComputerName $Computer -ErrorAction Stop
         $ServerSettingsObject = [PSCustomObject] @{
@@ -125,8 +135,10 @@
             Add-DHCPError -Summary $DHCPSummary -ServerName $Computer -Component 'Server Settings' -Operation 'Get-DhcpServerSetting' -ErrorMessage $ErrorMessage -Severity 'Warning'
         }
     }
+    }
 
     # Network bindings
+    if (($null -eq $Components) -or $Components['NetworkBindings']) {
     try {
         $Bindings = Get-DhcpServerv4Binding -ComputerName $Computer -ErrorAction Stop
         if ($Bindings -and $Bindings.Count -gt 0) {
@@ -151,8 +163,10 @@
     } catch {
         Add-DHCPError -Summary $DHCPSummary -ServerName $Computer -Component 'Network Bindings' -Operation 'Get-DhcpServerv4Binding' -ErrorMessage $_.Exception.Message -Severity 'Warning'
     }
+    }
 
     # Security filters
+    if (($null -eq $Components) -or $Components['SecurityFilters']) {
     try {
         Write-Verbose "Get-WinADDHCPExtendedServerData - Checking security filters on $Computer"
         $FilterList = Get-DhcpServerv4FilterList -ComputerName $Computer -ErrorAction Stop
@@ -186,8 +200,10 @@
         }
         $DHCPSummary.SecurityFilters.Add($SecurityFilterObject)
     }
+    }
 
     # IPv6 Scopes (with robust error handling since IPv6 DHCP is rarely deployed)
+    if (($null -eq $Components) -or $Components['IPv6']) {
     try {
         Write-Verbose "Get-WinADDHCPExtendedServerData - Checking for IPv6 DHCP support on $Computer"
 
@@ -275,5 +291,6 @@
     } catch {
         # This catch should rarely be reached due to inner try-catch, but provides final safety net
         Add-DHCPError -Summary $DHCPSummary -ServerName $Computer -Component 'IPv6 DHCP Analysis' -Operation 'IPv6 Overall Processing' -ErrorMessage $_.Exception.Message -Severity 'Warning'
+    }
     }
 }
