@@ -58,6 +58,27 @@
     This includes lease duration validation, DNS configuration checks, and failover validation.
     Automatically sets SkipScopeDetails for performance and adjusts tabs to show only validation-relevant data.
 
+    .PARAMETER IncludeComponents
+    Pass-through filter to `Get-WinADDHCPSummary` controlling what is gathered. Supported values:
+    Servers, Scopes, ScopeStatistics, Failover, IPv6, Multicast, Reservations, Leases, Policies,
+    Options, Classes, ServerSettings, NetworkBindings, AuditLogs, Databases, SecurityFilters,
+    EnhancedAnalysis, OptionsAnalysis, Validation, TimingStatistics.
+
+    .PARAMETER ExcludeComponents
+    Pass-through exclusion of components. Also auto-hides related tabs (e.g., excluding ScopeStatistics removes the Utilization tab).
+
+    .PARAMETER IncludeServers
+    Only analyze these DHCP servers (filters discovery and detailed processing).
+
+    .PARAMETER ExcludeServers
+    Exclude these DHCP servers from discovery/processing.
+
+    .PARAMETER IncludeScopeId
+    Only process these IPv4 scope IDs across the queried servers.
+
+    .PARAMETER ExcludeScopeId
+    Exclude these IPv4 scope IDs from processing.
+
     .EXAMPLE
     Show-WinADDHCPSummary
 
@@ -82,6 +103,21 @@
     Show-WinADDHCPSummary -ComputerName "dhcp01.example.com", "dhcp02.example.com" -PassThru
 
     Generates a report for specific DHCP servers and returns the data object.
+
+    .EXAMPLE
+    Show-WinADDHCPSummary -Minimal -IncludeServers dhcp01.contoso.com,dhcp02.contoso.com -IncludeComponents Servers,Scopes,Failover,Validation,TimingStatistics -Online
+
+    Minimal, fast failover-focused report for a targeted server list.
+
+    .EXAMPLE
+    Show-WinADDHCPSummary -ExcludeComponents IPv6,Options,Classes,ScopeStatistics -IncludeTabs Overview,ValidationIssues,Infrastructure,Failover -Online
+
+    Lightweight report excluding DHCPv6 and options/classes and skipping scope utilization; corresponding tabs auto-hide.
+
+    .EXAMPLE
+    Show-WinADDHCPSummary -ComputerName dhcp01.contoso.com -IncludeScopeId 10.10.1.0,10.10.2.0 -IncludeComponents Scopes,ScopeStatistics,Options,Reservations,Leases,Validation -Online
+
+    Deep-dive report for specific scope IDs on a single server with full per-scope details.
 
     .NOTES
     This function requires the DHCP PowerShell module and PSWriteHTML module for report generation.
@@ -118,6 +154,15 @@
         [switch] $ConsiderMissingFailoverCritical,
         [switch] $ConsiderDNSConfigCritical,
         [switch] $IncludeServerAvailabilityIssues,
+        # New: Scan component gating (passed through to Get-WinADDHCPSummary)
+        [ValidateSet('Servers','Scopes','ScopeStatistics','Failover','IPv6','Multicast','Reservations','Leases','Policies','Options','Classes','ServerSettings','NetworkBindings','AuditLogs','Databases','SecurityFilters','EnhancedAnalysis','OptionsAnalysis','Validation','TimingStatistics')]
+        [string[]] $IncludeComponents,
+        [ValidateSet('Servers','Scopes','ScopeStatistics','Failover','IPv6','Multicast','Reservations','Leases','Policies','Options','Classes','ServerSettings','NetworkBindings','AuditLogs','Databases','SecurityFilters','EnhancedAnalysis','OptionsAnalysis','Validation','TimingStatistics')]
+        [string[]] $ExcludeComponents,
+        [alias('IncludeHost','IncludeDHCPServers')][string[]] $IncludeServers,
+        [alias('ExcludeHost','ExcludeDHCPServers')][string[]] $ExcludeServers,
+        [alias('IncludeScope','IncludeScopes')][string[]] $IncludeScopeId,
+        [alias('ExcludeScope','ExcludeScopes')][string[]] $ExcludeScopeId,
         [string[]] $IncludeTabs = @('Overview', 'IPv4/IPv6', 'Utilization', 'ValidationIssues', 'Infrastructure', 'Options&Classes', 'Failover', 'NetworkSegmentation', 'Performance', 'SecurityCompliance'),
         [string[]] $ExcludeTabs = @(),
         [switch] $ShowTimingStatistics
@@ -147,6 +192,34 @@
         Write-Verbose "Show-WinADDHCPSummary - Minimal mode enabled: focusing on validation data only"
     }
 
+    # Adjust visible tabs based on excluded components, when specified
+    if ($ExcludeComponents -and $ExcludeComponents.Count -gt 0) {
+        # If both Options and Classes excluded, drop the combined tab
+        if ('Options' -in $ExcludeComponents -and 'Classes' -in $ExcludeComponents) {
+            $IncludeTabs = @($IncludeTabs | Where-Object { $_ -ne 'Options&Classes' })
+        }
+        if ('ServerSettings' -in $ExcludeComponents) {
+            $IncludeTabs = @($IncludeTabs | Where-Object { $_ -ne 'ServerSettings' })
+        }
+        if ('Policies' -in $ExcludeComponents) {
+            $IncludeTabs = @($IncludeTabs | Where-Object { $_ -ne 'Policies' })
+        }
+        if ('Failover' -in $ExcludeComponents) {
+            $IncludeTabs = @($IncludeTabs | Where-Object { $_ -ne 'Failover' })
+        }
+        if ('ScopeStatistics' -in $ExcludeComponents) {
+            $IncludeTabs = @($IncludeTabs | Where-Object { $_ -ne 'Utilization' })
+        }
+        # If everything under IPv4/IPv6 is excluded, hide the tab
+        if ((('Scopes' -in $ExcludeComponents) -and ('IPv6' -in $ExcludeComponents) -and ('Multicast' -in $ExcludeComponents))) {
+            $IncludeTabs = @($IncludeTabs | Where-Object { $_ -ne 'IPv4/IPv6' })
+        }
+        # If all analysis excluded, remove analysis sub-tabs
+        if ('EnhancedAnalysis' -in $ExcludeComponents -and 'OptionsAnalysis' -in $ExcludeComponents) {
+            $IncludeTabs = @($IncludeTabs | Where-Object { $_ -notin @('Performance','SecurityCompliance','ScaleAnalysis') })
+        }
+    }
+
     # Gather DHCP data using Get-WinADDHCPSummary (with TestMode if specified)
     $GetWinADDHCPSummarySplat = @{
         Forest                    = $Forest
@@ -165,6 +238,12 @@
     if ($ConsiderMissingFailoverCritical) { $GetWinADDHCPSummarySplat.ConsiderMissingFailoverCritical = $true }
     if ($ConsiderDNSConfigCritical) { $GetWinADDHCPSummarySplat.ConsiderDNSConfigCritical = $true }
     if ($IncludeServerAvailabilityIssues) { $GetWinADDHCPSummarySplat.IncludeServerAvailabilityIssues = $true }
+    if ($IncludeComponents) { $GetWinADDHCPSummarySplat.IncludeComponents = $IncludeComponents }
+    if ($ExcludeComponents) { $GetWinADDHCPSummarySplat.ExcludeComponents = $ExcludeComponents }
+    if ($IncludeServers)    { $GetWinADDHCPSummarySplat.IncludeServers    = $IncludeServers }
+    if ($ExcludeServers)    { $GetWinADDHCPSummarySplat.ExcludeServers    = $ExcludeServers }
+    if ($IncludeScopeId)    { $GetWinADDHCPSummarySplat.IncludeScopeId    = $IncludeScopeId }
+    if ($ExcludeScopeId)    { $GetWinADDHCPSummarySplat.ExcludeScopeId    = $ExcludeScopeId }
 
     Write-Verbose "Show-WinADDHCPSummary - Gathering DHCP data from Get-WinADDHCPSummary"
     $DHCPData = Get-WinADDHCPSummary @GetWinADDHCPSummarySplat
