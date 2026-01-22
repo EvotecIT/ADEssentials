@@ -7,6 +7,7 @@
         [System.Collections.Generic.List[Object]] $DHCPSummaryTimingStatistics,
         [System.Collections.Generic.List[Object]] $DHCPSummaryErrors,
         [switch] $SkipScopeDetails,
+        [switch] $AccurateUtilization,
         [switch] $TestMode
     )
 
@@ -32,6 +33,41 @@
             $ScopeTotalAddresses = ($ScopeStats.AddressesInUse + $ScopeStats.AddressesFree)
             $ScopeObject.TotalAddresses = $ScopeTotalAddresses
 
+            # Accurate utilization (active leases + active reservations)
+            if ($AccurateUtilization) {
+                $AccurateStart = Get-Date
+                try {
+                    if ($TestMode) {
+                        $ActiveCount = $ScopeStats.AddressesInUse
+                        $AccurateSource = 'TestMode'
+                    } else {
+                        $Leases = Get-DhcpServerv4Lease -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction Stop
+                        $ActiveCount = @($Leases | Where-Object { $_.AddressState -eq 'Active' -or $_.AddressState -eq 'ActiveReservation' }).Count
+                        $AccurateSource = 'ActiveLeases'
+                    }
+                    if ($DHCPSummaryTimingStatistics) {
+                        Add-DHCPTimingStatistic -TimingList $DHCPSummaryTimingStatistics -ServerName $Computer -Operation 'Scope Accurate Utilization' -StartTime $AccurateStart -ItemCount 1
+                    }
+
+                    $ScopeObject.ReportedAddressesInUse = $ScopeObject.AddressesInUse
+                    $ScopeObject.ReportedAddressesFree = $ScopeObject.AddressesFree
+                    $ScopeObject.ReportedPercentageInUse = $ScopeObject.PercentageInUse
+
+                    $ScopeObject.AccurateAddressesInUse = $ActiveCount
+                    $ScopeObject.AccuratePercentageInUse = if ($ScopeTotalAddresses -gt 0) { [Math]::Round(($ActiveCount / $ScopeTotalAddresses) * 100, 2) } else { 0 }
+                    $ScopeObject.AccurateUtilizationSource = $AccurateSource
+
+                    $ScopeObject.AddressesInUse = $ScopeObject.AccurateAddressesInUse
+                    $ScopeObject.AddressesFree = $ScopeTotalAddresses - $ScopeObject.AccurateAddressesInUse
+                    if ($ScopeObject.AddressesFree -lt 0) { $ScopeObject.AddressesFree = 0 }
+                    $ScopeObject.PercentageInUse = $ScopeObject.AccuratePercentageInUse
+                } catch {
+                    if ($DHCPSummaryErrors) {
+                        Add-DHCPError -Summary @{ Errors = $DHCPSummaryErrors } -ServerName $Computer -ScopeId $Scope.ScopeId -Component 'Scope Accurate Utilization' -Operation 'Get-DhcpServerv4Lease' -ErrorMessage $_.Exception.Message -Severity 'Warning'
+                    }
+                }
+            }
+
             # Calculate scope efficiency metrics
             $ScopeRange = [System.Net.IPAddress]::Parse($Scope.EndRange).GetAddressBytes()[3] - [System.Net.IPAddress]::Parse($Scope.StartRange).GetAddressBytes()[3] + 1
             $ScopeObject.DefinedRange = $ScopeRange
@@ -41,10 +77,8 @@
             $BestPracticeIssues = [System.Collections.Generic.List[string]]::new()
 
             # Check scope size best practices
-            if ($ScopeTotalAddresses -lt 10) {
+            if ($ScopeTotalAddresses -le 2) {
                 $BestPracticeIssues.Add("Very small scope size ($ScopeTotalAddresses addresses) - consider consolidation")
-            } elseif ($ScopeTotalAddresses -gt 1000) {
-                $BestPracticeIssues.Add("Very large scope size ($ScopeTotalAddresses addresses) - consider segmentation")
             }
 
             # Check utilization thresholds - Add to UtilizationIssues instead of Issues
@@ -53,9 +87,6 @@
                 $ScopeObject.HasUtilizationIssues = $true
             } elseif ($ScopeObject.PercentageInUse -gt 80) {
                 $ScopeObject.UtilizationIssues.Add("High utilization level ($($ScopeObject.PercentageInUse)%) - expansion planning recommended")
-                $ScopeObject.HasUtilizationIssues = $true
-            } elseif ($ScopeObject.PercentageInUse -lt 5 -and $Scope.State -eq 'Active') {
-                $ScopeObject.UtilizationIssues.Add("Very low utilization ($($ScopeObject.PercentageInUse)%) - scope may be unnecessary")
                 $ScopeObject.HasUtilizationIssues = $true
             }
 
@@ -69,8 +100,8 @@
             
             return @{
                 TotalAddresses = $ScopeTotalAddresses
-                AddressesInUse = $ScopeStats.AddressesInUse
-                AddressesFree = $ScopeStats.AddressesFree
+                AddressesInUse = $ScopeObject.AddressesInUse
+                AddressesFree = $ScopeObject.AddressesFree
             }
         } catch {
             if ($DHCPSummaryErrors) {

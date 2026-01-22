@@ -23,6 +23,11 @@
         # Overall Utilization Summary
         New-HTMLSection -HeaderText "📊 Overall DHCP Utilization Summary" {
             New-HTMLPanel -Invisible {
+                if ($DHCPData.AccurateUtilization) {
+                    New-HTMLText -Text "Accurate utilization is enabled (active leases + active reservations). This is slower due to per-scope lease enumeration." -FontSize 11pt -Color DarkOrange
+                } else {
+                    New-HTMLText -Text "Utilization is based on DHCP scope statistics, which include inactive reservations." -FontSize 11pt -Color DarkGray
+                }
                 # Create utilization gauges
                 New-HTMLSection -Density Compact -Invisible {
                     New-HTMLPanel {
