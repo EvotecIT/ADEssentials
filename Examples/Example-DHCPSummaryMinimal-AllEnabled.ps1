@@ -27,6 +27,8 @@ return
 # Counters
 $CriticalCount = $Output.ValidationResults.Summary.TotalCriticalIssues
 $WarningCount = $Output.ValidationResults.Summary.TotalWarningIssues
+$InfoCount = $Output.ValidationResults.Summary.TotalInfoIssues
+$TotalIssues = @($Output.ScopesWithIssues).Count
 if ($SendOnCriticalOnly -and $CriticalCount -eq 0) {
     Write-Host 'No critical issues detected. Skipping email send.'
     return
@@ -35,6 +37,7 @@ if ($SendOnCriticalOnly -and $CriticalCount -eq 0) {
 # Buckets
 $critOnlyOnPrimary = $Output.ValidationResults.CriticalIssues.FailoverOnlyOnPrimary
 $critMissingOnBoth = $Output.ValidationResults.CriticalIssues.FailoverMissingOnBoth
+$critDNSPublic = $Output.ValidationResults.CriticalIssues.PublicDNSWithUpdates
 $critDNSProblems = $Output.ValidationResults.CriticalIssues.DNSConfigurationProblems
 $critServersOffline = $Output.ValidationResults.CriticalIssues.ServersOffline
 $polMissingFailover = $Output.ValidationResults.WarningIssues.MissingFailover   # list stays under WarningIssues; policy elevates counts
@@ -42,6 +45,7 @@ $polMissingFailover = $Output.ValidationResults.WarningIssues.MissingFailover   
 $warnOnlyOnSecondary = $Output.ValidationResults.WarningIssues.FailoverOnlyOnSecondary
 $warnLease = $Output.ValidationResults.WarningIssues.ExtendedLeaseDuration
 $warnDNSMgmt = $Output.ValidationResults.WarningIssues.DNSRecordManagement
+$infoMissingDomain = $Output.ValidationResults.InfoIssues.MissingDomainName
 
 # Build email
 $EmailBody = EmailBody {
@@ -57,6 +61,25 @@ $EmailBody = EmailBody {
         if ($WarningCount -gt 0) {
             EmailListItem -Text "Warning Issues: ", $WarningCount -Color None, DarkOrange -FontWeight normal, bold
         }
+        if ($InfoCount -gt 0) {
+            EmailListItem -Text "Info Issues: ", $InfoCount -Color None, Gray -FontWeight normal, bold
+        }
+        EmailListItem -Text "Scopes With Issues (unique): ", $TotalIssues -Color None, Red -FontWeight normal, bold
+    }
+
+    EmailText -Text "Issue counts are per-scope and may overlap across categories." -Color DarkGray -FontSize 9pt -LineBreak
+    EmailText -Text "Issue Breakdown (where the counts come from):" -Color Blue -FontSize 9pt -FontWeight bold -LineBreak
+    EmailList -FontSize 9pt {
+        if ($critOnlyOnPrimary.Count -gt 0) { EmailListItem -Text "Critical: Missing on secondary (failover mismatch): ", $critOnlyOnPrimary.Count -Color None, Red -FontWeight normal, bold }
+        if ($critMissingOnBoth.Count -gt 0) { EmailListItem -Text "Critical: Missing on both partners: ", $critMissingOnBoth.Count -Color None, Red -FontWeight normal, bold }
+        if ($critDNSPublic.Count -gt 0) { EmailListItem -Text "Critical: Public DNS + updates enabled: ", $critDNSPublic.Count -Color None, Red -FontWeight normal, bold }
+        if ($critDNSProblems.Count -gt 0) { EmailListItem -Text "Critical: DNS configuration problems (policy): ", $critDNSProblems.Count -Color None, Red -FontWeight normal, bold }
+        if ($critServersOffline.Count -gt 0) { EmailListItem -Text "Critical: Offline/unhealthy DHCP servers: ", $critServersOffline.Count -Color None, Red -FontWeight normal, bold }
+        if ($polMissingFailover.Count -gt 0) { EmailListItem -Text "Warning/Policy: No failover configured: ", $polMissingFailover.Count -Color None, DarkOrange -FontWeight normal, bold }
+        if ($warnOnlyOnSecondary.Count -gt 0) { EmailListItem -Text "Warning: Missing on primary (failover mismatch): ", $warnOnlyOnSecondary.Count -Color None, DarkOrange -FontWeight normal, bold }
+        if ($warnLease.Count -gt 0) { EmailListItem -Text "Warning: Lease duration > 48h: ", $warnLease.Count -Color None, DarkOrange -FontWeight normal, bold }
+        if ($warnDNSMgmt.Count -gt 0) { EmailListItem -Text "Warning: DNS record management settings: ", $warnDNSMgmt.Count -Color None, DarkOrange -FontWeight normal, bold }
+        if ($infoMissingDomain.Count -gt 0) { EmailListItem -Text "Info: Missing domain name option (015): ", $infoMissingDomain.Count -Color None, Gray -FontWeight normal, bold }
     }
 
     if ($critOnlyOnPrimary.Count -gt 0) {
@@ -114,7 +137,7 @@ $EmailSplat = @{
     To       = 'network-team@company.pl'
     Body     = $EmailBody
     Priority = if ($CriticalCount -gt 0) { 'High' } else { 'Normal' }
-    Subject  = if ($CriticalCount -gt 0) { "DHCP Validation: Critical issues found ($CriticalCount)" } else { "DHCP Validation: Warnings ($WarningCount)" }
+    Subject  = if ($TotalIssues -gt 0) { "DHCP Validation Issues - $TotalIssues scope(s) (C:$CriticalCount W:$WarningCount I:$InfoCount)" } else { "DHCP Validation: OK" }
     Verbose  = $true
     WhatIf   = $true
     MgGraph  = $true
