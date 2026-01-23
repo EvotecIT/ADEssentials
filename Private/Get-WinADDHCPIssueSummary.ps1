@@ -5,28 +5,53 @@ function Get-WinADDHCPIssueSummary {
         [System.Collections.IDictionary] $DHCPSummary
     )
 
+    function Get-Count {
+        param([object] $Value)
+        if ($null -eq $Value) { return 0 }
+        return @($Value).Count
+    }
+    function Get-Int {
+        param([object] $Value)
+        if ($null -eq $Value) { return 0 }
+        return [int]$Value
+    }
+
     $v = $DHCPSummary.ValidationResults
+    if (-not $v) {
+        $v = [ordered]@{
+            Summary           = [ordered]@{
+                TotalCriticalIssues    = 0
+                TotalWarningIssues     = 0
+                TotalInfoIssues        = 0
+                TotalUtilizationIssues = 0
+            }
+            CriticalIssues    = [ordered]@{}
+            WarningIssues     = [ordered]@{}
+            InfoIssues        = [ordered]@{}
+            UtilizationIssues = [ordered]@{}
+        }
+    }
 
     $countsCritical = [ordered]@{
-        PublicDNSWithUpdates     = @($v.CriticalIssues.PublicDNSWithUpdates).Count
-        DNSConfigurationProblems = @($v.CriticalIssues.DNSConfigurationProblems).Count
-        ServersOffline           = @($v.CriticalIssues.ServersOffline).Count
-        FailoverOnlyOnPrimary    = @($v.CriticalIssues.FailoverOnlyOnPrimary).Count
-        FailoverMissingOnBoth    = @($v.CriticalIssues.FailoverMissingOnBoth).Count
+        PublicDNSWithUpdates     = (Get-Count $v.CriticalIssues.PublicDNSWithUpdates)
+        DNSConfigurationProblems = (Get-Count $v.CriticalIssues.DNSConfigurationProblems)
+        ServersOffline           = (Get-Count $v.CriticalIssues.ServersOffline)
+        FailoverOnlyOnPrimary    = (Get-Count $v.CriticalIssues.FailoverOnlyOnPrimary)
+        FailoverMissingOnBoth    = (Get-Count $v.CriticalIssues.FailoverMissingOnBoth)
     }
     $countsWarning = [ordered]@{
-        MissingFailover         = @($v.WarningIssues.MissingFailover).Count
-        FailoverOnlyOnSecondary = @($v.WarningIssues.FailoverOnlyOnSecondary).Count
-        ExtendedLeaseDuration   = @($v.WarningIssues.ExtendedLeaseDuration).Count
-        DNSRecordManagement     = @($v.WarningIssues.DNSRecordManagement).Count
+        MissingFailover         = (Get-Count $v.WarningIssues.MissingFailover)
+        FailoverOnlyOnSecondary = (Get-Count $v.WarningIssues.FailoverOnlyOnSecondary)
+        ExtendedLeaseDuration   = (Get-Count $v.WarningIssues.ExtendedLeaseDuration)
+        DNSRecordManagement     = (Get-Count $v.WarningIssues.DNSRecordManagement)
     }
     $countsInfo = [ordered]@{
-        MissingDomainName = @($v.InfoIssues.MissingDomainName).Count
-        InactiveScopes    = @($v.InfoIssues.InactiveScopes).Count
+        MissingDomainName = (Get-Count $v.InfoIssues.MissingDomainName)
+        InactiveScopes    = (Get-Count $v.InfoIssues.InactiveScopes)
     }
     $countsUtil = [ordered]@{
-        HighUtilization     = @($v.UtilizationIssues.HighUtilization).Count
-        ModerateUtilization = @($v.UtilizationIssues.ModerateUtilization).Count
+        HighUtilization     = (Get-Count $v.UtilizationIssues.HighUtilization)
+        ModerateUtilization = (Get-Count $v.UtilizationIssues.ModerateUtilization)
     }
 
     $totalIssueInstances = 0
@@ -35,11 +60,11 @@ function Get-WinADDHCPIssueSummary {
     }
 
     $summary = [ordered]@{
-        TotalCriticalIssues                = $v.Summary.TotalCriticalIssues
-        TotalWarningIssues                 = $v.Summary.TotalWarningIssues
-        TotalInfoIssues                    = $v.Summary.TotalInfoIssues
-        TotalUtilizationIssues             = $v.Summary.TotalUtilizationIssues
-        UniqueScopesWithIssues             = @($DHCPSummary.ScopesWithIssues).Count
+        TotalCriticalIssues                = (Get-Int $v.Summary.TotalCriticalIssues)
+        TotalWarningIssues                 = (Get-Int $v.Summary.TotalWarningIssues)
+        TotalInfoIssues                    = (Get-Int $v.Summary.TotalInfoIssues)
+        TotalUtilizationIssues             = (Get-Int $v.Summary.TotalUtilizationIssues)
+        UniqueScopesWithIssues             = (Get-Count $DHCPSummary.ScopesWithIssues)
         IssueCountsByCategory              = [ordered]@{
             Critical    = $countsCritical
             Warning     = $countsWarning
