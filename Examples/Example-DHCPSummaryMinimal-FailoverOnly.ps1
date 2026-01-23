@@ -28,6 +28,8 @@ $Output = Show-WinADDHCPSummary @showWinADDHCPSummarySplat
 # Counters
 $CriticalCount = $Output.ValidationResults.Summary.TotalCriticalIssues
 $WarningCount = $Output.ValidationResults.Summary.TotalWarningIssues
+$InfoCount = $Output.ValidationResults.Summary.TotalInfoIssues
+$TotalIssues = @($Output.ScopesWithIssues).Count
 if ($SendOnCriticalOnly -and $CriticalCount -eq 0) {
     Write-Host 'No critical issues detected. Skipping email send.'
     return
@@ -49,6 +51,16 @@ $EmailBody = EmailBody {
         EmailListItem -Text "Total Scopes: ", $($Output.Scopes.Count) -Color None, DodgerBlue -FontWeight normal, bold
         if ($CriticalCount -gt 0) { EmailListItem -Text "Critical Issues: ", $CriticalCount -Color None, Red -FontWeight normal, bold }
         if ($WarningCount -gt 0) { EmailListItem -Text "Warning Issues: ", $WarningCount -Color None, DarkOrange -FontWeight normal, bold }
+        if ($InfoCount -gt 0) { EmailListItem -Text "Info Issues: ", $InfoCount -Color None, Gray -FontWeight normal, bold }
+        EmailListItem -Text "Scopes With Issues (unique): ", $TotalIssues -Color None, Red -FontWeight normal, bold
+    }
+
+    EmailText -Text "Issue counts are per-scope and may overlap across categories." -Color DarkGray -FontSize 9pt -LineBreak
+    EmailText -Text "Issue Breakdown (failover-focused):" -Color Blue -FontSize 9pt -FontWeight bold -LineBreak
+    EmailList -FontSize 9pt {
+        if ($critOnlyOnPrimary.Count -gt 0) { EmailListItem -Text "Critical: Missing on secondary (failover mismatch): ", $critOnlyOnPrimary.Count -Color None, Red -FontWeight normal, bold }
+        if ($critMissingOnBoth.Count -gt 0) { EmailListItem -Text "Critical: Missing on both partners: ", $critMissingOnBoth.Count -Color None, Red -FontWeight normal, bold }
+        if ($warnOnlyOnSecondary.Count -gt 0) { EmailListItem -Text "Warning: Missing on primary (failover mismatch): ", $warnOnlyOnSecondary.Count -Color None, DarkOrange -FontWeight normal, bold }
     }
 
     if ($critOnlyOnPrimary.Count -gt 0) {
@@ -77,7 +89,13 @@ $EmailSplat = @{
     To       = 'network-team@company.pl'
     Body     = $EmailBody
     Priority = if ($CriticalCount -gt 0) { 'High' } else { 'Low' }
-    Subject  = if ($CriticalCount -gt 0) { "DHCP Validation: Critical issues found ($CriticalCount)" } else { 'DHCP Validation: OK' }
+    Subject  = if ($CriticalCount -gt 0) {
+        "DHCP Validation Issues - $TotalIssues scope(s) (C:$CriticalCount W:$WarningCount I:$InfoCount)"
+    } elseif ($TotalIssues -gt 0 -or $WarningCount -gt 0 -or $InfoCount -gt 0) {
+        "DHCP Validation Issues - $TotalIssues scope(s) (W:$WarningCount I:$InfoCount)"
+    } else {
+        'DHCP Validation: OK'
+    }
     Verbose  = $true
     WhatIf   = $true
     MgGraph  = $true

@@ -54,6 +54,12 @@
     Focuses on lease duration, DNS configuration, and failover validation.
     This mode significantly improves performance by collecting only validation-critical data.
 
+    .PARAMETER AccurateUtilization
+    When specified, calculates utilization using active leases and active reservations per scope
+    instead of relying solely on DHCP scope statistics (which include inactive reservations).
+    This is significantly slower because it queries leases for each scope.
+    Recommended only with IncludeScopeId, IncludeServers, or ComputerName to limit scope.
+
     .PARAMETER IncludeComponents
     Limits what components are gathered. Supported values:
     Servers, Scopes, ScopeStatistics, Failover, IPv6, Multicast, Reservations, Leases, Policies,
@@ -145,6 +151,7 @@
         [switch] $ConsiderMissingFailoverCritical,
         [switch] $ConsiderDNSConfigCritical,
         [switch] $IncludeServerAvailabilityIssues,
+        [switch] $AccurateUtilization,
         # New: Control what we scan/collect
         [ValidateSet('Servers','Scopes','ScopeStatistics','Failover','IPv6','Multicast','Reservations','Leases','Policies','Options','Classes','ServerSettings','NetworkBindings','AuditLogs','Databases','SecurityFilters','EnhancedAnalysis','OptionsAnalysis','Validation','TimingStatistics')]
         [string[]] $IncludeComponents,
@@ -171,6 +178,28 @@
         Write-Verbose "Get-WinADDHCPSummary - Running in TEST MODE - using mock data for DHCP operations"
     }
 
+    # Accurate utilization is expensive; allow only when scope is limited
+    if ($AccurateUtilization) {
+        if ($ExcludeComponents -and $ExcludeComponents -contains 'ScopeStatistics') {
+            Write-Warning "Get-WinADDHCPSummary - AccurateUtilization requires ScopeStatistics; disabled because ScopeStatistics was excluded"
+            $AccurateUtilization = $false
+        } elseif ($Minimal) {
+            Write-Warning "Get-WinADDHCPSummary - AccurateUtilization is not supported in Minimal mode; disabled"
+            $AccurateUtilization = $false
+        } else {
+            $ScopeLimiter = ($IncludeScopeId -and $IncludeScopeId.Count -gt 0) -or
+                            ($IncludeServers -and $IncludeServers.Count -gt 0) -or
+                            ($ComputerName -and $ComputerName.Count -gt 0)
+            if (-not $ScopeLimiter) {
+                Write-Warning "Get-WinADDHCPSummary - AccurateUtilization requires IncludeScopeId/IncludeServers/ComputerName to limit scope; disabled to avoid heavy load"
+                $AccurateUtilization = $false
+            } elseif ($SkipScopeDetails) {
+                Write-Verbose "Get-WinADDHCPSummary - AccurateUtilization enabled; SkipScopeDetails disabled"
+                $SkipScopeDetails = $false
+            }
+        }
+    }
+
     # Build effective component selection map (defaults depend on Minimal)
     $allComponents = @(
         'Servers','Scopes','ScopeStatistics','Failover','IPv6','Multicast','Reservations','Leases','Policies','Options','Classes','ServerSettings','NetworkBindings','AuditLogs','Databases','SecurityFilters','EnhancedAnalysis','OptionsAnalysis','Validation','TimingStatistics'
@@ -191,6 +220,7 @@
 
     $Components = @{}
     foreach ($c in $allComponents) { $Components[$c] = ($c -in $effectiveComponents) }
+    if ($AccurateUtilization) { $Components['ScopeStatistics'] = $true }
 
     # Initialize result structure
     $DHCPSummary = [ordered] @{
@@ -232,6 +262,7 @@
         Statistics                = [ordered] @{}
         ValidationResults         = [ordered] @{}
         TimingStatistics          = [System.Collections.Generic.List[Object]]::new()
+        AccurateUtilization       = $AccurateUtilization
     }
 
     # Get DHCP servers from AD for discovery
@@ -530,7 +561,7 @@
 
             # Get scope statistics
             $localSkip = $SkipScopeDetails -or (-not $Components['ScopeStatistics'])
-            $ScopeStats = Get-WinADDHCPScopeStatistics -Computer $Computer -Scope $Scope -ScopeObject $ScopeObject -DHCPSummaryTimingStatistics $DHCPSummary.TimingStatistics -DHCPSummaryErrors $DHCPSummary.Errors -SkipScopeDetails:$localSkip -TestMode:$TestMode
+            $ScopeStats = Get-WinADDHCPScopeStatistics -Computer $Computer -Scope $Scope -ScopeObject $ScopeObject -DHCPSummaryTimingStatistics $DHCPSummary.TimingStatistics -DHCPSummaryErrors $DHCPSummary.Errors -SkipScopeDetails:$localSkip -AccurateUtilization:$AccurateUtilization -TestMode:$TestMode
             $ServerTotalAddresses += $ScopeStats.TotalAddresses
             $ServerAddressesInUse += $ScopeStats.AddressesInUse
             $ServerAddressesFree += $ScopeStats.AddressesFree
@@ -618,6 +649,20 @@
             WarningIssues     = [ordered]@{}
             InfoIssues        = [ordered]@{}
         }
+    }
+
+    # Store validation policy (for external reporting)
+    $DHCPSummary.ValidationPolicy = [ordered]@{
+        ConsiderMissingFailoverCritical = $ConsiderMissingFailoverCritical.IsPresent
+        ConsiderDNSConfigCritical       = $ConsiderDNSConfigCritical.IsPresent
+        IncludeServerAvailabilityIssues = $IncludeServerAvailabilityIssues.IsPresent
+    }
+
+    # Precompute issue summary for easier external consumption
+    try {
+        $DHCPSummary.IssueSummary = Get-WinADDHCPIssueSummary -DHCPSummary $DHCPSummary
+    } catch {
+        Write-Verbose "Get-WinADDHCPSummary - Failed to compute IssueSummary: $($_.Exception.Message)"
     }
 
     # Enhanced Analysis (skip in minimal mode)

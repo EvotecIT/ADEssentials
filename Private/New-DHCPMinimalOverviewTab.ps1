@@ -12,7 +12,7 @@
                     New-HTMLText -Text "This minimal report focuses on critical DHCP configuration validation based on essential requirements:" -FontSize 12px
                     New-HTMLList {
                         New-HTMLListItem -Text "Lease Duration: ", "Validates scopes with lease time > 48 hours" -FontWeight bold, normal
-                        New-HTMLListItem -Text "DNS Configuration: ", "Checks for public DNS servers and missing domain options" -FontWeight bold, normal
+                        New-HTMLListItem -Text "DNS Configuration: ", "Checks public DNS with updates, DNS record management, and missing domain options" -FontWeight bold, normal
                         New-HTMLListItem -Text "Failover Status: ", "Identifies scopes without proper failover configuration" -FontWeight bold, normal
                     } -FontSize 12px
                 }
@@ -37,17 +37,21 @@
 
             # Validation categories chart
             if ($DHCPData.ScopesWithIssues.Count -gt 0) {
-                $LeaseDurationCount = ($DHCPData.ScopesWithIssues | Where-Object { $_.Issues -contains 'Lease duration greater than 48 hours' }).Count
-                $DNSConfigCount = ($DHCPData.ScopesWithIssues | Where-Object {
-                        $_.Issues -contains 'DNS updates enabled with public DNS servers' -or
-                        $_.Issues -contains 'DNS updates enabled but missing domain name option' -or
-                        $_.Issues -contains 'DNS update settings misconfigured'
-                    }).Count
-                $FailoverCount = ($DHCPData.ScopesWithIssues | Where-Object { $_.Issues -contains 'Missing DHCP failover configuration' }).Count
+                $LeaseDurationCount = @($DHCPData.ValidationResults.WarningIssues.ExtendedLeaseDuration).Count
+                $PublicDNSCount = @($DHCPData.ValidationResults.CriticalIssues.PublicDNSWithUpdates).Count
+                $DNSConfigProblemsCount = @($DHCPData.ValidationResults.CriticalIssues.DNSConfigurationProblems).Count
+                $DNSRecordMgmtCount = @($DHCPData.ValidationResults.WarningIssues.DNSRecordManagement).Count
+                $MissingDomainNameCount = @($DHCPData.ValidationResults.InfoIssues.MissingDomainName).Count
+                $FailoverCount = @($DHCPData.ValidationResults.WarningIssues.MissingFailover).Count
 
                 New-HTMLSection -HeaderText "Issue Categories" -Invisible -Density Compact {
                     New-HTMLInfoCard -Title "Lease Duration" -Number $LeaseDurationCount -Subtitle "Scopes > 48 hours" -Icon "⏱️" -TitleColor 'Orange' -NumberColor 'DarkOrange' -ShadowColor 'rgba(255, 165, 0, 0.15)'
-                    New-HTMLInfoCard -Title "DNS Config" -Number $DNSConfigCount -Subtitle "DNS Issues" -Icon "🌐" -TitleColor 'OrangeRed' -NumberColor 'Red' -ShadowColor 'rgba(255, 69, 0, 0.15)'
+                    New-HTMLInfoCard -Title "Public DNS + Updates" -Number $PublicDNSCount -Subtitle "Critical" -Icon "🌐" -TitleColor 'OrangeRed' -NumberColor 'Red' -ShadowColor 'rgba(255, 69, 0, 0.15)'
+                    if ($DNSConfigProblemsCount -gt 0) {
+                        New-HTMLInfoCard -Title "DNS Config Problems" -Number $DNSConfigProblemsCount -Subtitle "Critical (Policy)" -Icon "⚠️" -TitleColor 'DarkRed' -NumberColor 'DarkRed' -ShadowColor 'rgba(139, 0, 0, 0.15)'
+                    }
+                    New-HTMLInfoCard -Title "DNS Record Mgmt" -Number $DNSRecordMgmtCount -Subtitle "Warnings" -Icon "📝" -TitleColor 'Orange' -NumberColor 'DarkOrange' -ShadowColor 'rgba(255, 165, 0, 0.15)'
+                    New-HTMLInfoCard -Title "Missing Domain Name" -Number $MissingDomainNameCount -Subtitle "Info" -Icon "ℹ️" -TitleColor 'SteelBlue' -NumberColor 'SteelBlue' -ShadowColor 'rgba(70, 130, 180, 0.15)'
                     New-HTMLInfoCard -Title "Failover" -Number $FailoverCount -Subtitle "Missing Failover" -Icon "🔄" -TitleColor 'Crimson' -NumberColor 'DarkRed' -ShadowColor 'rgba(220, 20, 60, 0.15)'
                 }
             }
@@ -57,20 +61,32 @@
         if ($DHCPData.ScopesWithIssues.Count -gt 0) {
             New-HTMLSection -HeaderText '🚨 Priority Actions Required' {
                 New-HTMLPanel -Invisible {
-                    $LeaseDurationCount = ($DHCPData.ScopesWithIssues | Where-Object { $_.Issues -contains 'Lease duration greater than 48 hours' }).Count
-                    $DNSCount = ($DHCPData.ScopesWithIssues | Where-Object { $_.Issues -match 'DNS' }).Count
-                    $FailoverCount = ($DHCPData.ScopesWithIssues | Where-Object { $_.Issues -match 'failover' }).Count
+                    $LeaseDurationCount = @($DHCPData.ValidationResults.WarningIssues.ExtendedLeaseDuration).Count
+                    $PublicDNSCount = @($DHCPData.ValidationResults.CriticalIssues.PublicDNSWithUpdates).Count
+                    $DNSConfigProblemsCount = @($DHCPData.ValidationResults.CriticalIssues.DNSConfigurationProblems).Count
+                    $DNSRecordMgmtCount = @($DHCPData.ValidationResults.WarningIssues.DNSRecordManagement).Count
+                    $MissingDomainNameCount = @($DHCPData.ValidationResults.InfoIssues.MissingDomainName).Count
+                    $FailoverCount = @($DHCPData.ValidationResults.WarningIssues.MissingFailover).Count
 
                     New-HTMLText -Text 'IMMEDIATE ACTIONS REQUIRED' -Color Red -FontSize 18px -FontWeight bold
                     New-HTMLList {
                         if ($LeaseDurationCount -gt 0) {
                             New-HTMLListItem -Text "🔴 Review and adjust $LeaseDurationCount scope(s) with lease duration > 48 hours" -Color Red -FontWeight bold
                         }
-                        if ($DNSCount -gt 0) {
-                            New-HTMLListItem -Text "🔴 Fix DNS configuration issues in $DNSCount scope(s)" -Color Red -FontWeight bold
+                        if ($PublicDNSCount -gt 0) {
+                            New-HTMLListItem -Text "🔴 Replace public DNS servers in $PublicDNSCount scope(s) with dynamic updates enabled" -Color Red -FontWeight bold
+                        }
+                        if ($DNSConfigProblemsCount -gt 0) {
+                            New-HTMLListItem -Text "🔴 Resolve DNS configuration problems in $DNSConfigProblemsCount scope(s) (critical policy)" -Color Red -FontWeight bold
+                        }
+                        if ($DNSRecordMgmtCount -gt 0) {
+                            New-HTMLListItem -Text "🟠 Enable DNS record management settings in $DNSRecordMgmtCount scope(s)" -Color Orange -FontWeight bold
                         }
                         if ($FailoverCount -gt 0) {
                             New-HTMLListItem -Text "🔴 Configure failover for $FailoverCount scope(s) to ensure high availability" -Color Red -FontWeight bold
+                        }
+                        if ($MissingDomainNameCount -gt 0) {
+                            New-HTMLListItem -Text "ℹ️ Configure Domain Name option (015) in $MissingDomainNameCount scope(s)" -Color Blue -FontWeight normal
                         }
                     } -FontSize 14px
                 }
@@ -111,9 +127,12 @@
                         ValidationStatus = $validation
                         IssueTypes       = if ($ServerIssuesCount -gt 0) {
                             $Types = @()
-                            if ($ServerIssuesList | Where-Object { $_.Issues -contains 'Lease duration greater than 48 hours' }) { $Types += 'Lease' }
-                            if ($ServerIssuesList | Where-Object { $_.Issues -match 'DNS' }) { $Types += 'DNS' }
-                            if ($ServerIssuesList | Where-Object { $_.Issues -match 'failover' }) { $Types += 'Failover' }
+                            if (($DHCPData.ValidationResults.WarningIssues.ExtendedLeaseDuration | Where-Object { $_.ServerName -eq $Server.ServerName }).Count -gt 0) { $Types += 'Lease' }
+                            if (($DHCPData.ValidationResults.CriticalIssues.PublicDNSWithUpdates | Where-Object { $_.ServerName -eq $Server.ServerName }).Count -gt 0) { $Types += 'PublicDNS' }
+                            if (($DHCPData.ValidationResults.CriticalIssues.DNSConfigurationProblems | Where-Object { $_.ServerName -eq $Server.ServerName }).Count -gt 0) { $Types += 'DNSConfig' }
+                            if (($DHCPData.ValidationResults.WarningIssues.DNSRecordManagement | Where-Object { $_.ServerName -eq $Server.ServerName }).Count -gt 0) { $Types += 'DNSRecords' }
+                            if (($DHCPData.ValidationResults.InfoIssues.MissingDomainName | Where-Object { $_.ServerName -eq $Server.ServerName }).Count -gt 0) { $Types += 'MissingDomain' }
+                            if (($DHCPData.ValidationResults.WarningIssues.MissingFailover | Where-Object { $_.ServerName -eq $Server.ServerName }).Count -gt 0) { $Types += 'Failover' }
                             $Types -join ', '
                         } else { 'None' }
                     }
