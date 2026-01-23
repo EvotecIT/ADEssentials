@@ -137,7 +137,13 @@ $EmailSplat = @{
     To       = 'network-team@company.pl'
     Body     = $EmailBody
     Priority = if ($CriticalCount -gt 0) { 'High' } else { 'Normal' }
-    Subject  = if ($TotalIssues -gt 0) { "DHCP Validation Issues - $TotalIssues scope(s) (C:$CriticalCount W:$WarningCount I:$InfoCount)" } else { "DHCP Validation: OK" }
+    Subject  = if ($CriticalCount -gt 0) {
+        "DHCP Validation Issues - $TotalIssues scope(s) (C:$CriticalCount W:$WarningCount I:$InfoCount)"
+    } elseif ($TotalIssues -gt 0 -or $WarningCount -gt 0 -or $InfoCount -gt 0) {
+        "DHCP Validation Issues - $TotalIssues scope(s) (W:$WarningCount I:$InfoCount)"
+    } else {
+        "DHCP Validation: OK"
+    }
     Verbose  = $true
     WhatIf   = $true
     MgGraph  = $true

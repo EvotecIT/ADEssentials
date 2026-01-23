@@ -41,8 +41,13 @@
                         $ActiveCount = $ScopeStats.AddressesInUse
                         $AccurateSource = 'TestMode'
                     } else {
-                        $Leases = Get-DhcpServerv4Lease -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction Stop
-                        $ActiveCount = @($Leases | Where-Object { $_.AddressState -eq 'Active' -or $_.AddressState -eq 'ActiveReservation' }).Count
+                        $ActiveCount = 0
+                        Get-DhcpServerv4Lease -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction Stop |
+                            ForEach-Object {
+                                if ($_.AddressState -eq 'Active' -or $_.AddressState -eq 'ActiveReservation') {
+                                    $ActiveCount++
+                                }
+                            }
                         $AccurateSource = 'ActiveLeases'
                     }
                     if ($DHCPSummaryTimingStatistics) {
@@ -68,8 +73,18 @@
                 }
             }
 
-            # Calculate scope efficiency metrics
-            $ScopeRange = [System.Net.IPAddress]::Parse($Scope.EndRange).GetAddressBytes()[3] - [System.Net.IPAddress]::Parse($Scope.StartRange).GetAddressBytes()[3] + 1
+            # Calculate scope efficiency metrics (full IPv4 range arithmetic)
+            try {
+                $startBytes = [System.Net.IPAddress]::Parse([string]$Scope.StartRange).GetAddressBytes()
+                $endBytes = [System.Net.IPAddress]::Parse([string]$Scope.EndRange).GetAddressBytes()
+                [array]::Reverse($startBytes)
+                [array]::Reverse($endBytes)
+                $startInt = [BitConverter]::ToUInt32($startBytes, 0)
+                $endInt = [BitConverter]::ToUInt32($endBytes, 0)
+                $ScopeRange = if ($endInt -ge $startInt) { [int64]($endInt - $startInt + 1) } else { 0 }
+            } catch {
+                $ScopeRange = 0
+            }
             $ScopeObject.DefinedRange = $ScopeRange
             $ScopeObject.UtilizationEfficiency = if ($ScopeRange -gt 0) { [Math]::Round(($ScopeTotalAddresses / $ScopeRange) * 100, 2) } else { 0 }
 
