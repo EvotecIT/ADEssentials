@@ -1,5 +1,5 @@
 ﻿Clear-Host
-Import-Module "PSPublishModule" -Force
+Import-Module "PSPublishModule" -Force -RequiredVersion '2.0.27'
 
 Invoke-ModuleBuild -ModuleName 'ADEssentials' {
     # Usual defaults as per standard module
