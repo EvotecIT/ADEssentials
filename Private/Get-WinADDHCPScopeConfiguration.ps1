@@ -50,6 +50,13 @@
         TotalAddresses             = 0
         DefinedRange               = 0
         UtilizationEfficiency      = 0
+        # Accurate utilization placeholders (populated when -AccurateUtilization is used)
+        ReportedAddressesInUse     = $null
+        ReportedAddressesFree      = $null
+        ReportedPercentageInUse    = $null
+        AccurateAddressesInUse     = $null
+        AccuratePercentageInUse    = $null
+        AccurateUtilizationSource  = $null
     }
 
     # Check DNS settings

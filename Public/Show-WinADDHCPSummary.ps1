@@ -58,6 +58,12 @@
     This includes lease duration validation, DNS configuration checks, and failover validation.
     Automatically sets SkipScopeDetails for performance and adjusts tabs to show only validation-relevant data.
 
+    .PARAMETER AccurateUtilization
+    When specified, calculates utilization using active leases and active reservations per scope
+    instead of relying solely on DHCP scope statistics (which include inactive reservations).
+    This is significantly slower because it queries leases for each scope.
+    Recommended only with IncludeScopeId, IncludeServers, or ComputerName to limit scope.
+
     .PARAMETER IncludeComponents
     Pass-through filter to `Get-WinADDHCPSummary` controlling what is gathered. Supported values:
     Servers, Scopes, ScopeStatistics, Failover, IPv6, Multicast, Reservations, Leases, Policies,
@@ -154,6 +160,7 @@
         [switch] $ConsiderMissingFailoverCritical,
         [switch] $ConsiderDNSConfigCritical,
         [switch] $IncludeServerAvailabilityIssues,
+        [switch] $AccurateUtilization,
         # New: Scan component gating (passed through to Get-WinADDHCPSummary)
         [ValidateSet('Servers','Scopes','ScopeStatistics','Failover','IPv6','Multicast','Reservations','Leases','Policies','Options','Classes','ServerSettings','NetworkBindings','AuditLogs','Databases','SecurityFilters','EnhancedAnalysis','OptionsAnalysis','Validation','TimingStatistics')]
         [string[]] $IncludeComponents,
@@ -238,6 +245,7 @@
     if ($ConsiderMissingFailoverCritical) { $GetWinADDHCPSummarySplat.ConsiderMissingFailoverCritical = $true }
     if ($ConsiderDNSConfigCritical) { $GetWinADDHCPSummarySplat.ConsiderDNSConfigCritical = $true }
     if ($IncludeServerAvailabilityIssues) { $GetWinADDHCPSummarySplat.IncludeServerAvailabilityIssues = $true }
+    if ($AccurateUtilization) { $GetWinADDHCPSummarySplat.AccurateUtilization = $true }
     if ($IncludeComponents) { $GetWinADDHCPSummarySplat.IncludeComponents = $IncludeComponents }
     if ($ExcludeComponents) { $GetWinADDHCPSummarySplat.ExcludeComponents = $ExcludeComponents }
     if ($IncludeServers)    { $GetWinADDHCPSummarySplat.IncludeServers    = $IncludeServers }
@@ -336,7 +344,7 @@
                 # Minimal mode - only validation-focused tabs
                 New-DHCPMinimalOverviewTab -DHCPData $DHCPData
                 New-DHCPMinimalValidationTab -DHCPData $DHCPData
-                New-DHCPMinimalFailoverTab -DHCPData $DHCPData
+                New-DHCPFailoverTab -DHCPData $DHCPData
                 New-DHCPMinimalAllScopesTab -DHCPData $DHCPData
             } else {
                 # Full mode - all tabs based on configuration

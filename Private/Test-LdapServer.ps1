@@ -116,12 +116,12 @@
                 $RetryCountList.Add($ScriptRetryCount - $RetryCount)
             }
         } else {
-            $GlobalCatalogSSL = [PSCustomObject] @{ Status = $null; ErrorMessage = 'Not Global Catalog' }
-            $GlobalCatalogNonSSL = [PSCustomObject] @{ Status = $null; ErrorMessage = 'Not Global Catalog' }
+            $GlobalCatalogSSL = [PSCustomObject] @{ Status = $null; ErrorMessage = $null }
+            $GlobalCatalogNonSSL = [PSCustomObject] @{ Status = $null; ErrorMessage = $null }
         }
     } else {
-        $GlobalCatalogSSL = [PSCustomObject] @{ Status = $null; ErrorMessage = 'Not Global Catalog' }
-        $GlobalCatalogNonSSL = [PSCustomObject] @{ Status = $null; ErrorMessage = 'Not Global Catalog' }
+        $GlobalCatalogSSL = [PSCustomObject] @{ Status = $null; ErrorMessage = $null }
+        $GlobalCatalogNonSSL = [PSCustomObject] @{ Status = $null; ErrorMessage = $null }
     }
 
     $testLDAPPortsSplat['Port'] = $PortLDAP
@@ -220,7 +220,7 @@
                 } until ($CertificateGC.State -eq $true)
                 $RetryCountList.Add($ScriptRetryCount - $RetryCount)
             } else {
-                $CertificateGC = [PSCustomObject] @{ Status = 'N/A'; ErrorMessage = 'Not Global Catalog' }
+                $CertificateGC = [PSCustomObject] @{ Status = 'N/A'; ErrorMessage = $null }
             }
         }
     }

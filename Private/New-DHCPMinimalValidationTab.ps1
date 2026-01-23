@@ -6,14 +6,20 @@
 
     New-HTMLTab -TabName 'Validation Results' {
         if ($DHCPData.ScopesWithIssues.Count -gt 0) {
-            # Group issues by type for summary
-            $LeaseDurationIssues = $DHCPData.ScopesWithIssues | Where-Object { $_.Issues -contains 'Lease duration greater than 48 hours' }
-            $DNSConfigIssues = $DHCPData.ScopesWithIssues | Where-Object {
-                $_.Issues -contains 'DNS updates enabled with public DNS servers' -or
-                $_.Issues -contains 'DNS updates enabled but missing domain name option' -or
-                $_.Issues -contains 'DNS update settings misconfigured'
-            }
-            $FailoverIssues = $DHCPData.ScopesWithIssues | Where-Object { $_.Issues -contains 'Missing DHCP failover configuration' }
+            # Group issues by type for summary (align with full report categories)
+            $LeaseDurationIssues = $DHCPData.ValidationResults.WarningIssues.ExtendedLeaseDuration
+            $PublicDNSWithUpdates = $DHCPData.ValidationResults.CriticalIssues.PublicDNSWithUpdates
+            $DNSConfigurationProblems = $DHCPData.ValidationResults.CriticalIssues.DNSConfigurationProblems
+            $DNSRecordManagement = $DHCPData.ValidationResults.WarningIssues.DNSRecordManagement
+            $MissingDomainName = $DHCPData.ValidationResults.InfoIssues.MissingDomainName
+            $FailoverIssues = $DHCPData.ValidationResults.WarningIssues.MissingFailover
+
+            $LeaseDurationCount = @($LeaseDurationIssues).Count
+            $PublicDNSCount = @($PublicDNSWithUpdates).Count
+            $DNSConfigProblemsCount = @($DNSConfigurationProblems).Count
+            $DNSRecordMgmtCount = @($DNSRecordManagement).Count
+            $MissingDomainNameCount = @($MissingDomainName).Count
+            $FailoverCount = @($FailoverIssues).Count
 
             # Summary Section
             New-HTMLSection -Invisible {
@@ -23,14 +29,23 @@
                         New-HTMLText -Text "The following configuration issues were found during validation:" -FontSize 12px
                         New-HTMLList {
                             New-HTMLListItem -Text "Total Issues: ", "$($DHCPData.ScopesWithIssues.Count) scope(s) with problems" -FontWeight bold, normal -Color Red, Black
-                            if ($LeaseDurationIssues.Count -gt 0) {
-                                New-HTMLListItem -Text "Lease Duration: ", "$($LeaseDurationIssues.Count) scope(s) exceed 48 hours" -FontWeight bold, normal -Color Orange, Black
+                            if ($LeaseDurationCount -gt 0) {
+                                New-HTMLListItem -Text "Lease Duration: ", "$LeaseDurationCount scope(s) exceed 48 hours" -FontWeight bold, normal -Color Orange, Black
                             }
-                            if ($DNSConfigIssues.Count -gt 0) {
-                                New-HTMLListItem -Text "DNS Configuration: ", "$($DNSConfigIssues.Count) scope(s) with DNS problems" -FontWeight bold, normal -Color Orange, Black
+                            if ($PublicDNSCount -gt 0) {
+                                New-HTMLListItem -Text "Public DNS + Updates: ", "$PublicDNSCount scope(s)" -FontWeight bold, normal -Color Orange, Black
                             }
-                            if ($FailoverIssues.Count -gt 0) {
-                                New-HTMLListItem -Text "Failover Missing: ", "$($FailoverIssues.Count) scope(s) without redundancy" -FontWeight bold, normal -Color Orange, Black
+                            if ($DNSConfigProblemsCount -gt 0) {
+                                New-HTMLListItem -Text "DNS Configuration Problems: ", "$DNSConfigProblemsCount scope(s)" -FontWeight bold, normal -Color Orange, Black
+                            }
+                            if ($DNSRecordMgmtCount -gt 0) {
+                                New-HTMLListItem -Text "DNS Record Management: ", "$DNSRecordMgmtCount scope(s)" -FontWeight bold, normal -Color Orange, Black
+                            }
+                            if ($MissingDomainNameCount -gt 0) {
+                                New-HTMLListItem -Text "Missing Domain Name Option: ", "$MissingDomainNameCount scope(s)" -FontWeight bold, normal -Color Orange, Black
+                            }
+                            if ($FailoverCount -gt 0) {
+                                New-HTMLListItem -Text "Failover Missing: ", "$FailoverCount scope(s) without redundancy" -FontWeight bold, normal -Color Orange, Black
                             }
                         } -FontSize 14px
                     }
@@ -38,7 +53,7 @@
             }
 
             # Lease Duration Issues
-            if ($LeaseDurationIssues.Count -gt 0) {
+            if ($LeaseDurationCount -gt 0) {
                 New-HTMLSection -HeaderText "⏱️ Lease Duration Issues (> 48 hours)" -CanCollapse {
                     New-HTMLPanel -Invisible {
                             New-HTMLText -Text "Scopes with excessive lease duration:" -FontSize 14px -FontWeight bold
@@ -55,35 +70,66 @@
                 }
             }
 
-            # DNS Configuration Issues
-            if ($DNSConfigIssues.Count -gt 0) {
-                New-HTMLSection -HeaderText "🌐 DNS Configuration Issues" -CanCollapse {
+            # Public DNS with updates (critical)
+            if ($PublicDNSCount -gt 0) {
+                New-HTMLSection -HeaderText "🌐 Public DNS Servers with Dynamic Updates Enabled" -CanCollapse {
                     New-HTMLPanel -Invisible {
-                            New-HTMLText -Text "Scopes with DNS configuration problems:" -FontSize 14px -FontWeight bold
-                            New-HTMLTable -DataTable $DNSConfigIssues {
+                            New-HTMLText -Text "Scopes using public DNS servers while dynamic updates are enabled:" -FontSize 14px -FontWeight bold
+                            New-HTMLTable -DataTable $PublicDNSWithUpdates {
                                 New-HTMLTableCondition -Name 'DNSServers' -ComparisonType string -Operator contains -Value '8.8.8.8' -BackgroundColor Red -Color White
                                 New-HTMLTableCondition -Name 'DNSServers' -ComparisonType string -Operator contains -Value '1.1.1.1' -BackgroundColor Red -Color White
                                 New-HTMLTableCondition -Name 'DNSServers' -ComparisonType string -Operator contains -Value '8.8.4.4' -BackgroundColor Red -Color White
                                 New-HTMLTableCondition -Name 'DNSServers' -ComparisonType string -Operator contains -Value '1.0.0.1' -BackgroundColor Red -Color White
-                                New-HTMLTableCondition -Name 'DomainNameOption' -ComparisonType string -Operator eq -Value '' -BackgroundColor Orange
-                                New-HTMLTableCondition -Name 'UpdateDnsRRForOlderClients' -ComparisonType bool -Operator eq -Value $false -BackgroundColor Yellow
-                                New-HTMLTableCondition -Name 'DeleteDnsRROnLeaseExpiry' -ComparisonType bool -Operator eq -Value $false -BackgroundColor Yellow
                             } -ScrollX -IncludeProperty @(
-                                'ServerName', 'ScopeId', 'Name', 'DNSServers', 'DomainNameOption',
-                                'DynamicUpdates', 'UpdateDnsRRForOlderClients', 'DeleteDnsRROnLeaseExpiry'
+                                'ServerName', 'ScopeId', 'Name', 'DNSServers', 'DynamicUpdates'
                             ) -Filtering
-                            New-HTMLText -Text "Recommendations:" -FontSize 12px -FontWeight bold -Color Blue
-                            New-HTMLList {
-                                New-HTMLListItem -Text "Replace public DNS servers with internal DNS servers (10.x.x.x)"
-                                New-HTMLListItem -Text "Configure Domain Name option (15) when DNS updates are enabled"
-                                New-HTMLListItem -Text "Enable 'Update DNS RR for Older Clients' and 'Delete DNS RR on Lease Expiry'"
-                            } -FontSize 11px
+                            New-HTMLText -Text "Recommendation:" -FontSize 12px -FontWeight bold -Color Blue
+                            New-HTMLText -Text "Replace public DNS servers with internal DNS servers (10.x.x.x)." -FontSize 11px -Color Blue
                         }
                 }
             }
 
+            # DNS configuration problems (aggregated when policy enabled)
+            if ($DNSConfigProblemsCount -gt 0) {
+                New-HTMLSection -HeaderText "⚠️ Scopes with DNS Configuration Problems" -CanCollapse {
+                    New-HTMLPanel -Invisible {
+                        New-HTMLTable -DataTable $DNSConfigurationProblems -Filtering -ScrollX
+                    }
+                }
+            }
+
+            # DNS record management issues (warning)
+            if ($DNSRecordMgmtCount -gt 0) {
+                New-HTMLSection -HeaderText "DNS Record Management Issues" -CanCollapse {
+                    New-HTMLPanel -Invisible {
+                            New-HTMLText -Text "Scopes with DNS record management problems:" -FontSize 14px -FontWeight bold
+                            New-HTMLTable -DataTable $DNSRecordManagement {
+                                New-HTMLTableCondition -Name 'UpdateDnsRRForOlderClients' -ComparisonType bool -Operator eq -Value $false -BackgroundColor Yellow
+                                New-HTMLTableCondition -Name 'DeleteDnsRROnLeaseExpiry' -ComparisonType bool -Operator eq -Value $false -BackgroundColor Yellow
+                            } -ScrollX -IncludeProperty @(
+                                'ServerName', 'ScopeId', 'Name', 'UpdateDnsRRForOlderClients', 'DeleteDnsRROnLeaseExpiry', 'DynamicUpdates'
+                            ) -Filtering
+                            New-HTMLText -Text "Recommendation:" -FontSize 12px -FontWeight bold -Color Blue
+                            New-HTMLText -Text "Enable 'Update DNS RR for Older Clients' and 'Delete DNS RR on Lease Expiry'." -FontSize 11px -Color Blue
+                        }
+                }
+            }
+
+            # Missing domain name (info)
+            if ($MissingDomainNameCount -gt 0) {
+                New-HTMLSection -HeaderText "Scopes Missing Domain Name Option" -CanCollapse {
+                    New-HTMLPanel -Invisible {
+                        New-HTMLTable -DataTable $MissingDomainName -Filtering -ScrollX -IncludeProperty @(
+                            'ServerName', 'ScopeId', 'Name', 'DomainNameOption', 'DynamicUpdates'
+                        )
+                        New-HTMLText -Text "Recommendation:" -FontSize 12px -FontWeight bold -Color Blue
+                        New-HTMLText -Text "Configure Domain Name option (015) when DNS updates are enabled." -FontSize 11px -Color Blue
+                    }
+                }
+            }
+
             # Failover Issues
-            if ($FailoverIssues.Count -gt 0) {
+            if ($FailoverCount -gt 0) {
                 New-HTMLSection -HeaderText "🔄 Failover Configuration Issues" -CanCollapse {
                     New-HTMLPanel -Invisible {
                             New-HTMLText -Text "Scopes without proper failover configuration:" -FontSize 14px -FontWeight bold
