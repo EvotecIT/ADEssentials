@@ -74,16 +74,16 @@
     Pass-through exclusion of components. Also auto-hides related tabs (e.g., excluding ScopeStatistics removes the Utilization tab).
 
     .PARAMETER IncludeServers
-    Only analyze these DHCP servers (filters discovery and detailed processing).
+    Only analyze these DHCP servers (case-insensitive). Matches exact FQDN or IP, and short names when short form is provided.
 
     .PARAMETER ExcludeServers
-    Exclude these DHCP servers from discovery/processing.
+    Exclude these DHCP servers (case-insensitive). Matches exact FQDN or IP, and short names when short form is provided.
 
     .PARAMETER IncludeServerPrefix
-    Only analyze DHCP servers whose short names start with these prefixes.
+    Only analyze DHCP servers whose short names start with these prefixes (case-insensitive).
 
     .PARAMETER ExcludeServerPrefix
-    Exclude DHCP servers whose short names start with these prefixes.
+    Exclude DHCP servers whose short names start with these prefixes (case-insensitive).
 
     .PARAMETER IncludeScopeId
     Only process these IPv4 scope IDs across the queried servers.
@@ -130,6 +130,11 @@
     Show-WinADDHCPSummary -ComputerName dhcp01.contoso.com -IncludeScopeId 10.10.1.0,10.10.2.0 -IncludeComponents Scopes,ScopeStatistics,Options,Reservations,Leases,Validation -Online
 
     Deep-dive report for specific scope IDs on a single server with full per-scope details.
+
+    .EXAMPLE
+    Show-WinADDHCPSummary -IncludeServerPrefix "NYC","LON" -Minimal -Online
+
+    Minimal report only for servers whose short names start with NYC or LON (case-insensitive).
 
     .NOTES
     This function requires the DHCP PowerShell module and PSWriteHTML module for report generation.
