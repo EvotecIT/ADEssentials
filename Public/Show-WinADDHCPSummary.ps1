@@ -79,6 +79,12 @@
     .PARAMETER ExcludeServers
     Exclude these DHCP servers from discovery/processing.
 
+    .PARAMETER IncludeServerPrefix
+    Only analyze DHCP servers whose short names start with these prefixes.
+
+    .PARAMETER ExcludeServerPrefix
+    Exclude DHCP servers whose short names start with these prefixes.
+
     .PARAMETER IncludeScopeId
     Only process these IPv4 scope IDs across the queried servers.
 
@@ -168,6 +174,8 @@
         [string[]] $ExcludeComponents,
         [alias('IncludeHost','IncludeDHCPServers')][string[]] $IncludeServers,
         [alias('ExcludeHost','ExcludeDHCPServers')][string[]] $ExcludeServers,
+        [string[]] $IncludeServerPrefix,
+        [string[]] $ExcludeServerPrefix,
         [alias('IncludeScope','IncludeScopes')][string[]] $IncludeScopeId,
         [alias('ExcludeScope','ExcludeScopes')][string[]] $ExcludeScopeId,
         [string[]] $IncludeTabs = @('Overview', 'IPv4/IPv6', 'Utilization', 'ValidationIssues', 'Infrastructure', 'Options&Classes', 'Failover', 'NetworkSegmentation', 'Performance', 'SecurityCompliance'),
@@ -248,8 +256,10 @@
     if ($AccurateUtilization) { $GetWinADDHCPSummarySplat.AccurateUtilization = $true }
     if ($IncludeComponents) { $GetWinADDHCPSummarySplat.IncludeComponents = $IncludeComponents }
     if ($ExcludeComponents) { $GetWinADDHCPSummarySplat.ExcludeComponents = $ExcludeComponents }
-    if ($IncludeServers)    { $GetWinADDHCPSummarySplat.IncludeServers    = $IncludeServers }
-    if ($ExcludeServers)    { $GetWinADDHCPSummarySplat.ExcludeServers    = $ExcludeServers }
+    if ($IncludeServers)       { $GetWinADDHCPSummarySplat.IncludeServers       = $IncludeServers }
+    if ($ExcludeServers)       { $GetWinADDHCPSummarySplat.ExcludeServers       = $ExcludeServers }
+    if ($IncludeServerPrefix)  { $GetWinADDHCPSummarySplat.IncludeServerPrefix  = $IncludeServerPrefix }
+    if ($ExcludeServerPrefix)  { $GetWinADDHCPSummarySplat.ExcludeServerPrefix  = $ExcludeServerPrefix }
     if ($IncludeScopeId)    { $GetWinADDHCPSummarySplat.IncludeScopeId    = $IncludeScopeId }
     if ($ExcludeScopeId)    { $GetWinADDHCPSummarySplat.ExcludeScopeId    = $ExcludeScopeId }
 
