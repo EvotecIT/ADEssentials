@@ -30,3 +30,21 @@ Describe 'DHCP Failover Analysis (TestMode)' {
     }
 }
 
+Describe 'DHCP Server Prefix Filters (TestMode)' {
+    BeforeAll {
+        Import-Module "$PSScriptRoot/../ADEssentials.psm1" -Force
+    }
+
+    It 'Filters servers by IncludeServerPrefix (case-insensitive)' {
+        $s = Get-WinADDHCPSummary -TestMode -Minimal -IncludeServerPrefix 'DHCP'
+        $s.Servers.Count | Should -Be 2
+        $s.Servers.ServerName | Should -Not -Contain 'dc01.domain.com'
+    }
+
+    It 'Filters servers by ExcludeServerPrefix and clears unrelated failover relationships' {
+        $s = Get-WinADDHCPSummary -TestMode -Minimal -ExcludeServerPrefix 'dhcp'
+        $s.Servers.Count | Should -Be 1
+        $s.FailoverRelationships.Count | Should -Be 0
+    }
+}
+

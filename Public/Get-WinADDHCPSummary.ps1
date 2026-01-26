@@ -70,16 +70,16 @@
     Excludes components from being gathered. Same accepted values as IncludeComponents.
 
     .PARAMETER IncludeServers
-    Only analyze these DHCP servers (FQDN or short names). Applied to discovery and detailed processing.
+    Only analyze these DHCP servers (case-insensitive). Matches exact FQDN or IP, and short names when short form is provided.
 
     .PARAMETER ExcludeServers
-    Exclude these DHCP servers from discovery/processing.
+    Exclude these DHCP servers (case-insensitive). Matches exact FQDN or IP, and short names when short form is provided.
 
     .PARAMETER IncludeServerPrefix
-    Only analyze DHCP servers whose short names start with these prefixes.
+    Only analyze DHCP servers whose short names start with these prefixes (case-insensitive).
 
     .PARAMETER ExcludeServerPrefix
-    Exclude DHCP servers whose short names start with these prefixes.
+    Exclude DHCP servers whose short names start with these prefixes (case-insensitive).
 
     .PARAMETER IncludeScopeId
     Only process these IPv4 scope IDs (e.g., 10.10.1.0). Applied per-server after scope discovery.
@@ -111,6 +111,11 @@
     Get-WinADDHCPSummary -ExcludeComponents IPv6,Options,Classes,ScopeStatistics
 
     Excludes DHCPv6, options/classes, and scope utilization for a lighter, faster collection.
+
+    .EXAMPLE
+    Get-WinADDHCPSummary -IncludeServerPrefix "NYC","LON"
+
+    Includes servers whose short names start with NYC or LON (case-insensitive), e.g., NYC01, nyc-dhcp, LON-DHCP01.
 
     .NOTES
     This function requires the DHCP PowerShell module and appropriate permissions to query DHCP servers.
@@ -184,6 +189,10 @@
 
     if ($TestMode) {
         Write-Verbose "Get-WinADDHCPSummary - Running in TEST MODE - using mock data for DHCP operations"
+    }
+
+    if ($IncludeServerPrefix -and $ExcludeServerPrefix) {
+        Write-Warning "Get-WinADDHCPSummary - Both IncludeServerPrefix and ExcludeServerPrefix specified; include is applied first, then exclude."
     }
 
     # Accurate utilization is expensive; allow only when scope is limited
@@ -285,21 +294,23 @@
 
         # Apply include/exclude filters to discovered servers if requested
         if ($IncludeServers -and $IncludeServers.Count -gt 0) {
-            $set = @{}
+            $setExact = @{}
+            $setShort = @{}
             foreach ($n in $IncludeServers) {
                 if ([string]::IsNullOrWhiteSpace($n)) { continue }
                 $name = $n.Trim().ToLower()
-                $set[$name] = $true
-                if ($name -match '\.') {
-                    $short = $name.Split('.')[0]
-                    if ($short) { $set[$short] = $true }
+                $setExact[$name] = $true
+                $ipValue = $null
+                $isIp = [System.Net.IPAddress]::TryParse($name, [ref]$ipValue)
+                if (-not $isIp -and $name -notmatch '\.') {
+                    $setShort[$name] = $true
                 }
             }
             $DHCPServersFromAD = @($DHCPServersFromAD | Where-Object {
                 $dns = ([string]$_.DnsName).ToLower()
                 $short = if ($dns -match '\.') { $dns.Split('.')[0] } else { $dns }
                 $ip = if ($_.IPAddress) { ([string]$_.IPAddress).ToLower() } else { $null }
-                $set.ContainsKey($dns) -or ($short -and $set.ContainsKey($short)) -or ($ip -and $set.ContainsKey($ip))
+                $setExact.ContainsKey($dns) -or ($ip -and $setExact.ContainsKey($ip)) -or ($short -and $setShort.ContainsKey($short))
             })
             Write-Verbose "Get-WinADDHCPSummary - After IncludeServers filter: $($DHCPServersFromAD.Count) servers"
         }
@@ -320,21 +331,23 @@
             }
         }
         if ($ExcludeServers -and $ExcludeServers.Count -gt 0) {
-            $setX = @{}
+            $setXExact = @{}
+            $setXShort = @{}
             foreach ($n in $ExcludeServers) {
                 if ([string]::IsNullOrWhiteSpace($n)) { continue }
                 $name = $n.Trim().ToLower()
-                $setX[$name] = $true
-                if ($name -match '\.') {
-                    $short = $name.Split('.')[0]
-                    if ($short) { $setX[$short] = $true }
+                $setXExact[$name] = $true
+                $ipValue = $null
+                $isIp = [System.Net.IPAddress]::TryParse($name, [ref]$ipValue)
+                if (-not $isIp -and $name -notmatch '\.') {
+                    $setXShort[$name] = $true
                 }
             }
             $DHCPServersFromAD = @($DHCPServersFromAD | Where-Object {
                 $dns = ([string]$_.DnsName).ToLower()
                 $short = if ($dns -match '\.') { $dns.Split('.')[0] } else { $dns }
                 $ip = if ($_.IPAddress) { ([string]$_.IPAddress).ToLower() } else { $null }
-                -not ($setX.ContainsKey($dns) -or ($short -and $setX.ContainsKey($short)) -or ($ip -and $setX.ContainsKey($ip)))
+                -not ($setXExact.ContainsKey($dns) -or ($ip -and $setXExact.ContainsKey($ip)) -or ($short -and $setXShort.ContainsKey($short)))
             })
             Write-Verbose "Get-WinADDHCPSummary - After ExcludeServers filter: $($DHCPServersFromAD.Count) servers"
         }
@@ -368,20 +381,24 @@
         # If specific servers provided, only analyze those
         $ServersToAnalyze = $ComputerName
         if ($IncludeServers -and $IncludeServers.Count -gt 0) {
-            $set = @{}
+            $setExact = @{}
+            $setShort = @{}
             foreach ($n in $IncludeServers) {
                 if ([string]::IsNullOrWhiteSpace($n)) { continue }
                 $name = $n.Trim().ToLower()
-                $set[$name] = $true
-                if ($name -match '\.') {
-                    $short = $name.Split('.')[0]
-                    if ($short) { $set[$short] = $true }
+                $setExact[$name] = $true
+                $ipValue = $null
+                $isIp = [System.Net.IPAddress]::TryParse($name, [ref]$ipValue)
+                if (-not $isIp -and $name -notmatch '\.') {
+                    $setShort[$name] = $true
                 }
             }
             $ServersToAnalyze = @($ServersToAnalyze | Where-Object {
                 $n = ([string]$_).ToLower()
-                $short = if ($n -match '\.') { $n.Split('.')[0] } else { $n }
-                $set.ContainsKey($n) -or ($short -and $set.ContainsKey($short))
+                $ipValue = $null
+                $isIp = [System.Net.IPAddress]::TryParse($n, [ref]$ipValue)
+                $short = if (-not $isIp -and $n -match '\.') { $n.Split('.')[0] } elseif (-not $isIp) { $n } else { $null }
+                $setExact.ContainsKey($n) -or ($short -and $setShort.ContainsKey($short))
             })
         }
         if ($IncludeServerPrefix -and $IncludeServerPrefix.Count -gt 0) {
@@ -400,20 +417,24 @@
             }
         }
         if ($ExcludeServers -and $ExcludeServers.Count -gt 0) {
-            $setX = @{}
+            $setXExact = @{}
+            $setXShort = @{}
             foreach ($n in $ExcludeServers) {
                 if ([string]::IsNullOrWhiteSpace($n)) { continue }
                 $name = $n.Trim().ToLower()
-                $setX[$name] = $true
-                if ($name -match '\.') {
-                    $short = $name.Split('.')[0]
-                    if ($short) { $setX[$short] = $true }
+                $setXExact[$name] = $true
+                $ipValue = $null
+                $isIp = [System.Net.IPAddress]::TryParse($name, [ref]$ipValue)
+                if (-not $isIp -and $name -notmatch '\.') {
+                    $setXShort[$name] = $true
                 }
             }
             $ServersToAnalyze = @($ServersToAnalyze | Where-Object {
                 $n = ([string]$_).ToLower()
-                $short = if ($n -match '\.') { $n.Split('.')[0] } else { $n }
-                -not ($setX.ContainsKey($n) -or ($short -and $setX.ContainsKey($short)))
+                $ipValue = $null
+                $isIp = [System.Net.IPAddress]::TryParse($n, [ref]$ipValue)
+                $short = if (-not $isIp -and $n -match '\.') { $n.Split('.')[0] } elseif (-not $isIp) { $n } else { $null }
+                -not ($setXExact.ContainsKey($n) -or ($short -and $setXShort.ContainsKey($short)))
             })
         }
         if ($ExcludeServerPrefix -and $ExcludeServerPrefix.Count -gt 0) {
@@ -530,14 +551,16 @@
                     if ($short) { $allowed[$short] = $true }
                 }
             }
-            $DHCPSummary.FailoverRelationships = @(
-                $DHCPSummary.FailoverRelationships |
-                    Where-Object {
-                        $a = if ($_.ServerName) { ([string]$_.ServerName).Trim().ToLower() } else { $null }
-                        $b = if ($_.PartnerServer) { ([string]$_.PartnerServer).Trim().ToLower() } else { $null }
-                        ($a -and $allowed.ContainsKey($a)) -and ($b -and $allowed.ContainsKey($b))
-                    }
-            )
+            $filteredFailoverRelationships = New-Object System.Collections.Generic.List[object]
+            foreach ($rel in $DHCPSummary.FailoverRelationships) {
+                if (-not $rel) { continue }
+                $a = if ($rel.ServerName) { ([string]$rel.ServerName).Trim().ToLower() } else { $null }
+                $b = if ($rel.PartnerServer) { ([string]$rel.PartnerServer).Trim().ToLower() } else { $null }
+                if (($a -and $allowed.ContainsKey($a)) -and ($b -and $allowed.ContainsKey($b))) {
+                    [void]$filteredFailoverRelationships.Add($rel)
+                }
+            }
+            $DHCPSummary.FailoverRelationships = $filteredFailoverRelationships
         }
     }
 
