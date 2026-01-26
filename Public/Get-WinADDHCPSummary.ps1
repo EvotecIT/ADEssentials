@@ -75,6 +75,12 @@
     .PARAMETER ExcludeServers
     Exclude these DHCP servers from discovery/processing.
 
+    .PARAMETER IncludeServerPrefix
+    Only analyze DHCP servers whose short names start with these prefixes.
+
+    .PARAMETER ExcludeServerPrefix
+    Exclude DHCP servers whose short names start with these prefixes.
+
     .PARAMETER IncludeScopeId
     Only process these IPv4 scope IDs (e.g., 10.10.1.0). Applied per-server after scope discovery.
 
@@ -160,6 +166,8 @@
         # New: Control which servers/scopes are processed
         [alias('IncludeHost','IncludeDHCPServers')][string[]] $IncludeServers,
         [alias('ExcludeHost','ExcludeDHCPServers')][string[]] $ExcludeServers,
+        [string[]] $IncludeServerPrefix,
+        [string[]] $ExcludeServerPrefix,
         [alias('IncludeScope','IncludeScopes')][string[]] $IncludeScopeId,
         [alias('ExcludeScope','ExcludeScopes')][string[]] $ExcludeScopeId
     )
@@ -277,14 +285,74 @@
 
         # Apply include/exclude filters to discovered servers if requested
         if ($IncludeServers -and $IncludeServers.Count -gt 0) {
-            $set = @{}; foreach ($n in $IncludeServers) { $set[$n.ToLower()] = $true }
-            $DHCPServersFromAD = @($DHCPServersFromAD | Where-Object { $set.ContainsKey($_.DnsName.ToLower()) })
+            $set = @{}
+            foreach ($n in $IncludeServers) {
+                if ([string]::IsNullOrWhiteSpace($n)) { continue }
+                $name = $n.Trim().ToLower()
+                $set[$name] = $true
+                if ($name -match '\.') {
+                    $short = $name.Split('.')[0]
+                    if ($short) { $set[$short] = $true }
+                }
+            }
+            $DHCPServersFromAD = @($DHCPServersFromAD | Where-Object {
+                $dns = ([string]$_.DnsName).ToLower()
+                $short = if ($dns -match '\.') { $dns.Split('.')[0] } else { $dns }
+                $ip = if ($_.IPAddress) { ([string]$_.IPAddress).ToLower() } else { $null }
+                $set.ContainsKey($dns) -or ($short -and $set.ContainsKey($short)) -or ($ip -and $set.ContainsKey($ip))
+            })
             Write-Verbose "Get-WinADDHCPSummary - After IncludeServers filter: $($DHCPServersFromAD.Count) servers"
         }
+        if ($IncludeServerPrefix -and $IncludeServerPrefix.Count -gt 0) {
+            $prefixes = @($IncludeServerPrefix | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object { $_.Trim().ToLower() })
+            if ($prefixes.Count -gt 0) {
+                $DHCPServersFromAD = @(
+                    $DHCPServersFromAD | Where-Object {
+                        if (-not $_.DnsName) { return $false }
+                        $short = ([string]$_.DnsName).Split('.')[0].ToLower()
+                        foreach ($p in $prefixes) {
+                            if ($short.StartsWith($p)) { return $true }
+                        }
+                        return $false
+                    }
+                )
+                Write-Verbose "Get-WinADDHCPSummary - After IncludeServerPrefix filter: $($DHCPServersFromAD.Count) servers"
+            }
+        }
         if ($ExcludeServers -and $ExcludeServers.Count -gt 0) {
-            $setX = @{}; foreach ($n in $ExcludeServers) { $setX[$n.ToLower()] = $true }
-            $DHCPServersFromAD = @($DHCPServersFromAD | Where-Object { -not $setX.ContainsKey($_.DnsName.ToLower()) })
+            $setX = @{}
+            foreach ($n in $ExcludeServers) {
+                if ([string]::IsNullOrWhiteSpace($n)) { continue }
+                $name = $n.Trim().ToLower()
+                $setX[$name] = $true
+                if ($name -match '\.') {
+                    $short = $name.Split('.')[0]
+                    if ($short) { $setX[$short] = $true }
+                }
+            }
+            $DHCPServersFromAD = @($DHCPServersFromAD | Where-Object {
+                $dns = ([string]$_.DnsName).ToLower()
+                $short = if ($dns -match '\.') { $dns.Split('.')[0] } else { $dns }
+                $ip = if ($_.IPAddress) { ([string]$_.IPAddress).ToLower() } else { $null }
+                -not ($setX.ContainsKey($dns) -or ($short -and $setX.ContainsKey($short)) -or ($ip -and $setX.ContainsKey($ip)))
+            })
             Write-Verbose "Get-WinADDHCPSummary - After ExcludeServers filter: $($DHCPServersFromAD.Count) servers"
+        }
+        if ($ExcludeServerPrefix -and $ExcludeServerPrefix.Count -gt 0) {
+            $prefixesX = @($ExcludeServerPrefix | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object { $_.Trim().ToLower() })
+            if ($prefixesX.Count -gt 0) {
+                $DHCPServersFromAD = @(
+                    $DHCPServersFromAD | Where-Object {
+                        if (-not $_.DnsName) { return $false }
+                        $short = ([string]$_.DnsName).Split('.')[0].ToLower()
+                        foreach ($p in $prefixesX) {
+                            if ($short.StartsWith($p)) { return $false }
+                        }
+                        return $true
+                    }
+                )
+                Write-Verbose "Get-WinADDHCPSummary - After ExcludeServerPrefix filter: $($DHCPServersFromAD.Count) servers"
+            }
         }
     } catch {
         Add-DHCPError -Summary $DHCPSummary -ServerName 'AD Discovery' -Component 'DHCP Server Discovery' -Operation 'Get-DhcpServerInDC' -ErrorMessage $_.Exception.Message -Severity 'Error'
@@ -300,10 +368,68 @@
         # If specific servers provided, only analyze those
         $ServersToAnalyze = $ComputerName
         if ($IncludeServers -and $IncludeServers.Count -gt 0) {
-            $ServersToAnalyze = @($ServersToAnalyze | Where-Object { $_ -in $IncludeServers })
+            $set = @{}
+            foreach ($n in $IncludeServers) {
+                if ([string]::IsNullOrWhiteSpace($n)) { continue }
+                $name = $n.Trim().ToLower()
+                $set[$name] = $true
+                if ($name -match '\.') {
+                    $short = $name.Split('.')[0]
+                    if ($short) { $set[$short] = $true }
+                }
+            }
+            $ServersToAnalyze = @($ServersToAnalyze | Where-Object {
+                $n = ([string]$_).ToLower()
+                $short = if ($n -match '\.') { $n.Split('.')[0] } else { $n }
+                $set.ContainsKey($n) -or ($short -and $set.ContainsKey($short))
+            })
+        }
+        if ($IncludeServerPrefix -and $IncludeServerPrefix.Count -gt 0) {
+            $prefixes = @($IncludeServerPrefix | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object { $_.Trim().ToLower() })
+            if ($prefixes.Count -gt 0) {
+                $ServersToAnalyze = @(
+                    $ServersToAnalyze | Where-Object {
+                        $n = ([string]$_).ToLower()
+                        $short = if ($n -match '\.') { $n.Split('.')[0] } else { $n }
+                        foreach ($p in $prefixes) {
+                            if ($short.StartsWith($p)) { return $true }
+                        }
+                        return $false
+                    }
+                )
+            }
         }
         if ($ExcludeServers -and $ExcludeServers.Count -gt 0) {
-            $ServersToAnalyze = @($ServersToAnalyze | Where-Object { $_ -notin $ExcludeServers })
+            $setX = @{}
+            foreach ($n in $ExcludeServers) {
+                if ([string]::IsNullOrWhiteSpace($n)) { continue }
+                $name = $n.Trim().ToLower()
+                $setX[$name] = $true
+                if ($name -match '\.') {
+                    $short = $name.Split('.')[0]
+                    if ($short) { $setX[$short] = $true }
+                }
+            }
+            $ServersToAnalyze = @($ServersToAnalyze | Where-Object {
+                $n = ([string]$_).ToLower()
+                $short = if ($n -match '\.') { $n.Split('.')[0] } else { $n }
+                -not ($setX.ContainsKey($n) -or ($short -and $setX.ContainsKey($short)))
+            })
+        }
+        if ($ExcludeServerPrefix -and $ExcludeServerPrefix.Count -gt 0) {
+            $prefixesX = @($ExcludeServerPrefix | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object { $_.Trim().ToLower() })
+            if ($prefixesX.Count -gt 0) {
+                $ServersToAnalyze = @(
+                    $ServersToAnalyze | Where-Object {
+                        $n = ([string]$_).ToLower()
+                        $short = if ($n -match '\.') { $n.Split('.')[0] } else { $n }
+                        foreach ($p in $prefixesX) {
+                            if ($short.StartsWith($p)) { return $false }
+                        }
+                        return $true
+                    }
+                )
+            }
         }
         Write-Verbose "Get-WinADDHCPSummary - Will perform detailed analysis on $($ServersToAnalyze.Count) specified servers"
     }
@@ -390,6 +516,28 @@
                 $FailoverByServer[$key] = New-Object System.Collections.Generic.List[object]
             }
             [void] $FailoverByServer[$key].Add($rel)
+        }
+
+        # Filter failover relationships for reporting/analysis to only include allowed servers
+        if ($DHCPServersFromAD -and $DHCPServersFromAD.Count -gt 0) {
+            $allowed = @{}
+            foreach ($s in $DHCPServersFromAD) {
+                if (-not $s -or -not $s.DnsName) { continue }
+                $n = ([string]$s.DnsName).Trim().ToLower()
+                if ($n) { $allowed[$n] = $true }
+                if ($n -match '\.') {
+                    $short = $n.Split('.')[0]
+                    if ($short) { $allowed[$short] = $true }
+                }
+            }
+            $DHCPSummary.FailoverRelationships = @(
+                $DHCPSummary.FailoverRelationships |
+                    Where-Object {
+                        $a = if ($_.ServerName) { ([string]$_.ServerName).Trim().ToLower() } else { $null }
+                        $b = if ($_.PartnerServer) { ([string]$_.PartnerServer).Trim().ToLower() } else { $null }
+                        ($a -and $allowed.ContainsKey($a)) -and ($b -and $allowed.ContainsKey($b))
+                    }
+            )
         }
     }
 
