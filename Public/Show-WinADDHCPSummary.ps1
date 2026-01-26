@@ -74,10 +74,16 @@
     Pass-through exclusion of components. Also auto-hides related tabs (e.g., excluding ScopeStatistics removes the Utilization tab).
 
     .PARAMETER IncludeServers
-    Only analyze these DHCP servers (filters discovery and detailed processing).
+    Only analyze these DHCP servers (case-insensitive). Matches exact FQDN or IP, and short names when short form is provided.
 
     .PARAMETER ExcludeServers
-    Exclude these DHCP servers from discovery/processing.
+    Exclude these DHCP servers (case-insensitive). Matches exact FQDN or IP, and short names when short form is provided.
+
+    .PARAMETER IncludeServerPrefix
+    Only analyze DHCP servers whose short names start with these prefixes (case-insensitive).
+
+    .PARAMETER ExcludeServerPrefix
+    Exclude DHCP servers whose short names start with these prefixes (case-insensitive).
 
     .PARAMETER IncludeScopeId
     Only process these IPv4 scope IDs across the queried servers.
@@ -125,6 +131,11 @@
 
     Deep-dive report for specific scope IDs on a single server with full per-scope details.
 
+    .EXAMPLE
+    Show-WinADDHCPSummary -IncludeServerPrefix "NYC","LON" -Minimal -Online
+
+    Minimal report only for servers whose short names start with NYC or LON (case-insensitive).
+
     .NOTES
     This function requires the DHCP PowerShell module and PSWriteHTML module for report generation.
     The generated report includes:
@@ -168,6 +179,8 @@
         [string[]] $ExcludeComponents,
         [alias('IncludeHost','IncludeDHCPServers')][string[]] $IncludeServers,
         [alias('ExcludeHost','ExcludeDHCPServers')][string[]] $ExcludeServers,
+        [string[]] $IncludeServerPrefix,
+        [string[]] $ExcludeServerPrefix,
         [alias('IncludeScope','IncludeScopes')][string[]] $IncludeScopeId,
         [alias('ExcludeScope','ExcludeScopes')][string[]] $ExcludeScopeId,
         [string[]] $IncludeTabs = @('Overview', 'IPv4/IPv6', 'Utilization', 'ValidationIssues', 'Infrastructure', 'Options&Classes', 'Failover', 'NetworkSegmentation', 'Performance', 'SecurityCompliance'),
@@ -248,8 +261,10 @@
     if ($AccurateUtilization) { $GetWinADDHCPSummarySplat.AccurateUtilization = $true }
     if ($IncludeComponents) { $GetWinADDHCPSummarySplat.IncludeComponents = $IncludeComponents }
     if ($ExcludeComponents) { $GetWinADDHCPSummarySplat.ExcludeComponents = $ExcludeComponents }
-    if ($IncludeServers)    { $GetWinADDHCPSummarySplat.IncludeServers    = $IncludeServers }
-    if ($ExcludeServers)    { $GetWinADDHCPSummarySplat.ExcludeServers    = $ExcludeServers }
+    if ($IncludeServers)       { $GetWinADDHCPSummarySplat.IncludeServers       = $IncludeServers }
+    if ($ExcludeServers)       { $GetWinADDHCPSummarySplat.ExcludeServers       = $ExcludeServers }
+    if ($IncludeServerPrefix)  { $GetWinADDHCPSummarySplat.IncludeServerPrefix  = $IncludeServerPrefix }
+    if ($ExcludeServerPrefix)  { $GetWinADDHCPSummarySplat.ExcludeServerPrefix  = $ExcludeServerPrefix }
     if ($IncludeScopeId)    { $GetWinADDHCPSummarySplat.IncludeScopeId    = $IncludeScopeId }
     if ($ExcludeScopeId)    { $GetWinADDHCPSummarySplat.ExcludeScopeId    = $ExcludeScopeId }
 
