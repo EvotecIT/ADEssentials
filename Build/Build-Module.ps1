@@ -4,7 +4,7 @@ Import-Module "PSPublishModule" -Force -RequiredVersion '2.0.27'
 Invoke-ModuleBuild -ModuleName 'ADEssentials' {
     # Usual defaults as per standard module
     $Manifest = [ordered] @{
-        ModuleVersion        = '1.0.0'
+        ModuleVersion        = '1.0.X'
         # Supported PSEditions
         CompatiblePSEditions = @('Desktop', 'Core')
         # ID used to uniquely identify this module
