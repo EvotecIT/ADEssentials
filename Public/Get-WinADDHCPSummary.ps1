@@ -529,16 +529,6 @@
         foreach ($s in $DHCPServersFromAD) {
             Get-WinADDHCPFailoverRelationships -Computer $s.DnsName -DHCPSummary $DHCPSummary -TestMode:$TestMode
         }
-        # Index failover relationships by server for fast lookup
-        foreach ($rel in $DHCPSummary.FailoverRelationships) {
-            if (-not $rel) { continue }
-            $key = $rel.ServerName.ToLower()
-            if (-not $FailoverByServer.ContainsKey($key)) {
-                $FailoverByServer[$key] = New-Object System.Collections.Generic.List[object]
-            }
-            [void] $FailoverByServer[$key].Add($rel)
-        }
-
         # Filter failover relationships for reporting/analysis to only include allowed servers
         if ($DHCPServersFromAD -and $DHCPServersFromAD.Count -gt 0) {
             $allowed = @{}
@@ -561,6 +551,16 @@
                 }
             }
             $DHCPSummary.FailoverRelationships = $filteredFailoverRelationships
+        }
+
+        # Index failover relationships by server for fast lookup (after filtering)
+        foreach ($rel in $DHCPSummary.FailoverRelationships) {
+            if (-not $rel) { continue }
+            $key = $rel.ServerName.ToLower()
+            if (-not $FailoverByServer.ContainsKey($key)) {
+                $FailoverByServer[$key] = New-Object System.Collections.Generic.List[object]
+            }
+            [void] $FailoverByServer[$key].Add($rel)
         }
     }
 
