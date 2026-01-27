@@ -41,6 +41,27 @@
                 [PSCustomObject]@{
                     DnsName = 'dc01.domain.com'
                     IPAddress = '192.168.1.5'
+                },
+                # Additional servers to exercise include/exclude prefix filtering
+                [PSCustomObject]@{
+                    DnsName = 'usfsm-dhcp01.domain.com'
+                    IPAddress = '192.168.1.21'
+                },
+                [PSCustomObject]@{
+                    DnsName = 'usgv-dhcp01.domain.com'
+                    IPAddress = '192.168.1.22'
+                },
+                [PSCustomObject]@{
+                    DnsName = 'us-s-mem-dhcp01.domain.com'
+                    IPAddress = '192.168.1.23'
+                },
+                [PSCustomObject]@{
+                    DnsName = 'it-dhcp01.domain.com'
+                    IPAddress = '192.168.1.24'
+                },
+                [PSCustomObject]@{
+                    DnsName = 'corp-dhcp03.domain.com'
+                    IPAddress = '192.168.1.25'
                 }
             )
         }
