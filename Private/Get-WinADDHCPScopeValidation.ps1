@@ -17,6 +17,13 @@
         }
     }
 
+    # PTR registration should stay enabled
+    if ($ScopeObject.DisableDnsPtrRRUpdate -eq $true) {
+        $ScopeObject.Issues.Add("DisableDnsPtrRRUpdate is enabled")
+        $ScopeObject.Issues.Add("PTR registration disabled")
+        $ScopeObject.HasIssues = $true
+    }
+
     # Check for dynamic DNS updates with public DNS servers
     if ($ScopeObject.DNSSettings -and $ScopeObject.DNSSettings.DynamicUpdates -ne 'Never') {
         if ($ScopeObject.DNSServers) {

@@ -164,7 +164,7 @@
                 if ($rel.ServerName.ToLower() -eq $Pairs[$key].ServerA) { $Pairs[$key].RelA = $rel } else { $Pairs[$key].RelB = $rel }
             }
 
-            foreach ($pair in $Pairs.Values) {
+            $pairRows = foreach ($pair in $Pairs.Values) {
                 $relA = $pair.RelA
                 $relB = $pair.RelB
                 $scopesA = if ($relA -and $relA.ScopeId) { @($relA.ScopeId) } else { @() }
@@ -194,35 +194,49 @@
                 $commonScopes = @($scopesOnA | Where-Object { $scopesOnB -contains $_ })
                 $allScopes = @($scopesA + $scopesB + $commonScopes) | Select-Object -Unique
 
-                $rows = foreach ($s in $allScopes) {
+                foreach ($s in $allScopes) {
                     $onA = $scopesA -contains $s
                     $onB = $scopesB -contains $s
                     $statusBase = if ($onA -and $onB) { 'On both partners' } elseif ($onA) { "Missing on $($pair.ServerB)" } elseif ($onB) { "Missing on $($pair.ServerA)" } else { 'Missing on both' }
                     $status = $statusBase + $(if (-not $verified -and $statusBase -ne 'On both partners') { ' (Unverified)' } else { '' })
-                    $failoverConfig = switch ($status) {
+                    $failoverConfig = switch ($statusBase) {
                         { $_ -like 'Missing on *' } { 'missing on one partner' }
                         'Missing on both' { 'missing on both' }
                         default { 'configured' }
                     }
                     [PSCustomObject]@{
                         Relationship          = $pair.Name
+                        Pair                  = "$($pair.ServerA) ↔ $($pair.ServerB)"
                         PartnerA              = $pair.ServerA
                         PartnerB              = $pair.ServerB
                         ScopeId               = $s
                         OnPartnerA            = $onA
                         OnPartnerB            = $onB
+                        VerifiedFromBothSides = $verified
                         Status                = $status
                         FailoverConfiguration = $failoverConfig
                     }
                 }
+            }
 
-                New-HTMLSection -HeaderText "$($pair.Name) — $($pair.ServerA) ↔ $($pair.ServerB)" {
-                    New-HTMLTable -DataTable $rows -Filtering {
-                        # Critical
-                        New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator like -Value 'Missing on *' -BackgroundColor Salmon
-                        New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Missing on both' -BackgroundColor Salmon
-                    } -DataStore JavaScript -ScrollX -Title "Scope Assignment Comparison"
+            if (@($pairRows).Count -gt 0) {
+                New-HTMLSection -Invisible {
+                    New-HTMLPanel {
+                        New-HTMLText -Text "Detailed scope comparison across all failover pairs. Use filtering on Relationship, Pair, or Status to narrow the view." -FontSize 12pt -Color DarkSlateGray
+                    } -Width '100%'
                 }
+                New-HTMLSection -Invisible {
+                    New-HTMLPanel {
+                        New-HTMLTable -DataTable $pairRows -Filtering {
+                            New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'On both partners' -BackgroundColor LightGreen
+                            New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator like -Value 'Missing on *' -BackgroundColor LightYellow
+                            New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Missing on both' -BackgroundColor Salmon -Color White
+                            New-HTMLTableCondition -Name 'VerifiedFromBothSides' -ComparisonType bool -Operator eq -Value $false -BackgroundColor Lavender -HighlightHeaders 'VerifiedFromBothSides'
+                        } -DataStore JavaScript -ScrollX -Title 'Scope Assignment Comparison by Relationship Pair'
+                    } -Width '100%'
+                }
+            } else {
+                New-HTMLText -Text "No failover pair comparison data is available." -Color Gray -FontSize 12pt
             }
         }
 
@@ -262,7 +276,7 @@
                             New-HTMLListItem -Text "Provides active-active configuration"
                             New-HTMLListItem -Text "Best for redundancy and load distribution"
                         }
-                    } -Width '48%'
+                    } -Width '100%'
 
                     New-HTMLPanel {
                         New-HTMLText -Text "Hot Standby Mode" -FontSize 14pt -FontWeight bold -Color DarkBlue
@@ -272,7 +286,7 @@
                             New-HTMLListItem -Text "Standby server activates only on primary failure"
                             New-HTMLListItem -Text "Best for specific server preference scenarios"
                         }
-                    } -Width '48%'
+                    } -Width '100%'
                 }
             }
         }

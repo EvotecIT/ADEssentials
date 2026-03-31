@@ -145,8 +145,14 @@
                 # DNS Record Management Issues
                 if ($DHCPData.ValidationResults.WarningIssues.DNSRecordManagement.Count -gt 0) {
                     New-HTMLSection -HeaderText "DNS Record Management Issues" -CanCollapse {
-                        # Title moved to section header
-                        New-HTMLTable -DataTable $DHCPData.ValidationResults.WarningIssues.DNSRecordManagement -Filtering -DataStore JavaScript -ScrollX
+                        New-HTMLText -Text "Scopes with DNS record management problems:" -FontSize 14pt -FontWeight bold -Color '#cc8800'
+                        New-HTMLTable -DataTable $DHCPData.ValidationResults.WarningIssues.DNSRecordManagement -Filtering -DataStore JavaScript -ScrollX {
+                            New-HTMLTableCondition -Name 'UpdateDnsRRForOlderClients' -ComparisonType bool -Operator eq -Value $false -BackgroundColor LightYellow
+                            New-HTMLTableCondition -Name 'DeleteDnsRROnLeaseExpiry' -ComparisonType bool -Operator eq -Value $false -BackgroundColor LightYellow
+                            New-HTMLTableCondition -Name 'DisableDnsPtrRRUpdate' -ComparisonType bool -Operator eq -Value $true -BackgroundColor Orange
+                        } -IncludeProperty @(
+                            'ServerName', 'ScopeId', 'Name', 'UpdateDnsRRForOlderClients', 'DeleteDnsRROnLeaseExpiry', 'DisableDnsPtrRRUpdate', 'DynamicUpdates'
+                        )
                     }
                 }
             }

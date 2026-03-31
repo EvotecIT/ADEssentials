@@ -106,11 +106,12 @@
                             New-HTMLTable -DataTable $DNSRecordManagement {
                                 New-HTMLTableCondition -Name 'UpdateDnsRRForOlderClients' -ComparisonType bool -Operator eq -Value $false -BackgroundColor Yellow
                                 New-HTMLTableCondition -Name 'DeleteDnsRROnLeaseExpiry' -ComparisonType bool -Operator eq -Value $false -BackgroundColor Yellow
+                                New-HTMLTableCondition -Name 'DisableDnsPtrRRUpdate' -ComparisonType bool -Operator eq -Value $true -BackgroundColor Orange -Color Black
                             } -ScrollX -IncludeProperty @(
-                                'ServerName', 'ScopeId', 'Name', 'UpdateDnsRRForOlderClients', 'DeleteDnsRROnLeaseExpiry', 'DynamicUpdates'
+                                'ServerName', 'ScopeId', 'Name', 'UpdateDnsRRForOlderClients', 'DeleteDnsRROnLeaseExpiry', 'DisableDnsPtrRRUpdate', 'DynamicUpdates'
                             ) -Filtering
                             New-HTMLText -Text "Recommendation:" -FontSize 12px -FontWeight bold -Color Blue
-                            New-HTMLText -Text "Enable 'Update DNS RR for Older Clients' and 'Delete DNS RR on Lease Expiry'." -FontSize 11px -Color Blue
+                            New-HTMLText -Text "Enable 'Update DNS RR for Older Clients', enable 'Delete DNS RR on Lease Expiry', and keep 'Disable DNS PTR RR Update' set to FALSE." -FontSize 11px -Color Blue
                         }
                 }
             }

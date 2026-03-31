@@ -46,11 +46,32 @@
 
                                 # Configuration Issues
                                 if ($Analysis.OptionIssues.Count -gt 0) {
+                                    $IssueDetails = foreach ($Issue in $Analysis.OptionIssues) {
+                                        ConvertTo-DHCPOptionIssueRecord -Issue $Issue
+                                    }
+                                    $IssueSummary = $IssueDetails | Group-Object -Property Category | Sort-Object Count -Descending | ForEach-Object {
+                                        $sample = $_.Group | Select-Object -First 1
+                                        [PSCustomObject]@{
+                                            Category       = $_.Name
+                                            IssueCount     = $_.Count
+                                            AffectedScopes = (@($_.Group.ScopeId | Where-Object { $_ } | Sort-Object -Unique)).Count
+                                            AffectedServers= (@($_.Group.ServerName | Where-Object { $_ } | Sort-Object -Unique)).Count
+                                            Recommendation = $sample.Recommendation
+                                        }
+                                    }
+
                                     New-HTMLSection -HeaderText "⚠️ Configuration Issues Found" -CanCollapse {
                                         New-HTMLPanel {
-                                            foreach ($Issue in $Analysis.OptionIssues) {
-                                                New-HTMLText -Text "⚠️ $Issue" -Color Orange -FontSize 14px
-                                            }
+                                            New-HTMLText -Text "The same issues are grouped by category first, then listed in a detailed table." -Color DarkOrange -FontSize 12pt -FontWeight bold
+                                            New-HTMLTable -DataTable $IssueSummary -Filtering {
+                                                New-HTMLTableCondition -Name 'IssueCount' -ComparisonType number -Operator gt -Value 0 -BackgroundColor LightYellow -HighlightHeaders 'IssueCount'
+                                            } -DataStore JavaScript -ScrollX -Title 'Issue Summary by Category'
+
+                                            New-HTMLTable -DataTable $IssueDetails -Filtering {
+                                                New-HTMLTableCondition -Name 'Category' -ComparisonType string -Operator eq -Value 'Public DNS' -BackgroundColor LightYellow
+                                                New-HTMLTableCondition -Name 'Category' -ComparisonType string -Operator eq -Value 'Lease Time' -BackgroundColor Moccasin
+                                                New-HTMLTableCondition -Name 'Category' -ComparisonType string -Operator eq -Value 'Domain Name' -BackgroundColor Lavender
+                                            } -DataStore JavaScript -ScrollX -Title 'Issue Details'
                                         }
                                     }
                                 }
