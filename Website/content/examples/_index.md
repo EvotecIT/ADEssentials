@@ -4,7 +4,7 @@ description: "Curated examples for Active Directory and infrastructure diagnosti
 layout: docs
 ---
 
-These examples are maintained with the ADEssentials repository and selected for the website because they show real operational checks.
+These ADEssentials examples focus on targeted Active Directory checks that are useful before moving into a larger reporting workflow.
 
 ## Featured examples
 

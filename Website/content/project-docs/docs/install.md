@@ -4,7 +4,7 @@ description: "Install ADEssentials from the package source used by this project.
 layout: docs
 ---
 
-Use this page when you need the shortest setup path before trying the curated examples.
+Install ADEssentials before trying the curated Active Directory examples.
 
 ## PowerShell Gallery
 

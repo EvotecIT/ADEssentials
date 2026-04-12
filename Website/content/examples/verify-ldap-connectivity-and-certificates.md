@@ -19,9 +19,9 @@ It comes from the source example at `Examples/Example.06-TestLDAPPorts.ps1`.
 ```powershell
 Import-Module .\ADEssentials.psd1 -Force
 
-Test-LDAP -IncludeDomainControllers 'ad1.ad.evotec.xyz' -Identity "krbtgt" -Verbose | Format-List *
-Test-LDAP -ComputerName 'ad.evotec.xyz' -VerifyCertificate -Verbose | Format-Table
-Test-LDAP -VerifyCertificate -Verbose -IncludeDomains 'ad.evotec.pl' | Format-Table
+Test-LDAP -IncludeDomainControllers 'dc01.corp.example.com' -Identity "krbtgt" -Verbose | Format-List *
+Test-LDAP -ComputerName 'corp.example.com' -VerifyCertificate -Verbose | Format-Table
+Test-LDAP -VerifyCertificate -Verbose -IncludeDomains 'corp.example.com' | Format-Table
 ```
 
 ## What this demonstrates

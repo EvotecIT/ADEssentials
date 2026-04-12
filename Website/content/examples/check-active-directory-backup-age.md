@@ -24,7 +24,7 @@ $LastBackup = Get-WinADLastBackup
 $LastBackup | Format-Table -AutoSize
 
 # Check selected domains
-$LastBackup = Get-WinADLastBackup -Domain 'ad.evotec.pl', 'ad.evotec.xyz'
+$LastBackup = Get-WinADLastBackup -Domain 'corp.example.com', 'child.corp.example.com'
 $LastBackup | Format-Table -AutoSize
 ```
 
