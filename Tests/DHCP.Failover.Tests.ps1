@@ -45,6 +45,18 @@ Describe 'DHCP DNS record management validation (TestMode)' {
     }
 }
 
+Describe 'DHCP option issue parsing' {
+    BeforeAll {
+        Import-Module "$PSScriptRoot/../ADEssentials.psm1" -Force
+    }
+
+    It 'Returns null for empty or whitespace issue text' {
+        InModuleScope ADEssentials {
+            ConvertTo-DHCPOptionIssueRecord -Issue '   ' | Should -BeNullOrEmpty
+        }
+    }
+}
+
 Describe 'DHCP Server Prefix Filters (TestMode)' {
     BeforeAll {
         Import-Module "$PSScriptRoot/../ADEssentials.psm1" -Force

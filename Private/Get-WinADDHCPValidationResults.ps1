@@ -133,12 +133,11 @@
         if ($MissingDomainName     -and $MissingDomainName.Count     -gt 0) { [void] $dnsAgg.AddRange($MissingDomainName) }
 
         # Deduplicate by (ServerName|ScopeId)
-        $seen = @{}
+        $seen = [System.Collections.Generic.HashSet[string]]::new()
         $dnsUnique = New-Object 'System.Collections.Generic.List[object]'
         foreach ($item in $dnsAgg) {
             $id = "$($item.ServerName)|$($item.ScopeId)"
-            if (-not $seen.ContainsKey($id)) {
-                $seen[$id] = $true
+            if ($seen.Add($id)) {
                 [void] $dnsUnique.Add($item)
             }
         }

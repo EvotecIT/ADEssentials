@@ -9,12 +9,21 @@ function ConvertTo-DHCPOptionIssueRecord {
         return $null
     }
 
+    if ($Issue -is [string] -and [string]::IsNullOrWhiteSpace($Issue)) {
+        return $null
+    }
+
     if ($Issue -isnot [string]) {
         $text = if ($Issue.PSObject.Properties['Issue']) { [string] $Issue.Issue } else { [string] $Issue }
         $serverName = if ($Issue.PSObject.Properties['ServerName']) { [string] $Issue.ServerName } else { $null }
         $scopeId = if ($Issue.PSObject.Properties['ScopeId']) { [string] $Issue.ScopeId } else { $null }
         $category = if ($Issue.PSObject.Properties['Category']) { [string] $Issue.Category } else { 'Other' }
         $recommendation = if ($Issue.PSObject.Properties['Recommendation']) { [string] $Issue.Recommendation } else { 'Review the DHCP option configuration and align it with the approved standard.' }
+
+        if ([string]::IsNullOrWhiteSpace($text)) {
+            return $null
+        }
+
         return [PSCustomObject]@{
             Category       = $category
             ServerName     = $serverName
