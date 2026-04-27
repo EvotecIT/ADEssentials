@@ -76,27 +76,36 @@
     foreach ($Zone in $ZonesToProcess) {
         Write-Verbose -Message "Get-WinDNSRecords - Processing zone for DNS records: $($Zone.ZoneName)"
         $DNSRecordsPerZone[$Zone.ZoneName] = Get-DnsServerResourceRecord -ComputerName $ADServer -ZoneName $Zone.ZoneName -RRType A
+        $ADRecordsPerZone[$Zone.ZoneName] = [ordered] @{}
         $ADRecordsPerZoneByDns[$Zone.ZoneName] = [ordered] @{}
         foreach ($Record in  $DNSRecordsPerZone[$Zone.ZoneName]) {
             if (-not $ADRecordsPerZoneByDns[$Zone.ZoneName][$Record.HostName]) {
                 $ADRecordsPerZoneByDns[$Zone.ZoneName][$Record.HostName] = [System.Collections.Generic.List[Object]]::new()
             }
             $ADRecordsPerZoneByDns[$Zone.ZoneName][$Record.HostName].Add($Record)
+            if (-not $ADRecordsPerZone[$Zone.ZoneName][$Record.HostName]) {
+                $ADRecordsPerZone[$Zone.ZoneName][$Record.HostName] = [PSCustomObject] @{
+                    Name          = $Record.HostName
+                    dNSTombstoned = $false
+                    whenCreated   = $null
+                    whenChanged   = $null
+                }
+            }
         }
     }
     if ($IncludeDetails) {
         #$Filter = { (Name -notlike "@" -and Name -notlike "_*" -and ObjectClass -eq 'dnsNode' -and Name -ne 'ForestDnsZone' -and Name -ne 'DomainDnsZone' ) }
         $Filter = "(Name -notlike '@' -and Name -notlike '_*' -and ObjectClass -eq 'dnsNode' -and Name -ne 'ForestDnsZone' -and Name -ne 'DomainDnsZone' )"
         foreach ($Zone in $ZonesToProcess) {
-            $ADRecordsPerZone[$Zone.ZoneName] = [ordered]@{}
             Write-Verbose -Message "Get-WinDNSRecords - Processing zone for AD records: $($Zone.ZoneName)"
             $TempObjects = @(
                 if ($Zone.ReplicationScope -eq 'Domain') {
                     try {
+                        $SearchBase = Get-WinDnsZoneSearchBase -Zone $Zone -RootDSE $oRootDSE
                         $getADObjectSplat = @{
                             Server     = $ADServer
                             Filter     = $Filter
-                            SearchBase = ("DC=$($Zone.ZoneName),CN=MicrosoftDNS,DC=DomainDnsZones," + $oRootDSE.defaultNamingContext)
+                            SearchBase = $SearchBase
                             Properties = 'CanonicalName', 'whenChanged', 'whenCreated', 'DistinguishedName', 'ProtectedFromAccidentalDeletion', 'dNSTombstoned', 'nTSecurityDescriptor'
                         }
                         Get-ADObject @getADObjectSplat
@@ -105,10 +114,11 @@
                     }
                 } elseif ($Zone.ReplicationScope -eq 'Forest') {
                     try {
+                        $SearchBase = Get-WinDnsZoneSearchBase -Zone $Zone -RootDSE $oRootDSE
                         $getADObjectSplat = @{
                             Server     = $ADServer
                             Filter     = $Filter
-                            SearchBase = ("DC=$($Zone.ZoneName),CN=MicrosoftDNS,DC=ForestDnsZones," + $oRootDSE.defaultNamingContext)
+                            SearchBase = $SearchBase
                             Properties = 'CanonicalName', 'whenChanged', 'whenCreated', 'DistinguishedName', 'ProtectedFromAccidentalDeletion', 'dNSTombstoned', 'nTSecurityDescriptor'
                         }
                         Get-ADObject @getADObjectSplat
