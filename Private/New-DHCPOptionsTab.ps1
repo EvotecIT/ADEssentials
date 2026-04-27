@@ -42,21 +42,32 @@
 
                         # Configuration Issues
                         if ($Analysis.OptionIssues.Count -gt 0) {
+                            $IssueDetails = foreach ($Issue in $Analysis.OptionIssues) {
+                                ConvertTo-DHCPOptionIssueRecord -Issue $Issue
+                            }
+                            $IssueSummary = $IssueDetails | Group-Object -Property Category | Sort-Object Count -Descending | ForEach-Object {
+                                $sample = $_.Group | Select-Object -First 1
+                                [PSCustomObject]@{
+                                    Category       = $_.Name
+                                    IssueCount     = $_.Count
+                                    AffectedScopes = (@($_.Group.ScopeId | Where-Object { $_ } | Sort-Object -Unique)).Count
+                                    AffectedServers= (@($_.Group.ServerName | Where-Object { $_ } | Sort-Object -Unique)).Count
+                                    Recommendation = $sample.Recommendation
+                                }
+                            }
+
                             New-HTMLSection -HeaderText "⚠️ Configuration Issues Found" -CanCollapse {
                                 New-HTMLPanel {
-                                    foreach ($Issue in $Analysis.OptionIssues) {
-                                        New-HTMLContainer {
-                                            if ($Issue -is [string]) {
-                                                # Handle string format (test mode)
-                                                New-HTMLText -Text "⚠️ $Issue" -Color Orange -FontSize 14px -FontWeight bold
-                                            } else {
-                                                # Handle object format (production)
-                                                New-HTMLText -Text "⚠️ $($Issue.Issue)" -Color Orange -FontSize 14px -FontWeight bold
-                                                New-HTMLText -Text "Servers affected: $($Issue.ServersAffected -join ', ')" -Color DarkOrange -FontSize 12px
-                                                New-HTMLText -Text "Recommendation: $($Issue.Recommendation)" -Color DarkGray -FontSize 12px -FontStyle italic
-                                            }
-                                        }
-                                    }
+                                    New-HTMLText -Text "The same issues are now grouped by category first, with detailed scope-level records below." -Color DarkOrange -FontSize 12pt -FontWeight bold
+                                    New-HTMLTable -DataTable $IssueSummary -Filtering {
+                                        New-HTMLTableCondition -Name 'IssueCount' -ComparisonType number -Operator gt -Value 0 -BackgroundColor LightYellow -HighlightHeaders 'IssueCount'
+                                    } -DataStore JavaScript -ScrollX -Title 'Issue Summary by Category'
+
+                                    New-HTMLTable -DataTable $IssueDetails -Filtering {
+                                        New-HTMLTableCondition -Name 'Category' -ComparisonType string -Operator eq -Value 'Public DNS' -BackgroundColor LightYellow
+                                        New-HTMLTableCondition -Name 'Category' -ComparisonType string -Operator eq -Value 'Lease Time' -BackgroundColor Moccasin
+                                        New-HTMLTableCondition -Name 'Category' -ComparisonType string -Operator eq -Value 'Domain Name' -BackgroundColor Lavender
+                                    } -DataStore JavaScript -ScrollX -Title 'Issue Details'
                                 }
                             }
                         }

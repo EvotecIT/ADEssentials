@@ -53,7 +53,7 @@
             if ($Issue -like "*exceeds 48 hours*") {
                 if ($ExtendedLeaseDuration -notcontains $Scope) { $ExtendedLeaseDuration.Add($Scope) }
             }
-            if ($Issue -like "*UpdateDnsRRForOlderClients*" -or $Issue -like "*DeleteDnsRROnLeaseExpiry*") {
+            if ($Issue -like "*UpdateDnsRRForOlderClients*" -or $Issue -like "*DeleteDnsRROnLeaseExpiry*" -or $Issue -like "*DisableDnsPtrRRUpdate*" -or $Issue -like "*PTR registration disabled*") {
                 if ($DNSRecordManagement -notcontains $Scope) { $DNSRecordManagement.Add($Scope) }
             }
             if ($Issue -like "*Domain name option*") {
@@ -133,12 +133,11 @@
         if ($MissingDomainName     -and $MissingDomainName.Count     -gt 0) { [void] $dnsAgg.AddRange($MissingDomainName) }
 
         # Deduplicate by (ServerName|ScopeId)
-        $seen = @{}
+        $seen = [System.Collections.Generic.HashSet[string]]::new()
         $dnsUnique = New-Object 'System.Collections.Generic.List[object]'
         foreach ($item in $dnsAgg) {
             $id = "$($item.ServerName)|$($item.ScopeId)"
-            if (-not $seen.ContainsKey($id)) {
-                $seen[$id] = $true
+            if ($seen.Add($id)) {
                 [void] $dnsUnique.Add($item)
             }
         }

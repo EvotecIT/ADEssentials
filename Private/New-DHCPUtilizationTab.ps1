@@ -20,6 +20,20 @@
     )
 
     New-HTMLTab -TabName 'Utilization' {
+        $OnlineServerPerformance = @($DHCPData.ServerPerformanceAnalysis | Where-Object { $_.Status -eq 'Online' } | Sort-Object UtilizationPercent -Descending)
+        $TopUtilizedScopes = @($DHCPData.Scopes | Where-Object { $_.State -eq 'Active' } | Sort-Object PercentageInUse -Descending | Select-Object -First 10)
+        $TopServerPerformance = @($OnlineServerPerformance | Select-Object -First 10)
+        $CriticalUtilizationCount = @($DHCPData.ValidationResults.UtilizationIssues.HighUtilization).Count
+        $ModerateUtilizationCount = @($DHCPData.ValidationResults.UtilizationIssues.ModerateUtilization).Count
+        $OverallUtilization = [Math]::Round([double]$DHCPData.Statistics.OverallPercentageInUse, 2)
+        $OverallUtilizationColor = if ($OverallUtilization -gt 90) {
+            'Crimson'
+        } elseif ($OverallUtilization -gt 75) {
+            'DarkOrange'
+        } else {
+            'DodgerBlue'
+        }
+
         # Overall Utilization Summary
         New-HTMLSection -HeaderText "📊 Overall DHCP Utilization Summary" {
             New-HTMLPanel -Invisible {
@@ -28,58 +42,53 @@
                 } else {
                     New-HTMLText -Text "Utilization is based on DHCP scope statistics, which include inactive reservations." -FontSize 11pt -Color DarkGray
                 }
-                # Create utilization gauges
-                New-HTMLSection -Density Compact -Invisible {
-                    New-HTMLPanel {
-                        #New-HTMLText -Text "Overall IP Utilization" -FontSize 14pt -FontWeight bold -Alignment center
-                        New-HTMLChart {
-                            New-ChartRadial -Name "Used" -Value $DHCPData.Statistics.OverallPercentageInUse
-                            New-ChartRadialOptions -CircleType SemiCircleGauge
-                        } -Title "Overall IP Utilization"
-                    }
 
-                    New-HTMLPanel {
-                        New-HTMLText -Text "Address Distribution" -FontSize 14pt -FontWeight bold -Alignment center
-                        New-HTMLChart {
-                            New-ChartDonut -Name "In Use" -Value $DHCPData.Statistics.AddressesInUse -Color '#FF6347'
-                            New-ChartDonut -Name "Available" -Value $DHCPData.Statistics.AddressesFree -Color '#00FF00'
-                        }
-                    }
-
-
-                    if (($DHCPData.ServerPerformanceAnalysis | Where-Object { $_.Status -eq 'Online' }).Count -gt 0) {
-                        New-HTMLPanel -Invisible {
-                            New-HTMLChart -Title "Server Utilization Comparison" {
-                                New-ChartBarOptions -Type bar -Distributed
-                                foreach ($Server in ($DHCPData.ServerPerformanceAnalysis | Where-Object { $_.Status -eq 'Online' })) {
-                                    New-ChartBar -Name $Server.ServerName -Value $Server.UtilizationPercent
-                                }
-                            }
-                        }
-                    }
-                    New-HTMLSection -Invisible {
-                        New-HTMLPanel {
-                            New-HTMLText -Text "Capacity Metrics" -FontSize 14pt -FontWeight bold -Alignment center
-                            $CapacityMetrics = [PSCustomObject]@{
-                                'Total Addresses' = "{0:N0}" -f $DHCPData.Statistics.TotalAddresses
-                                'In Use'          = "{0:N0}" -f $DHCPData.Statistics.AddressesInUse
-                                'Available'       = "{0:N0}" -f $DHCPData.Statistics.AddressesFree
-                                'Critical Scopes' = ($DHCPData.ValidationResults.UtilizationIssues.HighUtilization.Count)
-                                'Warning Scopes'  = ($DHCPData.ValidationResults.UtilizationIssues.ModerateUtilization.Count)
-                            }
-                            New-HTMLTable -DataTable $CapacityMetrics -HideFooter -DisableSearch -DisablePaging -DisableOrdering
-                        }
-                    }
+                New-HTMLSection -Invisible -Density Compact {
+                    New-HTMLInfoCard -Title "Overall Utilization" -Number "$OverallUtilization%" -Subtitle "Across all active scopes" -Icon "📊" -TitleColor $OverallUtilizationColor -NumberColor $OverallUtilizationColor
+                    New-HTMLInfoCard -Title "Addresses In Use" -Number ("{0:N0}" -f $DHCPData.Statistics.AddressesInUse) -Subtitle "Currently assigned" -Icon "🔴" -TitleColor 'Crimson' -NumberColor 'DarkRed'
+                    New-HTMLInfoCard -Title "Addresses Available" -Number ("{0:N0}" -f $DHCPData.Statistics.AddressesFree) -Subtitle "Remaining capacity" -Icon "🟢" -TitleColor 'LimeGreen' -NumberColor 'DarkGreen'
+                    New-HTMLInfoCard -Title "Critical Scopes" -Number $CriticalUtilizationCount -Subtitle ">90% utilization" -Icon "🚨" -TitleColor $(if ($CriticalUtilizationCount -gt 0) { 'Crimson' } else { 'LimeGreen' }) -NumberColor $(if ($CriticalUtilizationCount -gt 0) { 'DarkRed' } else { 'DarkGreen' })
+                    New-HTMLInfoCard -Title "Warning Scopes" -Number $ModerateUtilizationCount -Subtitle "75-90% utilization" -Icon "⚠️" -TitleColor $(if ($ModerateUtilizationCount -gt 0) { 'DarkOrange' } else { 'LimeGreen' }) -NumberColor $(if ($ModerateUtilizationCount -gt 0) { 'DarkOrange' } else { 'DarkGreen' })
                 }
+
+                $CapacityMetrics = [PSCustomObject]@{
+                    'Total Addresses' = "{0:N0}" -f $DHCPData.Statistics.TotalAddresses
+                    'In Use'          = "{0:N0}" -f $DHCPData.Statistics.AddressesInUse
+                    'Available'       = "{0:N0}" -f $DHCPData.Statistics.AddressesFree
+                    'Critical Scopes' = $CriticalUtilizationCount
+                    'Warning Scopes'  = $ModerateUtilizationCount
+                }
+                New-HTMLTable -DataTable $CapacityMetrics -HideFooter -DisableSearch -DisablePaging -DisableOrdering -Buttons @() -Title 'Capacity Metrics'
             }
         }
 
         # Utilization by Server
         if ($DHCPData.ServerPerformanceAnalysis.Count -gt 0) {
             New-HTMLSection -HeaderText "🖥️ Server Utilization Analysis" -Wrap wrap {
-                # Server utilization chart
-
                 New-HTMLPanel -Invisible {
+                    if ($TopServerPerformance.Count -gt 0) {
+                        $serverRanking = for ($index = 0; $index -lt $TopServerPerformance.Count; $index++) {
+                            [PSCustomObject]@{
+                                Rank               = $index + 1
+                                ServerName         = $TopServerPerformance[$index].ServerName
+                                UtilizationPercent = [Math]::Round([double]$TopServerPerformance[$index].UtilizationPercent, 2)
+                                ActiveScopes       = $TopServerPerformance[$index].ActiveScopes
+                                ScopesWithIssues   = $TopServerPerformance[$index].ScopesWithIssues
+                                PerformanceRating  = $TopServerPerformance[$index].PerformanceRating
+                                CapacityStatus     = $TopServerPerformance[$index].CapacityStatus
+                            }
+                        }
+
+                        New-HTMLText -Text "Top online servers by utilization, shown as a ranking table to keep the layout readable and avoid chart overflow." -FontSize 11pt -Color DarkSlateGray
+                        New-HTMLTable -DataTable $serverRanking -HideFooter -DisableSearch -DisablePaging -DisableOrdering -Buttons @() -Title 'Top 10 Server Utilization' {
+                            New-HTMLTableCondition -Name 'UtilizationPercent' -ComparisonType number -Operator gt -Value 90 -BackgroundColor Red -Color White -HighlightHeaders 'UtilizationPercent', 'CapacityStatus'
+                            New-HTMLTableCondition -Name 'UtilizationPercent' -ComparisonType number -Operator gt -Value 75 -BackgroundColor Orange -HighlightHeaders 'UtilizationPercent'
+                            New-HTMLTableCondition -Name 'UtilizationPercent' -ComparisonType number -Operator gt -Value 50 -BackgroundColor Yellow -HighlightHeaders 'UtilizationPercent'
+                            New-HTMLTableCondition -Name 'CapacityStatus' -ComparisonType string -Operator eq -Value 'Critical' -BackgroundColor Red -Color White
+                            New-HTMLTableCondition -Name 'CapacityStatus' -ComparisonType string -Operator eq -Value 'Warning' -BackgroundColor Orange
+                        }
+                    }
+
                     New-HTMLTable -DataTable $DHCPData.ServerPerformanceAnalysis -Filtering {
                         New-HTMLTableCondition -Name 'Status' -ComparisonType string -Operator eq -Value 'Online' -BackgroundColor LightGreen -FailBackgroundColor Salmon
                         New-HTMLTableCondition -Name 'UtilizationPercent' -ComparisonType number -Operator gt -Value 90 -BackgroundColor Red -Color White -HighlightHeaders 'UtilizationPercent'
@@ -87,7 +96,7 @@
                         New-HTMLTableCondition -Name 'UtilizationPercent' -ComparisonType number -Operator gt -Value 50 -BackgroundColor Yellow -HighlightHeaders 'UtilizationPercent'
                         New-HTMLTableCondition -Name 'CapacityStatus' -ComparisonType string -Operator eq -Value 'Critical' -BackgroundColor Red -Color White
                         New-HTMLTableCondition -Name 'CapacityStatus' -ComparisonType string -Operator eq -Value 'Warning' -BackgroundColor Orange
-                    } -DataStore JavaScript -Title "Server Capacity and Performance Metrics"
+                    } -DataStore JavaScript -ScrollX -Title "Server Capacity and Performance Metrics"
                 }
             }
         }
@@ -95,18 +104,29 @@
         # Scope Utilization Details
         New-HTMLSection -HeaderText "📈 Scope Utilization Analysis" -Wrap wrap {
             New-HTMLPanel -Invisible {
-                # Top 10 utilized scopes chart
-                $TopUtilizedScopes = $DHCPData.Scopes | Where-Object { $_.State -eq 'Active' } | Sort-Object PercentageInUse -Descending | Select-Object -First 10
+                # Top 10 utilized scopes table
                 if ($TopUtilizedScopes.Count -gt 0) {
-                    New-HTMLChart -Title "Top 10 Most Utilized Scopes" {
-                        New-ChartBarOptions -Type bar -Distributed
-                        foreach ($Scope in $TopUtilizedScopes) {
-                            $Color = if ($Scope.PercentageInUse -gt 90) { '#FF0000' }
-                            elseif ($Scope.PercentageInUse -gt 75) { '#FFA500' }
-                            else { '#00FF00' }
-                            New-ChartBar -Name "$($Scope.Name) ($($Scope.ScopeId))" -Value $Scope.PercentageInUse -Color $Color
+                    $scopeRanking = for ($index = 0; $index -lt $TopUtilizedScopes.Count; $index++) {
+                        [PSCustomObject]@{
+                            Rank               = $index + 1
+                            ServerName         = $TopUtilizedScopes[$index].ServerName
+                            ScopeId            = [string]$TopUtilizedScopes[$index].ScopeId
+                            Name               = $TopUtilizedScopes[$index].Name
+                            PercentageInUse    = [Math]::Round([double]$TopUtilizedScopes[$index].PercentageInUse, 2)
+                            AddressesInUse     = $TopUtilizedScopes[$index].AddressesInUse
+                            AddressesFree      = $TopUtilizedScopes[$index].AddressesFree
+                            CapacityStatus     = if ($TopUtilizedScopes[$index].PercentageInUse -gt 90) { 'Critical' } elseif ($TopUtilizedScopes[$index].PercentageInUse -gt 75) { 'Warning' } else { 'Healthy' }
                         }
-                    } -Height 400
+                    }
+
+                    New-HTMLText -Text "Top 10 most utilized scopes, shown as a compact ranking table instead of a chart to keep the layout stable." -FontSize 11pt -Color DarkSlateGray
+                    New-HTMLTable -DataTable $scopeRanking -HideFooter -DisableSearch -DisablePaging -DisableOrdering -Title 'Top 10 Most Utilized Scopes' -Buttons @() {
+                        New-HTMLTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 90 -BackgroundColor Salmon -HighlightHeaders 'PercentageInUse', 'CapacityStatus'
+                        New-HTMLTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 75 -BackgroundColor LightYellow -HighlightHeaders 'PercentageInUse'
+                        New-HTMLTableCondition -Name 'CapacityStatus' -ComparisonType string -Operator eq -Value 'Critical' -BackgroundColor Red -Color White
+                        New-HTMLTableCondition -Name 'CapacityStatus' -ComparisonType string -Operator eq -Value 'Warning' -BackgroundColor Orange
+                        New-HTMLTableCondition -Name 'CapacityStatus' -ComparisonType string -Operator eq -Value 'Healthy' -BackgroundColor LightGreen
+                    }
                 }
             }
             # High utilization scopes
@@ -116,7 +136,7 @@
                     New-HTMLTable -DataTable $DHCPData.ValidationResults.UtilizationIssues.HighUtilization -Filtering {
                         New-HTMLTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 95 -BackgroundColor Red -Color White -HighlightHeaders 'PercentageInUse'
                         New-HTMLTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 90 -BackgroundColor Salmon -HighlightHeaders 'PercentageInUse'
-                    } -DataStore JavaScript
+                    } -DataStore JavaScript -ScrollX
                 }
             }
 
@@ -127,7 +147,7 @@
                     New-HTMLTable -DataTable $DHCPData.ValidationResults.UtilizationIssues.ModerateUtilization -Filtering {
                         New-HTMLTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 85 -BackgroundColor Orange -HighlightHeaders 'PercentageInUse'
                         New-HTMLTableCondition -Name 'PercentageInUse' -ComparisonType number -Operator gt -Value 75 -BackgroundColor Yellow -HighlightHeaders 'PercentageInUse'
-                    } -DataStore JavaScript
+                    } -DataStore JavaScript -ScrollX
                 }
             }
 

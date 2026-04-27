@@ -35,7 +35,7 @@
                     } -ScrollX -IncludeProperty @(
                         'ServerName', 'ScopeId', 'Name', 'State', 'LeaseDurationHours',
                         'DNSServers', 'DomainNameOption', 'DynamicUpdates',
-                        'UpdateDnsRRForOlderClients', 'DeleteDnsRROnLeaseExpiry',
+                        'UpdateDnsRRForOlderClients', 'DeleteDnsRROnLeaseExpiry', 'DisableDnsPtrRRUpdate',
                         'FailoverPartner', 'HasFailover', 'FailoverConfiguration'
                     )
                 }
@@ -56,10 +56,11 @@
                         New-HTMLTableCondition -Name 'DNSServers' -ComparisonType string -Operator contains -Value '1.1' -BackgroundColor Red -Color White
                         New-HTMLTableCondition -Name 'UpdateDnsRRForOlderClients' -ComparisonType bool -Operator eq -Value $false -BackgroundColor Yellow
                         New-HTMLTableCondition -Name 'DeleteDnsRROnLeaseExpiry' -ComparisonType bool -Operator eq -Value $false -BackgroundColor Yellow
+                        New-HTMLTableCondition -Name 'DisableDnsPtrRRUpdate' -ComparisonType bool -Operator eq -Value $true -BackgroundColor Orange
                     } -ScrollX -IncludeProperty @(
                         'ServerName', 'ScopeId', 'Name', 'State', 'LeaseDurationHours',
                         'DNSServers', 'DomainNameOption', 'DynamicUpdates',
-                        'UpdateDnsRRForOlderClients', 'DeleteDnsRROnLeaseExpiry',
+                        'UpdateDnsRRForOlderClients', 'DeleteDnsRROnLeaseExpiry', 'DisableDnsPtrRRUpdate',
                         'FailoverPartner', 'HasFailover', 'FailoverConfiguration', 'Issues'
                     )
                 }

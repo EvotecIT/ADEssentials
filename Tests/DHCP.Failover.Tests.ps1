@@ -30,6 +30,33 @@ Describe 'DHCP Failover Analysis (TestMode)' {
     }
 }
 
+Describe 'DHCP DNS record management validation (TestMode)' {
+    BeforeAll {
+        Import-Module "$PSScriptRoot/../ADEssentials.psm1" -Force
+    }
+
+    It 'Flags scopes when PTR registration updates are disabled' {
+        $s = Get-WinADDHCPSummary -TestMode -Minimal
+
+        $ptrIssue = $s.ValidationResults.WarningIssues.DNSRecordManagement | Where-Object { [string] $_.ScopeId -eq '10.1.0.0' } | Select-Object -First 1
+        $ptrIssue | Should -Not -BeNullOrEmpty
+        $ptrIssue.DisableDnsPtrRRUpdate | Should -BeTrue
+        $ptrIssue.Issues | Should -Contain 'PTR registration disabled'
+    }
+}
+
+Describe 'DHCP option issue parsing' {
+    BeforeAll {
+        Import-Module "$PSScriptRoot/../ADEssentials.psm1" -Force
+    }
+
+    It 'Returns null for empty or whitespace issue text' {
+        InModuleScope ADEssentials {
+            ConvertTo-DHCPOptionIssueRecord -Issue '   ' | Should -BeNullOrEmpty
+        }
+    }
+}
+
 Describe 'DHCP Server Prefix Filters (TestMode)' {
     BeforeAll {
         Import-Module "$PSScriptRoot/../ADEssentials.psm1" -Force
