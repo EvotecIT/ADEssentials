@@ -55,7 +55,20 @@
             'msDS-ManagedPasswordInterval', 'msDS-GroupMSAMembership', 'ManagedPasswordIntervalInDays', 'msDS-RevealedDSAs', 'servicePrincipalName'
             #'msDS-ManagedPasswordId', 'msDS-ManagedPasswordPreviousId'
         )
-        $Accounts = Get-ADServiceAccount -Filter "*" -Server $QueryServer -Properties $Properties
+        $DmsaProperties = @(
+            'msDS-DelegatedMSAState', 'msDS-ManagedAccountPrecededByLink', 'msDS-SupersededAccountState', 'msDS-SupersededManagedServiceAccountLink', 'msDS-SupersededServiceAccountState'
+        )
+        $QueryProperties = if (Test-WinADSchemaAttribute -Name 'msDS-DelegatedMSAState' -Server $QueryServer) {
+            @($Properties + $DmsaProperties)
+        } else {
+            $Properties
+        }
+        try {
+            $Accounts = Get-ADServiceAccount -Filter "*" -Server $QueryServer -Properties $QueryProperties -ErrorAction Stop
+        } catch {
+            Write-Warning -Message "Get-WinADServiceAccount - Failed to query dMSA properties from $Domain using $($QueryServer). Retrying without dMSA-only properties. Error: $($_.Exception.Message)"
+            $Accounts = Get-ADServiceAccount -Filter "*" -Server $QueryServer -Properties $Properties
+        }
         $Output[$Domain] = foreach ($Account in $Accounts) {
             #$Account
 
@@ -69,11 +82,13 @@
             } else {
                 $PasswordLastChangedDays = $null
             }
+            $ServiceAccountType = ConvertTo-WinADServiceAccountType -ObjectClass $Account.ObjectClass
             $SupportedEncryption = ConvertTo-WinADSupportedEncryptionTypes -Value $Account.'msDS-SupportedEncryptionTypes'
 
             [PSCustomObject] @{
                 Name                                         = $Account.Name
                 Enabled                                      = $Account.Enabled                              # : True                     # : WO_SVC_Delete$
+                ServiceAccountType                           = $ServiceAccountType
                 ObjectClass                                  = $Account.ObjectClass                          # : msDS-ManagedServiceAccount
                 CanonicalName                                = $Account.CanonicalName                        # : ad.evotec.xyz/Managed Service Accounts/WO_SVC_Delete
                 DomainName                                   = ConvertFrom-DistinguishedName -ToDomainCN -DistinguishedName $Account.DistinguishedName
@@ -93,6 +108,11 @@
                 'msDS-GroupMSAMembershipOwner'               = $Account.'msDS-GroupMSAMembership'.Owner
                 #'msDS-ManagedPasswordPreviousId'             = $Account.'msDS-ManagedPasswordPreviousId'
 
+                'msDS-DelegatedMSAState'                     = $Account.'msDS-DelegatedMSAState'
+                'msDS-ManagedAccountPrecededByLink'          = $Account.'msDS-ManagedAccountPrecededByLink'
+                'msDS-SupersededAccountState'                = $Account.'msDS-SupersededAccountState'
+                'msDS-SupersededManagedServiceAccountLink'   = $Account.'msDS-SupersededManagedServiceAccountLink'
+                'msDS-SupersededServiceAccountState'         = $Account.'msDS-SupersededServiceAccountState'
                 'msDS-RevealedDSAs'                          = $Account.'msDS-RevealedDSAs'
                 'servicePrincipalName'                       = $Account.servicePrincipalName
                 AccountNotDelegated                          = $Account.AccountNotDelegated                  # : False
@@ -104,10 +124,10 @@
                 'msDS-SupportedEncryptionTypes'               = $SupportedEncryption.RawValue
                 SupportedEncryptionTypesState                 = $SupportedEncryption.ValueState
                 SupportedEncryptionTypes                      = $SupportedEncryption.TypesText
-                UsesDomainEncryptionDefaults                  = $SupportedEncryption.UsesDomainDefaults
-                UsesAESKeys                                   = $SupportedEncryption.UsesAESKeys
-                UsesRC4Encryption                             = $SupportedEncryption.UsesRC4Encryption
-                UsesDESEncryption                             = $SupportedEncryption.UsesDESEncryption
+                FallsBackToDomainEncryptionDefaults           = $SupportedEncryption.FallsBackToDomainDefaults
+                SupportsAESKeys                               = $SupportedEncryption.SupportsAESKeys
+                SupportsRC4Encryption                         = $SupportedEncryption.SupportsRC4Encryption
+                SupportsDESEncryption                         = $SupportedEncryption.SupportsDESEncryption
                 EnforcesAESSessionKeys                        = $SupportedEncryption.EnforcesAESSessionKeys
                 msDSSupportedEncryptionTypes                  = $SupportedEncryption.Types
                 # 'msDS-User-Account-Control-Computed' = $Account.'msDS-User-Account-Control-Computed'   # : 0

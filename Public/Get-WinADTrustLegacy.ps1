@@ -98,8 +98,8 @@
                     'TrustingPolicy'             = $Trust.TrustingPolicy
                     'TrustType'                  = $Trust.TrustType.ToString()
                     'UplevelOnly'                = $Trust.UplevelOnly
-                    'UsesAESKeys'                = $Trust.UsesAESKeys
-                    'UsesRC4Encryption'          = $Trust.UsesRC4Encryption
+                    'Supports AES Keys'          = $Trust.UsesAESKeys
+                    'Supports RC4 Encryption'    = $Trust.UsesRC4Encryption
                     'Trust Source DC'            = if ($null -ne $TrustWMI) { $TrustWMI.PSComputerName } else { '' }
                     'Trust Target DC'            = if ($null -ne $TrustWMI) { $TrustWMI.TrustedDCName.Replace('\\', '') } else { '' }
                     'Trust Source DN'            = $Trust.Source
@@ -131,8 +131,8 @@
                     'TrustingPolicy'            = $Trust.TrustingPolicy
                     'TrustType'                 = $Trust.TrustType.ToString()
                     'UplevelOnly'               = $Trust.UplevelOnly
-                    'UsesAESKeys'               = $Trust.UsesAESKeys
-                    'UsesRC4Encryption'         = $Trust.UsesRC4Encryption
+                    'SupportsAESKeys'           = $Trust.UsesAESKeys
+                    'SupportsRC4Encryption'     = $Trust.UsesRC4Encryption
                     'TrustSourceDC'             = if ($null -ne $TrustWMI) { $TrustWMI.PSComputerName } else { '' }
                     'TrustTargetDC'             = if ($null -ne $TrustWMI) { $TrustWMI.TrustedDCName.Replace('\\', '') } else { '' }
                     'TrustSourceDN'             = $Trust.Source
