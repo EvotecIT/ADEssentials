@@ -71,7 +71,7 @@
             }
             $SupportedEncryption = ConvertTo-WinADSupportedEncryptionTypes -Value $Account.'msDS-SupportedEncryptionTypes'
 
-            [PSCUstomObject] @{
+            [PSCustomObject] @{
                 Name                                         = $Account.Name
                 Enabled                                      = $Account.Enabled                              # : True                     # : WO_SVC_Delete$
                 ObjectClass                                  = $Account.ObjectClass                          # : msDS-ManagedServiceAccount
