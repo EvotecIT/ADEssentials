@@ -55,7 +55,7 @@
             'WhenCreated', 'WhenChanged'
             'nTSecurityDescriptor',
             'Country', 'Title', 'Department'
-            'msds-resultantpso'
+            'msds-resultantpso', 'msDS-SupportedEncryptionTypes'
         )
         try {
             $AllUsers[$Domain] = Get-ADUser -Filter "*" -Properties $Properties -Server $QueryServer #$ForestInformation['QueryServers'][$Domain].HostName[0]
@@ -176,6 +176,7 @@
             $msExchRecipientTypeDetails = Convert-ExchangeRecipient -msExchRecipientTypeDetails $User.msExchRecipientTypeDetails
             $msExchRecipientDisplayType = Convert-ExchangeRecipient -msExchRecipientDisplayType $User.msExchRecipientDisplayType
             $msExchRemoteRecipientType = Convert-ExchangeRecipient -msExchRemoteRecipientType $User.msExchRemoteRecipientType
+            $SupportedEncryption = ConvertTo-WinADSupportedEncryptionTypes -Value $User.'msDS-SupportedEncryptionTypes'
 
             if ($User.'msds-resultantpso') {
                 # $PasswordPolicy = 'FineGrained'
@@ -232,6 +233,15 @@
                     PasswordExpired           = $User.PasswordExpired
                     CannotChangePassword      = $User.CannotChangePassword
                     TrustedForDelegation      = $User.TrustedForDelegation
+                    'msDS-SupportedEncryptionTypes' = $SupportedEncryption.RawValue
+                    SupportedEncryptionTypesState = $SupportedEncryption.ValueState
+                    SupportedEncryptionTypes  = $SupportedEncryption.TypesText
+                    UsesDomainEncryptionDefaults = $SupportedEncryption.UsesDomainDefaults
+                    UsesAESKeys               = $SupportedEncryption.UsesAESKeys
+                    UsesRC4Encryption         = $SupportedEncryption.UsesRC4Encryption
+                    UsesDESEncryption         = $SupportedEncryption.UsesDESEncryption
+                    EnforcesAESSessionKeys    = $SupportedEncryption.EnforcesAESSessionKeys
+                    msDSSupportedEncryptionTypes = $SupportedEncryption.Types
                     ManagerDN                 = $User.Manager
                     ManagerLastLogon          = $ManagerLastLogon
                     Group                     = $Group
@@ -278,6 +288,15 @@
                     PasswordExpired           = $User.PasswordExpired
                     CannotChangePassword      = $User.CannotChangePassword
                     TrustedForDelegation      = $User.TrustedForDelegation
+                    'msDS-SupportedEncryptionTypes' = $SupportedEncryption.RawValue
+                    SupportedEncryptionTypesState = $SupportedEncryption.ValueState
+                    SupportedEncryptionTypes  = $SupportedEncryption.TypesText
+                    UsesDomainEncryptionDefaults = $SupportedEncryption.UsesDomainDefaults
+                    UsesAESKeys               = $SupportedEncryption.UsesAESKeys
+                    UsesRC4Encryption         = $SupportedEncryption.UsesRC4Encryption
+                    UsesDESEncryption         = $SupportedEncryption.UsesDESEncryption
+                    EnforcesAESSessionKeys    = $SupportedEncryption.EnforcesAESSessionKeys
+                    msDSSupportedEncryptionTypes = $SupportedEncryption.Types
                     ManagerDN                 = $User.Manager
                     ManagerLastLogon          = $ManagerLastLogon
                     Group                     = $Group

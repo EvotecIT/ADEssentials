@@ -77,6 +77,7 @@
         } else {
             $ObjectSID = $null
         }
+        $SupportedEncryption = ConvertTo-WinADSupportedEncryptionTypes -Value $Trust.properties.'msds-supportedencryptiontypes'
 
         $TrustObject = [PSCustomObject] @{
             #Name                   = [string] $Trust.properties.name              #        {ad.evotec.xyz}
@@ -101,7 +102,7 @@
             ShowInAdvancedViewOnly       = [bool]::Parse($Trust.properties.showinadvancedviewonly) #        {True}
             TrustPosixOffset             = [string] $Trust.properties.trustposixoffset       #        {-2147483648}
             msDSTrustForestTrustInfo     = $msDSTrustForestTrustInfo
-            msDSSupportedEncryptionTypes = if ($Trust.properties.'msds-supportedencryptiontypes') { Get-ADEncryptionTypes -Value ([int] $Trust.properties.'msds-supportedencryptiontypes'[0]) } else { $null }
+            msDSSupportedEncryptionTypes = $SupportedEncryption.Types
             #SecurityIdentifier     = [string] $Trust.properties.securityidentifier     #        {1 4 0 0 0 0 0 5 21 0 0 0 113 37 225 50 27 133 23 171 67 175 144 188}
             #InstanceType           = $Trust.properties.instancetype           #        {4}
             #AdsPath                = [string] $Trust.properties.adspath                #        {LDAP://CN=ad.evotec.xyz,CN=System,DC=ad,DC=evotec,DC=pl}

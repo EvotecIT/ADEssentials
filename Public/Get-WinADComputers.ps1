@@ -58,7 +58,7 @@
         $Properties = @(
             'DistinguishedName', 'LastLogonDate', 'PasswordLastSet', 'Enabled', 'DnsHostName', 'PasswordNeverExpires', 'PasswordNotRequired',
             'PasswordExpired', 'ManagedBy', 'OperatingSystemVersion', 'OperatingSystem' , 'TrustedForDelegation', 'WhenCreated', 'WhenChanged', 'PrimaryGroupID'
-            'nTSecurityDescriptor'
+            'nTSecurityDescriptor', 'msDS-SupportedEncryptionTypes'
         )
         $AllComputers[$Domain] = Get-ADComputer -Filter "*" -Server $QueryServer -Properties $Properties
     }
@@ -120,6 +120,7 @@
             } else {
                 $PasswordLastChangedDays = $null
             }
+            $SupportedEncryption = ConvertTo-WinADSupportedEncryptionTypes -Value $Computer.'msDS-SupportedEncryptionTypes'
 
             if ($AddOwner) {
                 $Owner = Get-ADACLOwner -ADObject $Computer -Verbose -Resolve
@@ -154,6 +155,15 @@
                     ManagerDN             = $Computer.ManagedBy
                     Description           = $Computer.Description
                     TrustedForDelegation  = $Computer.TrustedForDelegation
+                    'msDS-SupportedEncryptionTypes' = $SupportedEncryption.RawValue
+                    SupportedEncryptionTypesState = $SupportedEncryption.ValueState
+                    SupportedEncryptionTypes = $SupportedEncryption.TypesText
+                    UsesDomainEncryptionDefaults = $SupportedEncryption.UsesDomainDefaults
+                    UsesAESKeys          = $SupportedEncryption.UsesAESKeys
+                    UsesRC4Encryption    = $SupportedEncryption.UsesRC4Encryption
+                    UsesDESEncryption    = $SupportedEncryption.UsesDESEncryption
+                    EnforcesAESSessionKeys = $SupportedEncryption.EnforcesAESSessionKeys
+                    msDSSupportedEncryptionTypes = $SupportedEncryption.Types
                 }
             } else {
                 $Owner = $null
@@ -185,6 +195,15 @@
                     ManagerDN             = $Computer.ManagedBy
                     Description           = $Computer.Description
                     TrustedForDelegation  = $Computer.TrustedForDelegation
+                    'msDS-SupportedEncryptionTypes' = $SupportedEncryption.RawValue
+                    SupportedEncryptionTypesState = $SupportedEncryption.ValueState
+                    SupportedEncryptionTypes = $SupportedEncryption.TypesText
+                    UsesDomainEncryptionDefaults = $SupportedEncryption.UsesDomainDefaults
+                    UsesAESKeys          = $SupportedEncryption.UsesAESKeys
+                    UsesRC4Encryption    = $SupportedEncryption.UsesRC4Encryption
+                    UsesDESEncryption    = $SupportedEncryption.UsesDESEncryption
+                    EnforcesAESSessionKeys = $SupportedEncryption.EnforcesAESSessionKeys
+                    msDSSupportedEncryptionTypes = $SupportedEncryption.Types
                 }
             }
         }

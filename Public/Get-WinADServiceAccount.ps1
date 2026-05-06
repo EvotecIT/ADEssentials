@@ -69,6 +69,7 @@
             } else {
                 $PasswordLastChangedDays = $null
             }
+            $SupportedEncryption = ConvertTo-WinADSupportedEncryptionTypes -Value $Account.'msDS-SupportedEncryptionTypes'
 
             [PSCUstomObject] @{
                 Name                                         = $Account.Name
@@ -100,8 +101,15 @@
                 AccountExpirationDate                        = $Account.AccountExpirationDate
                 #AllowReversiblePasswordEncryption = $Account.AllowReversiblePasswordEncryption    # : False
                 #CannotChangePassword              = $Account.CannotChangePassword                 # : False
-                #'msDS-SupportedEncryptionTypes'      = $Account.'msDS-SupportedEncryptionTypes'        # : 28
-                msDSSupportedEncryptionTypes                 = Get-ADEncryptionTypes -Value $Account.'msds-supportedencryptiontypes'
+                'msDS-SupportedEncryptionTypes'               = $SupportedEncryption.RawValue
+                SupportedEncryptionTypesState                 = $SupportedEncryption.ValueState
+                SupportedEncryptionTypes                      = $SupportedEncryption.TypesText
+                UsesDomainEncryptionDefaults                  = $SupportedEncryption.UsesDomainDefaults
+                UsesAESKeys                                   = $SupportedEncryption.UsesAESKeys
+                UsesRC4Encryption                             = $SupportedEncryption.UsesRC4Encryption
+                UsesDESEncryption                             = $SupportedEncryption.UsesDESEncryption
+                EnforcesAESSessionKeys                        = $SupportedEncryption.EnforcesAESSessionKeys
+                msDSSupportedEncryptionTypes                  = $SupportedEncryption.Types
                 # 'msDS-User-Account-Control-Computed' = $Account.'msDS-User-Account-Control-Computed'   # : 0
                 #ObjectGUID                        = $Account.ObjectGUID                           # : 573ff95e-c1f8-45e2-9b64-662fb9cb0615
                 PasswordNeverExpires                         = $Account.PasswordNeverExpires                 # : False
