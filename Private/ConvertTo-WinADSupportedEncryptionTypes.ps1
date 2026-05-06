@@ -14,10 +14,10 @@ function ConvertTo-WinADSupportedEncryptionTypes {
             ValueState             = 'Not configured'
             Types                  = [string[]] @()
             TypesText              = 'Not configured (uses KDC/domain defaults)'
-            UsesDomainDefaults     = $true
-            UsesAESKeys            = $false
-            UsesRC4Encryption      = $false
-            UsesDESEncryption      = $false
+            FallsBackToDomainDefaults = $true
+            SupportsAESKeys        = $false
+            SupportsRC4Encryption  = $false
+            SupportsDESEncryption  = $false
             EnforcesAESSessionKeys = $false
         }
     }
@@ -30,10 +30,10 @@ function ConvertTo-WinADSupportedEncryptionTypes {
             ValueState             = 'Invalid'
             Types                  = [string[]] @()
             TypesText              = "Invalid value: $Value"
-            UsesDomainDefaults     = $false
-            UsesAESKeys            = $false
-            UsesRC4Encryption      = $false
-            UsesDESEncryption      = $false
+            FallsBackToDomainDefaults = $false
+            SupportsAESKeys        = $false
+            SupportsRC4Encryption  = $false
+            SupportsDESEncryption  = $false
             EnforcesAESSessionKeys = $false
         }
     }
@@ -44,10 +44,10 @@ function ConvertTo-WinADSupportedEncryptionTypes {
             ValueState             = 'Configured as 0'
             Types                  = [string[]] @()
             TypesText              = 'Configured as 0 (uses KDC/domain defaults)'
-            UsesDomainDefaults     = $true
-            UsesAESKeys            = $false
-            UsesRC4Encryption      = $false
-            UsesDESEncryption      = $false
+            FallsBackToDomainDefaults = $true
+            SupportsAESKeys        = $false
+            SupportsRC4Encryption  = $false
+            SupportsDESEncryption  = $false
             EnforcesAESSessionKeys = $false
         }
     }
@@ -76,10 +76,10 @@ function ConvertTo-WinADSupportedEncryptionTypes {
         ValueState             = 'Configured'
         Types                  = $Types
         TypesText              = if ($Types.Count -gt 0) { $Types -join ', ' } else { 'None' }
-        UsesDomainDefaults     = $false
-        UsesAESKeys            = $Types -contains 'AES128-CTS-HMAC-SHA1-96' -or $Types -contains 'AES256-CTS-HMAC-SHA1-96'
-        UsesRC4Encryption      = $Types -contains 'RC4-HMAC'
-        UsesDESEncryption      = $Types -contains 'DES-CBC-CRC' -or $Types -contains 'DES-CBC-MD5'
+        FallsBackToDomainDefaults = $false
+        SupportsAESKeys        = $Types -contains 'AES128-CTS-HMAC-SHA1-96' -or $Types -contains 'AES256-CTS-HMAC-SHA1-96'
+        SupportsRC4Encryption  = $Types -contains 'RC4-HMAC'
+        SupportsDESEncryption  = $Types -contains 'DES-CBC-CRC' -or $Types -contains 'DES-CBC-MD5'
         EnforcesAESSessionKeys = $Types -contains 'AES256-CTS-HMAC-SHA1-96-SK'
     }
 }

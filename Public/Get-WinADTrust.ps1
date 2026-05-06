@@ -141,8 +141,8 @@
                 #'TrustedPolicy'           = $null #$Trust.TrustedPolicy
                 #'TrustingPolicy'          = $null #$Trust.TrustingPolicy
                 'UplevelOnly'             = $TrustObject[$Trust.Details.TargetName].TrustAttributes -contains "UpLevel Only"
-                'UsesAESKeys'             = $TrustObject[$Trust.Details.TargetName].msDSSupportedEncryptionTypes -contains "AES128-CTS-HMAC-SHA1-96" -or $TrustObject[$Trust.Details.TargetName].msDSSupportedEncryptionTypes -contains 'AES256-CTS-HMAC-SHA1-96'
-                'UsesRC4Encryption'       = $TrustObject[$Trust.Details.TargetName].TrustAttributes -contains "Uses RC4 Encryption"
+                'SupportsAESKeys'         = $TrustObject[$Trust.Details.TargetName].msDSSupportedEncryptionTypes -contains "AES128-CTS-HMAC-SHA1-96" -or $TrustObject[$Trust.Details.TargetName].msDSSupportedEncryptionTypes -contains 'AES256-CTS-HMAC-SHA1-96'
+                'SupportsRC4Encryption'   = $TrustObject[$Trust.Details.TargetName].TrustAttributes -contains "Uses RC4 Encryption"
                 'EncryptionTypes'         = $TrustObject[$Trust.Details.TargetName].msDSSupportedEncryptionTypes -join ', '
                 'TrustSourceDC'           = $TrustStatus.TrustSourceDC
                 'TrustTargetDC'           = $TrustStatus.TrustTargetDC

@@ -158,10 +158,10 @@
                     'msDS-SupportedEncryptionTypes' = $SupportedEncryption.RawValue
                     SupportedEncryptionTypesState = $SupportedEncryption.ValueState
                     SupportedEncryptionTypes = $SupportedEncryption.TypesText
-                    UsesDomainEncryptionDefaults = $SupportedEncryption.UsesDomainDefaults
-                    UsesAESKeys          = $SupportedEncryption.UsesAESKeys
-                    UsesRC4Encryption    = $SupportedEncryption.UsesRC4Encryption
-                    UsesDESEncryption    = $SupportedEncryption.UsesDESEncryption
+                    FallsBackToDomainEncryptionDefaults = $SupportedEncryption.FallsBackToDomainDefaults
+                    SupportsAESKeys      = $SupportedEncryption.SupportsAESKeys
+                    SupportsRC4Encryption = $SupportedEncryption.SupportsRC4Encryption
+                    SupportsDESEncryption = $SupportedEncryption.SupportsDESEncryption
                     EnforcesAESSessionKeys = $SupportedEncryption.EnforcesAESSessionKeys
                     msDSSupportedEncryptionTypes = $SupportedEncryption.Types
                 }
@@ -198,10 +198,10 @@
                     'msDS-SupportedEncryptionTypes' = $SupportedEncryption.RawValue
                     SupportedEncryptionTypesState = $SupportedEncryption.ValueState
                     SupportedEncryptionTypes = $SupportedEncryption.TypesText
-                    UsesDomainEncryptionDefaults = $SupportedEncryption.UsesDomainDefaults
-                    UsesAESKeys          = $SupportedEncryption.UsesAESKeys
-                    UsesRC4Encryption    = $SupportedEncryption.UsesRC4Encryption
-                    UsesDESEncryption    = $SupportedEncryption.UsesDESEncryption
+                    FallsBackToDomainEncryptionDefaults = $SupportedEncryption.FallsBackToDomainDefaults
+                    SupportsAESKeys      = $SupportedEncryption.SupportsAESKeys
+                    SupportsRC4Encryption = $SupportedEncryption.SupportsRC4Encryption
+                    SupportsDESEncryption = $SupportedEncryption.SupportsDESEncryption
                     EnforcesAESSessionKeys = $SupportedEncryption.EnforcesAESSessionKeys
                     msDSSupportedEncryptionTypes = $SupportedEncryption.Types
                 }

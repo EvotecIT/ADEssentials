@@ -188,13 +188,13 @@
                                 New-HTMLTableCondition -Name 'Enabled' -ComparisonType string -Operator eq -Value $True
                                 New-HTMLTableCondition -Name 'PasswordNotRequired' -ComparisonType string -Operator eq -Value $True
                             } -BackgroundColor Red -HighlightHeaders Name, SamAccountName, Enabled, PasswordNotRequired
-                            New-HTMLTableCondition -Name 'UsesDESEncryption' -ComparisonType bool -Operator eq -Value $true -BackgroundColor Red
-                            New-HTMLTableCondition -Name 'UsesRC4Encryption' -ComparisonType bool -Operator eq -Value $true -BackgroundColor Salmon
-                            New-HTMLTableCondition -Name 'UsesDomainEncryptionDefaults' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightYellow
+                            New-HTMLTableCondition -Name 'SupportsDESEncryption' -ComparisonType bool -Operator eq -Value $true -BackgroundColor Red
+                            New-HTMLTableCondition -Name 'SupportsRC4Encryption' -ComparisonType bool -Operator eq -Value $true -BackgroundColor Salmon
+                            New-HTMLTableCondition -Name 'FallsBackToDomainEncryptionDefaults' -ComparisonType bool -Operator eq -Value $true -BackgroundColor LightYellow
                             New-HTMLTableConditionGroup -Conditions {
-                                New-HTMLTableCondition -Name 'UsesAESKeys' -ComparisonType bool -Operator eq -Value $false
-                                New-HTMLTableCondition -Name 'UsesDomainEncryptionDefaults' -ComparisonType bool -Operator eq -Value $false
-                            } -BackgroundColor LightPink -HighlightHeaders SupportedEncryptionTypes, UsesAESKeys
+                                New-HTMLTableCondition -Name 'SupportsAESKeys' -ComparisonType bool -Operator eq -Value $false
+                                New-HTMLTableCondition -Name 'FallsBackToDomainEncryptionDefaults' -ComparisonType bool -Operator eq -Value $false
+                            } -BackgroundColor LightPink -HighlightHeaders SupportedEncryptionTypes, SupportsAESKeys
                         } -ScrollX
                     }
                 }
