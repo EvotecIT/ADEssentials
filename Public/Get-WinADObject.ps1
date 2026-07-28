@@ -308,6 +308,7 @@
                     #Deleted             = $Object.properties.isDeleted -as [string]
                     #Recycled            = $Object.properties.isRecycled -as [string]
                     UserPrincipalName   = $Object.properties.userprincipalname -as [string]
+                    Mail                = $Object.properties.mail -as [string]
                     ObjectSID           = $ObjectSID
                     MemberOf            = $Object.properties.memberof -as [array]
                     Members             = $Members
