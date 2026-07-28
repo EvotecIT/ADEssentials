@@ -42,11 +42,24 @@
     .PARAMETER EnableDiagramFilteringButton
     Adds button to enable/disable filtering in diagrams. It's extension to EnableDiagramFiltering, when you prefer button over automatic filtering.
 
+    .PARAMETER CustomIcons
+    Dictionary of wildcard patterns matched against object names to override diagram node icons.
+    Each key is a wildcard pattern (compared with -like) and each value is either a string with an image URL,
+    or a dictionary with Image, or IconSolid/IconRegular/IconBrands (Font Awesome icon name) plus optional IconColor.
+    The first matching pattern wins - provide an [ordered] dictionary to control precedence. Objects without a match keep default icons.
+    Patterns use -like semantics, so a literal [ or ] in an object name must be escaped with a backtick in the pattern.
+
     .EXAMPLE
     Show-WinADGroupMemberOf -Identity 'przemyslaw.klys' -Verbose -Summary
 
     .EXAMPLE
     Show-WinADGroupMemberOf -Identity 'przemyslaw.klys', 'adm.pklys' -Summary
+
+    .EXAMPLE
+    Show-WinADGroupMemberOf -Identity 'adm.pklys' -Online -CustomIcons ([ordered] @{
+        '*-RBAC-*'          = 'https://cdn-icons-png.flaticon.com/512/1687/1687242.png'
+        'Enterprise Admins' = @{ IconSolid = 'user-shield'; IconColor = 'Red' }
+    })
 
     .NOTES
     General notes
@@ -65,7 +78,8 @@
         [switch] $SkipDiagram,
         [switch] $EnableDiagramFiltering,
         [switch] $EnableDiagramFilteringButton,
-        [int] $DiagramFilteringMinimumCharacters = 3
+        [int] $DiagramFilteringMinimumCharacters = 3,
+        [System.Collections.IDictionary] $CustomIcons
     )
     $HideAppliesTo = 'Both'
     $Script:Reporting = [ordered] @{}
@@ -136,13 +150,13 @@
                         Write-Verbose -Message "Show-WinADGroupMemberOf - Processing HTML generation for $ObjectName - Diagram"
                         New-HTMLTab -TabName 'Diagram Basic' {
                             New-HTMLSection -Title "Diagram for $ObjectName" {
-                                New-HTMLGroupOfDiagramDefault -Identity $MyObject -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -DataTableID $DataTableID -ColumnID 1 -Online:$Online -EnableDiagramFiltering:$EnableDiagramFiltering.IsPresent -DiagramFilteringMinimumCharacters $DiagramFilteringMinimumCharacters -EnableDiagramFilteringButton:$EnableDiagramFilteringButton.IsPresent
+                                New-HTMLGroupOfDiagramDefault -Identity $MyObject -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -DataTableID $DataTableID -ColumnID 1 -Online:$Online -EnableDiagramFiltering:$EnableDiagramFiltering.IsPresent -DiagramFilteringMinimumCharacters $DiagramFilteringMinimumCharacters -EnableDiagramFilteringButton:$EnableDiagramFilteringButton.IsPresent -CustomIcons $CustomIcons
                             }
                         }
                         Write-Verbose -Message "Show-WinADGroupMemberOf - Processing HTML generation for $ObjectName - Diagram Hierarchy"
                         New-HTMLTab -TabName 'Diagram Hierarchy' {
                             New-HTMLSection -Title "Diagram for $ObjectName" {
-                                New-HTMLGroupOfDiagramHierarchical -Identity $MyObject -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -Online:$Online -EnableDiagramFiltering:$EnableDiagramFiltering.IsPresent -DiagramFilteringMinimumCharacters $DiagramFilteringMinimumCharacters -EnableDiagramFilteringButton:$EnableDiagramFilteringButton.IsPresent
+                                New-HTMLGroupOfDiagramHierarchical -Identity $MyObject -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -Online:$Online -EnableDiagramFiltering:$EnableDiagramFiltering.IsPresent -DiagramFilteringMinimumCharacters $DiagramFilteringMinimumCharacters -EnableDiagramFilteringButton:$EnableDiagramFilteringButton.IsPresent -CustomIcons $CustomIcons
                             }
                         }
                     }
@@ -154,12 +168,12 @@
             New-HTMLTab -Name 'Summary' {
                 New-HTMLTab -TabName 'Diagram Basic' {
                     New-HTMLSection -Title "Diagram for Summary" {
-                        New-HTMLGroupOfDiagramSummary -ADGroup $GroupsList -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -DataTableID $DataTableID -ColumnID 1 -Online:$Online -EnableDiagramFiltering:$EnableDiagramFiltering.IsPresent -DiagramFilteringMinimumCharacters $DiagramFilteringMinimumCharacters -EnableDiagramFilteringButton:$EnableDiagramFilteringButton.IsPresent
+                        New-HTMLGroupOfDiagramSummary -ADGroup $GroupsList -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -DataTableID $DataTableID -ColumnID 1 -Online:$Online -EnableDiagramFiltering:$EnableDiagramFiltering.IsPresent -DiagramFilteringMinimumCharacters $DiagramFilteringMinimumCharacters -EnableDiagramFilteringButton:$EnableDiagramFilteringButton.IsPresent -CustomIcons $CustomIcons
                     }
                 }
                 New-HTMLTab -TabName 'Diagram Hierarchy' {
                     New-HTMLSection -Title "Diagram for Summary" {
-                        New-HTMLGroupOfDiagramSummaryHierarchical -ADGroup $GroupsList -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -Online:$Online -EnableDiagramFiltering:$EnableDiagramFiltering.IsPresent -DiagramFilteringMinimumCharacters $DiagramFilteringMinimumCharacters -EnableDiagramFilteringButton:$EnableDiagramFilteringButton.IsPresent
+                        New-HTMLGroupOfDiagramSummaryHierarchical -ADGroup $GroupsList -HideAppliesTo $HideAppliesTo -HideUsers:$HideUsers -HideComputers:$HideComputers -HideOther:$HideOther -Online:$Online -EnableDiagramFiltering:$EnableDiagramFiltering.IsPresent -DiagramFilteringMinimumCharacters $DiagramFilteringMinimumCharacters -EnableDiagramFilteringButton:$EnableDiagramFilteringButton.IsPresent -CustomIcons $CustomIcons
                     }
                 }
             }

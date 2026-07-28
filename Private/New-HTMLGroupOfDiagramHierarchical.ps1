@@ -42,7 +42,8 @@
         [switch] $Online,
         [switch] $EnableDiagramFiltering,
         [switch] $EnableDiagramFilteringButton,
-        [int] $DiagramFilteringMinimumCharacters = 3
+        [int] $DiagramFilteringMinimumCharacters = 3,
+        [System.Collections.IDictionary] $CustomIcons
     )
     New-HTMLDiagram -Height 'calc(100vh - 200px)' {
         New-DiagramOptionsLayout -HierarchicalEnabled $true #-HierarchicalDirection FromLeftToRight #-HierarchicalSortMethod directed
@@ -58,10 +59,13 @@
                 $IDParent = "$($ADObject.ParentGroupDomain)$($ADObject.ParentGroupDN)$LevelParent"
 
                 [int] $Level = $($ADObject.Nesting) + 1
+                $CustomIconSplat = Get-WinADCustomDiagramIcon -Name $ADObject.Name -CustomIcons $CustomIcons
                 if ($ADObject.Type -eq 'User') {
                     if (-not $HideUsers -or $HideAppliesTo -notin 'Both', 'Hierarchical') {
                         $Label = $ADObject.Name + [System.Environment]::NewLine + $ADObject.DomainName
-                        if ($Online) {
+                        if ($CustomIconSplat) {
+                            New-DiagramNode -Id $ID -Label $Label -Level $Level @CustomIconSplat
+                        } elseif ($Online) {
                             New-DiagramNode -Id $ID -Label $Label -Image $Script:ConfigurationIcons.ImageUser -Level $Level
                         } else {
                             New-DiagramNode -Id $ID -Label $Label -Level $Level -IconSolid user -IconColor LightSteelBlue
@@ -78,7 +82,13 @@
                     }
                     # $SummaryMembers = -join ('Total: ', $ADObject.TotalMembers, ' Direct: ', $ADObject.DirectMembers, ' Groups: ', $ADObject.DirectGroups, ' Indirect: ', $ADObject.IndirectMembers)
                     $Label = $ADObject.Name + [System.Environment]::NewLine + $ADObject.DomainName + [System.Environment]::NewLine # + $SummaryMembers
-                    if ($Online) {
+                    if ($CustomIconSplat) {
+                        if ($CustomIconSplat.Image) {
+                            # keep the border cue distinguishing the queried group from nested ones
+                            $CustomIconSplat.ColorBorder = $BorderColor
+                        }
+                        New-DiagramNode -Id $ID -Label $Label -Level $Level @CustomIconSplat
+                    } elseif ($Online) {
                         New-DiagramNode -Id $ID -Label $Label -Image $Image -Level $Level -ColorBorder $BorderColor
                     } else {
                         New-DiagramNode -Id $ID -Label $Label -Level $Level -IconSolid user-friends
@@ -87,7 +97,9 @@
                 } elseif ($ADObject.Type -eq 'Computer') {
                     if (-not $HideComputers -or $HideAppliesTo -notin 'Both', 'Hierarchical') {
                         $Label = $ADObject.Name + [System.Environment]::NewLine + $ADObject.DomainName
-                        if ($Online) {
+                        if ($CustomIconSplat) {
+                            New-DiagramNode -Id $ID -Label $Label -Level $Level @CustomIconSplat
+                        } elseif ($Online) {
                             New-DiagramNode -Id $ID -Label $Label -Image $Script:ConfigurationIcons.ImageComputer -Level $Level
                         } else {
                             New-DiagramNode -Id $ID -Label $Label -IconSolid desktop -IconColor LightGray -Level $Level
@@ -97,7 +109,9 @@
                 } else {
                     if (-not $HideOther -or $HideAppliesTo -notin 'Both', 'Hierarchical') {
                         $Label = $ADObject.Name + [System.Environment]::NewLine + $ADObject.DomainName
-                        if ($Online) {
+                        if ($CustomIconSplat) {
+                            New-DiagramNode -Id $ID -Label $Label -Level $Level @CustomIconSplat
+                        } elseif ($Online) {
                             New-DiagramNode -Id $ID -Label $Label -Image $Script:ConfigurationIcons.ImageOther -Level $Level
                         } else {
                             New-DiagramNode -Id $ID -Label $Label -IconSolid robot -IconColor LightSalmon -Level $Level
