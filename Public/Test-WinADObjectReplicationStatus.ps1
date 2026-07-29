@@ -53,7 +53,7 @@
         Write-Warning "Test-WinADObjectReplicationStatus - Object not found. Try again later or check the object does exists."
         return
     }
-    $DomainFromIdentity = $ObjectInformation.Domain
+    $DomainFromIdentity = $ObjectInformation.DomainName
     $DistinguishedName = $ObjectInformation.DistinguishedName
 
     $ForestInformation = Get-WinADForestDetails -Extended -PreferWritable
