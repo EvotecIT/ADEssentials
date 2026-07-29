@@ -176,7 +176,7 @@
                         $SectionInformation = New-HTMLSection -Title "Information for $GroupName" {
                             New-HTMLTable -DataTable $ADGroup -Filtering -DataStoreID $DataStoreID {
                                 if (-not $DisableBuiltinConditions) {
-                                    New-TableHeader -Names Name, SamAccountName, DomainName, DisplayName -Title 'Member'
+                                    New-TableHeader -Names Name, SamAccountName, DomainName, DisplayName, Mail -Title 'Member'
                                     New-TableHeader -Names DirectMembers, DirectGroups, IndirectMembers, TotalMembers -Title 'Statistics'
                                     New-TableHeader -Names GroupType, GroupScope -Title 'Group Details'
                                     New-TableCondition -BackgroundColor CoralRed -Color White -ComparisonType bool -Value $false -Name Enabled -Operator eq

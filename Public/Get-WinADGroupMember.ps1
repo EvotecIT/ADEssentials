@@ -56,7 +56,7 @@
         [Parameter(DontShow)][string[]] $NestingPath = @()
     )
     Begin {
-        $Properties = 'GroupName', 'Name', 'SamAccountName', 'DisplayName', 'Enabled', 'Type', 'Nesting', 'CrossForest', 'ParentGroup', 'ParentGroupDomain', 'GroupDomainName', 'DistinguishedName', 'Sid'
+        $Properties = 'GroupName', 'Name', 'SamAccountName', 'DisplayName', 'Mail', 'Enabled', 'Type', 'Nesting', 'CrossForest', 'ParentGroup', 'ParentGroupDomain', 'GroupDomainName', 'DistinguishedName', 'Sid'
         if (-not $Script:WinADGroupMemberCache -or $ClearCache) {
             $Script:WinADGroupMemberCache = @{}
             $Script:WinADCircularChainMemo = @{}
@@ -82,6 +82,7 @@
                     SamAccountName    = $null
                     DomainName        = $null
                     DisplayName       = $null
+                    Mail              = $null
                     Enabled           = $null
                     GroupType         = $null
                     GroupScope        = $null
@@ -119,6 +120,7 @@
                         $InitialGroup.Name = $ADGroupName.Name
                         $InitialGroup.SamAccountName = $ADGroupName.SamAccountName
                         $InitialGroup.DisplayName = $ADGroupName.DisplayName
+                        $InitialGroup.Mail = $ADGroupName.Mail
                         $InitialGroup.GroupDomainName = $ADGroupName.DomainName
                         $InitialGroup.DistinguishedName = $ADGroupName.DistinguishedName
                         $InitialGroup.Sid = $ADGroupName.ObjectSID
@@ -191,6 +193,7 @@
                         SamAccountName    = $NestedMember.SamAccountName
                         DomainName        = $NestedMember.DomainName #ConvertFrom-DistinguishedName -DistinguishedName $NestedMember.DistinguishedName -ToDomainCN
                         DisplayName       = $NestedMember.DisplayName
+                        Mail              = $NestedMember.Mail
                         Enabled           = $NestedMember.Enabled
                         GroupType         = $NestedMember.GroupType
                         GroupScope        = $NestedMember.GroupScope

@@ -54,6 +54,7 @@
                     SamAccountName       = $Object.SamAccountName
                     DomainName           = $Object.DomainName
                     DisplayName          = $Object.DisplayName
+                    Mail                 = $Object.Mail
                     Enabled              = $Object.Enabled
                     Type                 = $Object.ObjectClass
                     GroupType            = $Object.GroupType
@@ -121,6 +122,7 @@
                         SamAccountName       = $NestedMember.SamAccountName
                         DomainName           = $NestedMember.DomainName
                         DisplayName          = $NestedMember.DisplayName
+                        Mail                 = $NestedMember.Mail
                         Enabled              = $NestedMember.Enabled
                         Type                 = $NestedMember.ObjectClass
                         GroupType            = $NestedMember.GroupType
