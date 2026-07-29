@@ -60,6 +60,8 @@
         if (-not $Script:WinADGroupMemberCache -or $ClearCache) {
             $Script:WinADGroupMemberCache = @{}
             $Script:WinADCircularChainMemo = @{}
+            $Script:WinADCircularChainMemoWeight = 0
+            $Script:WinADCircularChainWarned = $null
             $Forest = [System.DirectoryServices.ActiveDirectory.Forest]::GetCurrentForest()
             $Script:WinADForestCache = @{
                 Forest  = $Forest
@@ -223,6 +225,7 @@
 
                         # Chain of groups proving this row closes a real circle - stays empty when it does not
                         [string[]] $CircularChain = @()
+                        $CircularCheck = $null
                         if ($CurrentNestingPath -contains $NestedMember.DistinguishedName) {
                             # NestedMember is already an ancestor in the membership chain that led here - a real circular membership
                             $CycleStart = $CurrentNestingPath.Count - 1
@@ -231,19 +234,28 @@
                             }
                             $CircularChain = $CurrentNestingPath[$CycleStart..($CurrentNestingPath.Count - 1)]
                             if (@($CircularChain | Select-Object -Unique).Count -ne $CircularChain.Count) {
-                                # The traversal path revisited a group so the slice is not the tightest circle - let the walk find it
-                                $CircularChain = Find-WinADGroupCircularChain -From $NestedMember.DistinguishedName -To $ADGroupName.DistinguishedName -Attribute 'Members' -Cache $Script:WinADGroupMemberCache
+                                # The traversal path revisited a group so the slice is not the tightest circle - let the walk find it.
+                                # The membership is proven circular either way, so if the bounded walk gives up the slice is kept.
+                                $TighterCheck = Find-WinADGroupCircularChain -From $NestedMember.DistinguishedName -To $ADGroupName.DistinguishedName -Attribute 'Members' -Cache $Script:WinADGroupMemberCache
+                                if ($TighterCheck.Status -eq 'Found') {
+                                    $CircularChain = $TighterCheck.Chain
+                                }
                             }
                         } elseif ($CollectedGroups -contains $NestedMember.DistinguishedName) {
                             # NestedMember was already visited on another branch. That alone is not circular (it may simply be
                             # reachable over more than one path), but the branch that visited it first may have been cut short,
                             # so verify whether it really leads back to the current group
-                            $CircularChain = Find-WinADGroupCircularChain -From $NestedMember.DistinguishedName -To $ADGroupName.DistinguishedName -Attribute 'Members' -Cache $Script:WinADGroupMemberCache
+                            $CircularCheck = Find-WinADGroupCircularChain -From $NestedMember.DistinguishedName -To $ADGroupName.DistinguishedName -Attribute 'Members' -Cache $Script:WinADGroupMemberCache
+                            $CircularChain = $CircularCheck.Chain
                         }
                         if ($CircularChain.Count -gt 0 -and ($CircularChain.Count -ge 3 -or -not $CreatedObject['CircularDirect'])) {
                             # A chain of 2 is the direct pair itself which CircularDirect already describes
                             $CreatedObject['CircularIndirect'] = $true
                             $CreatedObject['CircularPath'] = ConvertTo-WinADCircularPath -DistinguishedName ($CircularChain + $NestedMember.DistinguishedName) -Cache $Script:WinADGroupMemberCache
+                        } elseif ($CircularCheck -and $CircularCheck.Status -eq 'LimitReached') {
+                            # The bounded walk gave up before proving or disproving a circle - report unknown rather than clean
+                            $CreatedObject['CircularIndirect'] = $null
+                            $CreatedObject['CircularPath'] = 'Unverified - search limit reached'
                         }
                         if ($All) {
                             [PSCustomObject] $CreatedObject
