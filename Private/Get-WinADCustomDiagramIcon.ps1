@@ -10,6 +10,8 @@
     The first matching pattern wins - provide an [ordered] dictionary to control precedence.
     Icon names are validated against the PSWriteHTML icon dictionary when it is loaded; unknown names
     and invalid wildcard patterns produce a single warning and fall back to default icons.
+    URL-backed images require network access when the generated report is opened; Font Awesome
+    overrides are self-contained and the right choice for offline reports.
 
     .PARAMETER Name
     Name of the object (user, group, computer) to match against the patterns.

@@ -67,6 +67,7 @@
     or a dictionary with Image, or IconSolid/IconRegular/IconBrands (Font Awesome icon name) plus optional IconColor.
     The first matching pattern wins - provide an [ordered] dictionary to control precedence. Objects without a match keep default icons.
     Patterns use -like semantics, so a literal [ or ] in an object name must be escaped with a backtick in the pattern.
+    URL-backed images still require network access when the generated report is opened; Font Awesome overrides are self-contained and the right choice for offline reports.
 
     .EXAMPLE
    Show-WinADGroupMember -GroupName 'Domain Admins' -FilePath $PSScriptRoot\Reports\GroupMembership1.html -Online -Verbose
