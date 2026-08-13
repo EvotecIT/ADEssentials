@@ -549,6 +549,122 @@ Describe 'DHCP failover evidence contracts' {
         }
     }
 
+    It 'Compares partner scopes by normalized server pair when relationship names differ' {
+        InModuleScope ADEssentials {
+            $summary = [ordered]@{
+                Servers = @(
+                    [PSCustomObject]@{ ServerName = 'dhcp01.domain.com' },
+                    [PSCustomObject]@{ ServerName = 'dhcp02.domain.com' }
+                )
+                CanonicalNameCache = @{}
+                FailoverCollectionStatus = @(
+                    [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; Success = $true },
+                    [PSCustomObject]@{ ServerName = 'dhcp02.domain.com'; Success = $true }
+                )
+                FailoverRelationships = @(
+                    [PSCustomObject]@{
+                        ServerName = 'dhcp01.domain.com'; PartnerServer = 'dhcp02.domain.com'
+                        Name = 'FO-Primary-Name'; ScopeId = @('10.20.0.0')
+                    },
+                    [PSCustomObject]@{
+                        ServerName = 'dhcp02.domain.com'; PartnerServer = 'DHCP01'
+                        Name = 'FO-Partner-Name'; ScopeId = @('10.20.0.0')
+                    }
+                )
+                Scopes = @(
+                    [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '10.20.0.0' },
+                    [PSCustomObject]@{ ServerName = 'dhcp02.domain.com'; ScopeId = '10.20.0.0' }
+                )
+            }
+
+            $rows = @(Get-DHCPFailoverPairComparison -DHCPSummary $summary)
+
+            $rows.Count | Should -Be 1
+            $rows[0].Relationship | Should -Be 'FO-Partner-Name, FO-Primary-Name'
+            $rows[0].OnPartnerA | Should -BeTrue
+            $rows[0].OnPartnerB | Should -BeTrue
+            $rows[0].VerifiedFromBothSides | Should -BeTrue
+            $rows[0].Status | Should -Be 'On both partners'
+            $rows[0].FailoverConfiguration | Should -Be 'configured'
+        }
+    }
+
+    It 'Keeps pair comparison unverified until both partner enumerations succeed' {
+        InModuleScope ADEssentials {
+            $summary = [ordered]@{
+                Servers = @(
+                    [PSCustomObject]@{ ServerName = 'dhcp01.domain.com' },
+                    [PSCustomObject]@{ ServerName = 'dhcp02.domain.com' }
+                )
+                CanonicalNameCache = @{}
+                FailoverCollectionStatus = @(
+                    [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; Success = $true },
+                    [PSCustomObject]@{ ServerName = 'dhcp02.domain.com'; Success = $false }
+                )
+                FailoverRelationships = @(
+                    [PSCustomObject]@{
+                        ServerName = 'dhcp01.domain.com'; PartnerServer = 'dhcp02.domain.com'
+                        Name = 'FO-Partial'; ScopeId = @('10.30.0.0')
+                    }
+                )
+                Scopes = @(
+                    [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '10.30.0.0' },
+                    [PSCustomObject]@{ ServerName = 'dhcp02.domain.com'; ScopeId = '10.30.0.0' }
+                )
+            }
+
+            $rows = @(Get-DHCPFailoverPairComparison -DHCPSummary $summary)
+
+            $rows.Count | Should -Be 1
+            $rows[0].VerifiedFromBothSides | Should -BeFalse
+            $rows[0].Status | Should -Be 'Missing on dhcp02.domain.com (Unverified)'
+            $rows[0].FailoverConfiguration | Should -Be 'unverified'
+
+            $summary.FailoverCollectionStatus[1].Success = $true
+            $verifiedRows = @(Get-DHCPFailoverPairComparison -DHCPSummary $summary)
+            $verifiedRows[0].VerifiedFromBothSides | Should -BeTrue
+            $verifiedRows[0].Status | Should -Be 'Missing on dhcp02.domain.com'
+            $verifiedRows[0].FailoverConfiguration | Should -Be 'missing on one partner'
+        }
+    }
+
+    It 'Classifies a common scope absent from both relationship assignments as missing on both' {
+        InModuleScope ADEssentials {
+            $summary = [ordered]@{
+                Servers = @(
+                    [PSCustomObject]@{ ServerName = 'dhcp01.domain.com' },
+                    [PSCustomObject]@{ ServerName = 'dhcp02.domain.com' }
+                )
+                CanonicalNameCache = @{}
+                FailoverCollectionStatus = @(
+                    [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; Success = $true },
+                    [PSCustomObject]@{ ServerName = 'dhcp02.domain.com'; Success = $true }
+                )
+                FailoverRelationships = @(
+                    [PSCustomObject]@{
+                        ServerName = 'dhcp01.domain.com'; PartnerServer = 'dhcp02.domain.com'
+                        Name = 'FO-Empty'; ScopeId = @()
+                    },
+                    [PSCustomObject]@{
+                        ServerName = 'dhcp02.domain.com'; PartnerServer = 'dhcp01.domain.com'
+                        Name = 'FO-Empty'; ScopeId = @()
+                    }
+                )
+                Scopes = @(
+                    [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; ScopeId = '10.40.0.0' },
+                    [PSCustomObject]@{ ServerName = 'dhcp02.domain.com'; ScopeId = '10.40.0.0' }
+                )
+            }
+
+            $rows = @(Get-DHCPFailoverPairComparison -DHCPSummary $summary)
+
+            $rows.Count | Should -Be 1
+            $rows[0].Status | Should -Be 'Missing on both'
+            $rows[0].FailoverConfiguration | Should -BeOfType [string]
+            $rows[0].FailoverConfiguration | Should -Be 'missing on both'
+        }
+    }
+
     It 'Only labels successfully enumerated servers without relationships as standalone' {
         InModuleScope ADEssentials {
             $summary = [ordered]@{
