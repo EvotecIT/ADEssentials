@@ -63,9 +63,9 @@
     try {
         Write-Verbose "Get-WinADDHCPExtendedServerData - Collecting server-level DHCP options for $Computer"
         if ($TestMode) {
-            $ServerOptions = Get-TestModeDHCPData -DataType 'DhcpServerv4OptionValueAll' -ComputerName $Computer
+            $ServerOptions = @(Get-TestModeDHCPData -DataType 'DhcpServerv4OptionValueAll' -ComputerName $Computer)
         } else {
-            $ServerOptions = Get-DhcpServerv4OptionValue -ComputerName $Computer -All -ErrorAction Stop
+            $ServerOptions = @(Get-DhcpServerv4OptionValue -ComputerName $Computer -All -ErrorAction Stop)
         }
         foreach ($Option in $ServerOptions) {
             $ServerOptionObject = [PSCustomObject] @{
@@ -94,9 +94,9 @@
     try {
         Write-Verbose "Get-WinADDHCPExtendedServerData - Collecting DHCP classes for $Computer"
         if ($TestMode) {
-            $Classes = Get-TestModeDHCPData -DataType 'DhcpServerv4Class' -ComputerName $Computer
+            $Classes = @(Get-TestModeDHCPData -DataType 'DhcpServerv4Class' -ComputerName $Computer)
         } else {
-            $Classes = Get-DhcpServerv4Class -ComputerName $Computer -ErrorAction Stop
+            $Classes = @(Get-DhcpServerv4Class -ComputerName $Computer -ErrorAction Stop)
         }
         foreach ($Class in $Classes) {
             $ClassObject = [PSCustomObject] @{
@@ -153,9 +153,9 @@
     if (($null -eq $Components) -or $Components['NetworkBindings']) {
     try {
         if ($TestMode) {
-            $Bindings = Get-TestModeDHCPData -DataType 'DhcpServerv4Binding' -ComputerName $Computer
+            $Bindings = @(Get-TestModeDHCPData -DataType 'DhcpServerv4Binding' -ComputerName $Computer)
         } else {
-            $Bindings = Get-DhcpServerv4Binding -ComputerName $Computer -ErrorAction Stop
+            $Bindings = @(Get-DhcpServerv4Binding -ComputerName $Computer -ErrorAction Stop)
         }
         if ($Bindings -and $Bindings.Count -gt 0) {
             Write-Verbose "Get-WinADDHCPExtendedServerData - Found $($Bindings.Count) network bindings on $Computer"
@@ -232,9 +232,9 @@
 
         try {
             if ($TestMode) {
-                $IPv6Scopes = Get-TestModeDHCPData -DataType 'DhcpServerv6Scope' -ComputerName $Computer
+                $IPv6Scopes = @(Get-TestModeDHCPData -DataType 'DhcpServerv6Scope' -ComputerName $Computer)
             } else {
-                $IPv6Scopes = Get-DhcpServerv6Scope -ComputerName $Computer -ErrorAction Stop
+                $IPv6Scopes = @(Get-DhcpServerv6Scope -ComputerName $Computer -ErrorAction Stop)
             }
             $IPv6Supported = $true
             Write-Verbose "Get-WinADDHCPExtendedServerData - IPv6 DHCP service detected on $Computer"

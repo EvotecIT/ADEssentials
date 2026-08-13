@@ -473,6 +473,82 @@ Describe 'DHCP failover evidence contracts' {
         }
     }
 
+    It 'Uses only active verified scopes in coverage and risk ratings' {
+        InModuleScope ADEssentials {
+            $scopes = @(
+                [PSCustomObject]@{
+                    ScopeId = '10.1.0.0'; Name = 'Verified'; ServerName = 'dhcp01.domain.com'; State = 'Active'
+                    PercentageInUse = 20; FailoverStatus = 'Configured'; FailoverVerified = $true; FailoverPartner = 'dhcp02.domain.com'
+                },
+                [PSCustomObject]@{
+                    ScopeId = '10.2.0.0'; Name = 'Partial'; ServerName = 'dhcp01.domain.com'; State = 'Active'
+                    PercentageInUse = 20; FailoverStatus = 'Configured'; FailoverVerified = $false; FailoverPartner = 'dhcp02.domain.com'
+                },
+                [PSCustomObject]@{
+                    ScopeId = '10.3.0.0'; Name = 'Inactive'; ServerName = 'dhcp01.domain.com'; State = 'Inactive'
+                    PercentageInUse = 20; FailoverStatus = 'Configured'; FailoverVerified = $true; FailoverPartner = 'dhcp02.domain.com'
+                },
+                [PSCustomObject]@{
+                    ScopeId = '10.4.0.0'; Name = 'Missing'; ServerName = 'dhcp01.domain.com'; State = 'Active'
+                    PercentageInUse = 20; FailoverStatus = 'Missing'; FailoverVerified = $true; FailoverPartner = $null
+                }
+            )
+
+            $coverage = Get-DHCPFailoverCoverageSummary -Scopes $scopes
+            $coverage.ConfiguredCount | Should -Be 1
+            $coverage.MissingCount | Should -Be 1
+            $coverage.UnverifiedCount | Should -Be 1
+            $coverage.Percentage | Should -Be 50
+
+            $summary = [ordered]@{
+                Scopes = $scopes
+                ScopeRedundancyAnalysis = [System.Collections.Generic.List[Object]]::new()
+            }
+            Get-WinADDHCPScopeRedundancyAnalysis -DHCPSummary $summary
+            $partial = $summary.ScopeRedundancyAnalysis | Where-Object ScopeId -eq '10.2.0.0'
+            $partial.RedundancyStatus | Should -Be 'Failover Evidence Unverified'
+            $partial.RiskLevel | Should -Be 'Unknown'
+            $partial.Recommendation | Should -Be 'Resolve failover collection errors'
+        }
+    }
+
+    It 'Keeps unknown scopes visible when unrelated relationships exist' {
+        InModuleScope ADEssentials {
+            $summary = [ordered]@{
+                Servers = @(
+                    [PSCustomObject]@{ ServerName = 'dhcp01.domain.com' },
+                    [PSCustomObject]@{ ServerName = 'dhcp02.domain.com' },
+                    [PSCustomObject]@{ ServerName = 'dhcp03.domain.com' }
+                )
+                CanonicalNameCache = @{}
+                FailoverCollectionStatus = @(
+                    [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; Success = $true },
+                    [PSCustomObject]@{ ServerName = 'dhcp02.domain.com'; Success = $true },
+                    [PSCustomObject]@{ ServerName = 'dhcp03.domain.com'; Success = $false }
+                )
+                FailoverRelationships = @(
+                    [PSCustomObject]@{
+                        ServerName = 'dhcp01.domain.com'; PartnerServer = 'dhcp02.domain.com'; GatheredFrom = 'dhcp01.domain.com'
+                        Name = 'FO-Unrelated'; Mode = 'LoadBalance'; State = 'Normal'; ScopeId = @()
+                    }
+                )
+                Scopes = @(
+                    [PSCustomObject]@{
+                        ServerName = 'dhcp03.domain.com'; ScopeId = '10.30.0.0'; State = 'Active'
+                        FailoverStatus = 'Unknown'; FailoverVerified = $false; FailoverPartner = $null
+                    }
+                )
+                FailoverAnalysis = $null
+            }
+
+            Get-WinADDHCPFailoverAnalysis -DHCPSummary $summary
+
+            $unknown = @($summary.FailoverAnalysis.UnverifiedScopes | Where-Object ScopeId -eq '10.30.0.0')
+            $unknown.Count | Should -Be 1
+            $unknown[0].Verified | Should -BeFalse
+        }
+    }
+
     It 'Only labels successfully enumerated servers without relationships as standalone' {
         InModuleScope ADEssentials {
             $summary = [ordered]@{
@@ -525,6 +601,15 @@ Describe 'DHCP failover evidence contracts' {
         $summary.Errors.Count | Should -Be 0
         $warnings.Count | Should -Be 0
         $errors.Count | Should -Be 0
+        $summary.AuditLogs.Count | Should -Be $summary.Servers.Count
+        $summary.Databases.Count | Should -Be $summary.Servers.Count
+        $summary.ServerSettings.Count | Should -Be $summary.Servers.Count
+        $summary.NetworkBindings.Count | Should -Be $summary.Servers.Count
+        $summary.SecurityFilters.Count | Should -Be $summary.Servers.Count
+        @($summary.AuditLogs | Where-Object { $null -eq $_.Enable -or [string]::IsNullOrWhiteSpace($_.Path) }).Count | Should -Be 0
+        @($summary.Databases | Where-Object { [string]::IsNullOrWhiteSpace($_.FileName) -or [string]::IsNullOrWhiteSpace($_.BackupPath) }).Count | Should -Be 0
+        @($summary.ServerSettings | Where-Object { -not $_.IsAuthorized -or -not $_.IsDomainJoined }).Count | Should -Be 0
+        @($summary.SecurityFilters | Where-Object FilteringMode -eq 'None').Count | Should -Be 0
     }
 }
 

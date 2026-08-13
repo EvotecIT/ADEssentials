@@ -697,6 +697,59 @@
             }
             return @()
         }
+
+        'DhcpServerAuditLog' {
+            return [PSCustomObject]@{
+                DiskCheckInterval = 50
+                Enable            = $true
+                MaxMBFileSize     = 70
+                MinMBDiskSpace    = 20
+                Path              = 'C:\Windows\System32\dhcp'
+            }
+        }
+
+        'DhcpServerDatabase' {
+            return [PSCustomObject]@{
+                FileName             = 'dhcp.mdb'
+                BackupPath           = 'C:\Windows\System32\dhcp\backup'
+                'BackupInterval(m)'  = 60
+                'CleanupInterval(m)' = 60
+                LoggingEnabled       = $true
+                RestoreFromBackup    = $false
+            }
+        }
+
+        'DhcpServerSetting' {
+            return [PSCustomObject]@{
+                ActivatePolicies          = $true
+                ConflictDetectionAttempts = 1
+                DynamicBootp              = $false
+                IsAuthorized              = $true
+                IsDomainJoined            = $true
+                NapEnabled                = $false
+                NpsUnreachableAction      = 'Full'
+                RestoreStatus             = $false
+            }
+        }
+
+        'DhcpServerv4Binding' {
+            return @(
+                [PSCustomObject]@{
+                    InterfaceIndex = 1
+                    InterfaceAlias = 'Ethernet'
+                    IPAddress      = '192.0.2.10'
+                    SubnetMask     = '255.255.255.0'
+                    State          = $true
+                }
+            )
+        }
+
+        'DhcpServerv4FilterList' {
+            return [PSCustomObject]@{
+                Allow = $true
+                Deny  = $false
+            }
+        }
         
         default {
             return $null

@@ -4,12 +4,16 @@ function Get-DHCPFailoverCoverageSummary {
         [AllowEmptyCollection()][object[]] $Scopes
     )
 
-    $configuredCount = @($Scopes | Where-Object { (Get-DHCPFailoverScopeStatus -Scope $_) -eq 'Configured' }).Count
+    $configuredCount = @($Scopes | Where-Object {
+        $_.State -eq 'Active' -and
+        (Get-DHCPFailoverScopeStatus -Scope $_) -eq 'Configured' -and
+        (Test-DHCPFailoverScopeVerified -Scope $_)
+    }).Count
     $missingCount = @($Scopes | Where-Object {
         $_.State -eq 'Active' -and (Get-DHCPFailoverScopeStatus -Scope $_) -eq 'Missing'
     }).Count
     $unverifiedCount = @($Scopes | Where-Object {
-        (Get-DHCPFailoverScopeStatus -Scope $_) -in @('Unknown', 'NotCollected')
+        $_.State -eq 'Active' -and -not (Test-DHCPFailoverScopeVerified -Scope $_)
     }).Count
     $assessedCount = $configuredCount + $missingCount
 

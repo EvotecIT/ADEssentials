@@ -14,41 +14,6 @@ function Get-WinADDHCPFailoverAnalysis {
 
     $enumeratedServers = Get-DHCPFailoverEnumeratedServerSet -DHCPSummary $DHCPSummary
 
-    if (-not $DHCPSummary.FailoverRelationships -or $DHCPSummary.FailoverRelationships.Count -eq 0) {
-        # No relationships at all. Still populate per-subnet issues so UI has a clear list.
-        foreach ($scope in $DHCPSummary.Scopes) {
-            if ($scope.State -eq 'Active' -and $scope.FailoverStatus -eq 'Missing') {
-                $PerSubnetIssues.Add([PSCustomObject]@{
-                    Relationship     = $null
-                    PrimaryServer    = $scope.ServerName.ToLower()
-                    SecondaryServer  = $null
-                    ScopeId          = $scope.ScopeId
-                    Issue            = 'No failover configured'
-                    Verified         = $true
-                })
-            } elseif ($scope.State -eq 'Active' -and $scope.FailoverStatus -eq 'Unknown') {
-                $UnverifiedScopes.Add([PSCustomObject]@{
-                    Relationship     = $null
-                    PrimaryServer    = $scope.ServerName.ToLower()
-                    SecondaryServer  = $null
-                    ScopeId          = $scope.ScopeId
-                    Issue            = 'Failover status could not be verified'
-                    Verified         = $false
-                })
-            }
-        }
-
-        $DHCPSummary.FailoverAnalysis = [ordered]@{
-            OnlyOnPrimary     = $OnlyOnPrimary
-            OnlyOnSecondary   = $OnlyOnSecondary
-            MissingOnBoth     = $MissingOnBoth
-            StaleRelationships= $Stale
-            PerSubnetIssues   = $PerSubnetIssues
-            UnverifiedScopes  = $UnverifiedScopes
-        }
-        return
-    }
-
     # Build aggregated view by normalized server pair (ignore relationship Name for matching)
     # Also track per-scope relationship names on each side for better reporting
     $byPair = @{}
@@ -200,11 +165,33 @@ function Get-WinADDHCPFailoverAnalysis {
         }
     }
 
-    # Add standalone "no failover configured" entries for scopes that didn't fall into any pair-based bucket
+    # Add standalone missing and unverified entries independently of whether
+    # unrelated servers returned relationships.
     foreach ($scope in $DHCPSummary.Scopes) {
-        if ($scope.State -ne 'Active' -or $scope.FailoverStatus -ne 'Missing') { continue }
+        if ($scope.State -ne 'Active') { continue }
         $sid = ([string]$scope.ScopeId).Trim()
         $srv = (Resolve-DHCPServerName -Name $scope.ServerName -DHCPSummary $DHCPSummary)
+        $failoverStatus = Get-DHCPFailoverScopeStatus -Scope $scope
+        $failoverVerified = Test-DHCPFailoverScopeVerified -Scope $scope
+
+        if (-not $failoverVerified) {
+            $unverifiedExists = @($UnverifiedScopes | Where-Object {
+                $_.ScopeId -eq $sid -and ($_.PrimaryServer -eq $srv -or $_.SecondaryServer -eq $srv)
+            }).Count -gt 0
+            if (-not $unverifiedExists) {
+                $UnverifiedScopes.Add([PSCustomObject]@{
+                    Relationship     = $null
+                    PrimaryServer    = $srv
+                    SecondaryServer  = $null
+                    ScopeId          = $sid
+                    Issue            = if ($failoverStatus -eq 'NotCollected') { 'Failover data was not collected' } else { 'Failover status could not be verified' }
+                    Verified         = $false
+                })
+            }
+            continue
+        }
+
+        if ($failoverStatus -ne 'Missing') { continue }
         $exists = $false
         foreach ($i in $PerSubnetIssues) {
             if ($i.ScopeId -eq $sid -and ($i.PrimaryServer -eq $srv -or $i.SecondaryServer -eq $srv)) { $exists = $true; break }
