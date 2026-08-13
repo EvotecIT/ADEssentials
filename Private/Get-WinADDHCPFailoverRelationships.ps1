@@ -6,13 +6,16 @@ function Get-WinADDHCPFailoverRelationships {
         [switch] $TestMode
     )
 
+    $relationships = @()
+    $success = $false
+    $errorMessage = $null
     try {
-        $relationships = @()
         if ($TestMode) {
             $relationships = Get-TestModeDHCPData -DataType 'DhcpServerv4FailoverAll' -ComputerName $Computer
         } else {
             $relationships = Get-DhcpServerv4Failover -ComputerName $Computer -ErrorAction Stop
         }
+        $success = $true
 
         foreach ($rel in $relationships) {
             if (-not $rel) { continue }
@@ -62,6 +65,7 @@ function Get-WinADDHCPFailoverRelationships {
         }
     } catch {
         $msg = $_.Exception.Message
+        $errorMessage = $msg
         # Extract richer details when available
         $reason   = $null; $category = $null; $target = $null; $fid = $null; $hresult = $null
         try { $reason   = [string]$_.CategoryInfo.Reason } catch {}
@@ -73,5 +77,16 @@ function Get-WinADDHCPFailoverRelationships {
         # Treat access problems as Errors to surface visibility; others remain Warnings
         $sev = if ($msg -match '(?i)(access is denied|permissiondenied|win32\s*5|unauthorized)') { 'Error' } else { 'Warning' }
         Add-DHCPError -Summary $DHCPSummary -ServerName $Computer -Component 'Failover Relationships' -Operation 'Get-DhcpServerv4Failover' -ErrorMessage $msg -Severity $sev -Reason $reason -Category $category -ErrorId $fid -Target $target -HResult $hresult
+    } finally {
+        if (-not $DHCPSummary.Contains('FailoverCollectionStatus')) {
+            $DHCPSummary['FailoverCollectionStatus'] = [System.Collections.Generic.List[Object]]::new()
+        }
+        $DHCPSummary.FailoverCollectionStatus.Add([PSCustomObject]@{
+            ServerName        = ([string]$Computer).Trim()
+            Success           = $success
+            RelationshipCount = @($relationships).Count
+            ErrorMessage      = $errorMessage
+            GatheredDate      = Get-Date
+        })
     }
 }

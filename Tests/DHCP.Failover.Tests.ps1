@@ -23,7 +23,7 @@ Describe 'DHCP Failover Analysis (TestMode)' {
         $s = Get-WinADDHCPSummary -TestMode -Minimal
         $set = New-Object 'System.Collections.Generic.HashSet[string]'
         foreach ($i in $s.FailoverAnalysis.PerSubnetIssues) {
-            $key = "$($i.PrimaryServer)↔$($i.SecondaryServer)|$($i.ScopeId)|$($i.Issue)"
+            $key = "$($i.PrimaryServer)<->$($i.SecondaryServer)|$($i.ScopeId)|$($i.Issue)"
             $added = $set.Add($key)
             $added | Should -BeTrue
         }
@@ -289,24 +289,111 @@ Describe 'DHCP Server Exclusions Affect All Outcomes (TestMode)' {
         ($scopeServerNames -join ',') | Should -Not -Match 'usfsm-|it-'
     }
 
-    It 'Excludes prefixed servers from failover relationships, maps, and analysis in full mode' {
+    It 'Retains an excluded partner as evidence without analyzing that partner as complete' {
         $components = @('Servers','Scopes','ScopeStatistics','Failover','Validation','TimingStatistics')
         $s = Get-WinADDHCPSummary -TestMode -IncludeComponents $components -ExcludeServerPrefix @('usfsm','it')
 
-        $relServers = @($s.FailoverRelationships | ForEach-Object { $_.ServerName, $_.PartnerServer })
-        ($relServers -join ',') | Should -Not -Match 'usfsm-|it-'
+        $externalRelationship = $s.FailoverRelationships |
+            Where-Object { $_.PartnerServer -eq 'usfsm-dhcp01.domain.com' } |
+            Select-Object -First 1
+        $externalRelationship | Should -Not -BeNullOrEmpty
 
         $scope10 = $s.Scopes | Where-Object { [string]$_.ScopeId -eq '10.10.0.0' } | Select-Object -First 1
         $scope20 = $s.Scopes | Where-Object { [string]$_.ScopeId -eq '10.20.0.0' } | Select-Object -First 1
 
-        $scope10.FailoverPartner | Should -BeNullOrEmpty
-        $scope10.HasFailover     | Should -BeFalse
+        $scope10.FailoverPartner | Should -Be 'usfsm-dhcp01.domain.com'
+        $scope10.HasFailover     | Should -BeTrue
+        $scope10.FailoverStatus  | Should -Be 'Configured'
+        $scope10.Issues          | Should -Not -Contain 'Missing DHCP failover configuration'
 
         $scope20.FailoverPartner | Should -Be 'corp-dhcp01.domain.com'
         $scope20.HasFailover     | Should -BeTrue
 
         $analysisServers = @($s.FailoverAnalysis.PerSubnetIssues | ForEach-Object { $_.PrimaryServer, $_.SecondaryServer })
         ($analysisServers -join ',') | Should -Not -Match 'usfsm-|it-'
+        @($s.FailoverAnalysis.UnverifiedScopes | Where-Object { $_.SecondaryServer -match 'usfsm-' }).Count | Should -Be 1
+    }
+}
+
+Describe 'DHCP failover evidence contracts' {
+    BeforeAll {
+        Import-Module "$PSScriptRoot/../ADEssentials.psm1" -Force
+    }
+
+    It 'Normalizes provider IPAddress arrays into configured per-scope evidence' {
+        InModuleScope ADEssentials {
+            $relationships = @(
+                [PSCustomObject]@{
+                    Name          = 'FO-ProductionShape'
+                    PartnerServer = 'dhcp02.domain.com'
+                    ScopeId       = [System.Net.IPAddress[]]@(
+                        [System.Net.IPAddress]::Parse('10.34.97.0'),
+                        [System.Net.IPAddress]::Parse('10.34.100.0')
+                    )
+                }
+            )
+            $status = [PSCustomObject]@{ Success = $true }
+            $map = New-DHCPFailoverEvidenceMap -Computer 'dhcp01.domain.com' -Relationships $relationships -CollectionStatus $status
+
+            $evidence = Get-DHCPFailoverScopeEvidence -EvidenceMap $map -ScopeId ([System.Net.IPAddress]::Parse('10.34.97.0'))
+
+            $evidence.Status | Should -Be 'Configured'
+            $evidence.Verified | Should -BeTrue
+            $evidence.PartnerServer | Should -Be 'dhcp02.domain.com'
+        }
+    }
+
+    It 'Classifies a missing relationship as unknown when enumeration failed' {
+        InModuleScope ADEssentials {
+            $status = [PSCustomObject]@{ Success = $false; ErrorMessage = 'Access denied' }
+            $map = New-DHCPFailoverEvidenceMap -Computer 'dhcp01.domain.com' -Relationships @() -CollectionStatus $status
+
+            $evidence = Get-DHCPFailoverScopeEvidence -EvidenceMap $map -ScopeId '10.34.97.0'
+            $scopeObject = [PSCustomObject]@{
+                FailoverStatus  = $evidence.Status
+                FailoverPartner = $null
+                Issues          = [System.Collections.Generic.List[string]]::new()
+                HasIssues       = $false
+                DNSSettings     = $null
+            }
+            $scope = [PSCustomObject]@{
+                LeaseDuration = [timespan]::FromHours(8)
+                Description   = ''
+            }
+
+            $evidence.Status | Should -Be 'Unknown'
+            $evidence.Verified | Should -BeFalse
+            Get-WinADDHCPScopeValidation -Scope $scope -ScopeObject $scopeObject | Should -BeFalse
+            $scopeObject.Issues | Should -Not -Contain 'Missing DHCP failover configuration'
+        }
+    }
+
+    It 'Keeps canonical-name caches isolated between summary runs' {
+        InModuleScope ADEssentials {
+            $first = [ordered]@{
+                Servers = @([PSCustomObject]@{ ServerName = 'dhcp01.first.example' })
+                CanonicalNameCache = @{}
+            }
+            $second = [ordered]@{
+                Servers = @([PSCustomObject]@{ ServerName = 'dhcp01.second.example' })
+                CanonicalNameCache = @{}
+            }
+
+            Resolve-DHCPServerName -Name 'dhcp01' -DHCPSummary $first | Should -Be 'dhcp01.first.example'
+            Resolve-DHCPServerName -Name 'dhcp01' -DHCPSummary $second | Should -Be 'dhcp01.second.example'
+        }
+    }
+
+    It 'Runs full TestMode without falling through to live DHCP collection' {
+        $warnings = @()
+        $errors = @()
+
+        $summary = Get-WinADDHCPSummary -TestMode -WarningVariable warnings -ErrorVariable errors
+
+        $summary.Scopes.Count | Should -BeGreaterThan 0
+        $summary.Errors.Count | Should -Be 0
+        $warnings.Count | Should -Be 0
+        $errors.Count | Should -Be 0
     }
 }
 

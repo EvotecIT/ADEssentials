@@ -12,7 +12,11 @@
     # Get audit log information
     if (($null -eq $Components) -or $Components['AuditLogs']) {
     try {
-        $AuditLog = Get-DhcpServerAuditLog -ComputerName $Computer -ErrorAction Stop
+        if ($TestMode) {
+            $AuditLog = Get-TestModeDHCPData -DataType 'DhcpServerAuditLog' -ComputerName $Computer
+        } else {
+            $AuditLog = Get-DhcpServerAuditLog -ComputerName $Computer -ErrorAction Stop
+        }
         $AuditLogObject = [PSCustomObject] @{
             ServerName        = $Computer
             DiskCheckInterval = $AuditLog.DiskCheckInterval
@@ -32,7 +36,11 @@
     # Get database information
     if (($null -eq $Components) -or $Components['Databases']) {
     try {
-        $Database = Get-DhcpServerDatabase -ComputerName $Computer -ErrorAction Stop
+        if ($TestMode) {
+            $Database = Get-TestModeDHCPData -DataType 'DhcpServerDatabase' -ComputerName $Computer
+        } else {
+            $Database = Get-DhcpServerDatabase -ComputerName $Computer -ErrorAction Stop
+        }
         $DatabaseObject = [PSCustomObject] @{
             ServerName             = $Computer
             FileName               = $Database.FileName
@@ -111,7 +119,11 @@
     # Server settings
     if (($null -eq $Components) -or $Components['ServerSettings']) {
     try {
-        $ServerSettings = Get-DhcpServerSetting -ComputerName $Computer -ErrorAction Stop
+        if ($TestMode) {
+            $ServerSettings = Get-TestModeDHCPData -DataType 'DhcpServerSetting' -ComputerName $Computer
+        } else {
+            $ServerSettings = Get-DhcpServerSetting -ComputerName $Computer -ErrorAction Stop
+        }
         $ServerSettingsObject = [PSCustomObject] @{
             ServerName                = $Computer
             ActivatePolicies          = if ($null -ne $ServerSettings.ActivatePolicies) { $ServerSettings.ActivatePolicies } else { $false }
@@ -140,7 +152,11 @@
     # Network bindings
     if (($null -eq $Components) -or $Components['NetworkBindings']) {
     try {
-        $Bindings = Get-DhcpServerv4Binding -ComputerName $Computer -ErrorAction Stop
+        if ($TestMode) {
+            $Bindings = Get-TestModeDHCPData -DataType 'DhcpServerv4Binding' -ComputerName $Computer
+        } else {
+            $Bindings = Get-DhcpServerv4Binding -ComputerName $Computer -ErrorAction Stop
+        }
         if ($Bindings -and $Bindings.Count -gt 0) {
             Write-Verbose "Get-WinADDHCPExtendedServerData - Found $($Bindings.Count) network bindings on $Computer"
 
@@ -169,7 +185,11 @@
     if (($null -eq $Components) -or $Components['SecurityFilters']) {
     try {
         Write-Verbose "Get-WinADDHCPExtendedServerData - Checking security filters on $Computer"
-        $FilterList = Get-DhcpServerv4FilterList -ComputerName $Computer -ErrorAction Stop
+        if ($TestMode) {
+            $FilterList = Get-TestModeDHCPData -DataType 'DhcpServerv4FilterList' -ComputerName $Computer
+        } else {
+            $FilterList = Get-DhcpServerv4FilterList -ComputerName $Computer -ErrorAction Stop
+        }
 
         $SecurityFilterObject = [PSCustomObject] @{
             ServerName    = $Computer
@@ -211,7 +231,11 @@
         $IPv6Supported = $false
 
         try {
-            $IPv6Scopes = Get-DhcpServerv6Scope -ComputerName $Computer -ErrorAction Stop
+            if ($TestMode) {
+                $IPv6Scopes = Get-TestModeDHCPData -DataType 'DhcpServerv6Scope' -ComputerName $Computer
+            } else {
+                $IPv6Scopes = Get-DhcpServerv6Scope -ComputerName $Computer -ErrorAction Stop
+            }
             $IPv6Supported = $true
             Write-Verbose "Get-WinADDHCPExtendedServerData - IPv6 DHCP service detected on $Computer"
         } catch {
@@ -256,7 +280,11 @@
 
                 # Get IPv6 scope statistics (with additional error handling)
                 try {
-                    $IPv6Stats = Get-DhcpServerv6ScopeStatistics -ComputerName $Computer -Prefix $IPv6Scope.Prefix -ErrorAction Stop
+                    if ($TestMode) {
+                        $IPv6Stats = Get-TestModeDHCPData -DataType 'DhcpServerv6ScopeStatistics' -ComputerName $Computer -ScopeId $IPv6Scope.Prefix
+                    } else {
+                        $IPv6Stats = Get-DhcpServerv6ScopeStatistics -ComputerName $Computer -Prefix $IPv6Scope.Prefix -ErrorAction Stop
+                    }
                     $IPv6ScopeObject.AddressesInUse = if ($IPv6Stats.AddressesInUse) { $IPv6Stats.AddressesInUse } else { 0 }
                     $IPv6ScopeObject.AddressesFree = if ($IPv6Stats.AddressesFree) { $IPv6Stats.AddressesFree } else { 0 }
                     $IPv6ScopeObject.PercentageInUse = if ($IPv6Stats.PercentageInUse) { [Math]::Round($IPv6Stats.PercentageInUse, 2) } else { 0 }

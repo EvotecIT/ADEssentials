@@ -26,16 +26,19 @@ function Resolve-DHCPServerName {
         [Parameter(Mandatory)][System.Collections.IDictionary] $DHCPSummary
     )
 
-    # Simple cache to avoid repeated scans
-    if (-not $script:DhcpCanonicalNameCache) { $script:DhcpCanonicalNameCache = @{} }
+    # Keep the cache on the summary so separate collection runs cannot leak names.
+    if (-not $DHCPSummary.Contains('CanonicalNameCache')) {
+        $DHCPSummary['CanonicalNameCache'] = @{}
+    }
+    $cache = $DHCPSummary.CanonicalNameCache
 
     $n = ConvertTo-NormalizedName -Name $Name
     if ($null -eq $n) { return $null }
 
-    if ($script:DhcpCanonicalNameCache.ContainsKey($n)) { return $script:DhcpCanonicalNameCache[$n] }
+    if ($cache.ContainsKey($n)) { return $cache[$n] }
 
     # Already FQDN
-    if ($n -match '\.') { $script:DhcpCanonicalNameCache[$n] = $n; return $n }
+    if ($n -match '\.') { $cache[$n] = $n; return $n }
 
     $short = $n
     # Try to match against known servers
@@ -47,7 +50,6 @@ function Resolve-DHCPServerName {
     }
 
     $resolved = if ($match) { $match } else { $n }
-    $script:DhcpCanonicalNameCache[$n] = $resolved
+    $cache[$n] = $resolved
     return $resolved
 }
-
