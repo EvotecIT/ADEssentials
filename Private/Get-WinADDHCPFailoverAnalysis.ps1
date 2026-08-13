@@ -12,12 +12,7 @@ function Get-WinADDHCPFailoverAnalysis {
     $PerSubnetIssues = [System.Collections.Generic.List[Object]]::new()
     $UnverifiedScopes = [System.Collections.Generic.List[Object]]::new()
 
-    $enumeratedServers = [System.Collections.Generic.HashSet[string]]::new()
-    foreach ($status in @($DHCPSummary.FailoverCollectionStatus)) {
-        if (-not $status.Success) { continue }
-        $server = Resolve-DHCPServerName -Name $status.ServerName -DHCPSummary $DHCPSummary
-        if ($server) { [void]$enumeratedServers.Add($server) }
-    }
+    $enumeratedServers = Get-DHCPFailoverEnumeratedServerSet -DHCPSummary $DHCPSummary
 
     if (-not $DHCPSummary.FailoverRelationships -or $DHCPSummary.FailoverRelationships.Count -eq 0) {
         # No relationships at all. Still populate per-subnet issues so UI has a clear list.

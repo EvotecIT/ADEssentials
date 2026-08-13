@@ -9,20 +9,22 @@ function Get-WinADDHCPFailoverRelationships {
     $relationships = @()
     $success = $false
     $errorMessage = $null
+    $normalizedRelationshipCount = 0
     try {
         if ($TestMode) {
             $relationships = Get-TestModeDHCPData -DataType 'DhcpServerv4FailoverAll' -ComputerName $Computer
         } else {
             $relationships = Get-DhcpServerv4Failover -ComputerName $Computer -ErrorAction Stop
         }
-        $success = $true
-
         foreach ($rel in $relationships) {
             if (-not $rel) { continue }
 
             # Normalize partner/server names to avoid duplicates due to case/whitespace
             $serverNameNorm  = ([string]$Computer).Trim()
             $partnerNameNorm = if ($rel.PartnerServer) { ([string]$rel.PartnerServer).Trim() } else { $null }
+            if ([string]::IsNullOrWhiteSpace($partnerNameNorm)) {
+                throw [System.IO.InvalidDataException]::new("DHCP failover relationship '$($rel.Name)' returned no partner server.")
+            }
 
             # Prefer explicit primary name if exposed by the provider; do NOT default to $Computer
             $primaryFromAPI = $null
@@ -44,7 +46,10 @@ function Get-WinADDHCPFailoverRelationships {
             }
 
             # Compose a stable pair key for quick grouping elsewhere
-            $pair = @($serverNameNorm.ToLower(), $partnerNameNorm.ToLower()) | Where-Object { $_ } | Sort-Object
+            $pair = @($serverNameNorm, $partnerNameNorm) |
+                Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+                ForEach-Object { $_.ToLowerInvariant() } |
+                Sort-Object
             $pairKey = ($pair -join '↔')
 
             # Normalize to a consistent object shape used throughout the report
@@ -62,7 +67,9 @@ function Get-WinADDHCPFailoverRelationships {
                 GatheredDate      = Get-Date
             }
             $DHCPSummary.FailoverRelationships.Add($obj)
+            $normalizedRelationshipCount++
         }
+        $success = $true
     } catch {
         $msg = $_.Exception.Message
         $errorMessage = $msg
@@ -84,7 +91,7 @@ function Get-WinADDHCPFailoverRelationships {
         $DHCPSummary.FailoverCollectionStatus.Add([PSCustomObject]@{
             ServerName        = ([string]$Computer).Trim()
             Success           = $success
-            RelationshipCount = @($relationships).Count
+            RelationshipCount = $normalizedRelationshipCount
             ErrorMessage      = $errorMessage
             GatheredDate      = Get-Date
         })

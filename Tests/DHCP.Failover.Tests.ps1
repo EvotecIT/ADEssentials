@@ -368,6 +368,137 @@ Describe 'DHCP failover evidence contracts' {
         }
     }
 
+    It 'Preserves unknown and not-collected states in downstream redundancy analysis' {
+        InModuleScope ADEssentials {
+            $summary = [ordered]@{
+                Scopes = @(
+                    [PSCustomObject]@{
+                        ScopeId = '10.34.97.0'; Name = 'Unknown'; ServerName = 'dhcp01.domain.com'
+                        State = 'Active'; PercentageInUse = 80; FailoverPartner = $null; FailoverStatus = 'Unknown'
+                    },
+                    [PSCustomObject]@{
+                        ScopeId = '10.34.100.0'; Name = 'Excluded'; ServerName = 'dhcp01.domain.com'
+                        State = 'Active'; PercentageInUse = 80; FailoverPartner = $null; FailoverStatus = 'NotCollected'
+                    }
+                )
+                ScopeRedundancyAnalysis = [System.Collections.Generic.List[Object]]::new()
+            }
+
+            Get-WinADDHCPScopeRedundancyAnalysis -DHCPSummary $summary
+
+            $summary.ScopeRedundancyAnalysis[0].RedundancyStatus | Should -Be 'Failover Status Unknown'
+            $summary.ScopeRedundancyAnalysis[0].RiskLevel | Should -Be 'Unknown'
+            $summary.ScopeRedundancyAnalysis[0].Recommendation | Should -Be 'Resolve failover collection errors'
+            $summary.ScopeRedundancyAnalysis[1].RedundancyStatus | Should -Be 'Failover Not Collected'
+            $summary.ScopeRedundancyAnalysis[1].RiskLevel | Should -Be 'Unknown'
+            $summary.ScopeRedundancyAnalysis[1].Recommendation | Should -Be 'Collect failover data'
+        }
+    }
+
+    It 'Does not mark retained relationships verified when row normalization fails' {
+        InModuleScope ADEssentials {
+            $good = [PSCustomObject]@{
+                Name          = 'FO-Good'
+                PartnerServer = 'dhcp02.domain.com'
+                Mode          = 'LoadBalance'
+                State         = 'Normal'
+                ScopeId       = @('10.34.97.0')
+            }
+            $bad = [PSCustomObject]@{
+                Name    = 'FO-Bad'
+                Mode    = 'LoadBalance'
+                State   = 'Normal'
+                ScopeId = @('10.34.100.0')
+            }
+            Add-Member -InputObject $bad -MemberType ScriptProperty -Name PartnerServer -Value { throw 'Relationship normalization failed' }
+
+            Mock Get-TestModeDHCPData { @($good, $bad) }
+            $summary = [ordered]@{
+                FailoverRelationships   = [System.Collections.Generic.List[Object]]::new()
+                FailoverCollectionStatus = [System.Collections.Generic.List[Object]]::new()
+                Errors                  = [System.Collections.Generic.List[Object]]::new()
+                Warnings                = [System.Collections.Generic.List[Object]]::new()
+            }
+
+            Get-WinADDHCPFailoverRelationships -Computer 'dhcp01.domain.com' -DHCPSummary $summary -TestMode -WarningAction SilentlyContinue
+
+            $summary.FailoverRelationships.Count | Should -Be 1
+            $summary.FailoverCollectionStatus.Count | Should -Be 1
+            $summary.FailoverCollectionStatus[0].Success | Should -BeFalse
+            $summary.FailoverCollectionStatus[0].RelationshipCount | Should -Be 1
+
+            $map = New-DHCPFailoverEvidenceMap -Computer 'dhcp01.domain.com' -Relationships $summary.FailoverRelationships -CollectionStatus $summary.FailoverCollectionStatus[0]
+            $evidence = Get-DHCPFailoverScopeEvidence -EvidenceMap $map -ScopeId '10.34.97.0'
+            $evidence.Status | Should -Be 'Configured'
+            $evidence.Verified | Should -BeFalse
+            $evidence.EvidenceSource | Should -Be 'Partial relationship evidence from incomplete enumeration'
+        }
+    }
+
+    It 'Only treats successful server enumeration as verification evidence' {
+        InModuleScope ADEssentials {
+            $summary = [ordered]@{
+                Servers = @(
+                    [PSCustomObject]@{ ServerName = 'dhcp01.domain.com' },
+                    [PSCustomObject]@{ ServerName = 'dhcp02.domain.com' }
+                )
+                CanonicalNameCache = @{}
+                FailoverCollectionStatus = @(
+                    [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; Success = $true },
+                    [PSCustomObject]@{ ServerName = 'dhcp02.domain.com'; Success = $false }
+                )
+            }
+
+            $enumerated = Get-DHCPFailoverEnumeratedServerSet -DHCPSummary $summary
+            $enumerated.Contains('DHCP01.DOMAIN.COM') | Should -BeTrue
+            $enumerated.Contains('dhcp02.domain.com') | Should -BeFalse
+        }
+    }
+
+    It 'Reports coverage as not assessed when every scope is unverified' {
+        InModuleScope ADEssentials {
+            $scopes = @(
+                [PSCustomObject]@{ State = 'Active'; FailoverStatus = 'Unknown'; FailoverPartner = $null },
+                [PSCustomObject]@{ State = 'Active'; FailoverStatus = 'NotCollected'; FailoverPartner = $null }
+            )
+
+            $coverage = Get-DHCPFailoverCoverageSummary -Scopes $scopes
+
+            $coverage.ConfiguredCount | Should -Be 0
+            $coverage.MissingCount | Should -Be 0
+            $coverage.UnverifiedCount | Should -Be 2
+            $coverage.AssessedCount | Should -Be 0
+            $coverage.Percentage | Should -BeNullOrEmpty
+            $coverage.Display | Should -Be 'N/A'
+        }
+    }
+
+    It 'Only labels successfully enumerated servers without relationships as standalone' {
+        InModuleScope ADEssentials {
+            $summary = [ordered]@{
+                Servers = @(
+                    [PSCustomObject]@{ ServerName = 'dhcp01.domain.com' },
+                    [PSCustomObject]@{ ServerName = 'dhcp02.domain.com' },
+                    [PSCustomObject]@{ ServerName = 'dhcp03.domain.com' }
+                )
+                CanonicalNameCache = @{}
+                FailoverRelationships = @(
+                    [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; PartnerServer = 'dhcp02.domain.com' }
+                )
+                FailoverCollectionStatus = @(
+                    [PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; Success = $true },
+                    [PSCustomObject]@{ ServerName = 'dhcp02.domain.com'; Success = $false },
+                    [PSCustomObject]@{ ServerName = 'dhcp03.domain.com'; Success = $true }
+                )
+            }
+
+            $standalone = @(Get-DHCPStandaloneServerName -DHCPSummary $summary)
+
+            $standalone.Count | Should -Be 1
+            $standalone[0] | Should -Be 'dhcp03.domain.com'
+        }
+    }
+
     It 'Keeps canonical-name caches isolated between summary runs' {
         InModuleScope ADEssentials {
             $first = [ordered]@{
