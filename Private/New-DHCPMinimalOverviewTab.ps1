@@ -4,6 +4,10 @@
         [Parameter(Mandatory)][System.Collections.IDictionary] $DHCPData
     )
 
+    $IssueSummary = Get-WinADDHCPIssueSummary -DHCPSummary $DHCPData
+    $UniqueScopesWithIssues = $IssueSummary.UniqueScopesWithIssues
+    $HasValidationIssues = $IssueSummary.TotalIssueInstances -gt 0
+
     New-HTMLTab -TabName 'Overview' {
         New-HTMLSection -Invisible {
             New-HTMLSection -HeaderText "DHCP Validation Summary" {
@@ -25,24 +29,29 @@
                 New-HTMLInfoCard -Title "Servers Checked" -Number $DHCPData.Statistics.TotalServers -Subtitle "DHCP Servers" -Icon "🖥️" -TitleColor 'DodgerBlue' -NumberColor 'Navy' -ShadowColor 'rgba(30, 144, 255, 0.15)'
                 New-HTMLInfoCard -Title "Total Scopes" -Number $DHCPData.Statistics.TotalScopes -Subtitle "Configured Scopes" -Icon "🔍" -TitleColor 'DodgerBlue' -NumberColor 'Navy' -ShadowColor 'rgba(30, 144, 255, 0.15)'
 
-                $IssueColor = if ($DHCPData.ScopesWithIssues.Count -eq 0) { 'Green' } elseif ($DHCPData.ScopesWithIssues.Count -le 5) { 'Orange' } else { 'Red' }
-                $IssueIcon = if ($DHCPData.ScopesWithIssues.Count -eq 0) { '✅' } else { '⚠️' }
-                New-HTMLInfoCard -Title "Issues Found" -Number $DHCPData.ScopesWithIssues.Count -Subtitle "Configuration Issues" -Icon $IssueIcon -TitleColor $IssueColor -NumberColor $IssueColor -ShadowColor "rgba(255, 0, 0, 0.15)"
+                $IssueColor = if (-not $HasValidationIssues) { 'Green' } elseif ($UniqueScopesWithIssues -le 5) { 'Orange' } else { 'Red' }
+                $IssueIcon = if (-not $HasValidationIssues) { '✅' } else { '⚠️' }
+                New-HTMLInfoCard -Title "Issues Found" -Number $UniqueScopesWithIssues -Subtitle "Unique Affected Scopes" -Icon $IssueIcon -TitleColor $IssueColor -NumberColor $IssueColor -ShadowColor "rgba(255, 0, 0, 0.15)"
 
-                $Status = if ($DHCPData.ScopesWithIssues.Count -eq 0) { 'PASSED' } else { 'FAILED' }
-                $StatusColor = if ($DHCPData.ScopesWithIssues.Count -eq 0) { 'Green' } else { 'Red' }
-                $StatusIcon = if ($DHCPData.ScopesWithIssues.Count -eq 0) { '✅' } else { '❌' }
+                $Status = if (-not $HasValidationIssues) { 'PASSED' } else { 'FAILED' }
+                $StatusColor = if (-not $HasValidationIssues) { 'Green' } else { 'Red' }
+                $StatusIcon = if (-not $HasValidationIssues) { '✅' } else { '❌' }
                 New-HTMLInfoCard -Title "Validation" -Number $Status -Subtitle "Overall Status" -Icon $StatusIcon -TitleColor $StatusColor -NumberColor $StatusColor -ShadowColor "rgba(0, 255, 0, 0.15)"
             }
 
             # Validation categories chart
-            if ($DHCPData.ScopesWithIssues.Count -gt 0) {
+            if ($HasValidationIssues) {
                 $LeaseDurationCount = @($DHCPData.ValidationResults.WarningIssues.ExtendedLeaseDuration).Count
                 $PublicDNSCount = @($DHCPData.ValidationResults.CriticalIssues.PublicDNSWithUpdates).Count
                 $DNSConfigProblemsCount = @($DHCPData.ValidationResults.CriticalIssues.DNSConfigurationProblems).Count
                 $DNSRecordMgmtCount = @($DHCPData.ValidationResults.WarningIssues.DNSRecordManagement).Count
                 $MissingDomainNameCount = @($DHCPData.ValidationResults.InfoIssues.MissingDomainName).Count
-                $FailoverCount = @($DHCPData.ValidationResults.WarningIssues.MissingFailover).Count
+                $FailoverCount = @(
+                    $DHCPData.ValidationResults.CriticalIssues.MissingFailover
+                    $DHCPData.ValidationResults.WarningIssues.MissingFailover
+                    $DHCPData.ValidationResults.CriticalIssues.FailoverMissingOnOnePartner
+                    $DHCPData.ValidationResults.CriticalIssues.FailoverMissingOnBoth
+                ).Count
 
                 New-HTMLSection -HeaderText "Issue Categories" -Invisible -Density Compact {
                     New-HTMLInfoCard -Title "Lease Duration" -Number $LeaseDurationCount -Subtitle "Scopes > 48 hours" -Icon "⏱️" -TitleColor 'Orange' -NumberColor 'DarkOrange' -ShadowColor 'rgba(255, 165, 0, 0.15)'
@@ -58,7 +67,7 @@
         }
 
         # Quick recommendations section
-        if ($DHCPData.ScopesWithIssues.Count -gt 0) {
+        if ($HasValidationIssues) {
             New-HTMLSection -HeaderText '🚨 Priority Actions Required' {
                 New-HTMLPanel -Invisible {
                     $LeaseDurationCount = @($DHCPData.ValidationResults.WarningIssues.ExtendedLeaseDuration).Count
@@ -66,7 +75,12 @@
                     $DNSConfigProblemsCount = @($DHCPData.ValidationResults.CriticalIssues.DNSConfigurationProblems).Count
                     $DNSRecordMgmtCount = @($DHCPData.ValidationResults.WarningIssues.DNSRecordManagement).Count
                     $MissingDomainNameCount = @($DHCPData.ValidationResults.InfoIssues.MissingDomainName).Count
-                    $FailoverCount = @($DHCPData.ValidationResults.WarningIssues.MissingFailover).Count
+                    $FailoverCount = @(
+                        $DHCPData.ValidationResults.CriticalIssues.MissingFailover
+                        $DHCPData.ValidationResults.WarningIssues.MissingFailover
+                        $DHCPData.ValidationResults.CriticalIssues.FailoverMissingOnOnePartner
+                        $DHCPData.ValidationResults.CriticalIssues.FailoverMissingOnBoth
+                    ).Count
 
                     New-HTMLText -Text 'IMMEDIATE ACTIONS REQUIRED' -Color Red -FontSize 18px -FontWeight bold
                     New-HTMLList {

@@ -65,6 +65,14 @@
                     }
                 }
 
+                if ($DHCPData.ValidationResults.CriticalIssues.MissingFailover.Count -gt 0) {
+                    New-HTMLSection -HeaderText "🔴 Active Scopes without Failover Configuration" -CanCollapse {
+                        New-HTMLTable -DataTable $DHCPData.ValidationResults.CriticalIssues.MissingFailover -Filtering {
+                            New-HTMLTableCondition -Name 'State' -ComparisonType string -Operator eq -Value 'Active' -BackgroundColor Salmon
+                        } -DataStore JavaScript -ScrollX
+                    }
+                }
+
                 # A scope assigned on only one member of a failover pair is critical,
                 # regardless of which canonical partner sorts first.
                 if ($DHCPData.ValidationResults.CriticalIssues.FailoverMissingOnOnePartner.Count -gt 0) {
@@ -145,6 +153,7 @@
                         )
                     }
                 }
+
             }
         }
 

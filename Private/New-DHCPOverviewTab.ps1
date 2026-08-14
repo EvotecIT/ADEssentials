@@ -27,7 +27,8 @@
     $TotalScopes = $DHCPData.Statistics.TotalScopes
     $ScopesActive = $DHCPData.Statistics.ScopesActive
     $ScopesInactive = $DHCPData.Statistics.ScopesInactive
-    $ScopesWithIssues = $DHCPData.Statistics.ScopesWithIssues
+    $IssueSummary = Get-WinADDHCPIssueSummary -DHCPSummary $DHCPData
+    $ScopesWithIssues = $IssueSummary.UniqueScopesWithIssues
     $TotalAddresses = $DHCPData.Statistics.TotalAddresses
     $AddressesInUse = $DHCPData.Statistics.AddressesInUse
     $AddressesFree = $DHCPData.Statistics.AddressesFree
@@ -102,11 +103,40 @@
                         $CriticalActions += "🔴 $FailedValidationServers server(s) failed connectivity validation - Check DNS, network, and DHCP service"
                     }
 
-                    # Check for scopes with configuration issues
-                    $ScopesWithConfigIssues = @($DHCPData.ScopesWithIssues).Count
-                    if ($ScopesWithConfigIssues -gt 0) {
-                        $WarningIssuesCount += $ScopesWithConfigIssues
-                        $WarningActions += "⚠️ $ScopesWithConfigIssues scope(s) have configuration issues - Review DNS settings and failover configuration"
+                    $PublicDNSIssues = @($DHCPData.ValidationResults.CriticalIssues.PublicDNSWithUpdates).Count
+                    if ($PublicDNSIssues -gt 0) {
+                        $CriticalIssuesCount += $PublicDNSIssues
+                        $CriticalActions += "🔴 $PublicDNSIssues scope(s) use public DNS with dynamic updates - Replace public resolvers or disable updates"
+                    }
+
+                    $CriticalDNSIssues = @($DHCPData.ValidationResults.CriticalIssues.DNSConfigurationProblems).Count
+                    if ($CriticalDNSIssues -gt 0) {
+                        $CriticalIssuesCount += $CriticalDNSIssues
+                        $CriticalActions += "🔴 $CriticalDNSIssues scope(s) have critical DNS configuration problems - Review DNS update and domain settings"
+                    }
+
+                    $CriticalMissingFailover = @($DHCPData.ValidationResults.CriticalIssues.MissingFailover).Count
+                    if ($CriticalMissingFailover -gt 0) {
+                        $CriticalIssuesCount += $CriticalMissingFailover
+                        $CriticalActions += "🔴 $CriticalMissingFailover scope(s) have no failover protection - Configure a failover relationship"
+                    }
+
+                    $ValidationWarnings = $DHCPData.ValidationResults.Summary.TotalWarningIssues
+                    if ($ValidationWarnings -gt 0) {
+                        $WarningIssuesCount += $ValidationWarnings
+                        $WarningActions += "⚠️ $ValidationWarnings validation warning(s) require review"
+                    }
+
+                    $MissingOnOnePartner = @($DHCPData.ValidationResults.CriticalIssues.FailoverMissingOnOnePartner).Count
+                    if ($MissingOnOnePartner -gt 0) {
+                        $CriticalIssuesCount += $MissingOnOnePartner
+                        $CriticalActions += "🔴 $MissingOnOnePartner scope(s) are missing from one failover partner - Synchronize the partner assignments"
+                    }
+
+                    $MissingOnBothPartners = @($DHCPData.ValidationResults.CriticalIssues.FailoverMissingOnBoth).Count
+                    if ($MissingOnBothPartners -gt 0) {
+                        $CriticalIssuesCount += $MissingOnBothPartners
+                        $CriticalActions += "🔴 $MissingOnBothPartners scope(s) are missing from both failover partner lists - Add the scopes to failover"
                     }
 
                     if ($CriticalIssuesCount -gt 0 -and $CriticalActions.Count -gt 0) {

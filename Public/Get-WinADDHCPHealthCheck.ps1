@@ -127,6 +127,20 @@
         }
     }
 
+    if (-not $Summary -or $Summary.Statistics.TotalServers -eq 0) {
+        if (-not $Quiet) {
+            Write-Color -Text '[!] ', '[DHCP] ', 'No DHCP servers found in the environment' -Color Yellow, DarkGray, Yellow
+        }
+        return @{
+            HealthScore     = 0
+            HealthStatus    = 'No Infrastructure'
+            Issues          = @('No DHCP servers found in the environment')
+            Recommendations = @('Install and configure DHCP servers', 'Check DHCP server registration in Active Directory')
+            Summary         = $Summary
+            Timestamp       = Get-Date
+        }
+    }
+
     # Initialize health scoring
     $HealthScore = 100
     $Issues = @()
@@ -146,10 +160,19 @@
         $Recommendations += "⚠️ Review server configuration issues and resolve them"
     }
 
-    # Check for scopes with configuration issues (Moderate: -10 points)
-    if ($Summary.Statistics.ScopesWithIssues -gt 0) {
+    # Score non-failover configuration evidence once. Failover defects are scored
+    # from their canonical severity buckets below, so the raw per-server symptom
+    # cannot reduce health a second time.
+    $NonFailoverScopeIssues = @(
+        $Summary.ValidationResults.CriticalIssues.PublicDNSWithUpdates
+        $Summary.ValidationResults.CriticalIssues.DNSConfigurationProblems
+        $Summary.ValidationResults.WarningIssues.ExtendedLeaseDuration
+        $Summary.ValidationResults.WarningIssues.DNSRecordManagement
+        $Summary.ValidationResults.InfoIssues.MissingDomainName
+    ) | Where-Object ScopeId | Sort-Object -Property ScopeId -Unique
+    if (@($NonFailoverScopeIssues).Count -gt 0) {
         $HealthScore -= 10
-        $Issues += "⚠️ $($Summary.Statistics.ScopesWithIssues) scope(s) have configuration issues"
+        $Issues += "⚠️ $(@($NonFailoverScopeIssues).Count) scope(s) have non-failover configuration issues"
         $Recommendations += "⚠️ Review scope configuration issues for optimal DHCP operation"
     }
 
@@ -179,6 +202,11 @@
         }
         if ($Summary.ValidationResults.CriticalIssues.HighUtilization.Count -gt 0) {
             $Recommendations += "🔴 Expand address pools for scopes with >90% utilization"
+        }
+        if ($Summary.ValidationResults.CriticalIssues.MissingFailover.Count -gt 0) {
+            $Recommendations += "🚨 Configure DHCP failover for high-availability scopes"
+            $Issues += "🚨 $($Summary.ValidationResults.CriticalIssues.MissingFailover.Count) scope(s) missing failover"
+            $HealthScore -= [Math]::Min(10, $Summary.ValidationResults.CriticalIssues.MissingFailover.Count)
         }
     }
 

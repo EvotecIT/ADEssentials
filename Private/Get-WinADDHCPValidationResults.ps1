@@ -18,8 +18,6 @@
     $ServersPingFailed = [System.Collections.Generic.List[Object]]::new()
     $ServersDHCPNotResponding = [System.Collections.Generic.List[Object]]::new()
     $MissingFailover = [System.Collections.Generic.List[Object]]::new()
-    $FailoverOnlyOnPrimary = [System.Collections.Generic.List[Object]]::new()
-    $FailoverOnlyOnSecondary = [System.Collections.Generic.List[Object]]::new()
     $FailoverMissingOnOnePartner = [System.Collections.Generic.List[Object]]::new()
     $FailoverMissingOnBoth = [System.Collections.Generic.List[Object]]::new()
     $ExtendedLeaseDuration = [System.Collections.Generic.List[Object]]::new()
@@ -69,17 +67,38 @@
         $onlyOnPartnerB = if ($DHCPSummary.FailoverAnalysis.Contains('OnlyOnPartnerB')) { $DHCPSummary.FailoverAnalysis.OnlyOnPartnerB } else { $DHCPSummary.FailoverAnalysis.OnlyOnSecondary }
         if ($onlyOnPartnerA) {
             foreach ($i in $onlyOnPartnerA) {
-                $FailoverOnlyOnPrimary.Add($i)
                 $FailoverMissingOnOnePartner.Add($i)
             }
         }
         if ($onlyOnPartnerB) {
             foreach ($i in $onlyOnPartnerB) {
-                $FailoverOnlyOnSecondary.Add($i)
                 $FailoverMissingOnOnePartner.Add($i)
             }
         }
         if ($DHCPSummary.FailoverAnalysis.MissingOnBoth)   { foreach ($i in $DHCPSummary.FailoverAnalysis.MissingOnBoth)   { $FailoverMissingOnBoth.Add($i) } }
+    }
+
+    # Canonical pair evidence is more specific than the per-server symptom.
+    # Suppress duplicate "not configured" rows for scopes already classified
+    # as missing from one or both partner relationship lists.
+    $CanonicalFailoverScopeKeys = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    foreach ($item in @($FailoverMissingOnOnePartner; $FailoverMissingOnBoth)) {
+        foreach ($partner in @($item.PartnerA, $item.PartnerB)) {
+            $canonicalPartner = Resolve-DHCPServerName -Name $partner -DHCPSummary $DHCPSummary
+            if ($canonicalPartner) {
+                $null = $CanonicalFailoverScopeKeys.Add("$canonicalPartner|$($item.ScopeId)")
+            }
+        }
+    }
+    if ($CanonicalFailoverScopeKeys.Count -gt 0) {
+        $UnpairedMissingFailover = [System.Collections.Generic.List[Object]]::new()
+        foreach ($item in $MissingFailover) {
+            $canonicalServer = Resolve-DHCPServerName -Name $item.ServerName -DHCPSummary $DHCPSummary
+            if (-not $CanonicalFailoverScopeKeys.Contains("$canonicalServer|$($item.ScopeId)")) {
+                $UnpairedMissingFailover.Add($item)
+            }
+        }
+        $MissingFailover = $UnpairedMissingFailover
     }
 
     # Inactive scopes
@@ -97,34 +116,56 @@
         Write-Verbose "Get-WinADDHCPValidationResults - Utilization validations skipped due to SkipScopeDetails parameter"
     }
 
+    # Apply severity policies to the evidence itself before exposing any buckets.
+    # This keeps the rendered rows, totals, and unique-scope counts in agreement.
+    $CriticalMissingFailover = [System.Collections.Generic.List[Object]]::new()
+    $WarningMissingFailover = [System.Collections.Generic.List[Object]]::new()
+    if ($ConsiderMissingFailoverCritical) {
+        foreach ($item in $MissingFailover) { $CriticalMissingFailover.Add($item) }
+    } else {
+        foreach ($item in $MissingFailover) { $WarningMissingFailover.Add($item) }
+    }
+
+    $CriticalDNSConfigurationProblems = [System.Collections.Generic.List[Object]]::new()
+    $WarningDNSRecordManagement = [System.Collections.Generic.List[Object]]::new()
+    $InfoMissingDomainName = [System.Collections.Generic.List[Object]]::new()
+    if ($ConsiderDNSConfigCritical) {
+        $seenDNSScopes = [System.Collections.Generic.HashSet[string]]::new()
+        foreach ($item in @($DNSRecordManagement; $MissingDomainName)) {
+            $id = "$($item.ServerName)|$($item.ScopeId)"
+            if ($seenDNSScopes.Add($id)) {
+                $CriticalDNSConfigurationProblems.Add($item)
+            }
+        }
+    } else {
+        foreach ($item in $DNSRecordManagement) { $WarningDNSRecordManagement.Add($item) }
+        foreach ($item in $MissingDomainName) { $InfoMissingDomainName.Add($item) }
+    }
+
     # Build result structure
     $ValidationResults = [ordered] @{
         CriticalIssues    = [ordered] @{
             PublicDNSWithUpdates     = $PublicDNSWithUpdates
-            DNSConfigurationProblems = @()
+            DNSConfigurationProblems = $CriticalDNSConfigurationProblems
             ServersOffline           = $ServersOffline
             ServersDNSFailed         = $ServersDNSFailed
             ServersPingFailed        = $ServersPingFailed
             ServersDHCPNotResponding = $ServersDHCPNotResponding
+            MissingFailover           = $CriticalMissingFailover
             FailoverMissingOnOnePartner = $FailoverMissingOnOnePartner
             FailoverMissingOnBoth       = $FailoverMissingOnBoth
-            # Compatibility aliases for the earlier direction-dependent shape.
-            FailoverOnlyOnPrimary       = $FailoverOnlyOnPrimary
-            FailoverOnlyOnSecondary     = $FailoverOnlyOnSecondary
         }
         UtilizationIssues = [ordered] @{
             HighUtilization     = $HighUtilization
             ModerateUtilization = $ModerateUtilization
         }
         WarningIssues     = [ordered] @{
-            MissingFailover         = $MissingFailover
-            # Compatibility alias; one-sided mismatches are counted as critical.
-            FailoverOnlyOnSecondary = $FailoverOnlyOnSecondary
-            ExtendedLeaseDuration   = $ExtendedLeaseDuration
-            DNSRecordManagement     = $DNSRecordManagement
+            MissingFailover       = $WarningMissingFailover
+            ExtendedLeaseDuration = $ExtendedLeaseDuration
+            DNSRecordManagement   = $WarningDNSRecordManagement
         }
         InfoIssues        = [ordered] @{
-            MissingDomainName = $MissingDomainName
+            MissingDomainName = $InfoMissingDomainName
             InactiveScopes    = $InactiveScopes
         }
         Summary           = [ordered] @{
@@ -136,31 +177,8 @@
             ScopesWithUtilization  = 0
             ScopesWithWarnings     = 0
             ScopesWithInfo         = 0
+            UniqueScopesWithIssues = 0
         }
-    }
-
-    # Escalate DNS config issues to critical when requested (readable & efficient)
-    if ($ConsiderDNSConfigCritical) {
-        # Aggregate
-        $dnsAgg = New-Object 'System.Collections.Generic.List[object]'
-        if ($PublicDNSWithUpdates -and $PublicDNSWithUpdates.Count -gt 0) { [void] $dnsAgg.AddRange($PublicDNSWithUpdates) }
-        if ($DNSRecordManagement   -and $DNSRecordManagement.Count   -gt 0) { [void] $dnsAgg.AddRange($DNSRecordManagement) }
-        if ($MissingDomainName     -and $MissingDomainName.Count     -gt 0) { [void] $dnsAgg.AddRange($MissingDomainName) }
-
-        # Deduplicate by (ServerName|ScopeId)
-        $seen = [System.Collections.Generic.HashSet[string]]::new()
-        $dnsUnique = New-Object 'System.Collections.Generic.List[object]'
-        foreach ($item in $dnsAgg) {
-            $id = "$($item.ServerName)|$($item.ScopeId)"
-            if ($seen.Add($id)) {
-                [void] $dnsUnique.Add($item)
-            }
-        }
-
-        $ValidationResults.CriticalIssues.DNSConfigurationProblems = $dnsUnique
-        # Prevent double-counting when summarizing
-        $DNSRecordManagement = [System.Collections.Generic.List[Object]]::new()
-        $MissingDomainName   = [System.Collections.Generic.List[Object]]::new()
     }
 
     # Counters
@@ -168,42 +186,46 @@
         $ValidationResults.CriticalIssues.PublicDNSWithUpdates.Count +
         $ValidationResults.CriticalIssues.DNSConfigurationProblems.Count +
         $ValidationResults.CriticalIssues.ServersOffline.Count +
+        $ValidationResults.CriticalIssues.MissingFailover.Count +
         $ValidationResults.CriticalIssues.FailoverMissingOnOnePartner.Count +
-        $ValidationResults.CriticalIssues.FailoverMissingOnBoth.Count +
-        $(if ($ConsiderMissingFailoverCritical) { $MissingFailover.Count } else { 0 })
+        $ValidationResults.CriticalIssues.FailoverMissingOnBoth.Count
     )
 
     $ValidationResults.Summary.TotalUtilizationIssues = ($HighUtilization.Count + $ModerateUtilization.Count)
 
     $ValidationResults.Summary.TotalWarningIssues = (
-        $(if ($ConsiderMissingFailoverCritical) { 0 } else { $MissingFailover.Count }) +
+        $ValidationResults.WarningIssues.MissingFailover.Count +
         $ExtendedLeaseDuration.Count +
-        $DNSRecordManagement.Count
+        $ValidationResults.WarningIssues.DNSRecordManagement.Count
     )
 
-    $ValidationResults.Summary.TotalInfoIssues = ($MissingDomainName.Count + $InactiveScopes.Count)
+    $ValidationResults.Summary.TotalInfoIssues = ($ValidationResults.InfoIssues.MissingDomainName.Count + $InactiveScopes.Count)
 
     # Unique scope counters
     $CriticalScopes = @(
         $ValidationResults.CriticalIssues.PublicDNSWithUpdates;
         $ValidationResults.CriticalIssues.DNSConfigurationProblems;
+        $ValidationResults.CriticalIssues.MissingFailover;
         $ValidationResults.CriticalIssues.FailoverMissingOnOnePartner;
         $ValidationResults.CriticalIssues.FailoverMissingOnBoth
     )
-    $ValidationResults.Summary.ScopesWithCritical = ($CriticalScopes | Sort-Object -Property ScopeId -Unique).Count
+    $ValidationResults.Summary.ScopesWithCritical = @($CriticalScopes | Sort-Object -Property ScopeId -Unique).Count
 
     $UtilizationScopes = @($HighUtilization; $ModerateUtilization)
-    $ValidationResults.Summary.ScopesWithUtilization = ($UtilizationScopes | Sort-Object -Property ScopeId -Unique).Count
+    $ValidationResults.Summary.ScopesWithUtilization = @($UtilizationScopes | Sort-Object -Property ScopeId -Unique).Count
 
     $WarningScopes = @(
-        $(if ($ConsiderMissingFailoverCritical) { @() } else { $MissingFailover })
+        $ValidationResults.WarningIssues.MissingFailover
         $ExtendedLeaseDuration
-        $DNSRecordManagement
+        $ValidationResults.WarningIssues.DNSRecordManagement
     )
-    $ValidationResults.Summary.ScopesWithWarnings = ($WarningScopes | Sort-Object -Property ScopeId -Unique).Count
+    $ValidationResults.Summary.ScopesWithWarnings = @($WarningScopes | Sort-Object -Property ScopeId -Unique).Count
 
-    $InfoScopes = @($MissingDomainName; $InactiveScopes)
-    $ValidationResults.Summary.ScopesWithInfo = ($InfoScopes | Sort-Object -Property ScopeId -Unique).Count
+    $InfoScopes = @($ValidationResults.InfoIssues.MissingDomainName; $InactiveScopes)
+    $ValidationResults.Summary.ScopesWithInfo = @($InfoScopes | Sort-Object -Property ScopeId -Unique).Count
+
+    $AllIssueScopes = @($CriticalScopes; $UtilizationScopes; $WarningScopes; $InfoScopes)
+    $ValidationResults.Summary.UniqueScopesWithIssues = @($AllIssueScopes | Where-Object ScopeId | Sort-Object -Property ScopeId -Unique).Count
 
     return $ValidationResults
 }

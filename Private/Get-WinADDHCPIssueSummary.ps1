@@ -25,6 +25,7 @@ function Get-WinADDHCPIssueSummary {
         PublicDNSWithUpdates     = (Get-ADEssentialsDHCPSummaryCount $v.CriticalIssues.PublicDNSWithUpdates)
         DNSConfigurationProblems = (Get-ADEssentialsDHCPSummaryCount $v.CriticalIssues.DNSConfigurationProblems)
         ServersOffline           = (Get-ADEssentialsDHCPSummaryCount $v.CriticalIssues.ServersOffline)
+        MissingFailover           = (Get-ADEssentialsDHCPSummaryCount $v.CriticalIssues.MissingFailover)
         FailoverMissingOnOnePartner = (Get-ADEssentialsDHCPSummaryCount $v.CriticalIssues.FailoverMissingOnOnePartner)
         FailoverMissingOnBoth       = (Get-ADEssentialsDHCPSummaryCount $v.CriticalIssues.FailoverMissingOnBoth)
     }
@@ -52,7 +53,7 @@ function Get-WinADDHCPIssueSummary {
         TotalWarningIssues                 = (Get-ADEssentialsDHCPSummaryInt $v.Summary.TotalWarningIssues)
         TotalInfoIssues                    = (Get-ADEssentialsDHCPSummaryInt $v.Summary.TotalInfoIssues)
         TotalUtilizationIssues             = (Get-ADEssentialsDHCPSummaryInt $v.Summary.TotalUtilizationIssues)
-        UniqueScopesWithIssues             = (Get-ADEssentialsDHCPSummaryCount $DHCPSummary.ScopesWithIssues)
+        UniqueScopesWithIssues             = (Get-ADEssentialsDHCPSummaryInt $v.Summary.UniqueScopesWithIssues)
         IssueCountsByCategory              = [ordered]@{
             Critical    = $countsCritical
             Warning     = $countsWarning

@@ -634,10 +634,96 @@ Describe 'DHCP failover evidence contracts' {
             $summary.FailoverAnalysis.OnlyOnPartnerB.Count | Should -Be 1
             $oneSided.Count | Should -Be 2
             @($oneSided | Where-Object { -not $_.PresentPartner -or -not $_.MissingPartner }).Count | Should -Be 0
+            $summary.ValidationResults.CriticalIssues.Contains('FailoverOnlyOnPrimary') | Should -BeFalse
+            $summary.ValidationResults.CriticalIssues.Contains('FailoverOnlyOnSecondary') | Should -BeFalse
+            $summary.ValidationResults.WarningIssues.Contains('FailoverOnlyOnPrimary') | Should -BeFalse
+            $summary.ValidationResults.WarningIssues.Contains('FailoverOnlyOnSecondary') | Should -BeFalse
+            $summary.FailoverAnalysis.OnlyOnPrimary.Count | Should -Be 1
+            $summary.FailoverAnalysis.OnlyOnSecondary.Count | Should -Be 1
 
             $issueSummary = Get-WinADDHCPIssueSummary -DHCPSummary $summary
             $issueSummary.IssueCountsByCategory.Critical.FailoverMissingOnOnePartner | Should -Be 2
             $issueSummary.IssueCountsByCategory.Warning.Contains('FailoverOnlyOnSecondary') | Should -BeFalse
+        }
+    }
+
+    It 'Moves policy-elevated evidence into mutually exclusive severity buckets' {
+        InModuleScope ADEssentials {
+            $missingFailover = [PSCustomObject]@{
+                ServerName = 'dhcp01.domain.com'; ScopeId = '10.60.0.0'; State = 'Active'; PercentageInUse = 10
+                Issues = @('DHCP Failover not configured')
+            }
+            $dnsProblem = [PSCustomObject]@{
+                ServerName = 'dhcp01.domain.com'; ScopeId = '10.61.0.0'; State = 'Active'; PercentageInUse = 10
+                Issues = @('UpdateDnsRRForOlderClients is disabled', 'Domain name option is missing')
+            }
+            $summary = [ordered]@{
+                Servers = @()
+                Scopes = @($missingFailover, $dnsProblem)
+                ScopesWithIssues = @($missingFailover, $dnsProblem)
+                FailoverAnalysis = $null
+            }
+
+            $normal = Get-WinADDHCPValidationResults -DHCPSummary $summary
+            $normal.CriticalIssues.MissingFailover.Count | Should -Be 0
+            $normal.WarningIssues.MissingFailover.Count | Should -Be 1
+            $normal.CriticalIssues.DNSConfigurationProblems.Count | Should -Be 0
+            $normal.WarningIssues.DNSRecordManagement.Count | Should -Be 1
+            $normal.InfoIssues.MissingDomainName.Count | Should -Be 1
+            $normal.Summary.UniqueScopesWithIssues | Should -Be 2
+
+            $elevated = Get-WinADDHCPValidationResults -DHCPSummary $summary -ConsiderMissingFailoverCritical -ConsiderDNSConfigCritical
+            $elevated.CriticalIssues.MissingFailover.Count | Should -Be 1
+            $elevated.WarningIssues.MissingFailover.Count | Should -Be 0
+            $elevated.CriticalIssues.DNSConfigurationProblems.Count | Should -Be 1
+            $elevated.WarningIssues.DNSRecordManagement.Count | Should -Be 0
+            $elevated.InfoIssues.MissingDomainName.Count | Should -Be 0
+            $elevated.Summary.TotalCriticalIssues | Should -Be 2
+            $elevated.Summary.TotalWarningIssues | Should -Be 0
+            $elevated.Summary.TotalInfoIssues | Should -Be 0
+            $elevated.Summary.UniqueScopesWithIssues | Should -Be 2
+
+            $summary.ValidationResults = $elevated
+            $issueSummary = Get-WinADDHCPIssueSummary -DHCPSummary $summary
+            $issueSummary.IssueCountsByCategory.Critical.MissingFailover | Should -Be 1
+            $issueSummary.IssueCountsByCategory.Warning.MissingFailover | Should -Be 0
+            $issueSummary.UniqueScopesWithIssues | Should -Be 2
+        }
+    }
+
+    It 'Lets canonical pair mismatches supersede duplicate per-server failover symptoms' {
+        InModuleScope ADEssentials {
+            $scopeA = [PSCustomObject]@{
+                ServerName = 'dhcp01.domain.com'; ScopeId = '10.62.0.0'; State = 'Active'; PercentageInUse = 10
+                Issues = @('DHCP Failover not configured')
+            }
+            $scopeB = [PSCustomObject]@{
+                ServerName = 'dhcp02.domain.com'; ScopeId = '10.62.0.0'; State = 'Active'; PercentageInUse = 10
+                Issues = @('DHCP Failover not configured')
+            }
+            $summary = [ordered]@{
+                Servers = @(
+                    [PSCustomObject]@{ ServerName = 'dhcp01.domain.com' },
+                    [PSCustomObject]@{ ServerName = 'dhcp02.domain.com' }
+                )
+                Scopes = @($scopeA, $scopeB)
+                ScopesWithIssues = @($scopeA, $scopeB)
+                FailoverAnalysis = [ordered]@{
+                    OnlyOnPartnerA = @([PSCustomObject]@{
+                        PartnerA = 'dhcp01.domain.com'; PartnerB = 'dhcp02.domain.com'; ScopeId = '10.62.0.0'
+                        PresentPartner = 'dhcp01.domain.com'; MissingPartner = 'dhcp02.domain.com'; Issue = 'Missing on dhcp02.domain.com'
+                    })
+                    OnlyOnPartnerB = @()
+                    MissingOnBoth = @()
+                }
+            }
+
+            $result = Get-WinADDHCPValidationResults -DHCPSummary $summary -ConsiderMissingFailoverCritical
+            $result.CriticalIssues.FailoverMissingOnOnePartner.Count | Should -Be 1
+            $result.CriticalIssues.MissingFailover.Count | Should -Be 0
+            $result.WarningIssues.MissingFailover.Count | Should -Be 0
+            $result.Summary.TotalCriticalIssues | Should -Be 1
+            $result.Summary.UniqueScopesWithIssues | Should -Be 1
         }
     }
 
@@ -646,27 +732,34 @@ Describe 'DHCP failover evidence contracts' {
             Mock Get-WinADDHCPSummary {
                 [ordered]@{
                     Statistics = [ordered]@{
-                        ServersOffline = 0; ServersWithIssues = 0; ScopesWithIssues = 0; OverallPercentageInUse = 0
+                        ServersOffline = 0; ServersWithIssues = 0; ScopesWithIssues = 2; OverallPercentageInUse = 0
                     }
                     Scopes = @()
                     ValidationResults = [ordered]@{
-                        Summary = [ordered]@{ TotalCriticalIssues = 1; TotalWarningIssues = 0 }
+                        Summary = [ordered]@{ TotalCriticalIssues = 2; TotalWarningIssues = 0 }
                         CriticalIssues = [ordered]@{
-                            PublicDNSWithUpdates = @(); HighUtilization = @()
+                            PublicDNSWithUpdates = @(); DNSConfigurationProblems = @(); HighUtilization = @()
+                            MissingFailover = @([PSCustomObject]@{ ScopeId = '10.51.0.0' })
                             FailoverMissingOnOnePartner = @([PSCustomObject]@{ ScopeId = '10.50.0.0' })
                             FailoverMissingOnBoth = @()
                         }
                         WarningIssues = [ordered]@{
                             MissingFailover = @(); ExtendedLeaseDuration = @(); DNSRecordManagement = @()
                         }
+                        InfoIssues = [ordered]@{ MissingDomainName = @() }
                     }
                 }
             }
 
             $result = Get-WinADDHCPHealthCheck -Quiet
+            $invokedResult = Invoke-WinADDHCPHealthCheck -Quiet
 
-            $result.HealthScore | Should -Be 99
+            $result.HealthScore | Should -Be 98
             ($result.Issues -join ' ') | Should -Match 'missing from one partner failover list'
+            ($result.Issues -join ' ') | Should -Match 'missing failover'
+            $invokedResult.HealthScore | Should -Be $result.HealthScore
+            $invokedResult.Issues | Should -Be $result.Issues
+            ($result.Issues -join ' ') | Should -Not -Match 'non-failover configuration issues'
         }
     }
 
