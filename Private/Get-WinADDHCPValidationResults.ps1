@@ -20,6 +20,7 @@
     $MissingFailover = [System.Collections.Generic.List[Object]]::new()
     $FailoverOnlyOnPrimary = [System.Collections.Generic.List[Object]]::new()
     $FailoverOnlyOnSecondary = [System.Collections.Generic.List[Object]]::new()
+    $FailoverMissingOnOnePartner = [System.Collections.Generic.List[Object]]::new()
     $FailoverMissingOnBoth = [System.Collections.Generic.List[Object]]::new()
     $ExtendedLeaseDuration = [System.Collections.Generic.List[Object]]::new()
     $ModerateUtilization = [System.Collections.Generic.List[Object]]::new()
@@ -64,8 +65,20 @@
 
     # Failover mismatches from precomputed analysis
     if ($DHCPSummary.FailoverAnalysis) {
-        if ($DHCPSummary.FailoverAnalysis.OnlyOnPrimary)   { foreach ($i in $DHCPSummary.FailoverAnalysis.OnlyOnPrimary)   { $FailoverOnlyOnPrimary.Add($i) } }
-        if ($DHCPSummary.FailoverAnalysis.OnlyOnSecondary) { foreach ($i in $DHCPSummary.FailoverAnalysis.OnlyOnSecondary) { $FailoverOnlyOnSecondary.Add($i) } }
+        $onlyOnPartnerA = if ($DHCPSummary.FailoverAnalysis.Contains('OnlyOnPartnerA')) { $DHCPSummary.FailoverAnalysis.OnlyOnPartnerA } else { $DHCPSummary.FailoverAnalysis.OnlyOnPrimary }
+        $onlyOnPartnerB = if ($DHCPSummary.FailoverAnalysis.Contains('OnlyOnPartnerB')) { $DHCPSummary.FailoverAnalysis.OnlyOnPartnerB } else { $DHCPSummary.FailoverAnalysis.OnlyOnSecondary }
+        if ($onlyOnPartnerA) {
+            foreach ($i in $onlyOnPartnerA) {
+                $FailoverOnlyOnPrimary.Add($i)
+                $FailoverMissingOnOnePartner.Add($i)
+            }
+        }
+        if ($onlyOnPartnerB) {
+            foreach ($i in $onlyOnPartnerB) {
+                $FailoverOnlyOnSecondary.Add($i)
+                $FailoverMissingOnOnePartner.Add($i)
+            }
+        }
         if ($DHCPSummary.FailoverAnalysis.MissingOnBoth)   { foreach ($i in $DHCPSummary.FailoverAnalysis.MissingOnBoth)   { $FailoverMissingOnBoth.Add($i) } }
     }
 
@@ -93,9 +106,11 @@
             ServersDNSFailed         = $ServersDNSFailed
             ServersPingFailed        = $ServersPingFailed
             ServersDHCPNotResponding = $ServersDHCPNotResponding
-            # Reclassified failover risks per request
-            FailoverOnlyOnPrimary    = $FailoverOnlyOnPrimary      # "missing on secondary" => critical
-            FailoverMissingOnBoth    = $FailoverMissingOnBoth      # "missing on both" => critical
+            FailoverMissingOnOnePartner = $FailoverMissingOnOnePartner
+            FailoverMissingOnBoth       = $FailoverMissingOnBoth
+            # Compatibility aliases for the earlier direction-dependent shape.
+            FailoverOnlyOnPrimary       = $FailoverOnlyOnPrimary
+            FailoverOnlyOnSecondary     = $FailoverOnlyOnSecondary
         }
         UtilizationIssues = [ordered] @{
             HighUtilization     = $HighUtilization
@@ -103,7 +118,7 @@
         }
         WarningIssues     = [ordered] @{
             MissingFailover         = $MissingFailover
-            # Keep as warning: "missing on primary" => present only on secondary
+            # Compatibility alias; one-sided mismatches are counted as critical.
             FailoverOnlyOnSecondary = $FailoverOnlyOnSecondary
             ExtendedLeaseDuration   = $ExtendedLeaseDuration
             DNSRecordManagement     = $DNSRecordManagement
@@ -153,7 +168,7 @@
         $ValidationResults.CriticalIssues.PublicDNSWithUpdates.Count +
         $ValidationResults.CriticalIssues.DNSConfigurationProblems.Count +
         $ValidationResults.CriticalIssues.ServersOffline.Count +
-        $ValidationResults.CriticalIssues.FailoverOnlyOnPrimary.Count +
+        $ValidationResults.CriticalIssues.FailoverMissingOnOnePartner.Count +
         $ValidationResults.CriticalIssues.FailoverMissingOnBoth.Count +
         $(if ($ConsiderMissingFailoverCritical) { $MissingFailover.Count } else { 0 })
     )
@@ -162,7 +177,6 @@
 
     $ValidationResults.Summary.TotalWarningIssues = (
         $(if ($ConsiderMissingFailoverCritical) { 0 } else { $MissingFailover.Count }) +
-        $FailoverOnlyOnSecondary.Count +
         $ExtendedLeaseDuration.Count +
         $DNSRecordManagement.Count
     )
@@ -173,7 +187,7 @@
     $CriticalScopes = @(
         $ValidationResults.CriticalIssues.PublicDNSWithUpdates;
         $ValidationResults.CriticalIssues.DNSConfigurationProblems;
-        $ValidationResults.CriticalIssues.FailoverOnlyOnPrimary;
+        $ValidationResults.CriticalIssues.FailoverMissingOnOnePartner;
         $ValidationResults.CriticalIssues.FailoverMissingOnBoth
     )
     $ValidationResults.Summary.ScopesWithCritical = ($CriticalScopes | Sort-Object -Property ScopeId -Unique).Count
@@ -183,7 +197,6 @@
 
     $WarningScopes = @(
         $(if ($ConsiderMissingFailoverCritical) { @() } else { $MissingFailover })
-        $FailoverOnlyOnSecondary
         $ExtendedLeaseDuration
         $DNSRecordManagement
     )

@@ -111,8 +111,9 @@
                     $perSubnet = $DHCPData.FailoverAnalysis.PerSubnetIssues | ForEach-Object {
                         [PSCustomObject]@{
                             ScopeId   = $_.ScopeId
-                            PartnerA  = $_.PrimaryServer
-                            PartnerB  = $_.SecondaryServer
+                            PartnerA  = $_.PartnerA
+                            PartnerB  = $_.PartnerB
+                            MissingPartner = $_.MissingPartner
                             Relation  = if ($_.Relationship) { $_.Relationship } else { '' }
                             Status    = $_.Issue  # e.g., "Missing on <server>" or "Missing from both partners"
                         }
@@ -129,7 +130,17 @@
             # Stale failover relationships (no subnets)
             if ($DHCPData.FailoverAnalysis -and $DHCPData.FailoverAnalysis.StaleRelationships -and $DHCPData.FailoverAnalysis.StaleRelationships.Count -gt 0) {
                 New-HTMLSection -HeaderText "🧹 Stale Failover Relationships (no subnets)" {
-                    New-HTMLTable -DataTable $DHCPData.FailoverAnalysis.StaleRelationships -ScrollX -Filtering {
+                    $staleRelationships = $DHCPData.FailoverAnalysis.StaleRelationships | ForEach-Object {
+                        [PSCustomObject]@{
+                            Relationship = $_.Relationship
+                            PartnerA     = $_.PartnerA
+                            PartnerB     = $_.PartnerB
+                            Mode         = $_.Mode
+                            State        = $_.State
+                            ScopeCount   = $_.ScopeCount
+                        }
+                    }
+                    New-HTMLTable -DataTable $staleRelationships -ScrollX -Filtering {
                         New-HTMLTableCondition -Name 'ScopeCount' -ComparisonType number -Operator eq -Value 0 -BackgroundColor Yellow
                     }
                 }

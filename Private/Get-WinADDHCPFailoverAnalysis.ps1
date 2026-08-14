@@ -5,12 +5,13 @@ function Get-WinADDHCPFailoverAnalysis {
     )
 
     # Prepare containers for analysis results
-    $OnlyOnPrimary   = [System.Collections.Generic.List[Object]]::new()
-    $OnlyOnSecondary = [System.Collections.Generic.List[Object]]::new()
+    $OnlyOnPartnerA  = [System.Collections.Generic.List[Object]]::new()
+    $OnlyOnPartnerB  = [System.Collections.Generic.List[Object]]::new()
     $MissingOnBoth   = [System.Collections.Generic.List[Object]]::new()
     $Stale           = [System.Collections.Generic.List[Object]]::new()
     $PerSubnetIssues = [System.Collections.Generic.List[Object]]::new()
     $UnverifiedScopes = [System.Collections.Generic.List[Object]]::new()
+    $staleKeys = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
 
     $enumeratedServers = Get-DHCPFailoverEnumeratedServerSet -DHCPSummary $DHCPSummary
 
@@ -28,11 +29,11 @@ function Get-WinADDHCPFailoverAnalysis {
             $byPair[$pairKey] = [ordered]@{
                 ServerA  = $sorted[0]
                 ServerB  = $sorted[1]
-                ScopesA  = New-Object System.Collections.Generic.HashSet[string]
-                ScopesB  = New-Object System.Collections.Generic.HashSet[string]
+                ScopesA  = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+                ScopesB  = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
                 NameMapA = @{}
                 NameMapB = @{}
-                Sources  = New-Object System.Collections.Generic.HashSet[string]  # servers we enumerated this pair from
+                Sources  = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)  # servers we enumerated this pair from
             }
         }
 
@@ -40,14 +41,19 @@ function Get-WinADDHCPFailoverAnalysis {
         if ($null -ne $rel.ScopeId) { $scopeList = @($rel.ScopeId | ForEach-Object { ([string]$_).Trim() }) }
         if ($scopeList.Count -eq 0) {
             # Stale relationship (no subnets attached)
-            $Stale.Add([PSCustomObject]@{
-                Relationship    = $rel.Name
-                PrimaryServer   = $sorted[0]
-                SecondaryServer = $sorted[1]
-                Mode            = $rel.Mode
-                State           = $rel.State
-                ScopeCount      = 0
-            })
+            $staleKey = '{0}|{1}|{2}|{3}' -f $pairKey, $rel.Name, $rel.Mode, $rel.State
+            if ($staleKeys.Add($staleKey)) {
+                $Stale.Add([PSCustomObject]@{
+                    Relationship    = $rel.Name
+                    PartnerA        = $sorted[0]
+                    PartnerB        = $sorted[1]
+                    PrimaryServer   = $sorted[0]
+                    SecondaryServer = $sorted[1]
+                    Mode            = $rel.Mode
+                    State           = $rel.State
+                    ScopeCount      = 0
+                })
+            }
         }
 
         foreach ($sid in $scopeList) {
@@ -55,11 +61,11 @@ function Get-WinADDHCPFailoverAnalysis {
             # Use canonicalized name for side selection as well
             if ($a -eq $byPair[$pairKey].ServerA) {
                 [void]$byPair[$pairKey].ScopesA.Add($sidStr)
-                if (-not $byPair[$pairKey].NameMapA.ContainsKey($sidStr)) { $byPair[$pairKey].NameMapA[$sidStr] = New-Object System.Collections.Generic.HashSet[string] }
+                if (-not $byPair[$pairKey].NameMapA.ContainsKey($sidStr)) { $byPair[$pairKey].NameMapA[$sidStr] = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase) }
                 [void]$byPair[$pairKey].NameMapA[$sidStr].Add([string]$rel.Name)
             } else {
                 [void]$byPair[$pairKey].ScopesB.Add($sidStr)
-                if (-not $byPair[$pairKey].NameMapB.ContainsKey($sidStr)) { $byPair[$pairKey].NameMapB[$sidStr] = New-Object System.Collections.Generic.HashSet[string] }
+                if (-not $byPair[$pairKey].NameMapB.ContainsKey($sidStr)) { $byPair[$pairKey].NameMapB[$sidStr] = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase) }
                 [void]$byPair[$pairKey].NameMapB[$sidStr].Add([string]$rel.Name)
             }
         }
@@ -72,7 +78,7 @@ function Get-WinADDHCPFailoverAnalysis {
     }
 
     # Set used to ensure we don't duplicate per-subnet rows across pairs or variations
-    $perSubnetKeys = New-Object System.Collections.Generic.HashSet[string]
+    $perSubnetKeys = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
 
     foreach ($pair in $byPair.Values) {
         $scopesA = @($pair.ScopesA)
@@ -86,6 +92,10 @@ function Get-WinADDHCPFailoverAnalysis {
             if (-not $verified) {
                 $UnverifiedScopes.Add([PSCustomObject]@{
                     Relationship     = $null
+                    PartnerA         = $pair.ServerA
+                    PartnerB         = $pair.ServerB
+                    PresentPartner   = $null
+                    MissingPartner   = $null
                     PrimaryServer    = $pair.ServerA
                     SecondaryServer  = $pair.ServerB
                     ScopeId          = $scopeId
@@ -98,6 +108,10 @@ function Get-WinADDHCPFailoverAnalysis {
                 $relName = if ($pair.NameMapA.ContainsKey($scopeId)) { (@($pair.NameMapA[$scopeId]) -join ', ') } else { $null }
                 $obj = [PSCustomObject]@{
                     Relationship     = $relName
+                    PartnerA         = $pair.ServerA
+                    PartnerB         = $pair.ServerB
+                    PresentPartner   = $pair.ServerA
+                    MissingPartner   = $pair.ServerB
                     PrimaryServer    = $pair.ServerA
                     SecondaryServer  = $pair.ServerB
                     ScopeId          = $scopeId
@@ -105,13 +119,17 @@ function Get-WinADDHCPFailoverAnalysis {
                     Verified         = $verified
                 }
                 if ($perSubnetKeys.Add((Get-FailoverIssueKey -ServerA $pair.ServerA -ServerB $pair.ServerB -ScopeId $scopeId -Issue $obj.Issue))) {
-                    $OnlyOnPrimary.Add($obj)
+                    $OnlyOnPartnerA.Add($obj)
                     $PerSubnetIssues.Add($obj)
                 }
             } elseif ($d.SideIndicator -eq '=>') {
                 $relName = if ($pair.NameMapB.ContainsKey($scopeId)) { (@($pair.NameMapB[$scopeId]) -join ', ') } else { $null }
                 $obj = [PSCustomObject]@{
                     Relationship     = $relName
+                    PartnerA         = $pair.ServerA
+                    PartnerB         = $pair.ServerB
+                    PresentPartner   = $pair.ServerB
+                    MissingPartner   = $pair.ServerA
                     PrimaryServer    = $pair.ServerA
                     SecondaryServer  = $pair.ServerB
                     ScopeId          = $scopeId
@@ -119,7 +137,7 @@ function Get-WinADDHCPFailoverAnalysis {
                     Verified         = $verified
                 }
                 if ($perSubnetKeys.Add((Get-FailoverIssueKey -ServerA $pair.ServerA -ServerB $pair.ServerB -ScopeId $scopeId -Issue $obj.Issue))) {
-                    $OnlyOnSecondary.Add($obj)
+                    $OnlyOnPartnerB.Add($obj)
                     $PerSubnetIssues.Add($obj)
                 }
             }
@@ -151,6 +169,10 @@ function Get-WinADDHCPFailoverAnalysis {
             if ($verified -and $scopesA -notcontains $sStr -and $scopesB -notcontains $sStr) {
                 $obj = [PSCustomObject]@{
                     Relationship     = $null
+                    PartnerA         = $pair.ServerA
+                    PartnerB         = $pair.ServerB
+                    PresentPartner   = $null
+                    MissingPartner   = $null
                     PrimaryServer    = $pair.ServerA
                     SecondaryServer  = $pair.ServerB
                     ScopeId          = $sStr
@@ -176,11 +198,15 @@ function Get-WinADDHCPFailoverAnalysis {
 
         if (-not $failoverVerified) {
             $unverifiedExists = @($UnverifiedScopes | Where-Object {
-                $_.ScopeId -eq $sid -and ($_.PrimaryServer -eq $srv -or $_.SecondaryServer -eq $srv)
+                $_.ScopeId -eq $sid -and ($_.PartnerA -eq $srv -or $_.PartnerB -eq $srv)
             }).Count -gt 0
             if (-not $unverifiedExists) {
                 $UnverifiedScopes.Add([PSCustomObject]@{
                     Relationship     = $null
+                    PartnerA         = $srv
+                    PartnerB         = $null
+                    PresentPartner   = $null
+                    MissingPartner   = $null
                     PrimaryServer    = $srv
                     SecondaryServer  = $null
                     ScopeId          = $sid
@@ -194,11 +220,15 @@ function Get-WinADDHCPFailoverAnalysis {
         if ($failoverStatus -ne 'Missing') { continue }
         $exists = $false
         foreach ($i in $PerSubnetIssues) {
-            if ($i.ScopeId -eq $sid -and ($i.PrimaryServer -eq $srv -or $i.SecondaryServer -eq $srv)) { $exists = $true; break }
+            if ($i.ScopeId -eq $sid -and ($i.PartnerA -eq $srv -or $i.PartnerB -eq $srv)) { $exists = $true; break }
         }
         if (-not $exists) {
             $obj = [PSCustomObject]@{
                 Relationship     = $null
+                PartnerA         = $srv
+                PartnerB         = $null
+                PresentPartner   = $null
+                MissingPartner   = $null
                 PrimaryServer    = $srv
                 SecondaryServer  = $null
                 ScopeId          = $sid
@@ -212,8 +242,11 @@ function Get-WinADDHCPFailoverAnalysis {
     }
 
     $DHCPSummary.FailoverAnalysis = [ordered]@{
-        OnlyOnPrimary     = $OnlyOnPrimary   # Note: Primary/Secondary here mean ServerA/ServerB (alphabetical), not HA roles
-        OnlyOnSecondary   = $OnlyOnSecondary
+        OnlyOnPartnerA    = $OnlyOnPartnerA
+        OnlyOnPartnerB    = $OnlyOnPartnerB
+        # Compatibility aliases retained for consumers of the earlier summary shape.
+        OnlyOnPrimary     = $OnlyOnPartnerA
+        OnlyOnSecondary   = $OnlyOnPartnerB
         MissingOnBoth     = $MissingOnBoth
         StaleRelationships= $Stale
         PerSubnetIssues   = $PerSubnetIssues

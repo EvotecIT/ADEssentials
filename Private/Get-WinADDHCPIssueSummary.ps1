@@ -25,14 +25,13 @@ function Get-WinADDHCPIssueSummary {
         PublicDNSWithUpdates     = (Get-ADEssentialsDHCPSummaryCount $v.CriticalIssues.PublicDNSWithUpdates)
         DNSConfigurationProblems = (Get-ADEssentialsDHCPSummaryCount $v.CriticalIssues.DNSConfigurationProblems)
         ServersOffline           = (Get-ADEssentialsDHCPSummaryCount $v.CriticalIssues.ServersOffline)
-        FailoverOnlyOnPrimary    = (Get-ADEssentialsDHCPSummaryCount $v.CriticalIssues.FailoverOnlyOnPrimary)
-        FailoverMissingOnBoth    = (Get-ADEssentialsDHCPSummaryCount $v.CriticalIssues.FailoverMissingOnBoth)
+        FailoverMissingOnOnePartner = (Get-ADEssentialsDHCPSummaryCount $v.CriticalIssues.FailoverMissingOnOnePartner)
+        FailoverMissingOnBoth       = (Get-ADEssentialsDHCPSummaryCount $v.CriticalIssues.FailoverMissingOnBoth)
     }
     $countsWarning = [ordered]@{
-        MissingFailover         = (Get-ADEssentialsDHCPSummaryCount $v.WarningIssues.MissingFailover)
-        FailoverOnlyOnSecondary = (Get-ADEssentialsDHCPSummaryCount $v.WarningIssues.FailoverOnlyOnSecondary)
-        ExtendedLeaseDuration   = (Get-ADEssentialsDHCPSummaryCount $v.WarningIssues.ExtendedLeaseDuration)
-        DNSRecordManagement     = (Get-ADEssentialsDHCPSummaryCount $v.WarningIssues.DNSRecordManagement)
+        MissingFailover       = (Get-ADEssentialsDHCPSummaryCount $v.WarningIssues.MissingFailover)
+        ExtendedLeaseDuration = (Get-ADEssentialsDHCPSummaryCount $v.WarningIssues.ExtendedLeaseDuration)
+        DNSRecordManagement   = (Get-ADEssentialsDHCPSummaryCount $v.WarningIssues.DNSRecordManagement)
     }
     $countsInfo = [ordered]@{
         MissingDomainName = (Get-ADEssentialsDHCPSummaryCount $v.InfoIssues.MissingDomainName)

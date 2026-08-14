@@ -47,8 +47,8 @@
                         New-HTMLInfoCard -Title "Unverified Scopes" -Number $ScopesUnverified -Subtitle "Collection incomplete" -Icon "❔" -TitleColor SteelBlue -NumberColor SteelBlue
                     }
                     if ($DHCPData.FailoverAnalysis) {
-                        New-HTMLInfoCard -Title "Missing on Partner B" -Number $($DHCPData.FailoverAnalysis.OnlyOnPrimary.Count) -Subtitle "Scopes assigned on A only" -Icon "🟠" -TitleColor 'DarkOrange' -NumberColor 'DarkOrange'
-                        New-HTMLInfoCard -Title "Missing on Partner A" -Number $($DHCPData.FailoverAnalysis.OnlyOnSecondary.Count) -Subtitle "Scopes assigned on B only" -Icon "🟠" -TitleColor 'DarkOrange' -NumberColor 'DarkOrange'
+                        $missingOnOnePartner = $DHCPData.FailoverAnalysis.OnlyOnPartnerA.Count + $DHCPData.FailoverAnalysis.OnlyOnPartnerB.Count
+                        New-HTMLInfoCard -Title "Missing on One Partner" -Number $missingOnOnePartner -Subtitle "Scope assignment mismatch" -Icon "🟠" -TitleColor 'DarkOrange' -NumberColor 'DarkOrange'
                         New-HTMLInfoCard -Title "Missing on Both" -Number $($DHCPData.FailoverAnalysis.MissingOnBoth.Count) -Subtitle "Gap" -Icon "⚠️" -TitleColor 'OrangeRed' -NumberColor 'OrangeRed'
                         if ($FailoverEnumWarnings.Count -gt 0 -or $FailoverEnumErrors.Count -gt 0) {
                             $warnColor = if ($FailoverEnumWarnings.Count -gt 0) { 'Orange' } else { 'Green' }
@@ -131,8 +131,9 @@
                 $perSubnet = $DHCPData.FailoverAnalysis.PerSubnetIssues | ForEach-Object {
                     [PSCustomObject]@{
                         ScopeId      = $_.ScopeId
-                        PartnerA     = $_.PrimaryServer
-                        PartnerB     = $_.SecondaryServer
+                        PartnerA     = $_.PartnerA
+                        PartnerB     = $_.PartnerB
+                        MissingPartner = $_.MissingPartner
                         Relationship = if ($_.Relationship) { $_.Relationship } else { '' }
                         Status       = $_.Issue
                     }
@@ -149,7 +150,17 @@
         # Stale failover relationships (no subnets)
         if ($DHCPData.FailoverAnalysis -and $DHCPData.FailoverAnalysis.StaleRelationships -and $DHCPData.FailoverAnalysis.StaleRelationships.Count -gt 0) {
             New-HTMLSection -HeaderText "🧹 Stale Failover Relationships (no subnets)" {
-                New-HTMLTable -DataTable $DHCPData.FailoverAnalysis.StaleRelationships -ScrollX -Filtering {
+                $staleRelationships = $DHCPData.FailoverAnalysis.StaleRelationships | ForEach-Object {
+                    [PSCustomObject]@{
+                        Relationship = $_.Relationship
+                        PartnerA     = $_.PartnerA
+                        PartnerB     = $_.PartnerB
+                        Mode         = $_.Mode
+                        State        = $_.State
+                        ScopeCount   = $_.ScopeCount
+                    }
+                }
+                New-HTMLTable -DataTable $staleRelationships -ScrollX -Filtering {
                     New-HTMLTableCondition -Name 'ScopeCount' -ComparisonType number -Operator eq -Value 0 -BackgroundColor Yellow
                 }
             }

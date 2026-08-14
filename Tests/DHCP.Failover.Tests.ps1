@@ -14,19 +14,29 @@ Describe 'DHCP Failover Analysis (TestMode)' {
         # and validate that pair-wise union + normalization works.
         $s.FailoverRelationships.Count | Should -Be 7
         $s.FailoverAnalysis.PerSubnetIssues.Count | Should -Be 6
-        $s.FailoverAnalysis.OnlyOnPrimary.Count    | Should -Be 1
-        $s.FailoverAnalysis.OnlyOnSecondary.Count  | Should -Be 1
+        $s.FailoverAnalysis.OnlyOnPartnerA.Count   | Should -Be 1
+        $s.FailoverAnalysis.OnlyOnPartnerB.Count   | Should -Be 1
         $s.FailoverAnalysis.MissingOnBoth.Count    | Should -Be 1
     }
 
     It 'Does not duplicate per-subnet issues across relationships' {
         $s = Get-WinADDHCPSummary -TestMode -Minimal
-        $set = New-Object 'System.Collections.Generic.HashSet[string]'
+        $set = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
         foreach ($i in $s.FailoverAnalysis.PerSubnetIssues) {
-            $key = "$($i.PrimaryServer)<->$($i.SecondaryServer)|$($i.ScopeId)|$($i.Issue)"
+            $key = "$($i.PartnerA)<->$($i.PartnerB)|$($i.ScopeId)|$($i.Issue)"
             $added = $set.Add($key)
             $added | Should -BeTrue
         }
+    }
+
+    It 'Deduplicates the same stale relationship collected from both partners' {
+        $s = Get-WinADDHCPSummary -TestMode -Minimal
+        $stale = @($s.FailoverAnalysis.StaleRelationships)
+
+        $stale.Count | Should -Be 1
+        $stale[0].PartnerA | Should -Not -BeNullOrEmpty
+        $stale[0].PartnerB | Should -Not -BeNullOrEmpty
+        $stale[0].ScopeCount | Should -Be 0
     }
 }
 
@@ -309,9 +319,9 @@ Describe 'DHCP Server Exclusions Affect All Outcomes (TestMode)' {
         $scope20.FailoverPartner | Should -Be 'corp-dhcp01.domain.com'
         $scope20.HasFailover     | Should -BeTrue
 
-        $analysisServers = @($s.FailoverAnalysis.PerSubnetIssues | ForEach-Object { $_.PrimaryServer, $_.SecondaryServer })
+        $analysisServers = @($s.FailoverAnalysis.PerSubnetIssues | ForEach-Object { $_.PartnerA, $_.PartnerB })
         ($analysisServers -join ',') | Should -Not -Match 'usfsm-|it-'
-        @($s.FailoverAnalysis.UnverifiedScopes | Where-Object { $_.SecondaryServer -match 'usfsm-' }).Count | Should -Be 1
+        @($s.FailoverAnalysis.UnverifiedScopes | Where-Object { $_.PartnerB -match 'usfsm-' }).Count | Should -Be 1
     }
 }
 
@@ -586,6 +596,77 @@ Describe 'DHCP failover evidence contracts' {
             $rows[0].VerifiedFromBothSides | Should -BeTrue
             $rows[0].Status | Should -Be 'On both partners'
             $rows[0].FailoverConfiguration | Should -Be 'configured'
+        }
+    }
+
+    It 'Keeps relationship names scoped to the assignment they describe' {
+        InModuleScope ADEssentials {
+            $summary = Get-WinADDHCPSummary -TestMode -Minimal
+            $rows = @(Get-DHCPFailoverPairComparison -DHCPSummary $summary)
+
+            $assignedOnA = $rows | Where-Object ScopeId -eq '10.1.0.0' | Select-Object -First 1
+            $assignedOnB = $rows | Where-Object ScopeId -eq '10.3.0.0' | Select-Object -First 1
+            $missingBoth = $rows | Where-Object ScopeId -eq '10.4.0.0' | Select-Object -First 1
+
+            $assignedOnA.Relationship | Should -Be 'FO-Branch, FO-ShortName'
+            $assignedOnA.RelationshipOnPartnerA | Should -Be 'FO-Branch, FO-ShortName'
+            $assignedOnA.RelationshipOnPartnerB | Should -BeNullOrEmpty
+            $assignedOnA.PresentPartner | Should -Be $assignedOnA.PartnerA
+            $assignedOnA.MissingPartner | Should -Be $assignedOnA.PartnerB
+
+            $assignedOnB.Relationship | Should -Be 'FO-Branch-Alt'
+            $assignedOnB.RelationshipOnPartnerA | Should -BeNullOrEmpty
+            $assignedOnB.RelationshipOnPartnerB | Should -Be 'FO-Branch-Alt'
+            $assignedOnB.PresentPartner | Should -Be $assignedOnB.PartnerB
+            $assignedOnB.MissingPartner | Should -Be $assignedOnB.PartnerA
+
+            $missingBoth.Relationship | Should -BeNullOrEmpty
+            @($rows | Where-Object Relationship -match 'FO-Stale-NoScopes').Count | Should -Be 0
+        }
+    }
+
+    It 'Classifies either one-sided assignment as the same critical defect' {
+        InModuleScope ADEssentials {
+            $summary = Get-WinADDHCPSummary -TestMode -Minimal
+            $oneSided = @($summary.ValidationResults.CriticalIssues.FailoverMissingOnOnePartner)
+
+            $summary.FailoverAnalysis.OnlyOnPartnerA.Count | Should -Be 1
+            $summary.FailoverAnalysis.OnlyOnPartnerB.Count | Should -Be 1
+            $oneSided.Count | Should -Be 2
+            @($oneSided | Where-Object { -not $_.PresentPartner -or -not $_.MissingPartner }).Count | Should -Be 0
+
+            $issueSummary = Get-WinADDHCPIssueSummary -DHCPSummary $summary
+            $issueSummary.IssueCountsByCategory.Critical.FailoverMissingOnOnePartner | Should -Be 2
+            $issueSummary.IssueCountsByCategory.Warning.Contains('FailoverOnlyOnSecondary') | Should -BeFalse
+        }
+    }
+
+    It 'Scores critical one-sided mismatches when no warning issues exist' {
+        InModuleScope ADEssentials {
+            Mock Get-WinADDHCPSummary {
+                [ordered]@{
+                    Statistics = [ordered]@{
+                        ServersOffline = 0; ServersWithIssues = 0; ScopesWithIssues = 0; OverallPercentageInUse = 0
+                    }
+                    Scopes = @()
+                    ValidationResults = [ordered]@{
+                        Summary = [ordered]@{ TotalCriticalIssues = 1; TotalWarningIssues = 0 }
+                        CriticalIssues = [ordered]@{
+                            PublicDNSWithUpdates = @(); HighUtilization = @()
+                            FailoverMissingOnOnePartner = @([PSCustomObject]@{ ScopeId = '10.50.0.0' })
+                            FailoverMissingOnBoth = @()
+                        }
+                        WarningIssues = [ordered]@{
+                            MissingFailover = @(); ExtendedLeaseDuration = @(); DNSRecordManagement = @()
+                        }
+                    }
+                }
+            }
+
+            $result = Get-WinADDHCPHealthCheck -Quiet
+
+            $result.HealthScore | Should -Be 99
+            ($result.Issues -join ' ') | Should -Match 'missing from one partner failover list'
         }
     }
 

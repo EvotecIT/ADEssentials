@@ -188,27 +188,23 @@
             $Issues += "⚠️ $($Summary.ValidationResults.WarningIssues.MissingFailover.Count) scope(s) missing failover"
             $HealthScore -= [Math]::Min(10, $Summary.ValidationResults.WarningIssues.MissingFailover.Count)
         }
-        if ($Summary.ValidationResults.CriticalIssues.FailoverOnlyOnPrimary.Count -gt 0) {
-            $Recommendations += "🚨 Synchronize failover scope lists: present only on primary (missing on secondary)"
-            $Issues += "🚨 $($Summary.ValidationResults.CriticalIssues.FailoverOnlyOnPrimary.Count) scope(s) only on primary failover list"
-            $HealthScore -= [Math]::Min(10, $Summary.ValidationResults.CriticalIssues.FailoverOnlyOnPrimary.Count)
-        }
-        if ($Summary.ValidationResults.WarningIssues.FailoverOnlyOnSecondary.Count -gt 0) {
-            $Recommendations += "⚠️ Synchronize failover scope lists: present only on secondary"
-            $Issues += "⚠️ $($Summary.ValidationResults.WarningIssues.FailoverOnlyOnSecondary.Count) scope(s) only on secondary failover list"
-            $HealthScore -= [Math]::Min(10, $Summary.ValidationResults.WarningIssues.FailoverOnlyOnSecondary.Count)
-        }
-        if ($Summary.ValidationResults.CriticalIssues.FailoverMissingOnBoth.Count -gt 0) {
-            $Recommendations += "🚨 Add scopes to failover on both partners"
-            $Issues += "🚨 $($Summary.ValidationResults.CriticalIssues.FailoverMissingOnBoth.Count) scope(s) missing on both failover lists"
-            $HealthScore -= [Math]::Min(15, $Summary.ValidationResults.CriticalIssues.FailoverMissingOnBoth.Count)
-        }
         if ($Summary.ValidationResults.WarningIssues.ExtendedLeaseDuration.Count -gt 0) {
             $Recommendations += "⚠️ Review extended lease durations for potential optimization"
         }
         if ($Summary.ValidationResults.WarningIssues.DNSRecordManagement.Count -gt 0) {
             $Recommendations += "⚠️ Review DNS record management settings for proper cleanup"
         }
+    }
+
+    if ($Summary.ValidationResults.CriticalIssues.FailoverMissingOnOnePartner.Count -gt 0) {
+        $Recommendations += "🚨 Synchronize failover scope assignments across both partners"
+        $Issues += "🚨 $($Summary.ValidationResults.CriticalIssues.FailoverMissingOnOnePartner.Count) scope(s) missing from one partner failover list"
+        $HealthScore -= [Math]::Min(10, $Summary.ValidationResults.CriticalIssues.FailoverMissingOnOnePartner.Count)
+    }
+    if ($Summary.ValidationResults.CriticalIssues.FailoverMissingOnBoth.Count -gt 0) {
+        $Recommendations += "🚨 Add scopes to failover on both partners"
+        $Issues += "🚨 $($Summary.ValidationResults.CriticalIssues.FailoverMissingOnBoth.Count) scope(s) missing on both failover lists"
+        $HealthScore -= [Math]::Min(15, $Summary.ValidationResults.CriticalIssues.FailoverMissingOnBoth.Count)
     }
 
     # Ensure health score doesn't go below 0
