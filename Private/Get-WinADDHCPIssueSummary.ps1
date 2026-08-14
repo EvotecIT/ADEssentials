@@ -31,6 +31,7 @@ function Get-WinADDHCPIssueSummary {
     }
     $countsWarning = [ordered]@{
         MissingFailover       = (Get-ADEssentialsDHCPSummaryCount $v.WarningIssues.MissingFailover)
+        FailoverUnverified    = (Get-ADEssentialsDHCPSummaryCount $v.WarningIssues.FailoverUnverified)
         ExtendedLeaseDuration = (Get-ADEssentialsDHCPSummaryCount $v.WarningIssues.ExtendedLeaseDuration)
         DNSRecordManagement   = (Get-ADEssentialsDHCPSummaryCount $v.WarningIssues.DNSRecordManagement)
     }
@@ -63,7 +64,8 @@ function Get-WinADDHCPIssueSummary {
         TotalIssueInstances                = $totalIssueInstances
         ValidationPolicy                   = $DHCPSummary.ValidationPolicy
         Notes                              = @(
-            'Counts by category are per-scope and may overlap; use UniqueScopesWithIssues for headline totals.'
+            'Scope-category counts may overlap; use UniqueScopesWithIssues for the unique affected-scope total.'
+            'Server availability issues are counted in TotalIssueInstances but not in UniqueScopesWithIssues.'
         )
     }
 

@@ -14,6 +14,8 @@
             $DNSConfigurationProblems = $DHCPData.ValidationResults.CriticalIssues.DNSConfigurationProblems
             $DNSRecordManagement = $DHCPData.ValidationResults.WarningIssues.DNSRecordManagement
             $MissingDomainName = $DHCPData.ValidationResults.InfoIssues.MissingDomainName
+            $ServersOffline = $DHCPData.ValidationResults.CriticalIssues.ServersOffline
+            $FailoverUnverified = $DHCPData.ValidationResults.WarningIssues.FailoverUnverified
             $FailoverIssues = @(
                 foreach ($item in @($DHCPData.ValidationResults.CriticalIssues.MissingFailover; $DHCPData.ValidationResults.WarningIssues.MissingFailover)) {
                     [PSCustomObject]@{
@@ -23,6 +25,7 @@
                         PresentPartner = $item.ServerName
                         MissingPartner = $null
                         Issue          = 'Failover not configured'
+                        Verified       = $true
                     }
                 }
                 foreach ($item in @($DHCPData.ValidationResults.CriticalIssues.FailoverMissingOnOnePartner; $DHCPData.ValidationResults.CriticalIssues.FailoverMissingOnBoth)) {
@@ -33,6 +36,18 @@
                         PresentPartner = $item.PresentPartner
                         MissingPartner = $item.MissingPartner
                         Issue          = $item.Issue
+                        Verified       = $true
+                    }
+                }
+                foreach ($item in $FailoverUnverified) {
+                    [PSCustomObject]@{
+                        ScopeId        = $item.ScopeId
+                        ServerName     = $null
+                        Relationship   = $item.Relationship
+                        PresentPartner = $null
+                        MissingPartner = $null
+                        Issue          = $item.Issue
+                        Verified       = $false
                     }
                 }
             )
@@ -43,6 +58,9 @@
             $DNSRecordMgmtCount = @($DNSRecordManagement).Count
             $MissingDomainNameCount = @($MissingDomainName).Count
             $FailoverCount = @($FailoverIssues).Count
+            $FailoverUnverifiedCount = @($FailoverUnverified).Count
+            $FailoverConfigurationCount = $FailoverCount - $FailoverUnverifiedCount
+            $ServersOfflineCount = @($ServersOffline).Count
 
             # Summary Section
             New-HTMLSection -Invisible {
@@ -52,6 +70,9 @@
                         New-HTMLText -Text "The following configuration issues were found during validation:" -FontSize 12px
                         New-HTMLList {
                             New-HTMLListItem -Text "Affected Scopes: ", "$($IssueSummary.UniqueScopesWithIssues) unique scope(s)" -FontWeight bold, normal -Color Red, Black
+                            if ($ServersOfflineCount -gt 0) {
+                                New-HTMLListItem -Text "Unavailable Servers: ", "$ServersOfflineCount server(s)" -FontWeight bold, normal -Color Red, Black
+                            }
                             if ($LeaseDurationCount -gt 0) {
                                 New-HTMLListItem -Text "Lease Duration: ", "$LeaseDurationCount scope(s) exceed 48 hours" -FontWeight bold, normal -Color Orange, Black
                             }
@@ -67,8 +88,11 @@
                             if ($MissingDomainNameCount -gt 0) {
                                 New-HTMLListItem -Text "Missing Domain Name Option: ", "$MissingDomainNameCount scope(s)" -FontWeight bold, normal -Color Orange, Black
                             }
-                            if ($FailoverCount -gt 0) {
-                                New-HTMLListItem -Text "Failover Missing: ", "$FailoverCount scope(s) without redundancy" -FontWeight bold, normal -Color Orange, Black
+                            if ($FailoverConfigurationCount -gt 0) {
+                                New-HTMLListItem -Text "Failover Missing: ", "$FailoverConfigurationCount scope(s) without verified redundancy" -FontWeight bold, normal -Color Orange, Black
+                            }
+                            if ($FailoverUnverifiedCount -gt 0) {
+                                New-HTMLListItem -Text "Failover Evidence: ", "$FailoverUnverifiedCount scope(s) could not be verified" -FontWeight bold, normal -Color Orange, Black
                             }
                         } -FontSize 14px
                     }
@@ -139,6 +163,18 @@
                 }
             }
 
+            if ($ServersOfflineCount -gt 0) {
+                New-HTMLSection -HeaderText "🖥️ Offline or Unavailable DHCP Servers" -CanCollapse {
+                    New-HTMLPanel -Invisible {
+                        New-HTMLTable -DataTable $ServersOffline -Filtering -ScrollX -IncludeProperty @(
+                            'ServerName', 'Status', 'ErrorMessage'
+                        )
+                        New-HTMLText -Text "Recommendation:" -FontSize 12px -FontWeight bold -Color Blue
+                        New-HTMLText -Text "Restore server connectivity or DHCP service availability, then rerun validation." -FontSize 11px -Color Blue
+                    }
+                }
+            }
+
             # Missing domain name (info)
             if ($MissingDomainNameCount -gt 0) {
                 New-HTMLSection -HeaderText "Scopes Missing Domain Name Option" -CanCollapse {
@@ -154,16 +190,22 @@
 
             # Failover Issues
             if ($FailoverCount -gt 0) {
-                New-HTMLSection -HeaderText "🔄 Failover Configuration Issues" -CanCollapse {
+                New-HTMLSection -HeaderText "🔄 Failover Validation Findings" -CanCollapse {
                     New-HTMLPanel -Invisible {
-                            New-HTMLText -Text "Scopes without proper failover configuration:" -FontSize 14px -FontWeight bold
+                            New-HTMLText -Text "Scopes with missing, inconsistent, or unverified failover evidence:" -FontSize 14px -FontWeight bold
                             New-HTMLTable -DataTable $FailoverIssues {
-                                New-HTMLTableCondition -Name 'Issue' -ComparisonType string -Operator contains -Value 'failover' -BackgroundColor Red -Color White
+                                New-HTMLTableCondition -Name 'Verified' -ComparisonType bool -Operator eq -Value $false -BackgroundColor LightYellow
+                                New-HTMLTableCondition -Name 'Verified' -ComparisonType bool -Operator eq -Value $true -BackgroundColor Salmon
                             } -ScrollX -IncludeProperty @(
-                                'ScopeId', 'ServerName', 'Relationship', 'PresentPartner', 'MissingPartner', 'Issue'
+                                'ScopeId', 'ServerName', 'Relationship', 'PresentPartner', 'MissingPartner', 'Issue', 'Verified'
                             ) -Filtering
                             New-HTMLText -Text "Recommendation:" -FontSize 12px -FontWeight bold -Color Blue
-                            New-HTMLText -Text "Configure DHCP failover for high availability and redundancy." -FontSize 11px -Color Blue
+                            if ($FailoverConfigurationCount -gt 0) {
+                                New-HTMLText -Text "Configure or synchronize DHCP failover for the verified configuration defects." -FontSize 11px -Color Blue
+                            }
+                            if ($FailoverUnverifiedCount -gt 0) {
+                                New-HTMLText -Text "Resolve failover collection errors and rerun validation before changing configuration for unverified scopes." -FontSize 11px -Color Blue
+                            }
                     }
                 }
             }

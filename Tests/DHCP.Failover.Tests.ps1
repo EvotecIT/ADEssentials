@@ -691,6 +691,125 @@ Describe 'DHCP failover evidence contracts' {
         }
     }
 
+    It 'Counts unverified failover evidence as a warning without fabricating a missing configuration' {
+        InModuleScope ADEssentials {
+            $scope = [PSCustomObject]@{
+                ServerName = 'dhcp01.domain.com'; ScopeId = '10.63.0.0'; State = 'Active'; PercentageInUse = 10
+                Issues = @('DHCP Failover not configured')
+            }
+            $inactiveScope = [PSCustomObject]@{
+                ServerName = 'dhcp01.domain.com'; ScopeId = '10.63.1.0'; State = 'Inactive'; PercentageInUse = 0
+                Issues = @()
+            }
+            $summary = [ordered]@{
+                Servers = @([PSCustomObject]@{ ServerName = 'dhcp01.domain.com'; Status = 'Online' })
+                Scopes = @($scope, $inactiveScope)
+                ScopesWithIssues = @($scope)
+                FailoverAnalysis = [ordered]@{
+                    OnlyOnPartnerA = @()
+                    OnlyOnPartnerB = @()
+                    MissingOnBoth = @()
+                    UnverifiedScopes = @(
+                        [PSCustomObject]@{
+                            PartnerA = 'dhcp01.domain.com'; PartnerB = $null; ScopeId = '10.63.0.0'
+                            Relationship = $null; Issue = 'Failover data was not collected'; Verified = $false
+                        }
+                        [PSCustomObject]@{
+                            PartnerA = 'dhcp01.domain.com'; PartnerB = $null; ScopeId = '10.63.1.0'
+                            Relationship = $null; Issue = 'Failover data was not collected'; Verified = $false
+                        }
+                    )
+                }
+            }
+
+            $result = Get-WinADDHCPValidationResults -DHCPSummary $summary
+            $summary.ValidationResults = $result
+            $issueSummary = Get-WinADDHCPIssueSummary -DHCPSummary $summary
+
+            $result.WarningIssues.FailoverUnverified.Count | Should -Be 1
+            $result.WarningIssues.FailoverUnverified.ScopeId | Should -Not -Contain '10.63.1.0'
+            $result.WarningIssues.MissingFailover.Count | Should -Be 0
+            $result.CriticalIssues.MissingFailover.Count | Should -Be 0
+            $result.Summary.TotalWarningIssues | Should -Be 1
+            $result.Summary.UniqueScopesWithIssues | Should -Be 2
+            $issueSummary.IssueCountsByCategory.Warning.FailoverUnverified | Should -Be 1
+            $issueSummary.TotalIssueInstances | Should -Be 2
+        }
+    }
+
+    It 'Scores unverified failover evidence as reduced confidence rather than healthy' {
+        InModuleScope ADEssentials {
+            $unverified = [PSCustomObject]@{
+                PartnerA = 'dhcp01.domain.com'; PartnerB = $null; ScopeId = '10.64.0.0'
+                Relationship = $null; Issue = 'Failover status could not be verified'; Verified = $false
+            }
+            Mock Get-WinADDHCPSummary {
+                [ordered]@{
+                    Statistics = [ordered]@{
+                        TotalServers = 1; ServersOnline = 1; ServersOffline = 0; ServersWithIssues = 0
+                        TotalScopes = 1; ScopesActive = 1; ScopesWithIssues = 0; OverallPercentageInUse = 0
+                    }
+                    Scopes = @([PSCustomObject]@{ ScopeId = '10.64.0.0'; State = 'Active'; PercentageInUse = 0 })
+                    ValidationResults = [ordered]@{
+                        Summary = [ordered]@{ TotalCriticalIssues = 0; TotalWarningIssues = 1 }
+                        CriticalIssues = [ordered]@{
+                            PublicDNSWithUpdates = @(); DNSConfigurationProblems = @(); HighUtilization = @()
+                            MissingFailover = @(); FailoverMissingOnOnePartner = @(); FailoverMissingOnBoth = @()
+                        }
+                        WarningIssues = [ordered]@{
+                            MissingFailover = @(); FailoverUnverified = @($unverified)
+                            ExtendedLeaseDuration = @(); DNSRecordManagement = @()
+                        }
+                        InfoIssues = [ordered]@{ MissingDomainName = @() }
+                    }
+                }
+            }
+
+            $result = Get-WinADDHCPHealthCheck -Quiet
+
+            $result.HealthScore | Should -Be 99
+            ($result.Issues -join ' ') | Should -Match 'unverified failover evidence'
+            ($result.Recommendations -join ' ') | Should -Match 'collection errors'
+        }
+    }
+
+    It 'Renders server-only availability failures in the minimal validation details' {
+        InModuleScope ADEssentials {
+            $server = [PSCustomObject]@{
+                ServerName = 'dhcp-offline.domain.com'
+                Status = 'DNS resolution failed'
+                ErrorMessage = 'Name resolution failed'
+            }
+            $summary = [ordered]@{
+                Servers = @($server)
+                Scopes = @()
+                ScopesWithIssues = @()
+                FailoverAnalysis = $null
+                Statistics = [ordered]@{ TotalServers = 1; TotalScopes = 0 }
+            }
+            $summary.ValidationResults = Get-WinADDHCPValidationResults -DHCPSummary $summary -IncludeServerAvailabilityIssues
+
+            $script:RenderedServerNames = @()
+            Mock New-HTMLTab { & $HtmlData }
+            Mock New-HTMLSection { if ($Content) { & $Content } }
+            Mock New-HTMLPanel { if ($Content) { & $Content } }
+            Mock New-HTMLList { if ($ListItems) { & $ListItems } }
+            Mock New-HTMLListItem {}
+            Mock New-HTMLText {}
+            Mock New-HTMLTableCondition {}
+            Mock New-HTMLTable {
+                $script:RenderedServerNames += @($DataTable | ForEach-Object ServerName)
+                if ($HTML) { & $HTML }
+            }
+
+            New-DHCPMinimalValidationTab -DHCPData $summary
+
+            $summary.ValidationResults.Summary.TotalCriticalIssues | Should -Be 1
+            $summary.ValidationResults.Summary.UniqueScopesWithIssues | Should -Be 0
+            $script:RenderedServerNames | Should -Contain 'dhcp-offline.domain.com'
+        }
+    }
+
     It 'Lets canonical pair mismatches supersede duplicate per-server failover symptoms' {
         InModuleScope ADEssentials {
             $scopeA = [PSCustomObject]@{

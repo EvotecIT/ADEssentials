@@ -20,6 +20,7 @@
     $MissingFailover = [System.Collections.Generic.List[Object]]::new()
     $FailoverMissingOnOnePartner = [System.Collections.Generic.List[Object]]::new()
     $FailoverMissingOnBoth = [System.Collections.Generic.List[Object]]::new()
+    $FailoverUnverified = [System.Collections.Generic.List[Object]]::new()
     $ExtendedLeaseDuration = [System.Collections.Generic.List[Object]]::new()
     $ModerateUtilization = [System.Collections.Generic.List[Object]]::new()
     $DNSRecordManagement = [System.Collections.Generic.List[Object]]::new()
@@ -76,13 +77,29 @@
             }
         }
         if ($DHCPSummary.FailoverAnalysis.MissingOnBoth)   { foreach ($i in $DHCPSummary.FailoverAnalysis.MissingOnBoth)   { $FailoverMissingOnBoth.Add($i) } }
+        if ($DHCPSummary.FailoverAnalysis.UnverifiedScopes) {
+            foreach ($i in $DHCPSummary.FailoverAnalysis.UnverifiedScopes) {
+                $partners = @($i.PartnerA, $i.PartnerB) | Where-Object { $_ } | ForEach-Object {
+                    Resolve-DHCPServerName -Name $_ -DHCPSummary $DHCPSummary
+                }
+                $matchingScopes = @($DHCPSummary.Scopes | Where-Object {
+                    if ([string]$_.ScopeId -ne [string]$i.ScopeId) { return $false }
+                    $scopeServer = Resolve-DHCPServerName -Name $_.ServerName -DHCPSummary $DHCPSummary
+                    return ($partners.Count -eq 0 -or $scopeServer -in $partners)
+                })
+                if ($matchingScopes.Count -gt 0 -and @($matchingScopes | Where-Object State -eq 'Active').Count -eq 0) {
+                    continue
+                }
+                $FailoverUnverified.Add($i)
+            }
+        }
     }
 
     # Canonical pair evidence is more specific than the per-server symptom.
     # Suppress duplicate "not configured" rows for scopes already classified
     # as missing from one or both partner relationship lists.
     $CanonicalFailoverScopeKeys = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
-    foreach ($item in @($FailoverMissingOnOnePartner; $FailoverMissingOnBoth)) {
+    foreach ($item in @($FailoverMissingOnOnePartner; $FailoverMissingOnBoth; $FailoverUnverified)) {
         foreach ($partner in @($item.PartnerA, $item.PartnerB)) {
             $canonicalPartner = Resolve-DHCPServerName -Name $partner -DHCPSummary $DHCPSummary
             if ($canonicalPartner) {
@@ -161,6 +178,7 @@
         }
         WarningIssues     = [ordered] @{
             MissingFailover       = $WarningMissingFailover
+            FailoverUnverified    = $FailoverUnverified
             ExtendedLeaseDuration = $ExtendedLeaseDuration
             DNSRecordManagement   = $WarningDNSRecordManagement
         }
@@ -195,6 +213,7 @@
 
     $ValidationResults.Summary.TotalWarningIssues = (
         $ValidationResults.WarningIssues.MissingFailover.Count +
+        $ValidationResults.WarningIssues.FailoverUnverified.Count +
         $ExtendedLeaseDuration.Count +
         $ValidationResults.WarningIssues.DNSRecordManagement.Count
     )
@@ -216,6 +235,7 @@
 
     $WarningScopes = @(
         $ValidationResults.WarningIssues.MissingFailover
+        $ValidationResults.WarningIssues.FailoverUnverified
         $ExtendedLeaseDuration
         $ValidationResults.WarningIssues.DNSRecordManagement
     )

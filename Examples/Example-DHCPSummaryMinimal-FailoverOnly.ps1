@@ -38,6 +38,7 @@ return
 # Buckets (failover focused)
 $critMissingOnOnePartner = $Output.ValidationResults.CriticalIssues.FailoverMissingOnOnePartner
 $critMissingOnBoth = $Output.ValidationResults.CriticalIssues.FailoverMissingOnBoth
+$warnFailoverUnverified = $Output.ValidationResults.WarningIssues.FailoverUnverified
 
 # Build email
 $EmailBody = EmailBody {
@@ -58,6 +59,7 @@ $EmailBody = EmailBody {
     EmailList -FontSize 9pt {
         if ($critMissingOnOnePartner.Count -gt 0) { EmailListItem -Text "Critical: Missing on one partner (failover mismatch): ", $critMissingOnOnePartner.Count -Color None, Red -FontWeight normal, bold }
         if ($critMissingOnBoth.Count -gt 0) { EmailListItem -Text "Critical: Missing on both partners: ", $critMissingOnBoth.Count -Color None, Red -FontWeight normal, bold }
+        if ($warnFailoverUnverified.Count -gt 0) { EmailListItem -Text "Warning: Failover evidence unverified: ", $warnFailoverUnverified.Count -Color None, DarkOrange -FontWeight normal, bold }
     }
 
     if ($critMissingOnOnePartner.Count -gt 0) {
@@ -68,6 +70,11 @@ $EmailBody = EmailBody {
     if ($critMissingOnBoth.Count -gt 0) {
         EmailText -Text "🔴 Critical: Scopes missing from failover on both partners" -Color Red -FontWeight bold -LineBreak
         EmailTable -DataTable ($critMissingOnBoth | Select-Object -First $TopN) -HideFooter -IncludeProperty 'Relationship', 'PartnerA', 'PartnerB', 'ScopeId'
+        EmailText -LineBreak
+    }
+    if ($warnFailoverUnverified.Count -gt 0) {
+        EmailText -Text "🟠 Warning: Failover Evidence Could Not Be Verified" -Color DarkOrange -FontWeight bold -LineBreak
+        EmailTable -DataTable ($warnFailoverUnverified | Select-Object -First $TopN) -HideFooter -IncludeProperty 'ScopeId', 'PartnerA', 'PartnerB', 'Relationship', 'Issue', 'Verified'
         EmailText -LineBreak
     }
 }

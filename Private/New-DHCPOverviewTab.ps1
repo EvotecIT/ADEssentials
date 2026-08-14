@@ -127,6 +127,11 @@
                         $WarningActions += "⚠️ $ValidationWarnings validation warning(s) require review"
                     }
 
+                    $UnverifiedFailover = @($DHCPData.ValidationResults.WarningIssues.FailoverUnverified).Count
+                    if ($UnverifiedFailover -gt 0) {
+                        $WarningActions += "⚠️ Failover evidence could not be verified for $UnverifiedFailover scope(s) - Resolve collection errors and rerun validation"
+                    }
+
                     $MissingOnOnePartner = @($DHCPData.ValidationResults.CriticalIssues.FailoverMissingOnOnePartner).Count
                     if ($MissingOnOnePartner -gt 0) {
                         $CriticalIssuesCount += $MissingOnOnePartner

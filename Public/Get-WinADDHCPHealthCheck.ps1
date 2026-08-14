@@ -222,6 +222,12 @@
         if ($Summary.ValidationResults.WarningIssues.DNSRecordManagement.Count -gt 0) {
             $Recommendations += "⚠️ Review DNS record management settings for proper cleanup"
         }
+        if ($Summary.ValidationResults.WarningIssues.FailoverUnverified.Count -gt 0) {
+            $unverifiedCount = $Summary.ValidationResults.WarningIssues.FailoverUnverified.Count
+            $Recommendations += "⚠️ Resolve DHCP failover collection errors and rerun validation before changing scope configuration"
+            $Issues += "⚠️ $unverifiedCount scope(s) have unverified failover evidence"
+            $HealthScore -= [Math]::Min(5, $unverifiedCount)
+        }
     }
 
     if ($Summary.ValidationResults.CriticalIssues.FailoverMissingOnOnePartner.Count -gt 0) {

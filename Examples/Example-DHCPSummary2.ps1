@@ -103,6 +103,12 @@ $EmailBody = EmailBody {
             } -HideFooter -IncludeProperty 'ServerName', 'ScopeId', 'Name', 'State', 'FailoverPartner'
         }
 
+        if ($DHCPData.ValidationResults.WarningIssues.FailoverUnverified.Count -gt 0) {
+            EmailText -Text "⚠️ Failover Evidence Could Not Be Verified" -Color DarkOrange -FontWeight bold
+            EmailTable -DataTable $DHCPData.ValidationResults.WarningIssues.FailoverUnverified -IncludeProperty 'ScopeId', 'PartnerA', 'PartnerB', 'Relationship', 'Issue', 'Verified'
+            EmailText -LineBreak
+        }
+
         # Extended Lease Duration
         if ($DHCPData.ValidationResults.WarningIssues.ExtendedLeaseDuration.Count -gt 0) {
             EmailText -Text "Scopes with Extended Lease Duration (>48 hours):" -Color Orange -FontWeight bold

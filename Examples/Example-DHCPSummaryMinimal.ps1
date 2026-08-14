@@ -23,6 +23,7 @@ $critDNSConfig       = $Output.ValidationResults.CriticalIssues.DNSConfiguration
 $critServersOffline  = $Output.ValidationResults.CriticalIssues.ServersOffline.Count
 $critMissingFailover = $Output.ValidationResults.CriticalIssues.MissingFailover.Count
 $warnMissingFailover = $Output.ValidationResults.WarningIssues.MissingFailover.Count
+$warnFailoverUnverified = $Output.ValidationResults.WarningIssues.FailoverUnverified.Count
 $warnLease           = $Output.ValidationResults.WarningIssues.ExtendedLeaseDuration.Count
 $warnDNSMgmt         = $Output.ValidationResults.WarningIssues.DNSRecordManagement.Count
 $infoMissingDomain   = $Output.ValidationResults.InfoIssues.MissingDomainName.Count
@@ -56,6 +57,7 @@ $EmailBody = EmailBody {
         if ($critServersOffline -gt 0) { EmailListItem -Text "Critical: Offline/unhealthy DHCP servers: ", $critServersOffline -Color None, Red -FontWeight normal, bold }
         if ($critMissingFailover -gt 0) { EmailListItem -Text "Critical: No failover configured: ", $critMissingFailover -Color None, Red -FontWeight normal, bold }
         if ($warnMissingFailover -gt 0) { EmailListItem -Text "Warning: No failover configured: ", $warnMissingFailover -Color None, DarkOrange -FontWeight normal, bold }
+        if ($warnFailoverUnverified -gt 0) { EmailListItem -Text "Warning: Failover evidence unverified: ", $warnFailoverUnverified -Color None, DarkOrange -FontWeight normal, bold }
         if ($warnLease -gt 0) { EmailListItem -Text "Warning: Lease duration > 48h: ", $warnLease -Color None, DarkOrange -FontWeight normal, bold }
         if ($warnDNSMgmt -gt 0) { EmailListItem -Text "Warning: DNS record management settings: ", $warnDNSMgmt -Color None, DarkOrange -FontWeight normal, bold }
         if ($infoMissingDomain -gt 0) { EmailListItem -Text "Info: Missing domain name option (015): ", $infoMissingDomain -Color None, Gray -FontWeight normal, bold }

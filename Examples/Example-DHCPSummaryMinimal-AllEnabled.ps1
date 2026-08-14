@@ -44,6 +44,7 @@ $critMissingFailover = $Output.ValidationResults.CriticalIssues.MissingFailover
 
 $warnLease = $Output.ValidationResults.WarningIssues.ExtendedLeaseDuration
 $warnDNSMgmt = $Output.ValidationResults.WarningIssues.DNSRecordManagement
+$warnFailoverUnverified = $Output.ValidationResults.WarningIssues.FailoverUnverified
 $infoMissingDomain = $Output.ValidationResults.InfoIssues.MissingDomainName
 
 # Build email
@@ -77,6 +78,7 @@ $EmailBody = EmailBody {
         if ($critMissingFailover.Count -gt 0) { EmailListItem -Text "Critical: No failover configured: ", $critMissingFailover.Count -Color None, Red -FontWeight normal, bold }
         if ($warnLease.Count -gt 0) { EmailListItem -Text "Warning: Lease duration > 48h: ", $warnLease.Count -Color None, DarkOrange -FontWeight normal, bold }
         if ($warnDNSMgmt.Count -gt 0) { EmailListItem -Text "Warning: DNS record management settings: ", $warnDNSMgmt.Count -Color None, DarkOrange -FontWeight normal, bold }
+        if ($warnFailoverUnverified.Count -gt 0) { EmailListItem -Text "Warning: Failover evidence unverified: ", $warnFailoverUnverified.Count -Color None, DarkOrange -FontWeight normal, bold }
         if ($infoMissingDomain.Count -gt 0) { EmailListItem -Text "Info: Missing domain name option (015): ", $infoMissingDomain.Count -Color None, Gray -FontWeight normal, bold }
     }
 
@@ -114,6 +116,11 @@ $EmailBody = EmailBody {
     if ($warnDNSMgmt.Count -gt 0) {
         EmailText -Text "🟠 Warning: DNS Record Management Settings" -Color DarkOrange -FontWeight bold -LineBreak
         EmailTable -DataTable ($warnDNSMgmt | Select-Object -First $TopN) -HideFooter -IncludeProperty 'ServerName', 'ScopeId', 'Name', 'UpdateDnsRRForOlderClients', 'DeleteDnsRROnLeaseExpiry'
+        EmailText -LineBreak
+    }
+    if ($warnFailoverUnverified.Count -gt 0) {
+        EmailText -Text "🟠 Warning: Failover Evidence Could Not Be Verified" -Color DarkOrange -FontWeight bold -LineBreak
+        EmailTable -DataTable ($warnFailoverUnverified | Select-Object -First $TopN) -HideFooter -IncludeProperty 'ScopeId', 'PartnerA', 'PartnerB', 'Relationship', 'Issue', 'Verified'
         EmailText -LineBreak
     }
 }

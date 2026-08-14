@@ -129,6 +129,26 @@
                     }
                 }
 
+                # Failover evidence could not be verified because relationship
+                # collection did not complete for one or both relevant servers.
+                if ($DHCPData.ValidationResults.WarningIssues.FailoverUnverified.Count -gt 0) {
+                    New-HTMLSection -HeaderText "⚠️ Failover Evidence Could Not Be Verified" -CanCollapse {
+                        $unverifiedData = $DHCPData.ValidationResults.WarningIssues.FailoverUnverified | ForEach-Object {
+                            [PSCustomObject]@{
+                                ScopeId      = $_.ScopeId
+                                PartnerA     = $_.PartnerA
+                                PartnerB     = $_.PartnerB
+                                Relationship = $_.Relationship
+                                Issue        = $_.Issue
+                                Verified     = $_.Verified
+                            }
+                        }
+                        New-HTMLTable -DataTable $unverifiedData -Filtering -DataStore JavaScript -ScrollX {
+                            New-HTMLTableCondition -Name 'Verified' -ComparisonType bool -Operator eq -Value $false -BackgroundColor LightYellow
+                        }
+                    }
+                }
+
                 # Extended Lease Duration
                 if ($DHCPData.ValidationResults.WarningIssues.ExtendedLeaseDuration.Count -gt 0) {
                     New-HTMLSection -HeaderText "Scopes with Extended Lease Duration (>48 hours)" -CanCollapse {
