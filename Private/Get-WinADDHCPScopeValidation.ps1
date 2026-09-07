@@ -63,8 +63,13 @@
         }
     }
 
-    # Check for missing failover configuration
-    if (-not $ScopeObject.FailoverPartner) {
+    # Only classify failover as missing when collection completed successfully.
+    $failoverMissing = if ($ScopeObject.PSObject.Properties.Name -contains 'FailoverStatus') {
+        $ScopeObject.FailoverStatus -eq 'Missing'
+    } else {
+        -not $ScopeObject.FailoverPartner
+    }
+    if ($failoverMissing) {
         $ScopeObject.Issues.Add("DHCP Failover not configured")
         $ScopeObject.Issues.Add("Missing DHCP failover configuration")  # For minimal report matching
         $ScopeObject.HasIssues = $true

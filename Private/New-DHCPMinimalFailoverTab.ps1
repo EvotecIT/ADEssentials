@@ -7,11 +7,10 @@
     New-HTMLTab -TabName 'Failover Status' {
         # Get failover data
         $FailoverRelationships = if ($DHCPData.FailoverRelationships) { $DHCPData.FailoverRelationships } else { @() }
-        $ScopesWithFailover = $DHCPData.Scopes | Where-Object { $_.FailoverPartner }
-        $ScopesWithoutFailover = $DHCPData.Scopes | Where-Object { -not $_.FailoverPartner -and $_.State -eq 'Active' }
-        # Show two decimals to avoid rounding 99.97% up to 100%
-        $CoveragePercentRaw = if ($DHCPData.Scopes.Count -gt 0) { (100.0 * $ScopesWithFailover.Count / $DHCPData.Scopes.Count) } else { 0 }
-        $CoveragePercent = [Math]::Round($CoveragePercentRaw, 2)
+        $coverage = Get-DHCPFailoverCoverageSummary -Scopes $DHCPData.Scopes
+        $ScopesWithFailoverCount = $coverage.ConfiguredCount
+        $ScopesWithoutFailoverCount = $coverage.MissingCount
+        $ScopesUnverifiedCount = $coverage.UnverifiedCount
 
         # Failover enumeration issues (from centralized error log)
         $FailoverEnumWarnings = @($DHCPData.Warnings | Where-Object { $_.Component -eq 'Failover Relationships' -and $_.Operation -eq 'Get-DhcpServerv4Failover' })
@@ -21,15 +20,20 @@
         New-HTMLSection -HeaderText "Failover Coverage Statistics" -Wrap wrap {
             New-HTMLSection -HeaderText "Failover Metrics" -Invisible -Density Compact {
                 New-HTMLInfoCard -Title "Failover Relationships" -Number $FailoverRelationships.Count -Subtitle "Configured Partnerships" -Icon "🤝" -TitleColor 'DodgerBlue' -NumberColor 'Navy' -ShadowColor 'rgba(30, 144, 255, 0.15)'
-                New-HTMLInfoCard -Title "Scopes with Failover" -Number $ScopesWithFailover.Count -Subtitle "Protected Scopes" -Icon "✅" -TitleColor 'Green' -NumberColor 'DarkGreen' -ShadowColor 'rgba(0, 128, 0, 0.15)'
+                New-HTMLInfoCard -Title "Scopes with Failover" -Number $ScopesWithFailoverCount -Subtitle "Protected Scopes" -Icon "✅" -TitleColor 'Green' -NumberColor 'DarkGreen' -ShadowColor 'rgba(0, 128, 0, 0.15)'
 
-                $NoFailoverColor = if ($ScopesWithoutFailover.Count -eq 0) { 'Green' } else { 'Orange' }
-                $NoFailoverIcon  = if ($ScopesWithoutFailover.Count -eq 0) { '✅' } else { '⚠️' }
-                New-HTMLInfoCard -Title "Scopes without Failover" -Number $ScopesWithoutFailover.Count -Subtitle "Unprotected Scopes" -Icon $NoFailoverIcon -TitleColor $NoFailoverColor -NumberColor $NoFailoverColor -ShadowColor 'rgba(255, 165, 0, 0.15)'
+                $NoFailoverColor = if ($ScopesWithoutFailoverCount -eq 0) { 'Green' } else { 'Orange' }
+                $NoFailoverIcon  = if ($ScopesWithoutFailoverCount -eq 0) { '✅' } else { '⚠️' }
+                New-HTMLInfoCard -Title "Scopes without Failover" -Number $ScopesWithoutFailoverCount -Subtitle "Unprotected Scopes" -Icon $NoFailoverIcon -TitleColor $NoFailoverColor -NumberColor $NoFailoverColor -ShadowColor 'rgba(255, 165, 0, 0.15)'
 
-                $CoverageColor = if ($CoveragePercent -ge 90) { 'Green' } elseif ($CoveragePercent -ge 70) { 'Orange' } else { 'Red' }
-                $CoverageIcon  = if ($CoveragePercent -ge 90) { '🎆' } elseif ($CoveragePercent -ge 70) { '📋' } else { '📉' }
-                New-HTMLInfoCard -Title "Failover Coverage" -Number "$CoveragePercent%" -Subtitle "Scope Protection Rate" -Icon $CoverageIcon -TitleColor $CoverageColor -NumberColor $CoverageColor -ShadowColor 'rgba(0, 0, 0, 0.15)'
+                if ($ScopesUnverifiedCount -gt 0) {
+                    New-HTMLInfoCard -Title "Unverified Scopes" -Number $ScopesUnverifiedCount -Subtitle "Excluded from coverage" -Icon "❔" -TitleColor SteelBlue -NumberColor SteelBlue -ShadowColor 'rgba(70, 130, 180, 0.15)'
+                }
+
+                $CoverageColor = if ($null -eq $coverage.Percentage) { 'SteelBlue' } elseif ($coverage.Percentage -ge 90) { 'Green' } elseif ($coverage.Percentage -ge 70) { 'Orange' } else { 'Red' }
+                $CoverageIcon  = if ($null -eq $coverage.Percentage) { '❔' } elseif ($coverage.Percentage -ge 90) { '🎆' } elseif ($coverage.Percentage -ge 70) { '📋' } else { '📉' }
+                $CoverageSubtitle = if ($null -eq $coverage.Percentage) { 'Not assessed' } else { 'Scope Protection Rate' }
+                New-HTMLInfoCard -Title "Failover Coverage" -Number $coverage.Display -Subtitle $CoverageSubtitle -Icon $CoverageIcon -TitleColor $CoverageColor -NumberColor $CoverageColor -ShadowColor 'rgba(0, 0, 0, 0.15)'
 
                 # Surface enumeration problems prominently
                 if ($FailoverEnumWarnings.Count -gt 0 -or $FailoverEnumErrors.Count -gt 0) {
@@ -62,20 +66,23 @@
                                     Modes        = New-Object System.Collections.Generic.HashSet[string]
                                     States       = New-Object System.Collections.Generic.HashSet[string]
                                     ScopesUnion  = New-Object System.Collections.Generic.HashSet[string]
-                                    Sources      = New-Object System.Collections.Generic.HashSet[string]
                                 }
                             }
                             if ($rel.Name) { [void]$pairs[$key].NameSet.Add([string]$rel.Name) }
                             if ($rel.Mode) { [void]$pairs[$key].Modes.Add([string]$rel.Mode) }
                             if ($rel.State) { [void]$pairs[$key].States.Add([string]$rel.State) }
                             foreach ($sid in @($rel.ScopeId)) { if ($sid) { [void]$pairs[$key].ScopesUnion.Add(([string]$sid).Trim()) } }
-                            if ($rel.GatheredFrom) { [void]$pairs[$key].Sources.Add((([string]$rel.GatheredFrom).Trim().ToLower())) }
                         }
 
+                        $enumeratedServers = Get-DHCPFailoverEnumeratedServerSet -DHCPSummary $DHCPData
                         $FailoverSummary = foreach ($p in $pairs.Values) {
                             $state = if ($p.States.Count -eq 1) { @($p.States)[0] } elseif ($p.States.Count -eq 0) { '' } else { 'Mixed' }
-                            $complete = ($p.Sources.Contains($p.ServerA) -and $p.Sources.Contains($p.ServerB))
-                            $dataSrc  = if ($complete) { 'Both partners' } elseif ($p.Sources.Contains($p.ServerA)) { "Only $($p.ServerA)" } elseif ($p.Sources.Contains($p.ServerB)) { "Only $($p.ServerB)" } else { 'Unknown' }
+                            $serverAComplete = $enumeratedServers.Contains($p.ServerA)
+                            $serverBComplete = $enumeratedServers.Contains($p.ServerB)
+                            $dataSrc = if ($serverAComplete -and $serverBComplete) { 'Both partners' }
+                            elseif ($serverAComplete) { "Only $($p.ServerA) completed" }
+                            elseif ($serverBComplete) { "Only $($p.ServerB) completed" }
+                            else { 'Enumeration incomplete' }
                             [PSCustomObject]@{
                                 Name       = (@($p.NameSet) -join ', ')
                                 PartnerA   = $p.ServerA  # alphabetical label
@@ -104,8 +111,9 @@
                     $perSubnet = $DHCPData.FailoverAnalysis.PerSubnetIssues | ForEach-Object {
                         [PSCustomObject]@{
                             ScopeId   = $_.ScopeId
-                            PartnerA  = $_.PrimaryServer
-                            PartnerB  = $_.SecondaryServer
+                            PartnerA  = $_.PartnerA
+                            PartnerB  = $_.PartnerB
+                            MissingPartner = $_.MissingPartner
                             Relation  = if ($_.Relationship) { $_.Relationship } else { '' }
                             Status    = $_.Issue  # e.g., "Missing on <server>" or "Missing from both partners"
                         }
@@ -122,7 +130,17 @@
             # Stale failover relationships (no subnets)
             if ($DHCPData.FailoverAnalysis -and $DHCPData.FailoverAnalysis.StaleRelationships -and $DHCPData.FailoverAnalysis.StaleRelationships.Count -gt 0) {
                 New-HTMLSection -HeaderText "🧹 Stale Failover Relationships (no subnets)" {
-                    New-HTMLTable -DataTable $DHCPData.FailoverAnalysis.StaleRelationships -ScrollX -Filtering {
+                    $staleRelationships = $DHCPData.FailoverAnalysis.StaleRelationships | ForEach-Object {
+                        [PSCustomObject]@{
+                            Relationship = $_.Relationship
+                            PartnerA     = $_.PartnerA
+                            PartnerB     = $_.PartnerB
+                            Mode         = $_.Mode
+                            State        = $_.State
+                            ScopeCount   = $_.ScopeCount
+                        }
+                    }
+                    New-HTMLTable -DataTable $staleRelationships -ScrollX -Filtering {
                         New-HTMLTableCondition -Name 'ScopeCount' -ComparisonType number -Operator eq -Value 0 -BackgroundColor Yellow
                     }
                 }
@@ -154,16 +172,8 @@
                 }
             }
 
-            # Standalone DHCP servers (no failover relationships and no enumeration error recorded)
-            $allServers = @($DHCPData.Servers | ForEach-Object { ([string]$_.ServerName).Trim().ToLower() })
-            $mentioned  = @()
-            foreach ($rel in $DHCPData.FailoverRelationships) {
-                if ($rel.ServerName)   { $mentioned += ([string]$rel.ServerName).Trim().ToLower() }
-                if ($rel.PartnerServer){ $mentioned += ([string]$rel.PartnerServer).Trim().ToLower() }
-            }
-            $mentioned = $mentioned | Select-Object -Unique
-            $enumFailed = @(@($FailoverEnumWarnings + $FailoverEnumErrors) | ForEach-Object { ([string]$_.ServerName).Trim().ToLower() }) | Select-Object -Unique
-            $standalone = @($allServers | Where-Object { ($_ -notin $mentioned) -and ($_ -notin $enumFailed) })
+            # A server is standalone only after its failover query completed successfully.
+            $standalone = @(Get-DHCPStandaloneServerName -DHCPSummary $DHCPData)
             if ($standalone.Count -gt 0) {
                 New-HTMLSection -HeaderText "ℹ️ Servers Without Any Failover Relationships (Standalone)" {
                     $rows = foreach ($srv in $standalone) {

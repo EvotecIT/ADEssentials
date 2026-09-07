@@ -19,7 +19,11 @@
         Write-Verbose "Get-WinADDHCPExtendedScopeData - Processing reservations for scope [$ScopeReservationCounter/$($Scopes.Count)]: $($Scope.ScopeId) on $Computer"
 
         try {
-            $Reservations = Get-DhcpServerv4Reservation -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction Stop
+            if ($TestMode) {
+                $Reservations = Get-TestModeDHCPData -DataType 'DhcpServerv4Reservation' -ComputerName $Computer -ScopeId $Scope.ScopeId
+            } else {
+                $Reservations = Get-DhcpServerv4Reservation -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction Stop
+            }
             Write-Verbose "Get-WinADDHCPExtendedScopeData - Found $($Reservations.Count) reservations in scope $($Scope.ScopeId) on $Computer"
 
             foreach ($Reservation in $Reservations) {
@@ -44,10 +48,18 @@
         if (($null -eq $Components) -or $Components['Leases']) {
         try {
             Write-Verbose "Get-WinADDHCPExtendedScopeData - Checking lease information for scope $($Scope.ScopeId) on $Computer"
-            $CurrentScopeStats = Get-DhcpServerv4ScopeStatistics -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction Stop
+            if ($TestMode) {
+                $CurrentScopeStats = Get-TestModeDHCPData -DataType 'DhcpServerv4ScopeStatistics' -ComputerName $Computer -ScopeId $Scope.ScopeId
+            } else {
+                $CurrentScopeStats = Get-DhcpServerv4ScopeStatistics -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction Stop
+            }
             if ($Scope.State -eq 'Active' -and $CurrentScopeStats.PercentageInUse -gt 75) {
                 Write-Verbose "Get-WinADDHCPExtendedScopeData - High utilization scope $($Scope.ScopeId) ($($CurrentScopeStats.PercentageInUse)%) - collecting lease sample on $Computer"
-                $Leases = Get-DhcpServerv4Lease -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction Stop | Select-Object -First 100
+                if ($TestMode) {
+                    $Leases = Get-TestModeDHCPData -DataType 'DhcpServerv4Lease' -ComputerName $Computer -ScopeId $Scope.ScopeId | Select-Object -First 100
+                } else {
+                    $Leases = Get-DhcpServerv4Lease -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction Stop | Select-Object -First 100
+                }
                 Write-Verbose "Get-WinADDHCPExtendedScopeData - Retrieved $($Leases.Count) lease samples for scope $($Scope.ScopeId) on $Computer"
 
                 foreach ($Lease in $Leases) {
@@ -77,7 +89,11 @@
         if (($null -eq $Components) -or $Components['Options']) {
         Write-Verbose "Get-WinADDHCPExtendedScopeData - Collecting DHCP options for scope $($Scope.ScopeId) on $Computer"
         try {
-            $ScopeOptions = Get-DhcpServerv4OptionValue -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction Stop
+            if ($TestMode) {
+                $ScopeOptions = Get-TestModeDHCPData -DataType 'DhcpServerv4OptionValue' -ComputerName $Computer -ScopeId $Scope.ScopeId
+            } else {
+                $ScopeOptions = Get-DhcpServerv4OptionValue -ComputerName $Computer -ScopeId $Scope.ScopeId -ErrorAction Stop
+            }
             Write-Verbose "Get-WinADDHCPExtendedScopeData - Found $($ScopeOptions.Count) options for scope $($Scope.ScopeId) on $Computer"
 
             foreach ($Option in $ScopeOptions) {

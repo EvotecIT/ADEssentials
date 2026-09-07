@@ -27,7 +27,8 @@
     $TotalScopes = $DHCPData.Statistics.TotalScopes
     $ScopesActive = $DHCPData.Statistics.ScopesActive
     $ScopesInactive = $DHCPData.Statistics.ScopesInactive
-    $ScopesWithIssues = $DHCPData.Statistics.ScopesWithIssues
+    $IssueSummary = Get-WinADDHCPIssueSummary -DHCPSummary $DHCPData
+    $ScopesWithIssues = $IssueSummary.UniqueScopesWithIssues
     $TotalAddresses = $DHCPData.Statistics.TotalAddresses
     $AddressesInUse = $DHCPData.Statistics.AddressesInUse
     $AddressesFree = $DHCPData.Statistics.AddressesFree
@@ -102,11 +103,45 @@
                         $CriticalActions += "🔴 $FailedValidationServers server(s) failed connectivity validation - Check DNS, network, and DHCP service"
                     }
 
-                    # Check for scopes with configuration issues
-                    $ScopesWithConfigIssues = @($DHCPData.ScopesWithIssues).Count
-                    if ($ScopesWithConfigIssues -gt 0) {
-                        $WarningIssuesCount += $ScopesWithConfigIssues
-                        $WarningActions += "⚠️ $ScopesWithConfigIssues scope(s) have configuration issues - Review DNS settings and failover configuration"
+                    $PublicDNSIssues = @($DHCPData.ValidationResults.CriticalIssues.PublicDNSWithUpdates).Count
+                    if ($PublicDNSIssues -gt 0) {
+                        $CriticalIssuesCount += $PublicDNSIssues
+                        $CriticalActions += "🔴 $PublicDNSIssues scope(s) use public DNS with dynamic updates - Replace public resolvers or disable updates"
+                    }
+
+                    $CriticalDNSIssues = @($DHCPData.ValidationResults.CriticalIssues.DNSConfigurationProblems).Count
+                    if ($CriticalDNSIssues -gt 0) {
+                        $CriticalIssuesCount += $CriticalDNSIssues
+                        $CriticalActions += "🔴 $CriticalDNSIssues scope(s) have critical DNS configuration problems - Review DNS update and domain settings"
+                    }
+
+                    $CriticalMissingFailover = @($DHCPData.ValidationResults.CriticalIssues.MissingFailover).Count
+                    if ($CriticalMissingFailover -gt 0) {
+                        $CriticalIssuesCount += $CriticalMissingFailover
+                        $CriticalActions += "🔴 $CriticalMissingFailover scope(s) have no failover protection - Configure a failover relationship"
+                    }
+
+                    $ValidationWarnings = $DHCPData.ValidationResults.Summary.TotalWarningIssues
+                    if ($ValidationWarnings -gt 0) {
+                        $WarningIssuesCount += $ValidationWarnings
+                        $WarningActions += "⚠️ $ValidationWarnings validation warning(s) require review"
+                    }
+
+                    $UnverifiedFailover = @($DHCPData.ValidationResults.WarningIssues.FailoverUnverified).Count
+                    if ($UnverifiedFailover -gt 0) {
+                        $WarningActions += "⚠️ Failover evidence could not be verified for $UnverifiedFailover scope(s) - Resolve collection errors and rerun validation"
+                    }
+
+                    $MissingOnOnePartner = @($DHCPData.ValidationResults.CriticalIssues.FailoverMissingOnOnePartner).Count
+                    if ($MissingOnOnePartner -gt 0) {
+                        $CriticalIssuesCount += $MissingOnOnePartner
+                        $CriticalActions += "🔴 $MissingOnOnePartner scope(s) are missing from one failover partner - Synchronize the partner assignments"
+                    }
+
+                    $MissingOnBothPartners = @($DHCPData.ValidationResults.CriticalIssues.FailoverMissingOnBoth).Count
+                    if ($MissingOnBothPartners -gt 0) {
+                        $CriticalIssuesCount += $MissingOnBothPartners
+                        $CriticalActions += "🔴 $MissingOnBothPartners scope(s) are missing from both failover partner lists - Add the scopes to failover"
                     }
 
                     if ($CriticalIssuesCount -gt 0 -and $CriticalActions.Count -gt 0) {
@@ -208,14 +243,17 @@
         # Failover Overview (new) - show critical failover coverage and mismatches
         if ($DHCPData.FailoverRelationships.Count -ge 0) {
             New-HTMLSection -HeaderText "Failover Overview" -Invisible -Density Compact {
-                $ScopesWithoutFailover = ($DHCPData.Scopes | Where-Object { $_.State -eq 'Active' -and (-not $_.HasFailover) }).Count
-                $OnlyOnPrimary   = if ($DHCPData.FailoverAnalysis) { $DHCPData.FailoverAnalysis.OnlyOnPrimary.Count } else { 0 }
-                $OnlyOnSecondary = if ($DHCPData.FailoverAnalysis) { $DHCPData.FailoverAnalysis.OnlyOnSecondary.Count } else { 0 }
-                $MissingOnBoth   = if ($DHCPData.FailoverAnalysis) { $DHCPData.FailoverAnalysis.MissingOnBoth.Count } else { 0 }
+                $coverage = Get-DHCPFailoverCoverageSummary -Scopes $DHCPData.Scopes
+                $ScopesWithoutFailover = $coverage.MissingCount
+                $ScopesUnverified = $coverage.UnverifiedCount
+                $MissingOnOnePartner = if ($DHCPData.FailoverAnalysis) { $DHCPData.FailoverAnalysis.OnlyOnPartnerA.Count + $DHCPData.FailoverAnalysis.OnlyOnPartnerB.Count } else { 0 }
+                $MissingOnBoth       = if ($DHCPData.FailoverAnalysis) { $DHCPData.FailoverAnalysis.MissingOnBoth.Count } else { 0 }
 
                 New-HTMLInfoCard -Title "Unprotected Scopes" -Number $ScopesWithoutFailover -Subtitle "No Failover" -Icon "🚨" -TitleColor $(if ($ScopesWithoutFailover -gt 0) { 'Orange' } else { 'Green' }) -NumberColor $(if ($ScopesWithoutFailover -gt 0) { 'DarkOrange' } else { 'DarkGreen' })
-                New-HTMLInfoCard -Title "Missing on Partner B" -Number $OnlyOnPrimary -Subtitle "Scopes assigned on A only" -Icon "🟠" -TitleColor 'DarkOrange' -NumberColor 'DarkOrange'
-                New-HTMLInfoCard -Title "Missing on Partner A" -Number $OnlyOnSecondary -Subtitle "Scopes assigned on B only" -Icon "🟠" -TitleColor 'DarkOrange' -NumberColor 'DarkOrange'
+                if ($ScopesUnverified -gt 0) {
+                    New-HTMLInfoCard -Title "Unverified Scopes" -Number $ScopesUnverified -Subtitle "Collection incomplete" -Icon "❔" -TitleColor 'SteelBlue' -NumberColor 'SteelBlue'
+                }
+                New-HTMLInfoCard -Title "Missing on One Partner" -Number $MissingOnOnePartner -Subtitle "Scope assignment mismatch" -Icon "🟠" -TitleColor 'DarkOrange' -NumberColor 'DarkOrange'
                 New-HTMLInfoCard -Title "Missing on Both" -Number $MissingOnBoth -Subtitle "Gap" -Icon "⚠️" -TitleColor 'OrangeRed' -NumberColor 'OrangeRed'
             }
         }

@@ -2,7 +2,7 @@
 
 # Example: Everything enabled (critical + warning buckets rendered)
 $ConsiderDNSConfigCritical = $true
-$ConsiderMissingFailoverCritical = $true   # policy: treat scopes without any failover as critical (count-wise)
+$ConsiderMissingFailoverCritical = $true   # policy: move scopes without any failover into the critical bucket
 $IncludeServerAvailabilityIssues = $true   # include offline/unhealthy servers as critical
 $SendOnCriticalOnly = $false  # send even when only warnings exist
 $TopN = 200     # limit rows per table for email readability
@@ -28,23 +28,23 @@ return
 $CriticalCount = $Output.ValidationResults.Summary.TotalCriticalIssues
 $WarningCount = $Output.ValidationResults.Summary.TotalWarningIssues
 $InfoCount = $Output.ValidationResults.Summary.TotalInfoIssues
-$TotalIssues = @($Output.ScopesWithIssues).Count
+$TotalIssues = $Output.ValidationResults.Summary.UniqueScopesWithIssues
 if ($SendOnCriticalOnly -and $CriticalCount -eq 0) {
     Write-Host 'No critical issues detected. Skipping email send.'
     return
 }
 
 # Buckets
-$critOnlyOnPrimary = $Output.ValidationResults.CriticalIssues.FailoverOnlyOnPrimary
+$critMissingOnOnePartner = $Output.ValidationResults.CriticalIssues.FailoverMissingOnOnePartner
 $critMissingOnBoth = $Output.ValidationResults.CriticalIssues.FailoverMissingOnBoth
 $critDNSPublic = $Output.ValidationResults.CriticalIssues.PublicDNSWithUpdates
 $critDNSProblems = $Output.ValidationResults.CriticalIssues.DNSConfigurationProblems
 $critServersOffline = $Output.ValidationResults.CriticalIssues.ServersOffline
-$polMissingFailover = $Output.ValidationResults.WarningIssues.MissingFailover   # list stays under WarningIssues; policy elevates counts
+$critMissingFailover = $Output.ValidationResults.CriticalIssues.MissingFailover
 
-$warnOnlyOnSecondary = $Output.ValidationResults.WarningIssues.FailoverOnlyOnSecondary
 $warnLease = $Output.ValidationResults.WarningIssues.ExtendedLeaseDuration
 $warnDNSMgmt = $Output.ValidationResults.WarningIssues.DNSRecordManagement
+$warnFailoverUnverified = $Output.ValidationResults.WarningIssues.FailoverUnverified
 $infoMissingDomain = $Output.ValidationResults.InfoIssues.MissingDomainName
 
 # Build email
@@ -70,26 +70,26 @@ $EmailBody = EmailBody {
     EmailText -Text "Issue counts are per-scope and may overlap across categories." -Color DarkGray -FontSize 9pt -LineBreak
     EmailText -Text "Issue Breakdown (where the counts come from):" -Color Blue -FontSize 9pt -FontWeight bold -LineBreak
     EmailList -FontSize 9pt {
-        if ($critOnlyOnPrimary.Count -gt 0) { EmailListItem -Text "Critical: Missing on secondary (failover mismatch): ", $critOnlyOnPrimary.Count -Color None, Red -FontWeight normal, bold }
+        if ($critMissingOnOnePartner.Count -gt 0) { EmailListItem -Text "Critical: Missing on one partner (failover mismatch): ", $critMissingOnOnePartner.Count -Color None, Red -FontWeight normal, bold }
         if ($critMissingOnBoth.Count -gt 0) { EmailListItem -Text "Critical: Missing on both partners: ", $critMissingOnBoth.Count -Color None, Red -FontWeight normal, bold }
         if ($critDNSPublic.Count -gt 0) { EmailListItem -Text "Critical: Public DNS + updates enabled: ", $critDNSPublic.Count -Color None, Red -FontWeight normal, bold }
         if ($critDNSProblems.Count -gt 0) { EmailListItem -Text "Critical: DNS configuration problems (policy): ", $critDNSProblems.Count -Color None, Red -FontWeight normal, bold }
         if ($critServersOffline.Count -gt 0) { EmailListItem -Text "Critical: Offline/unhealthy DHCP servers: ", $critServersOffline.Count -Color None, Red -FontWeight normal, bold }
-        if ($polMissingFailover.Count -gt 0) { EmailListItem -Text "Warning/Policy: No failover configured: ", $polMissingFailover.Count -Color None, DarkOrange -FontWeight normal, bold }
-        if ($warnOnlyOnSecondary.Count -gt 0) { EmailListItem -Text "Warning: Missing on primary (failover mismatch): ", $warnOnlyOnSecondary.Count -Color None, DarkOrange -FontWeight normal, bold }
+        if ($critMissingFailover.Count -gt 0) { EmailListItem -Text "Critical: No failover configured: ", $critMissingFailover.Count -Color None, Red -FontWeight normal, bold }
         if ($warnLease.Count -gt 0) { EmailListItem -Text "Warning: Lease duration > 48h: ", $warnLease.Count -Color None, DarkOrange -FontWeight normal, bold }
         if ($warnDNSMgmt.Count -gt 0) { EmailListItem -Text "Warning: DNS record management settings: ", $warnDNSMgmt.Count -Color None, DarkOrange -FontWeight normal, bold }
+        if ($warnFailoverUnverified.Count -gt 0) { EmailListItem -Text "Warning: Failover evidence unverified: ", $warnFailoverUnverified.Count -Color None, DarkOrange -FontWeight normal, bold }
         if ($infoMissingDomain.Count -gt 0) { EmailListItem -Text "Info: Missing domain name option (015): ", $infoMissingDomain.Count -Color None, Gray -FontWeight normal, bold }
     }
 
-    if ($critOnlyOnPrimary.Count -gt 0) {
-        EmailText -Text "🔴 Critical: Scopes present only on primary (missing on secondary)" -Color Red -FontWeight bold -LineBreak
-        EmailTable -DataTable ($critOnlyOnPrimary | Select-Object -First $TopN) -HideFooter -IncludeProperty 'Relationship', 'PrimaryServer', 'SecondaryServer', 'ScopeId'
+    if ($critMissingOnOnePartner.Count -gt 0) {
+        EmailText -Text "🔴 Critical: Scopes missing from one failover partner" -Color Red -FontWeight bold -LineBreak
+        EmailTable -DataTable ($critMissingOnOnePartner | Select-Object -First $TopN) -HideFooter -IncludeProperty 'Relationship', 'PartnerA', 'PartnerB', 'PresentPartner', 'MissingPartner', 'ScopeId'
         EmailText -LineBreak
     }
     if ($critMissingOnBoth.Count -gt 0) {
         EmailText -Text "🔴 Critical: Scopes missing from failover on both partners" -Color Red -FontWeight bold -LineBreak
-        EmailTable -DataTable ($critMissingOnBoth | Select-Object -First $TopN) -HideFooter -IncludeProperty 'Relationship', 'PrimaryServer', 'SecondaryServer', 'ScopeId'
+        EmailTable -DataTable ($critMissingOnBoth | Select-Object -First $TopN) -HideFooter -IncludeProperty 'Relationship', 'PartnerA', 'PartnerB', 'ScopeId'
         EmailText -LineBreak
     }
     if ($ConsiderDNSConfigCritical -and $critDNSProblems.Count -gt 0) {
@@ -102,17 +102,12 @@ $EmailBody = EmailBody {
         EmailTable -DataTable ($critServersOffline | Select-Object -First $TopN) -HideFooter -IncludeProperty 'ServerName', 'Status', 'ErrorMessage'
         EmailText -LineBreak
     }
-    if ($ConsiderMissingFailoverCritical -and $polMissingFailover.Count -gt 0) {
+    if ($critMissingFailover.Count -gt 0) {
         EmailText -Text "🔴 Critical (policy): Scopes Without Failover Protection" -Color Red -FontWeight bold -LineBreak
-        EmailTable -DataTable ($polMissingFailover | Select-Object -First $TopN) -HideFooter -IncludeProperty 'ServerName', 'ScopeId', 'Name', 'State'
+        EmailTable -DataTable ($critMissingFailover | Select-Object -First $TopN) -HideFooter -IncludeProperty 'ServerName', 'ScopeId', 'Name', 'State'
         EmailText -LineBreak
     }
 
-    if ($warnOnlyOnSecondary.Count -gt 0) {
-        EmailText -Text "🟠 Warning: Scopes present only on secondary (missing on primary)" -Color DarkOrange -FontWeight bold -LineBreak
-        EmailTable -DataTable ($warnOnlyOnSecondary | Select-Object -First $TopN) -HideFooter -IncludeProperty 'Relationship', 'PrimaryServer', 'SecondaryServer', 'ScopeId'
-        EmailText -LineBreak
-    }
     if ($warnLease.Count -gt 0) {
         EmailText -Text "🟠 Warning: Extended Lease Duration (>48h)" -Color DarkOrange -FontWeight bold -LineBreak
         EmailTable -DataTable ($warnLease | Select-Object -First $TopN) -HideFooter -IncludeProperty 'ServerName', 'ScopeId', 'Name', 'LeaseDurationHours'
@@ -121,6 +116,11 @@ $EmailBody = EmailBody {
     if ($warnDNSMgmt.Count -gt 0) {
         EmailText -Text "🟠 Warning: DNS Record Management Settings" -Color DarkOrange -FontWeight bold -LineBreak
         EmailTable -DataTable ($warnDNSMgmt | Select-Object -First $TopN) -HideFooter -IncludeProperty 'ServerName', 'ScopeId', 'Name', 'UpdateDnsRRForOlderClients', 'DeleteDnsRROnLeaseExpiry'
+        EmailText -LineBreak
+    }
+    if ($warnFailoverUnverified.Count -gt 0) {
+        EmailText -Text "🟠 Warning: Failover Evidence Could Not Be Verified" -Color DarkOrange -FontWeight bold -LineBreak
+        EmailTable -DataTable ($warnFailoverUnverified | Select-Object -First $TopN) -HideFooter -IncludeProperty 'ScopeId', 'PartnerA', 'PartnerB', 'Relationship', 'Issue', 'Verified'
         EmailText -LineBreak
     }
 }
@@ -150,4 +150,3 @@ $EmailSplat = @{
 }
 
 Send-EmailMessage @EmailSplat
-

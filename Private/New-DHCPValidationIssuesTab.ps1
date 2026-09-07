@@ -65,16 +65,27 @@
                     }
                 }
 
-                # Scopes assigned only to Partner A (missing on Partner B) — critical
-                if ($DHCPData.ValidationResults.CriticalIssues.FailoverOnlyOnPrimary.Count -gt 0) {
-                    New-HTMLSection -HeaderText "🔴 Failover Scope Mismatches: Assigned on Partner A only (missing on Partner B)" -CanCollapse {
-                        $data = $DHCPData.ValidationResults.CriticalIssues.FailoverOnlyOnPrimary | ForEach-Object {
+                if ($DHCPData.ValidationResults.CriticalIssues.MissingFailover.Count -gt 0) {
+                    New-HTMLSection -HeaderText "🔴 Active Scopes without Failover Configuration" -CanCollapse {
+                        New-HTMLTable -DataTable $DHCPData.ValidationResults.CriticalIssues.MissingFailover -Filtering {
+                            New-HTMLTableCondition -Name 'State' -ComparisonType string -Operator eq -Value 'Active' -BackgroundColor Salmon
+                        } -DataStore JavaScript -ScrollX
+                    }
+                }
+
+                # A scope assigned on only one member of a failover pair is critical,
+                # regardless of which canonical partner sorts first.
+                if ($DHCPData.ValidationResults.CriticalIssues.FailoverMissingOnOnePartner.Count -gt 0) {
+                    New-HTMLSection -HeaderText "🔴 Failover Scope Mismatches: Missing on One Partner" -CanCollapse {
+                        $data = $DHCPData.ValidationResults.CriticalIssues.FailoverMissingOnOnePartner | ForEach-Object {
                             [PSCustomObject]@{
                                 Relationship          = $_.Relationship
-                                PartnerA              = $_.PrimaryServer
-                                PartnerB              = $_.SecondaryServer
+                                PartnerA              = $_.PartnerA
+                                PartnerB              = $_.PartnerB
+                                PresentPartner        = $_.PresentPartner
+                                MissingPartner        = $_.MissingPartner
                                 ScopeId               = $_.ScopeId
-                                FailoverConfiguration = 'missing on secondary'
+                                FailoverConfiguration = 'missing on one partner'
                                 Issue                 = $_.Issue
                             }
                         }
@@ -87,7 +98,17 @@
                 # Missing on both partners — critical
                 if ($DHCPData.ValidationResults.CriticalIssues.FailoverMissingOnBoth.Count -gt 0) {
                     New-HTMLSection -HeaderText "🔴 Scopes Missing from Failover on Both Partners" -CanCollapse {
-                        New-HTMLTable -DataTable $DHCPData.ValidationResults.CriticalIssues.FailoverMissingOnBoth -Filtering {
+                        $missingBothData = $DHCPData.ValidationResults.CriticalIssues.FailoverMissingOnBoth | ForEach-Object {
+                            [PSCustomObject]@{
+                                Relationship = $_.Relationship
+                                PartnerA     = $_.PartnerA
+                                PartnerB     = $_.PartnerB
+                                ScopeId      = $_.ScopeId
+                                Issue        = $_.Issue
+                                Verified     = $_.Verified
+                            }
+                        }
+                        New-HTMLTable -DataTable $missingBothData -Filtering {
                             New-HTMLTableCondition -Name 'Issue' -ComparisonType string -Operator contains -Value 'both' -BackgroundColor Salmon -HighlightHeaders 'Issue'
                         } -DataStore JavaScript -ScrollX
                     }
@@ -108,28 +129,25 @@
                     }
                 }
 
-                # NOTE: 'Failover only on primary' moved to Critical section
-
-                # Scopes assigned only to Partner B (missing on Partner A)
-                if ($DHCPData.ValidationResults.WarningIssues.FailoverOnlyOnSecondary.Count -gt 0) {
-                    New-HTMLSection -HeaderText "🔄 Failover Scope Mismatches: Assigned on Partner B only (missing on Partner A)" -CanCollapse {
-                        $data = $DHCPData.ValidationResults.WarningIssues.FailoverOnlyOnSecondary | ForEach-Object {
+                # Failover evidence could not be verified because relationship
+                # collection did not complete for one or both relevant servers.
+                if ($DHCPData.ValidationResults.WarningIssues.FailoverUnverified.Count -gt 0) {
+                    New-HTMLSection -HeaderText "⚠️ Failover Evidence Could Not Be Verified" -CanCollapse {
+                        $unverifiedData = $DHCPData.ValidationResults.WarningIssues.FailoverUnverified | ForEach-Object {
                             [PSCustomObject]@{
-                                Relationship          = $_.Relationship
-                                PartnerA              = $_.PrimaryServer
-                                PartnerB              = $_.SecondaryServer
-                                ScopeId               = $_.ScopeId
-                                FailoverConfiguration = 'missing on primary'
-                                Issue                 = $_.Issue
+                                ScopeId      = $_.ScopeId
+                                PartnerA     = $_.PartnerA
+                                PartnerB     = $_.PartnerB
+                                Relationship = $_.Relationship
+                                Issue        = $_.Issue
+                                Verified     = $_.Verified
                             }
                         }
-                        New-HTMLTable -DataTable $data -Filtering {
-                            New-HTMLTableCondition -Name 'FailoverConfiguration' -ComparisonType string -Operator contains -Value 'missing' -BackgroundColor LightYellow
-                        } -DataStore JavaScript -ScrollX
+                        New-HTMLTable -DataTable $unverifiedData -Filtering -DataStore JavaScript -ScrollX {
+                            New-HTMLTableCondition -Name 'Verified' -ComparisonType bool -Operator eq -Value $false -BackgroundColor LightYellow
+                        }
                     }
                 }
-
-                # NOTE: 'Missing on both' moved to Critical section
 
                 # Extended Lease Duration
                 if ($DHCPData.ValidationResults.WarningIssues.ExtendedLeaseDuration.Count -gt 0) {
@@ -155,6 +173,7 @@
                         )
                     }
                 }
+
             }
         }
 

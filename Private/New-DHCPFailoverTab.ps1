@@ -20,6 +20,9 @@
     )
 
     New-HTMLTab -TabName 'Failover' {
+        $enumeratedServers = Get-DHCPFailoverEnumeratedServerSet -DHCPSummary $DHCPData
+        $coverage = Get-DHCPFailoverCoverageSummary -Scopes $DHCPData.Scopes
+
         # Failover Overview at the top
         New-HTMLSection -HeaderText "🔄 High Availability Overview" {
             New-HTMLPanel -Invisible {
@@ -27,8 +30,9 @@
                 $TotalFailoverRelationships = $DHCPData.FailoverRelationships.Count
                 $ActiveFailovers = ($DHCPData.FailoverRelationships | Where-Object { $_.State -eq 'Normal' }).Count
                 $FailoverIssues = ($DHCPData.FailoverRelationships | Where-Object { $_.State -ne 'Normal' }).Count
-                $ScopesWithFailover = ($DHCPData.Scopes | Where-Object { $null -ne $_.FailoverPartner -and $_.FailoverPartner -ne '' }).Count
-                $ScopesWithoutFailover = ($DHCPData.Scopes | Where-Object { $_.State -eq 'Active' -and ($null -eq $_.FailoverPartner -or $_.FailoverPartner -eq '') }).Count
+                $ScopesWithFailover = $coverage.ConfiguredCount
+                $ScopesWithoutFailover = $coverage.MissingCount
+                $ScopesUnverified = $coverage.UnverifiedCount
 
                 # Failover enumeration issues (from centralized error log)
                 $FailoverEnumWarnings = @($DHCPData.Warnings | Where-Object { $_.Component -eq 'Failover Relationships' -and $_.Operation -eq 'Get-DhcpServerv4Failover' })
@@ -39,9 +43,12 @@
                     New-HTMLInfoCard -Title "Active Failovers" -Number $ActiveFailovers -Subtitle "Normal State" -Icon "✅" -TitleColor Green -NumberColor DarkGreen
                     New-HTMLInfoCard -Title "Failover Issues" -Number $FailoverIssues -Subtitle "Need Attention" -Icon "⚠️" -TitleColor $(if ($FailoverIssues -gt 0) { "Red" } else { "Green" }) -NumberColor $(if ($FailoverIssues -gt 0) { "DarkRed" } else { "DarkGreen" })
                     New-HTMLInfoCard -Title "Unprotected Scopes" -Number $ScopesWithoutFailover -Subtitle "No Failover" -Icon "🚨" -TitleColor $(if ($ScopesWithoutFailover -gt 0) { "Orange" } else { "Green" }) -NumberColor $(if ($ScopesWithoutFailover -gt 0) { "DarkOrange" } else { "DarkGreen" })
+                    if ($ScopesUnverified -gt 0) {
+                        New-HTMLInfoCard -Title "Unverified Scopes" -Number $ScopesUnverified -Subtitle "Collection incomplete" -Icon "❔" -TitleColor SteelBlue -NumberColor SteelBlue
+                    }
                     if ($DHCPData.FailoverAnalysis) {
-                        New-HTMLInfoCard -Title "Missing on Partner B" -Number $($DHCPData.FailoverAnalysis.OnlyOnPrimary.Count) -Subtitle "Scopes assigned on A only" -Icon "🟠" -TitleColor 'DarkOrange' -NumberColor 'DarkOrange'
-                        New-HTMLInfoCard -Title "Missing on Partner A" -Number $($DHCPData.FailoverAnalysis.OnlyOnSecondary.Count) -Subtitle "Scopes assigned on B only" -Icon "🟠" -TitleColor 'DarkOrange' -NumberColor 'DarkOrange'
+                        $missingOnOnePartner = $DHCPData.FailoverAnalysis.OnlyOnPartnerA.Count + $DHCPData.FailoverAnalysis.OnlyOnPartnerB.Count
+                        New-HTMLInfoCard -Title "Missing on One Partner" -Number $missingOnOnePartner -Subtitle "Scope assignment mismatch" -Icon "🟠" -TitleColor 'DarkOrange' -NumberColor 'DarkOrange'
                         New-HTMLInfoCard -Title "Missing on Both" -Number $($DHCPData.FailoverAnalysis.MissingOnBoth.Count) -Subtitle "Gap" -Icon "⚠️" -TitleColor 'OrangeRed' -NumberColor 'OrangeRed'
                         if ($FailoverEnumWarnings.Count -gt 0 -or $FailoverEnumErrors.Count -gt 0) {
                             $warnColor = if ($FailoverEnumWarnings.Count -gt 0) { 'Orange' } else { 'Green' }
@@ -57,6 +64,9 @@
                     New-HTMLChart -Title "Failover Coverage Analysis" {
                         New-ChartPie -Name "With Failover" -Value $ScopesWithFailover -Color '#00FF00'
                         New-ChartPie -Name "Without Failover" -Value $ScopesWithoutFailover -Color '#FF6347'
+                        if ($ScopesUnverified -gt 0) {
+                            New-ChartPie -Name "Unverified" -Value $ScopesUnverified -Color '#4682B4'
+                        }
                     } -Height 300
                 }
             }
@@ -80,20 +90,22 @@
                         Modes       = New-Object System.Collections.Generic.HashSet[string]
                         States      = New-Object System.Collections.Generic.HashSet[string]
                         ScopesUnion = New-Object System.Collections.Generic.HashSet[string]
-                        Sources     = New-Object System.Collections.Generic.HashSet[string]
                     }
                 }
                 if ($rel.Name) { [void]$pairs[$key].NameSet.Add([string]$rel.Name) }
                 if ($rel.Mode) { [void]$pairs[$key].Modes.Add([string]$rel.Mode) }
                 if ($rel.State) { [void]$pairs[$key].States.Add([string]$rel.State) }
                 foreach ($sid in @($rel.ScopeId)) { if ($sid) { [void]$pairs[$key].ScopesUnion.Add(([string]$sid).Trim()) } }
-                if ($rel.GatheredFrom) { [void]$pairs[$key].Sources.Add((([string]$rel.GatheredFrom).Trim().ToLower())) }
             }
 
             $FailoverSummary = foreach ($p in $pairs.Values) {
                 $state = if ($p.States.Count -eq 1) { @($p.States)[0] } elseif ($p.States.Count -eq 0) { '' } else { 'Mixed' }
-                $complete = ($p.Sources.Contains($p.ServerA) -and $p.Sources.Contains($p.ServerB))
-                $dataSrc  = if ($complete) { 'Both partners' } elseif ($p.Sources.Contains($p.ServerA)) { "Only $($p.ServerA)" } elseif ($p.Sources.Contains($p.ServerB)) { "Only $($p.ServerB)" } else { 'Unknown' }
+                $serverAComplete = $enumeratedServers.Contains($p.ServerA)
+                $serverBComplete = $enumeratedServers.Contains($p.ServerB)
+                $dataSrc = if ($serverAComplete -and $serverBComplete) { 'Both partners' }
+                elseif ($serverAComplete) { "Only $($p.ServerA) completed" }
+                elseif ($serverBComplete) { "Only $($p.ServerB) completed" }
+                else { 'Enumeration incomplete' }
                 [PSCustomObject]@{
                     Name       = (@($p.NameSet) -join ', ')
                     PartnerA   = $p.ServerA
@@ -119,8 +131,9 @@
                 $perSubnet = $DHCPData.FailoverAnalysis.PerSubnetIssues | ForEach-Object {
                     [PSCustomObject]@{
                         ScopeId      = $_.ScopeId
-                        PartnerA     = $_.PrimaryServer
-                        PartnerB     = $_.SecondaryServer
+                        PartnerA     = $_.PartnerA
+                        PartnerB     = $_.PartnerB
+                        MissingPartner = $_.MissingPartner
                         Relationship = if ($_.Relationship) { $_.Relationship } else { '' }
                         Status       = $_.Issue
                     }
@@ -137,7 +150,17 @@
         # Stale failover relationships (no subnets)
         if ($DHCPData.FailoverAnalysis -and $DHCPData.FailoverAnalysis.StaleRelationships -and $DHCPData.FailoverAnalysis.StaleRelationships.Count -gt 0) {
             New-HTMLSection -HeaderText "🧹 Stale Failover Relationships (no subnets)" {
-                New-HTMLTable -DataTable $DHCPData.FailoverAnalysis.StaleRelationships -ScrollX -Filtering {
+                $staleRelationships = $DHCPData.FailoverAnalysis.StaleRelationships | ForEach-Object {
+                    [PSCustomObject]@{
+                        Relationship = $_.Relationship
+                        PartnerA     = $_.PartnerA
+                        PartnerB     = $_.PartnerB
+                        Mode         = $_.Mode
+                        State        = $_.State
+                        ScopeCount   = $_.ScopeCount
+                    }
+                }
+                New-HTMLTable -DataTable $staleRelationships -ScrollX -Filtering {
                     New-HTMLTableCondition -Name 'ScopeCount' -ComparisonType number -Operator eq -Value 0 -BackgroundColor Yellow
                 }
             }
@@ -145,79 +168,7 @@
 
         # Pair-wise analysis views
         New-HTMLSection -HeaderText "🔎 Relationship Pair View" -CanCollapse {
-            # Build pairs keyed by normalized server tuple + relationship name
-            $Pairs = @{}
-            foreach ($rel in $DHCPData.FailoverRelationships) {
-                $a = $rel.ServerName.ToLower()
-                $b = $rel.PartnerServer.ToLower()
-                $sorted = @($a, $b) | Sort-Object
-                $key = "$($rel.Name.ToLower())|$($sorted -join '↔')"
-                if (-not $Pairs.ContainsKey($key)) {
-                    $Pairs[$key] = [ordered]@{
-                        Name    = $rel.Name
-                        ServerA = $sorted[0]
-                        ServerB = $sorted[1]
-                        RelA    = $null
-                        RelB    = $null
-                    }
-                }
-                if ($rel.ServerName.ToLower() -eq $Pairs[$key].ServerA) { $Pairs[$key].RelA = $rel } else { $Pairs[$key].RelB = $rel }
-            }
-
-            $pairRows = foreach ($pair in $Pairs.Values) {
-                $relA = $pair.RelA
-                $relB = $pair.RelB
-                $scopesA = if ($relA -and $relA.ScopeId) { @($relA.ScopeId) } else { @() }
-                $scopesB = if ($relB -and $relB.ScopeId) { @($relB.ScopeId) } else { @() }
-                $verified = ($relA -ne $null -and $relB -ne $null)
-
-                # Only include common scopes on both servers to detect 'Missing on both'
-                # Use canonicalized names to avoid short/FQDN mismatches
-                $scopesOnA = @(
-                    $DHCPData.Scopes |
-                        Where-Object {
-                            if (-not $_.ServerName) { return $false }
-                            $srv = Resolve-DHCPServerName -Name $_.ServerName -DHCPSummary $DHCPData
-                            return ($srv -eq $pair.ServerA)
-                        } |
-                        Select-Object -ExpandProperty ScopeId -Unique
-                )
-                $scopesOnB = @(
-                    $DHCPData.Scopes |
-                        Where-Object {
-                            if (-not $_.ServerName) { return $false }
-                            $srv = Resolve-DHCPServerName -Name $_.ServerName -DHCPSummary $DHCPData
-                            return ($srv -eq $pair.ServerB)
-                        } |
-                        Select-Object -ExpandProperty ScopeId -Unique
-                )
-                $commonScopes = @($scopesOnA | Where-Object { $scopesOnB -contains $_ })
-                $allScopes = @($scopesA + $scopesB + $commonScopes) | Select-Object -Unique
-
-                foreach ($s in $allScopes) {
-                    $onA = $scopesA -contains $s
-                    $onB = $scopesB -contains $s
-                    $statusBase = if ($onA -and $onB) { 'On both partners' } elseif ($onA) { "Missing on $($pair.ServerB)" } elseif ($onB) { "Missing on $($pair.ServerA)" } else { 'Missing on both' }
-                    $status = $statusBase + $(if (-not $verified -and $statusBase -ne 'On both partners') { ' (Unverified)' } else { '' })
-                    $failoverConfig = switch ($statusBase) {
-                        { $_ -like 'Missing on *' } { 'missing on one partner' }
-                        'Missing on both' { 'missing on both' }
-                        default { 'configured' }
-                    }
-                    [PSCustomObject]@{
-                        Relationship          = $pair.Name
-                        Pair                  = "$($pair.ServerA) ↔ $($pair.ServerB)"
-                        PartnerA              = $pair.ServerA
-                        PartnerB              = $pair.ServerB
-                        ScopeId               = $s
-                        OnPartnerA            = $onA
-                        OnPartnerB            = $onB
-                        VerifiedFromBothSides = $verified
-                        Status                = $status
-                        FailoverConfiguration = $failoverConfig
-                    }
-                }
-            }
+            $pairRows = @(Get-DHCPFailoverPairComparison -DHCPSummary $DHCPData)
 
             if (@($pairRows).Count -gt 0) {
                 New-HTMLSection -Invisible {
@@ -317,16 +268,8 @@
             }
         }
 
-        # Standalone DHCP servers (no failover relationships and no enumeration error recorded)
-        $allServers = @($DHCPData.Servers | ForEach-Object { ([string]$_.ServerName).Trim().ToLower() })
-        $mentioned  = @()
-        foreach ($rel in $DHCPData.FailoverRelationships) {
-            if ($rel.ServerName)   { $mentioned += ([string]$rel.ServerName).Trim().ToLower() }
-            if ($rel.PartnerServer){ $mentioned += ([string]$rel.PartnerServer).Trim().ToLower() }
-        }
-        $mentioned = $mentioned | Select-Object -Unique
-        $enumFailed = @(@($FailoverEnumWarnings + $FailoverEnumErrors) | ForEach-Object { ([string]$_.ServerName).Trim().ToLower() }) | Select-Object -Unique
-        $standalone = @($allServers | Where-Object { ($_ -notin $mentioned) -and ($_ -notin $enumFailed) })
+        # A server is standalone only after its failover query completed successfully.
+        $standalone = @(Get-DHCPStandaloneServerName -DHCPSummary $DHCPData)
         if ($standalone.Count -gt 0) {
             New-HTMLSection -HeaderText "ℹ️ Servers Without Any Failover Relationships (Standalone)" -CanCollapse {
                 $rows = foreach ($srv in $standalone) {

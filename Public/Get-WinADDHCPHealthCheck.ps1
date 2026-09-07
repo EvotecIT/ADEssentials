@@ -127,6 +127,20 @@
         }
     }
 
+    if (-not $Summary -or $Summary.Statistics.TotalServers -eq 0) {
+        if (-not $Quiet) {
+            Write-Color -Text '[!] ', '[DHCP] ', 'No DHCP servers found in the environment' -Color Yellow, DarkGray, Yellow
+        }
+        return @{
+            HealthScore     = 0
+            HealthStatus    = 'No Infrastructure'
+            Issues          = @('No DHCP servers found in the environment')
+            Recommendations = @('Install and configure DHCP servers', 'Check DHCP server registration in Active Directory')
+            Summary         = $Summary
+            Timestamp       = Get-Date
+        }
+    }
+
     # Initialize health scoring
     $HealthScore = 100
     $Issues = @()
@@ -146,10 +160,19 @@
         $Recommendations += "⚠️ Review server configuration issues and resolve them"
     }
 
-    # Check for scopes with configuration issues (Moderate: -10 points)
-    if ($Summary.Statistics.ScopesWithIssues -gt 0) {
+    # Score non-failover configuration evidence once. Failover defects are scored
+    # from their canonical severity buckets below, so the raw per-server symptom
+    # cannot reduce health a second time.
+    $NonFailoverScopeIssues = @(
+        $Summary.ValidationResults.CriticalIssues.PublicDNSWithUpdates
+        $Summary.ValidationResults.CriticalIssues.DNSConfigurationProblems
+        $Summary.ValidationResults.WarningIssues.ExtendedLeaseDuration
+        $Summary.ValidationResults.WarningIssues.DNSRecordManagement
+        $Summary.ValidationResults.InfoIssues.MissingDomainName
+    ) | Where-Object ScopeId | Sort-Object -Property ScopeId -Unique
+    if (@($NonFailoverScopeIssues).Count -gt 0) {
         $HealthScore -= 10
-        $Issues += "⚠️ $($Summary.Statistics.ScopesWithIssues) scope(s) have configuration issues"
+        $Issues += "⚠️ $(@($NonFailoverScopeIssues).Count) scope(s) have non-failover configuration issues"
         $Recommendations += "⚠️ Review scope configuration issues for optimal DHCP operation"
     }
 
@@ -180,6 +203,11 @@
         if ($Summary.ValidationResults.CriticalIssues.HighUtilization.Count -gt 0) {
             $Recommendations += "🔴 Expand address pools for scopes with >90% utilization"
         }
+        if ($Summary.ValidationResults.CriticalIssues.MissingFailover.Count -gt 0) {
+            $Recommendations += "🚨 Configure DHCP failover for high-availability scopes"
+            $Issues += "🚨 $($Summary.ValidationResults.CriticalIssues.MissingFailover.Count) scope(s) missing failover"
+            $HealthScore -= [Math]::Min(10, $Summary.ValidationResults.CriticalIssues.MissingFailover.Count)
+        }
     }
 
     if ($Summary.ValidationResults.Summary.TotalWarningIssues -gt 0) {
@@ -188,27 +216,29 @@
             $Issues += "⚠️ $($Summary.ValidationResults.WarningIssues.MissingFailover.Count) scope(s) missing failover"
             $HealthScore -= [Math]::Min(10, $Summary.ValidationResults.WarningIssues.MissingFailover.Count)
         }
-        if ($Summary.ValidationResults.CriticalIssues.FailoverOnlyOnPrimary.Count -gt 0) {
-            $Recommendations += "🚨 Synchronize failover scope lists: present only on primary (missing on secondary)"
-            $Issues += "🚨 $($Summary.ValidationResults.CriticalIssues.FailoverOnlyOnPrimary.Count) scope(s) only on primary failover list"
-            $HealthScore -= [Math]::Min(10, $Summary.ValidationResults.CriticalIssues.FailoverOnlyOnPrimary.Count)
-        }
-        if ($Summary.ValidationResults.WarningIssues.FailoverOnlyOnSecondary.Count -gt 0) {
-            $Recommendations += "⚠️ Synchronize failover scope lists: present only on secondary"
-            $Issues += "⚠️ $($Summary.ValidationResults.WarningIssues.FailoverOnlyOnSecondary.Count) scope(s) only on secondary failover list"
-            $HealthScore -= [Math]::Min(10, $Summary.ValidationResults.WarningIssues.FailoverOnlyOnSecondary.Count)
-        }
-        if ($Summary.ValidationResults.CriticalIssues.FailoverMissingOnBoth.Count -gt 0) {
-            $Recommendations += "🚨 Add scopes to failover on both partners"
-            $Issues += "🚨 $($Summary.ValidationResults.CriticalIssues.FailoverMissingOnBoth.Count) scope(s) missing on both failover lists"
-            $HealthScore -= [Math]::Min(15, $Summary.ValidationResults.CriticalIssues.FailoverMissingOnBoth.Count)
-        }
         if ($Summary.ValidationResults.WarningIssues.ExtendedLeaseDuration.Count -gt 0) {
             $Recommendations += "⚠️ Review extended lease durations for potential optimization"
         }
         if ($Summary.ValidationResults.WarningIssues.DNSRecordManagement.Count -gt 0) {
             $Recommendations += "⚠️ Review DNS record management settings for proper cleanup"
         }
+        if ($Summary.ValidationResults.WarningIssues.FailoverUnverified.Count -gt 0) {
+            $unverifiedCount = $Summary.ValidationResults.WarningIssues.FailoverUnverified.Count
+            $Recommendations += "⚠️ Resolve DHCP failover collection errors and rerun validation before changing scope configuration"
+            $Issues += "⚠️ $unverifiedCount scope(s) have unverified failover evidence"
+            $HealthScore -= [Math]::Min(5, $unverifiedCount)
+        }
+    }
+
+    if ($Summary.ValidationResults.CriticalIssues.FailoverMissingOnOnePartner.Count -gt 0) {
+        $Recommendations += "🚨 Synchronize failover scope assignments across both partners"
+        $Issues += "🚨 $($Summary.ValidationResults.CriticalIssues.FailoverMissingOnOnePartner.Count) scope(s) missing from one partner failover list"
+        $HealthScore -= [Math]::Min(10, $Summary.ValidationResults.CriticalIssues.FailoverMissingOnOnePartner.Count)
+    }
+    if ($Summary.ValidationResults.CriticalIssues.FailoverMissingOnBoth.Count -gt 0) {
+        $Recommendations += "🚨 Add scopes to failover on both partners"
+        $Issues += "🚨 $($Summary.ValidationResults.CriticalIssues.FailoverMissingOnBoth.Count) scope(s) missing on both failover lists"
+        $HealthScore -= [Math]::Min(15, $Summary.ValidationResults.CriticalIssues.FailoverMissingOnBoth.Count)
     }
 
     # Ensure health score doesn't go below 0

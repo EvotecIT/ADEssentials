@@ -274,12 +274,14 @@
         DHCPClasses               = [System.Collections.Generic.List[Object]]::new()
         Superscopes               = [System.Collections.Generic.List[Object]]::new()
         FailoverRelationships     = [System.Collections.Generic.List[Object]]::new()
+        FailoverCollectionStatus  = [System.Collections.Generic.List[Object]]::new()
         ServerStatistics          = [System.Collections.Generic.List[Object]]::new()
         OptionsAnalysis           = [System.Collections.Generic.List[Object]]::new()
         Statistics                = [ordered] @{}
         ValidationResults         = [ordered] @{}
         TimingStatistics          = [System.Collections.Generic.List[Object]]::new()
         AccurateUtilization       = $AccurateUtilization
+        CanonicalNameCache        = @{}
     }
 
     # Get DHCP servers from AD for discovery
@@ -529,31 +531,9 @@
         foreach ($s in $DHCPServersFromAD) {
             Get-WinADDHCPFailoverRelationships -Computer $s.DnsName -DHCPSummary $DHCPSummary -TestMode:$TestMode
         }
-        # Filter failover relationships for reporting/analysis to only include allowed servers
-        if ($DHCPServersFromAD -and $DHCPServersFromAD.Count -gt 0) {
-            $allowed = @{}
-            foreach ($s in $DHCPServersFromAD) {
-                if (-not $s -or -not $s.DnsName) { continue }
-                $n = ([string]$s.DnsName).Trim().ToLower()
-                if ($n) { $allowed[$n] = $true }
-                if ($n -match '\.') {
-                    $short = $n.Split('.')[0]
-                    if ($short) { $allowed[$short] = $true }
-                }
-            }
-            $filteredFailoverRelationships = New-Object System.Collections.Generic.List[object]
-            foreach ($rel in $DHCPSummary.FailoverRelationships) {
-                if (-not $rel) { continue }
-                $a = if ($rel.ServerName) { ([string]$rel.ServerName).Trim().ToLower() } else { $null }
-                $b = if ($rel.PartnerServer) { ([string]$rel.PartnerServer).Trim().ToLower() } else { $null }
-                if (($a -and $allowed.ContainsKey($a)) -and ($b -and $allowed.ContainsKey($b))) {
-                    [void]$filteredFailoverRelationships.Add($rel)
-                }
-            }
-            $DHCPSummary.FailoverRelationships = $filteredFailoverRelationships
-        }
-
-        # Index failover relationships by server for fast lookup (after filtering)
+        # Index evidence by the server that was actually queried. A filtered-out
+        # partner remains valid evidence for an included server, but is not itself
+        # treated as fully enumerated.
         foreach ($rel in $DHCPSummary.FailoverRelationships) {
             if (-not $rel) { continue }
             $key = $rel.ServerName.ToLower()
@@ -577,8 +557,17 @@
         # Determine if this server should be analyzed in detail
         $ShouldAnalyze = $ServersToAnalyzeSet[$Computer.ToLower()] -eq $true
 
-        # Reset per-server failover map
-        $ServerFailoverMap = $null
+        $serverKey = $Computer.ToLower()
+        $serverRelationships = if ($FailoverByServer.ContainsKey($serverKey)) {
+            @($FailoverByServer[$serverKey] | ForEach-Object { $_ })
+        } else {
+            @()
+        }
+        $serverCollectionStatus = @(
+            $DHCPSummary.FailoverCollectionStatus |
+                Where-Object { ([string]$_.ServerName).Trim().ToLower() -eq $serverKey }
+        ) | Select-Object -Last 1
+        $ServerFailoverEvidenceMap = New-DHCPFailoverEvidenceMap -Computer $Computer -Relationships $serverRelationships -CollectionStatus $serverCollectionStatus -CollectionEnabled:$Components['Failover']
 
         # Test connectivity and get server information only for servers to analyze
         if ($ShouldAnalyze) {
@@ -648,6 +637,9 @@
                 } else {
                     $Scopes = Get-DhcpServerv4Scope -ComputerName $Computer -ErrorAction Stop
                 }
+                # Windows PowerShell 5.1 does not provide an intrinsic Count
+                # property for a single PSCustomObject.
+                $Scopes = @($Scopes)
                 # Apply Include/Exclude scope filters if provided
                 if ($IncludeScopeId -and $IncludeScopeId.Count -gt 0) {
                     $setS = @{}; foreach ($sid in $IncludeScopeId) { $setS[[string]$sid] = $true }
@@ -715,20 +707,10 @@
             Write-Progress -Activity "Processing Scopes on $Computer" -Status "Scope $($Scope.ScopeId) ($ScopeCounter of $($Scopes.Count))" -PercentComplete (($ScopeCounter / $Scopes.Count) * 100) -ParentId 1 -Id 2
             Write-Verbose "Get-WinADDHCPSummary - Processing scope $($Scope.ScopeId) on $Computer"
 
-        # Build failover map once per server (collect relationships, then map ScopeId->Partner)
-        if (-not $ServerFailoverMap -and $Components['Failover']) {
-            $ServerFailoverMap = @{}
-            $key = $Computer.ToLower()
-            if ($FailoverByServer.ContainsKey($key)) {
-                foreach ($rel in $FailoverByServer[$key]) {
-                    $scopeList = if ($rel.ScopeId -is [Array]) { $rel.ScopeId } else { @($rel.ScopeId) }
-                    foreach ($sid in $scopeList) { if ($sid) { $ServerFailoverMap[[string]$sid] = $rel.PartnerServer } }
-                }
-            }
-        }
+            $FailoverEvidence = Get-DHCPFailoverScopeEvidence -EvidenceMap $ServerFailoverEvidenceMap -ScopeId $Scope.ScopeId
 
-        # Get scope configuration
-        $ScopeObject = Get-WinADDHCPScopeConfiguration -Computer $Computer -Scope $Scope -DHCPSummaryErrors $DHCPSummary.Errors -TestMode:$TestMode -ServerFailoverMap $ServerFailoverMap
+            # Get scope configuration
+            $ScopeObject = Get-WinADDHCPScopeConfiguration -Computer $Computer -Scope $Scope -DHCPSummaryErrors $DHCPSummary.Errors -TestMode:$TestMode -FailoverEvidence $FailoverEvidence
 
             # Get scope statistics
             $localSkip = $SkipScopeDetails -or (-not $Components['ScopeStatistics'])

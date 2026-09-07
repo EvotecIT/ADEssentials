@@ -1,8 +1,7 @@
 ﻿Import-Module .\ADEssentials.psd1 -Force
 
-# Example: Failover-only mapping (your requested behavior)
-# Critical = missing on secondary (OnlyOnPrimary), missing on both
-# Warning  = missing on primary (OnlyOnSecondary)
+# Example: Failover-only mapping
+# Critical = missing on one partner or missing on both partners
 $ConsiderDNSConfigCritical = $false  # do not escalate DNS into critical
 $ConsiderMissingFailoverCritical = $false  # do not escalate scopes-without-any-failover into critical
 $IncludeServerAvailabilityIssues = $false  # keep server availability out of critical
@@ -29,7 +28,7 @@ $Output = Show-WinADDHCPSummary @showWinADDHCPSummarySplat
 $CriticalCount = $Output.ValidationResults.Summary.TotalCriticalIssues
 $WarningCount = $Output.ValidationResults.Summary.TotalWarningIssues
 $InfoCount = $Output.ValidationResults.Summary.TotalInfoIssues
-$TotalIssues = @($Output.ScopesWithIssues).Count
+$TotalIssues = $Output.ValidationResults.Summary.UniqueScopesWithIssues
 if ($SendOnCriticalOnly -and $CriticalCount -eq 0) {
     Write-Host 'No critical issues detected. Skipping email send.'
     return
@@ -37,9 +36,9 @@ if ($SendOnCriticalOnly -and $CriticalCount -eq 0) {
 
 return
 # Buckets (failover focused)
-$critOnlyOnPrimary = $Output.ValidationResults.CriticalIssues.FailoverOnlyOnPrimary
+$critMissingOnOnePartner = $Output.ValidationResults.CriticalIssues.FailoverMissingOnOnePartner
 $critMissingOnBoth = $Output.ValidationResults.CriticalIssues.FailoverMissingOnBoth
-$warnOnlyOnSecondary = $Output.ValidationResults.WarningIssues.FailoverOnlyOnSecondary
+$warnFailoverUnverified = $Output.ValidationResults.WarningIssues.FailoverUnverified
 
 # Build email
 $EmailBody = EmailBody {
@@ -58,25 +57,24 @@ $EmailBody = EmailBody {
     EmailText -Text "Issue counts are per-scope and may overlap across categories." -Color DarkGray -FontSize 9pt -LineBreak
     EmailText -Text "Issue Breakdown (failover-focused):" -Color Blue -FontSize 9pt -FontWeight bold -LineBreak
     EmailList -FontSize 9pt {
-        if ($critOnlyOnPrimary.Count -gt 0) { EmailListItem -Text "Critical: Missing on secondary (failover mismatch): ", $critOnlyOnPrimary.Count -Color None, Red -FontWeight normal, bold }
+        if ($critMissingOnOnePartner.Count -gt 0) { EmailListItem -Text "Critical: Missing on one partner (failover mismatch): ", $critMissingOnOnePartner.Count -Color None, Red -FontWeight normal, bold }
         if ($critMissingOnBoth.Count -gt 0) { EmailListItem -Text "Critical: Missing on both partners: ", $critMissingOnBoth.Count -Color None, Red -FontWeight normal, bold }
-        if ($warnOnlyOnSecondary.Count -gt 0) { EmailListItem -Text "Warning: Missing on primary (failover mismatch): ", $warnOnlyOnSecondary.Count -Color None, DarkOrange -FontWeight normal, bold }
+        if ($warnFailoverUnverified.Count -gt 0) { EmailListItem -Text "Warning: Failover evidence unverified: ", $warnFailoverUnverified.Count -Color None, DarkOrange -FontWeight normal, bold }
     }
 
-    if ($critOnlyOnPrimary.Count -gt 0) {
-        EmailText -Text "🔴 Critical: Scopes present only on primary (missing on secondary)" -Color Red -FontWeight bold -LineBreak
-        EmailTable -DataTable ($critOnlyOnPrimary | Select-Object -First $TopN) -HideFooter -IncludeProperty 'Relationship', 'PrimaryServer', 'SecondaryServer', 'ScopeId'
+    if ($critMissingOnOnePartner.Count -gt 0) {
+        EmailText -Text "🔴 Critical: Scopes missing from one failover partner" -Color Red -FontWeight bold -LineBreak
+        EmailTable -DataTable ($critMissingOnOnePartner | Select-Object -First $TopN) -HideFooter -IncludeProperty 'Relationship', 'PartnerA', 'PartnerB', 'PresentPartner', 'MissingPartner', 'ScopeId'
         EmailText -LineBreak
     }
     if ($critMissingOnBoth.Count -gt 0) {
         EmailText -Text "🔴 Critical: Scopes missing from failover on both partners" -Color Red -FontWeight bold -LineBreak
-        EmailTable -DataTable ($critMissingOnBoth | Select-Object -First $TopN) -HideFooter -IncludeProperty 'Relationship', 'PrimaryServer', 'SecondaryServer', 'ScopeId'
+        EmailTable -DataTable ($critMissingOnBoth | Select-Object -First $TopN) -HideFooter -IncludeProperty 'Relationship', 'PartnerA', 'PartnerB', 'ScopeId'
         EmailText -LineBreak
     }
-
-    if ($warnOnlyOnSecondary.Count -gt 0) {
-        EmailText -Text "🟠 Warning: Scopes present only on secondary (missing on primary)" -Color DarkOrange -FontWeight bold -LineBreak
-        EmailTable -DataTable ($warnOnlyOnSecondary | Select-Object -First $TopN) -HideFooter -IncludeProperty 'Relationship', 'PrimaryServer', 'SecondaryServer', 'ScopeId'
+    if ($warnFailoverUnverified.Count -gt 0) {
+        EmailText -Text "🟠 Warning: Failover Evidence Could Not Be Verified" -Color DarkOrange -FontWeight bold -LineBreak
+        EmailTable -DataTable ($warnFailoverUnverified | Select-Object -First $TopN) -HideFooter -IncludeProperty 'ScopeId', 'PartnerA', 'PartnerB', 'Relationship', 'Issue', 'Verified'
         EmailText -LineBreak
     }
 }
@@ -102,4 +100,3 @@ $EmailSplat = @{
 }
 
 Send-EmailMessage @EmailSplat
-
