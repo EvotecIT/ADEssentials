@@ -49,11 +49,11 @@
         [System.Collections.IDictionary] $ExtendedForestInformation
     )
     $ForestInformation = Get-WinADForestDetails -Forest $Forest -IncludeDomains $IncludeDomains -ExcludeDomains $ExcludeDomains -ExcludeDomainControllers $ExcludeDomainControllers -IncludeDomainControllers $IncludeDomainControllers -SkipRODC:$SkipRODC -ExtendedForestInformation $ExtendedForestInformation
-    $Events = Get-Events -LogName 'Directory Service' -ID 2887 -Machine $ForestInformation.ForestDomainControllers.HostName -DateFrom ((Get-Date).Date.adddays(-$Days))
+    $Events = Get-EVXEvent -LogName 'Directory Service' -EventId 2887 -MachineName $ForestInformation.ForestDomainControllers.HostName -StartTime ((Get-Date).Date.AddDays(-$Days)) -ReadMode Full -ExpandData -ContinueOnError -ErrorAction SilentlyContinue
     foreach ($E in $Events) {
         [PSCustomobject] @{
-            'Domain Controller'                                                        = $E.Computer
-            'Date'                                                                     = $E.Date
+            'Domain Controller'                                                        = $E.ComputerName
+            'Date'                                                                     = $E.TimeCreated
             'Number of simple binds performed without SSL/TLS'                         = $E.'NoNameA0'
             'Number of Negotiate/Kerberos/NTLM/Digest binds performed without signing' = $E.'NoNameA1'
             'GatheredFrom'                                                             = $E.'GatheredFrom'

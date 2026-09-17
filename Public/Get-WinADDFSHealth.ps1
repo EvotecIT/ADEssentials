@@ -255,7 +255,7 @@
                 $DomainSummary['Availability'] = $false
             }
             try {
-                [Array] $Events = Get-Events -LogName "DFS Replication" -Level Error -ComputerName $Hostname -DateFrom $Yesterday -DateTo $Today
+                [Array] $Events = Get-EVXEvent -LogName 'DFS Replication' -Level Error -MachineName $Hostname -StartTime $Yesterday -EndTime $Today
                 $DomainSummary['DFSErrors'] = $Events.Count
                 $DomainSummary['DFSEvents'] = $Events
             } catch {
