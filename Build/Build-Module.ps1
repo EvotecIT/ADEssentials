@@ -104,6 +104,9 @@ Invoke-ModuleBuild -ModuleName 'ADEssentials' {
         ModulesPath         = "$PSScriptRoot\..\Artefacts\Unpacked\Modules"
         RequiredModulesPath = "$PSScriptRoot\..\Artefacts\Unpacked\Modules"
         AddRequiredModules  = $true
+        RequiredModulesSource     = 'Download'
+        RequiredModulesTool       = 'PowerShellGet'
+        RequiredModulesRepository = 'PSGallery'
         CopyFiles           = @{
             #"Examples\PublishingExample\Example-ExchangeEssentials.ps1" = "RunMe.ps1"
         }
@@ -116,6 +119,9 @@ Invoke-ModuleBuild -ModuleName 'ADEssentials' {
         ModulesPath         = "$PSScriptRoot\..\Artefacts\Packed\Modules"
         RequiredModulesPath = "$PSScriptRoot\..\Artefacts\Packed\Modules"
         AddRequiredModules  = $true
+        RequiredModulesSource     = 'Download'
+        RequiredModulesTool       = 'PowerShellGet'
+        RequiredModulesRepository = 'PSGallery'
         CopyFiles           = @{
             #"Examples\PublishingExample\Example-ExchangeEssentials.ps1" = "RunMe.ps1"
         }
