@@ -5,7 +5,7 @@
 )
 
 Clear-Host
-Import-Module PSPublishModule -MinimumVersion '3.0.161' -Force -ErrorAction Stop
+Import-Module PSPublishModule -MinimumVersion '3.0.162' -Force -ErrorAction Stop
 
 Invoke-ModuleBuild -ModuleName 'ADEssentials' {
     # Usual defaults as per standard module
@@ -32,8 +32,8 @@ Invoke-ModuleBuild -ModuleName 'ADEssentials' {
     }
     New-ConfigurationManifest @Manifest
 
-    New-ConfigurationModule -Type ApprovedModule -Name 'PSSharedGoods' -RequiredVersion '0.0.313' -Guid Auto -VersionSource PSGallery
-    New-ConfigurationModule -Type ApprovedModule -Name 'PSWriteColor' -RequiredVersion '1.0.7' -Guid Auto -VersionSource PSGallery
+    New-ConfigurationModule -Type ApprovedModule -Name 'PSSharedGoods' -Version 'Latest' -Guid Auto -VersionSource PSGallery
+    New-ConfigurationModule -Type ApprovedModule -Name 'PSWriteColor' -Version 'Latest' -Guid Auto -VersionSource PSGallery
     New-ConfigurationModule -Type RequiredModule -Name 'PSWriteHTML' -Version 1.38.0 -Guid Auto
     New-ConfigurationModule -Type RequiredModule -Name 'PSEventViewer' -Version 4.0.0 -Guid Auto
     New-ConfigurationModule -Type ApprovedModule -Name @('Connectimo', 'PSUnifi', 'PSWebToolbox', 'PSMyPassword')
