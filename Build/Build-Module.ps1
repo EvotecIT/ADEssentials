@@ -1,11 +1,14 @@
 ﻿param(
     [Alias('ConfigurationGateMode')]
     [ValidateSet('Manifest', 'Build', 'Publish')]
-    [string] $RunMode = 'Build'
+    [string] $RunMode = 'Build',
+
+    [bool] $SignModule = ($RunMode -eq 'Publish'),
+
+    [bool] $PublishGitHub = $true
 )
 
-Clear-Host
-Import-Module "PSPublishModule" -Force
+Import-Module PSPublishModule -MinimumVersion '3.0.164' -Force -ErrorAction Stop
 
 Invoke-ModuleBuild -ModuleName 'ADEssentials' {
     # Usual defaults as per standard module
@@ -32,10 +35,11 @@ Invoke-ModuleBuild -ModuleName 'ADEssentials' {
     }
     New-ConfigurationManifest @Manifest
 
-    New-ConfigurationModule -Type RequiredModule -Name 'PSSharedGoods' -Version 0.0.313 -Guid Auto
+    New-ConfigurationModule -Type ApprovedModule -Name 'PSSharedGoods' -Version 'Latest' -Guid Auto -VersionSource PSGallery
+    New-ConfigurationModule -Type ApprovedModule -Name 'PSWriteColor' -Version 'Latest' -Guid Auto -VersionSource PSGallery
     New-ConfigurationModule -Type RequiredModule -Name 'PSWriteHTML' -Version 1.38.0 -Guid Auto
     New-ConfigurationModule -Type RequiredModule -Name 'PSEventViewer' -Version 4.0.0 -Guid Auto
-    New-ConfigurationModule -Type ApprovedModule -Name @('PSSharedGoods', 'PSWriteColor', 'Connectimo', 'PSUnifi', 'PSWebToolbox', 'PSMyPassword')
+    New-ConfigurationModule -Type ApprovedModule -Name @('Connectimo', 'PSUnifi', 'PSWebToolbox', 'PSMyPassword')
 
     New-ConfigurationModuleSkip -IgnoreFunctionName @(
         'ConvertTo-Excel'
@@ -95,7 +99,7 @@ Invoke-ModuleBuild -ModuleName 'ADEssentials' {
     # the packaged module. Live collection still fails clearly at the call site.
     New-ConfigurationCommand -ModuleName 'DNSServer'
 
-    New-ConfigurationBuild -Enable:$true -SignModule -MergeModuleOnBuild -MergeFunctionsFromApprovedModules -CertificateThumbprint '92E95FB58EFFA6A4A75E77A33CDD6BFE6DD30F1A'
+    New-ConfigurationBuild -Enable:$true -SignModule:$SignModule -MergeModuleOnBuild -MergeFunctionsFromApprovedModules -CertificateThumbprint '92E95FB58EFFA6A4A75E77A33CDD6BFE6DD30F1A'
 
     $newConfigurationArtefactSplat = @{
         Type                = 'Unpacked'
@@ -131,7 +135,9 @@ Invoke-ModuleBuild -ModuleName 'ADEssentials' {
 
     # global options for publishing to github/psgallery
     New-ConfigurationPublish -Type PowerShellGallery -FilePath 'C:\Support\Important\PowerShellGalleryAPI.txt' -Enabled:$true
-    New-ConfigurationPublish -Type GitHub -FilePath 'C:\Support\Important\GitHubAPI.txt' -UserName 'EvotecIT' -Enabled:$true
+    if ($PublishGitHub) {
+        New-ConfigurationPublish -Type GitHub -FilePath 'C:\Support\Important\GitHubAPI.txt' -UserName 'EvotecIT' -Enabled:$true
+    }
 
     New-ConfigurationGate -Mode $RunMode
 }
