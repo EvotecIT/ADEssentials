@@ -5,7 +5,7 @@
 )
 
 Clear-Host
-Import-Module PSPublishModule -MinimumVersion '3.0.162' -Force -ErrorAction Stop
+Import-Module PSPublishModule -MinimumVersion '3.0.163' -Force -ErrorAction Stop
 
 Invoke-ModuleBuild -ModuleName 'ADEssentials' {
     # Usual defaults as per standard module
